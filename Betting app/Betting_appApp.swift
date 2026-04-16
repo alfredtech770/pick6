@@ -23,19 +23,8 @@ struct Betting_appApp: App {
         WindowGroup {
             Group {
                 if authManager.isCheckingSession {
-                    // Hold on a dark splash while Keychain session is restored
-                    ZStack {
-                        Color(hex: "#151517").ignoresSafeArea()
-                        HStack(spacing: 0) {
-                            Text("PICK")
-                                .font(.custom("BarlowCondensed-Black", size: 38))
-                                .foregroundColor(.white)
-                            Text("6")
-                                .font(.custom("BarlowCondensed-Black", size: 38))
-                                .foregroundColor(Color(hex: "#22C55E"))
-                        }
-                    }
-                    .preferredColorScheme(.dark)
+                    Pick6SplashLoader()
+                        .preferredColorScheme(.dark)
                 } else if !hasCompletedOnboarding {
                     Pick6OnboardingView { _ in
                         hasCompletedOnboarding = true

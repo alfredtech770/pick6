@@ -1,0 +1,1749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pick6 — The Future of Sports Predictions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #000000;
+    --ink-2: #0a0a0a;
+    --surface: #0f0f10;
+    --surface-2: #15151a;
+    --stroke: rgba(255,255,255,0.08);
+    --stroke-strong: rgba(255,255,255,0.2);
+    --text: #fafafa;
+    --text-dim: rgba(255,255,255,0.66);
+    --text-muted: rgba(255,255,255,0.42);
+
+    /* ACID palette */
+    --acid: #c6ff00;
+    --acid-bright: #d9ff3f;
+    --acid-deep: #9ecb00;
+    --acid-glow: rgba(198,255,0,0.35);
+    --grad: linear-gradient(135deg, #d9ff3f 0%, #c6ff00 40%, #9ecb00 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+  }
+
+  .stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .slide {
+    position: absolute;
+    width: min(94vw, calc(92vh * 16 / 9));
+    height: min(92vh, calc(94vw * 9 / 16));
+    background: var(--ink);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04);
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+    transition: opacity .55s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1);
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  /* Ambient */
+  .orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(90px); opacity: 0.25; pointer-events: none;
+  }
+  .orb.acid { background: var(--acid); }
+  .noise {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.035;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>");
+  }
+  .grid-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(198,255,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(198,255,0,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .canvas {
+    position: absolute; inset: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* frame corners */
+  .frame-mark {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-color: rgba(255,255,255,0.3);
+    border-style: solid;
+    border-width: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .frame-mark.tl { top: 20px; left: 20px; border-top-width: 1px; border-left-width: 1px; }
+  .frame-mark.tr { top: 20px; right: 20px; border-top-width: 1px; border-right-width: 1px; }
+  .frame-mark.bl { bottom: 20px; left: 20px; border-bottom-width: 1px; border-left-width: 1px; }
+  .frame-mark.br { bottom: 20px; right: 20px; border-bottom-width: 1px; border-right-width: 1px; }
+
+  /* slide meta: section number + brand */
+  .meta {
+    position: absolute; left: 0; right: 0; top: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 32px 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-muted);
+    z-index: 2;
+  }
+  .meta .brand {
+    display: inline-flex; gap: 10px; align-items: center;
+    color: var(--text);
+  }
+  .meta .brand .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 12px var(--acid-glow); }
+  .meta .num { color: var(--acid); }
+
+  .footer-meta {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 28px 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-muted);
+    z-index: 2;
+  }
+
+  /* Typography system */
+  h1, h2, h3 { margin: 0; font-family: 'Inter', sans-serif; font-weight: 800; }
+  h1 { letter-spacing: -0.035em; line-height: 0.96; }
+  h2 { letter-spacing: -0.02em; line-height: 1.02; }
+  h3 { letter-spacing: -0.015em; line-height: 1.18; }
+  p  { margin: 0; }
+
+  .title-hero { font-size: clamp(2.4rem, 5.4vw, 5.8rem); }
+  .title-xxl  { font-size: clamp(2.1rem, 4.3vw, 4.3rem); }
+  .title-xl   { font-size: clamp(1.7rem, 3.3vw, 3.3rem); }
+  .title-l    { font-size: clamp(1.4rem, 2.4vw, 2.4rem); }
+  .title-m    { font-size: clamp(1rem, 1.4vw, 1.4rem); font-weight: 700; }
+  .title-s    { font-size: clamp(0.85rem, 1vw, 1rem); font-weight: 600; }
+
+  .body      { font-size: clamp(0.85rem, 1.02vw, 1.02rem); line-height: 1.5; color: var(--text-dim); font-weight: 400; }
+  .body-sm   { font-size: clamp(0.72rem, 0.82vw, 0.86rem); line-height: 1.5; color: var(--text-dim); }
+  .body-xs   { font-size: clamp(0.68rem, 0.76vw, 0.78rem); line-height: 1.45; color: var(--text-muted); }
+
+  .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: var(--acid);
+  }
+  .accent { color: var(--acid); }
+  .accent-grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .underline-acid {
+    position: relative; display: inline-block;
+  }
+  .underline-acid::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0.02em;
+    height: 0.12em; background: var(--acid); opacity: 0.35;
+    z-index: -1;
+  }
+
+  /* Decorations */
+  .hair { height: 1px; background: var(--stroke); margin: 24px 0; }
+  .hair-acid { height: 2px; background: linear-gradient(90deg, var(--acid), transparent 70%); margin: 28px 0; }
+
+  /* Big outlined numeral for section backdrop */
+  .numeral {
+    position: absolute;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(12rem, 28vw, 28rem);
+    color: transparent;
+    -webkit-text-stroke: 1.2px rgba(255,255,255,0.06);
+    line-height: 0.8;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -0.02em;
+    z-index: 0;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(198,255,0,0.08);
+    border: 1px solid rgba(198,255,0,0.4);
+    color: var(--acid);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .pill .bullet { width: 6px; height: 6px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 10px var(--acid-glow); }
+
+  /* Card */
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.008));
+    border: 1px solid var(--stroke);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .4s cubic-bezier(.2,.8,.2,1), border-color .3s, background .3s;
+  }
+  .slide.active .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(198,255,0,0.35);
+    background: linear-gradient(180deg, rgba(198,255,0,0.04), rgba(255,255,255,0.01));
+  }
+  .card .corner-mark {
+    position: absolute; top: 16px; right: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    color: var(--text-muted); letter-spacing: 0.14em;
+  }
+
+  /* Step marker — bold ordinal */
+  .step {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 2.4rem;
+    color: var(--acid);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .step .slash { color: var(--text-muted); font-size: 1.4rem; font-weight: 400; font-family: 'JetBrains Mono', monospace; }
+  .step .total { color: var(--text-muted); font-size: 1rem; font-weight: 400; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.08em; }
+
+  .ordinal {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(3.4rem, 6vw, 6rem);
+    line-height: 0.8; color: transparent;
+    -webkit-text-stroke: 1.2px var(--acid);
+    letter-spacing: -0.03em;
+  }
+  .ordinal.filled {
+    -webkit-text-stroke: 0;
+    color: var(--acid);
+  }
+
+  /* Stats big number */
+  .bigstat {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(3.6rem, 6.5vw, 6.5rem);
+    line-height: 0.9;
+    color: var(--text);
+    letter-spacing: -0.04em;
+  }
+  .bigstat .unit { color: var(--acid); }
+  .bigstat-glow {
+    text-shadow: 0 0 40px var(--acid-glow);
+  }
+
+  /* Animations */
+  .slide .anim { opacity: 0; transform: translateY(14px); transition: opacity .6s .1s cubic-bezier(.2,.8,.2,1), transform .6s .1s cubic-bezier(.2,.8,.2,1); }
+  .slide.active .anim { opacity: 1; transform: translateY(0); }
+  .slide .anim.d1 { transition-delay: .12s; }
+  .slide .anim.d2 { transition-delay: .24s; }
+  .slide .anim.d3 { transition-delay: .36s; }
+  .slide .anim.d4 { transition-delay: .48s; }
+  .slide .anim.d5 { transition-delay: .60s; }
+  .slide .anim.d6 { transition-delay: .72s; }
+  .slide .anim.d7 { transition-delay: .84s; }
+  .slide .anim.d8 { transition-delay: .96s; }
+
+  /* Reveal — clip-path line-by-line */
+  .reveal { overflow: hidden; }
+  .reveal > * {
+    transform: translateY(100%);
+    transition: transform .8s cubic-bezier(.2,.8,.2,1);
+    transition-delay: .2s;
+    display: block;
+  }
+  .slide.active .reveal > * { transform: translateY(0); }
+
+  /* Animated acid line */
+  .line-draw {
+    height: 2px;
+    background: var(--acid);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1s cubic-bezier(.2,.8,.2,1);
+    transition-delay: .3s;
+  }
+  .slide.active .line-draw { transform: scaleX(1); }
+  .line-draw.w-40 { width: 40%; }
+  .line-draw.w-20 { width: 20%; }
+  .line-draw.w-full { width: 100%; }
+
+  /* Sheen animation */
+  @keyframes sheen {
+    0% { transform: translateX(-120%); }
+    60% { transform: translateX(120%); }
+    100% { transform: translateX(120%); }
+  }
+  .sheen {
+    position: relative; overflow: hidden;
+  }
+  .sheen::after {
+    content: ""; position: absolute; top: 0; left: 0; height: 100%; width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(198,255,0,0.15), transparent);
+    animation: sheen 5s ease-in-out infinite 2s;
+  }
+
+  /* Cover specific */
+  .cover-canvas {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    background:
+      radial-gradient(1000px 600px at 70% 30%, rgba(198,255,0,0.18), transparent 60%),
+      radial-gradient(800px 500px at 20% 100%, rgba(198,255,0,0.08), transparent 60%),
+      var(--ink);
+  }
+  .cover-mark {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(5rem, 16vw, 18rem);
+    letter-spacing: -0.06em;
+    line-height: 0.82;
+    text-align: center;
+    position: relative; z-index: 2;
+  }
+  .cover-mark .pick { color: var(--text); }
+  .cover-mark .six {
+    color: var(--acid);
+    position: relative;
+    display: inline-block;
+  }
+  .cover-mark .six::after {
+    content: ""; position: absolute; inset: 0;
+    background: var(--acid); filter: blur(22px); opacity: 0.4;
+    z-index: -1;
+  }
+  .cover-tagline {
+    margin-top: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--text-dim);
+    font-size: clamp(0.7rem, 1vw, 0.95rem);
+    text-align: center;
+  }
+  .cover-tagline .hash { color: var(--acid); }
+
+  /* marquee on cover */
+  .marquee {
+    position: absolute; left: 0; right: 0; bottom: 14%;
+    overflow: hidden; white-space: nowrap;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(1.4rem, 3.4vw, 3.4rem);
+    letter-spacing: -0.03em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.08);
+    z-index: 1;
+  }
+  .marquee-track {
+    display: inline-block;
+    animation: marquee 28s linear infinite;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .marquee .sep { color: var(--acid); -webkit-text-stroke: 0; margin: 0 24px; }
+
+  /* cover scan lines */
+  .scan {
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: 2px; background: var(--acid);
+    opacity: 0.3;
+    animation: scan 6s linear infinite;
+    z-index: 1;
+  }
+  @keyframes scan {
+    0% { transform: translateY(-40vh); opacity: 0; }
+    20% { opacity: 0.35; }
+    80% { opacity: 0.35; }
+    100% { transform: translateY(40vh); opacity: 0; }
+  }
+
+  /* Column layouts */
+  .pad { padding: 8% 7% 10% 7%; }
+  .pad-sm { padding: 7% 7% 9% 7%; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6%; height: 100%; }
+  .two-col.asym { grid-template-columns: 1.3fr 1fr; }
+  .two-col.asym-r { grid-template-columns: 1fr 1.3fr; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2.5%; }
+  .four-col  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5%; }
+
+  /* Step block (used in a few slides) */
+  .stepblock {
+    display: grid; grid-template-columns: 90px 1fr; gap: 22px; align-items: start;
+    padding: 22px 0;
+    border-top: 1px solid var(--stroke);
+  }
+  .stepblock:last-child { border-bottom: 1px solid var(--stroke); }
+  .stepblock .idx {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 2.2rem;
+    color: var(--acid);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  /* Footer on slides */
+  .footnote {
+    position: absolute; left: 7%; right: 7%; bottom: 9%;
+    padding-top: 18px;
+    border-top: 1px solid var(--stroke);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  /* Founder card */
+  .founder {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.006));
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+  }
+  .founder .initials {
+    width: 64px; height: 64px; border-radius: 14px;
+    background: var(--acid);
+    color: #000;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1.6rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    letter-spacing: -0.04em;
+  }
+  .founder::before {
+    content: ""; position: absolute; left: -30px; top: -30px;
+    width: 200px; height: 200px; background: var(--acid);
+    opacity: 0.08; filter: blur(40px); border-radius: 50%;
+  }
+
+  /* Contact */
+  .contact-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--stroke);
+  }
+  .contact-row:last-child { border-bottom: 0; }
+  .contact-row .tick {
+    width: 24px; height: 24px; color: var(--acid);
+  }
+
+  /* Banner */
+  .banner {
+    background: linear-gradient(90deg, rgba(198,255,0,0.08), rgba(198,255,0,0.01) 60%);
+    border: 1px solid rgba(198,255,0,0.25);
+    border-left: 3px solid var(--acid);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  /* Icons */
+  .ic { stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-box {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: rgba(198,255,0,0.08);
+    border: 1px solid rgba(198,255,0,0.25);
+    color: var(--acid);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* Progress + nav */
+  .progress {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: 2px; background: rgba(255,255,255,0.06); z-index: 10;
+  }
+  .progress .fill {
+    height: 100%; background: var(--acid);
+    width: 0%; transition: width .5s ease;
+    box-shadow: 0 0 14px var(--acid-glow);
+  }
+  .nav {
+    position: fixed; bottom: 14px; right: 18px; z-index: 11;
+    display: flex; gap: 10px; align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--text-dim);
+    letter-spacing: 0.12em;
+  }
+  .nav button {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--stroke);
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .nav button:hover { background: rgba(198,255,0,0.12); border-color: rgba(198,255,0,0.35); color: var(--acid); }
+  .nav .count { min-width: 54px; text-align: center; }
+
+  .hint {
+    position: fixed; bottom: 14px; left: 18px; z-index: 11;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem; letter-spacing: 0.14em; color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* ============ PHONE MOCKUP ============ */
+  .phone {
+    position: relative;
+    aspect-ratio: 919 / 1999;
+    border-radius: 36px;
+    padding: 6px;
+    background: linear-gradient(135deg, #1a1a1c 0%, #0a0a0a 100%);
+    box-shadow:
+      0 30px 80px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.08),
+      inset 0 0 0 2px rgba(255,255,255,0.03);
+    overflow: visible;
+  }
+  .phone::before {
+    content: "";
+    position: absolute; inset: -16px;
+    border-radius: 48px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(198,255,0,0.18), transparent 70%);
+    filter: blur(24px);
+    z-index: -1;
+    opacity: 0.9;
+  }
+  .phone .screen {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 30px;
+    overflow: hidden;
+    background: #000;
+  }
+  .phone img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  /* Reflection sheen over the screen */
+  .phone .screen::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.04) 100%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    border-radius: 30px;
+  }
+  .phone.tilt-l { transform: rotate(-6deg); }
+  .phone.tilt-r { transform: rotate(6deg); }
+  .phone.tilt-ll { transform: rotate(-10deg); }
+  .phone.tilt-rr { transform: rotate(10deg); }
+  .phone.floating { animation: phone-float 6s ease-in-out infinite; }
+  .phone.floating.d1 { animation-delay: -1.2s; }
+  .phone.floating.d2 { animation-delay: -2.4s; }
+  @keyframes phone-float {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -10px; }
+  }
+  /* Phone row — 3 phones staggered */
+  .phone-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6%;
+    align-items: center;
+  }
+  .phone-row .phone { width: 100%; }
+  .phone-row .phone:nth-child(1) { transform: translateY(16px) rotate(-4deg); }
+  .phone-row .phone:nth-child(2) { transform: translateY(-14px) scale(1.04); z-index: 2; }
+  .phone-row .phone:nth-child(3) { transform: translateY(16px) rotate(4deg); }
+  .phone-row .phone:nth-child(1):hover { transform: translateY(10px) rotate(-2deg); }
+  .phone-row .phone:nth-child(2):hover { transform: translateY(-20px) scale(1.06); }
+  .phone-row .phone:nth-child(3):hover { transform: translateY(10px) rotate(2deg); }
+  .phone-row .phone { transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+
+  /* Fanned phone stack — for cover slide */
+  .phone-fan {
+    position: absolute;
+    display: flex;
+    pointer-events: none;
+  }
+  .phone-fan .phone {
+    width: 180px;
+    opacity: 0;
+    transition: opacity 1s cubic-bezier(.2,.8,.2,1), transform 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+  .slide.active .phone-fan .phone { opacity: 1; }
+  .phone-fan .phone:nth-child(1) {
+    transform: translateX(0) translateY(40px) rotate(-12deg);
+  }
+  .phone-fan .phone:nth-child(2) {
+    transform: translateX(-60px) translateY(0) rotate(0deg);
+    z-index: 2;
+  }
+  .phone-fan .phone:nth-child(3) {
+    transform: translateX(-120px) translateY(40px) rotate(12deg);
+  }
+  .slide.active .phone-fan .phone:nth-child(1) {
+    transform: translateX(0) translateY(40px) rotate(-12deg);
+    transition-delay: .4s;
+  }
+  .slide.active .phone-fan .phone:nth-child(2) {
+    transform: translateX(-60px) translateY(0) rotate(0deg);
+    transition-delay: .55s;
+  }
+  .slide.active .phone-fan .phone:nth-child(3) {
+    transform: translateX(-120px) translateY(40px) rotate(12deg);
+    transition-delay: .7s;
+  }
+
+  @media (max-width: 900px) {
+    .slide { border-radius: 8px; }
+    .meta { padding: 18px 22px; }
+    .pad { padding: 14% 7%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- ============== SLIDE 1: COVER ============== -->
+  <section class="slide" data-slide="1">
+    <div class="cover-canvas">
+      <div class="orb acid" style="top:-10%; right:-5%; width: 520px; height: 520px;"></div>
+      <div class="orb acid" style="bottom:-20%; left:-10%; width: 400px; height: 400px; opacity:0.18;"></div>
+      <div class="noise"></div>
+      <div class="scan"></div>
+
+      <div class="frame-mark tl"></div>
+      <div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div>
+      <div class="frame-mark br"></div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">00</span> / 14 — COVER</span>
+      </div>
+
+      <div style="position:absolute; inset:0; display:grid; grid-template-columns: 1.1fr 1fr; align-items:stretch; padding: 9% 6% 16% 6%; gap: 4%; z-index:3;">
+        <div style="text-align:left; min-width: 0; display:flex; flex-direction:column; justify-content:center;">
+          <div class="anim">
+            <div class="pill" style="margin-bottom: 24px;">
+              <span class="bullet"></span>THE FUTURE OF SPORTS PREDICTIONS
+            </div>
+          </div>
+          <div class="cover-mark anim d1" style="text-align:left; font-size: clamp(3.4rem, 9.5vw, 10rem); line-height: 0.88;">
+            <span class="pick">PICK</span><span class="six">6</span>
+          </div>
+          <div class="cover-tagline anim d2" style="text-align:left; margin-top: 20px;">
+            <span class="hash">#</span>&nbsp;who&rsquo;s the winner
+          </div>
+        </div>
+
+        <!-- Phones fan right column -->
+        <div class="anim d3" style="position:relative; min-width: 0; min-height: 380px;">
+          <div class="phone tilt-ll floating" style="position:absolute; width: 30%; left: 2%; top: 18%; z-index:1;">
+            <div class="screen"><img src="assets/screen-soccer-home.jpg" alt="Pick6 soccer view" loading="lazy"/></div>
+          </div>
+          <div class="phone floating d1" style="position:absolute; width: 34%; left: 33%; top: 6%; z-index:3;">
+            <div class="screen"><img src="assets/screen-nba-home.jpg" alt="Pick6 NBA view" loading="lazy"/></div>
+          </div>
+          <div class="phone tilt-rr floating d2" style="position:absolute; width: 30%; right: 2%; top: 18%; z-index:2;">
+            <div class="screen"><img src="assets/screen-f1.jpg" alt="Pick6 F1 view" loading="lazy"/></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="marquee">
+        <div class="marquee-track">
+          AI&nbsp;PREDICTIONS<span class="sep">◆</span>25K&nbsp;MATCHES<span class="sep">◆</span>30&nbsp;LEAGUES<span class="sep">◆</span>71%&nbsp;SUCCESS<span class="sep">◆</span>
+          AI&nbsp;PREDICTIONS<span class="sep">◆</span>25K&nbsp;MATCHES<span class="sep">◆</span>30&nbsp;LEAGUES<span class="sep">◆</span>71%&nbsp;SUCCESS<span class="sep">◆</span>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span>V1.0 — 2026</span>
+        <span class="mono">DAN&nbsp;&amp;&nbsp;DOV&nbsp;SEBBAN</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 2: INTRO ============== -->
+  <section class="slide" data-slide="2">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="noise"></div>
+      <div class="numeral" style="right:-4%; top:-8%;">01</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">01</span> / 14 — INTRODUCTION</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">PICK6 :</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">The Future of</h1>
+        </div>
+        <div class="reveal" style="margin-top: 4px;">
+          <h1 class="title-xl accent">Sports Predictions<span style="color:var(--text)">.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 22px;"></div>
+
+        <div class="two-col anim d3" style="margin-top: 22px; height:auto; align-items:start; gap: 5%;">
+          <div>
+            <p class="body-sm">
+              Pick6 embodies the new generation of sports prediction platforms, born from the
+              meeting between authentic sports passion and the most advanced technological
+              innovation. Founded by Dan and Dov Sebban, two French entrepreneur brothers united
+              by their love of team sports.
+            </p>
+            <p class="body-sm" style="margin-top: 10px;">
+              The company relies on artificial intelligence entirely developed in-house, fed daily
+              by the analysis of more than 25,000 matches across 30 international championships —
+              generating 750 monthly predictions with a success rate reaching
+              <span style="color:var(--acid); font-weight:600;">71%</span>.
+            </p>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap: 10px;">
+            <div class="card" style="padding: 14px;">
+              <div class="kicker" style="font-size:0.62rem;">Users</div>
+              <div class="bigstat" style="font-size: clamp(1.8rem, 3vw, 3rem); margin-top: 4px;">25K<span class="unit">+</span></div>
+              <p class="body-xs" style="margin-top: 2px;">Active worldwide</p>
+            </div>
+            <div class="card" style="padding: 14px;">
+              <div class="kicker" style="font-size:0.62rem;">Success</div>
+              <div class="bigstat" style="font-size: clamp(1.8rem, 3vw, 3rem); margin-top: 4px;">71<span class="unit">%</span></div>
+              <p class="body-xs" style="margin-top: 2px;">Prediction accuracy</p>
+            </div>
+            <div class="card" style="padding: 14px;">
+              <div class="kicker" style="font-size:0.62rem;">Leagues</div>
+              <div class="bigstat" style="font-size: clamp(1.8rem, 3vw, 3rem); margin-top: 4px;">30</div>
+              <p class="body-xs" style="margin-top: 2px;">International</p>
+            </div>
+            <div class="card" style="padding: 14px;">
+              <div class="kicker" style="font-size:0.62rem;">Outlook</div>
+              <div class="bigstat" style="font-size: clamp(1.8rem, 3vw, 3rem); margin-top: 4px;">2026</div>
+              <p class="body-xs" style="margin-top: 2px;">World Cup launch</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ INTRODUCTION</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 3: STORY ============== -->
+  <section class="slide" data-slide="3">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="grid-bg"></div>
+      <div class="orb acid" style="top:-10%; left:-10%; opacity: 0.12;"></div>
+      <div class="numeral" style="left:-2%; bottom:-10%;">02</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">02</span> / 14 — ORIGIN STORY</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">The Story of Passion</div>
+        <div class="reveal" style="margin-top: 12px;">
+          <h1 class="title-xl">Transformed</h1>
+        </div>
+        <div class="reveal">
+          <h1 class="title-xl accent">into Innovation<span style="color:var(--text)">.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 32px;"></div>
+
+        <div class="two-col anim d3" style="margin-top: 24px; align-items:start; height:auto; gap: 6%;">
+          <div>
+            <p class="body-sm">
+              Founded by brothers Dan and Dov Sebban, two French entrepreneurs united by their love
+              of team sports. Daniel brings his commercial expertise while Dov, a marketing and
+              technology specialist, nurtures a passion for research and innovation.
+            </p>
+            <p class="body-sm" style="margin-top: 12px;">
+              The idea emerged during their football evenings with friends — their strategic
+              analyses revealed the gap between intuitive expertise and the available technological
+              tools. The concept was born: exploit AI to democratize high-quality sports
+              predictions.
+            </p>
+          </div>
+          <div>
+            <p class="body-sm">
+              Convinced the global sports market represents a major sector, the two entrepreneurs
+              devoted six intensive months to developing their vision — a proprietary technology
+              that revolutionizes predictive analyses of unparalleled precision.
+            </p>
+            <div style="display:flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
+              <span class="pill"><span class="bullet"></span>6 MONTHS R&amp;D</span>
+              <span class="pill">2 FOUNDERS</span>
+              <span class="pill">1 VISION</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ ORIGIN STORY</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 4: PROJECT DEVELOPMENT ============== -->
+  <section class="slide" data-slide="4">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="noise"></div>
+      <div class="numeral" style="right:-3%; top:-10%;">03</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">03</span> / 14 — DEVELOPMENT</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="two-col asym" style="align-items:start; height:auto; gap:8%;">
+          <div>
+            <div class="kicker anim">Project Development :</div>
+            <div class="reveal" style="margin-top: 12px;">
+              <h1 class="title-xl">From Concept</h1>
+            </div>
+            <div class="reveal">
+              <h1 class="title-xl accent">to Reality<span style="color:var(--text)">.</span></h1>
+            </div>
+            <div class="line-draw w-40" style="margin-top: 28px;"></div>
+            <p class="body-sm anim d4" style="margin-top: 22px;">
+              This unique technological approach, combined with the founders&rsquo; authentic
+              passion for sport, constitutes the foundation of Pick6&rsquo;s sustainable competitive
+              advantage.
+            </p>
+          </div>
+          <div class="anim d2">
+            <div class="stepblock">
+              <div class="idx">01</div>
+              <div>
+                <h3 class="title-m">Intensive Development Phase</h3>
+                <p class="body-sm" style="margin-top: 6px;">
+                  After eighteen months of intensive development, the Pick6 application was
+                  launched in October 2022. This gestation period revealed the first major
+                  technological challenges.
+                </p>
+              </div>
+            </div>
+            <div class="stepblock">
+              <div class="idx">02</div>
+              <div>
+                <h3 class="title-m">Strategic Team Building</h3>
+                <p class="body-sm" style="margin-top: 6px;">
+                  The team made the strategic choice to surround itself exclusively with French
+                  developers recognized for their technical excellence, guaranteeing quality and
+                  protecting proprietary know-how.
+                </p>
+              </div>
+            </div>
+            <div class="stepblock">
+              <div class="idx">03</div>
+              <div>
+                <h3 class="title-m">Proprietary AI Development</h3>
+                <p class="body-sm" style="margin-top: 6px;">
+                  Unlike competitors who rely on generic machine learning solutions, Pick6 develops
+                  its own artificial intelligence from A to Z with continuous improvement and
+                  evolutionary architecture.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ DEVELOPMENT</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 5: FOUNDERS ============== -->
+  <section class="slide" data-slide="5">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="numeral" style="left:-2%; top:-10%;">04</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">04</span> / 14 — FOUNDERS</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">The Founders</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">Dan <span class="accent">&amp;</span> Dov Sebban<span>.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 24px;"></div>
+
+        <div class="two-col anim d3" style="margin-top: 22px; align-items:start; height:auto;">
+          <div class="founder" style="padding: 20px;">
+            <div style="display:flex; gap: 14px; align-items:center;">
+              <div class="initials" style="width:52px; height:52px; font-size:1.3rem;">DS</div>
+              <div>
+                <h3 class="title-l" style="color: var(--text);">Dan Sebban</h3>
+                <p class="mono" style="color: var(--acid); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 4px;">Business / Growth</p>
+              </div>
+            </div>
+            <p class="body-sm" style="margin-top: 14px;">
+              He brings to Pick6 his commercial expertise forged through varied experiences in
+              business development.
+            </p>
+            <p class="body-sm" style="margin-top: 8px;">
+              His pragmatic market approach and strategic acumen are major assets for the
+              platform&rsquo;s international expansion — orchestrating partnerships and growth.
+            </p>
+          </div>
+          <div class="founder" style="padding: 20px;">
+            <div style="display:flex; gap: 14px; align-items:center;">
+              <div class="initials" style="width:52px; height:52px; font-size:1.3rem;">DS</div>
+              <div>
+                <h3 class="title-l" style="color: var(--text);">Dov Sebban</h3>
+                <p class="mono" style="color: var(--acid); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 4px;">Tech / Marketing</p>
+              </div>
+            </div>
+            <p class="body-sm" style="margin-top: 14px;">
+              He complements this vision as a marketing and technology specialist.
+            </p>
+            <p class="body-sm" style="margin-top: 8px;">
+              A researcher at heart with insatiable curiosity for emerging innovations — keeping
+              Pick6 at the technological edge and ahead of market shifts.
+            </p>
+          </div>
+        </div>
+
+        <div class="banner anim d5" style="margin-top: 18px;">
+          <p class="body-xs" style="color: var(--text);">
+            Together the brothers form a complementary tandem — Dan&rsquo;s business vision enriched
+            by Dov&rsquo;s technical expertise, sharing an intuitive understanding of what sports
+            enthusiasts expect.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ FOUNDERS</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 6: REVOLUTIONARY TECHNOLOGY ============== -->
+  <section class="slide" data-slide="6">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="grid-bg"></div>
+      <div class="numeral" style="right:-3%; top:-10%;">05</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">05</span> / 14 — TECHNOLOGY</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="two-col asym" style="align-items:center; height:auto; gap: 6%;">
+          <div>
+            <div class="kicker anim">Revolutionary Technology</div>
+            <div class="reveal" style="margin-top: 10px;">
+              <h1 class="title-xl">at the Service of <span class="accent">Sport</span><span>.</span></h1>
+            </div>
+            <div class="line-draw w-20" style="margin-top: 24px;"></div>
+
+            <p class="body-sm anim d3" style="margin-top: 18px;">
+              Pick6 radically distinguishes itself from the competition through the development of
+              entirely proprietary artificial intelligence, designed specifically for sports
+              predictive analysis. Unlike competing solutions that rely on generic machine
+              learning, the Pick6 team built its technology from A to Z.
+            </p>
+          </div>
+          <div class="anim d2" style="display:flex; align-items:center; justify-content:center; position:relative;">
+            <div class="phone floating" style="width: 60%;">
+              <div class="screen"><img src="assets/screen-nba-detail.jpg" alt="Pick6 AI confidence prediction" loading="lazy"/></div>
+            </div>
+            <!-- Floating AI callout -->
+            <div class="anim d5" style="position:absolute; left: 4%; top: 14%; background: rgba(0,0,0,0.7); border:1px solid rgba(198,255,0,0.35); border-radius: 10px; padding: 10px 14px; backdrop-filter: blur(6px);">
+              <div class="mono" style="color:var(--acid); font-size:.68rem; letter-spacing: 0.18em;">AI CONFIDENCE</div>
+              <div style="font-family:'Archivo Black',sans-serif; font-size: 1.8rem; color:var(--text); line-height:1;">64%</div>
+            </div>
+            <div class="anim d6" style="position:absolute; right: -4%; bottom: 18%; background: rgba(0,0,0,0.7); border:1px solid rgba(198,255,0,0.35); border-radius: 10px; padding: 10px 14px; backdrop-filter: blur(6px);">
+              <div class="mono" style="color:var(--acid); font-size:.68rem; letter-spacing: 0.18em;">PROPRIETARY AI</div>
+              <div style="font-size:.84rem; color:var(--text);">3-layer architecture</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="three-col anim d4" style="margin-top: 24px;">
+          <div class="card sheen" style="padding: 18px;">
+            <span class="corner-mark">L.01</span>
+            <div class="ordinal filled" style="font-size: 2.4rem;">01</div>
+            <h3 class="title-m" style="margin-top: 10px;">First AI Layer</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Operational AI analyzing sports data and generating initial predictions with
+              continuous learning capabilities.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <span class="corner-mark">L.02</span>
+            <div class="ordinal" style="font-size: 2.4rem;">02</div>
+            <h3 class="title-m" style="margin-top: 10px;">Second AI Layer</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Currently in development — controls and optimizes the first layer, ensuring quality
+              and accuracy.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <span class="corner-mark">L.03</span>
+            <div class="ordinal" style="font-size: 2.4rem;">03</div>
+            <h3 class="title-m" style="margin-top: 10px;">Third AI Layer</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Dedicated to maximizing the profitability of predictions, completing the
+              architecture.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ TECHNOLOGY</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 7: STATS ============== -->
+  <section class="slide" data-slide="7">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="orb acid" style="top:-20%; left:-10%; opacity: 0.2;"></div>
+      <div class="orb acid" style="bottom:-20%; right:-10%; opacity: 0.12;"></div>
+      <div class="numeral" style="left:-2%; bottom:-10%;">06</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">06</span> / 14 — PERFORMANCE</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2; padding: 7% 7% 10% 7%;">
+        <div style="display:grid; grid-template-columns: 1fr auto; gap: 5%; align-items:center;">
+          <div>
+            <div class="kicker anim">Performance &amp; Reliability</div>
+            <div class="reveal" style="margin-top: 8px;">
+              <h1 class="title-l">The Numbers <span class="accent">Speak</span><span>.</span></h1>
+            </div>
+            <div class="line-draw w-20" style="margin-top: 16px;"></div>
+            <p class="body-xs anim d3" style="margin-top: 14px; max-width: 56ch;">
+              Performances are supported by a team of 10 specialized professionals — including
+              two French developers dedicated exclusively to perfecting the AI.
+            </p>
+          </div>
+          <div class="anim d2" style="position:relative; width: 180px;">
+            <div class="phone floating" style="width: 100%;">
+              <div class="screen"><img src="assets/screen-won.jpg" alt="Pick6 winning bet result" loading="lazy"/></div>
+            </div>
+            <div class="anim d5" style="position:absolute; right: -22%; top: 8%; background: rgba(198,255,0,0.1); border:1px solid rgba(198,255,0,0.5); border-radius: 10px; padding: 8px 12px; backdrop-filter: blur(6px); white-space:nowrap;">
+              <div class="mono" style="color:var(--acid); font-size:.62rem; letter-spacing: 0.18em;">AI PICK · WON</div>
+              <div style="font-family:'Archivo Black',sans-serif; font-size: 1.2rem; color:var(--acid); line-height:1;">+€110</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="four-col anim d4" style="margin-top: 18px;">
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">/01</span>
+            <div class="bigstat bigstat-glow" style="font-size: clamp(1.8rem, 3.2vw, 3.2rem);"><span data-count="71" data-suffix="">71</span><span class="unit">%</span></div>
+            <div class="line-draw w-full" style="margin: 8px 0;"></div>
+            <h3 class="title-s">Success Rate</h3>
+            <p class="body-xs" style="margin-top: 4px;">
+              Across 10,000+ predictions.
+            </p>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">/02</span>
+            <div class="bigstat bigstat-glow" style="font-size: clamp(1.8rem, 3.2vw, 3.2rem);"><span data-count="25" data-suffix="">25</span><span class="unit">K</span></div>
+            <div class="line-draw w-full" style="margin: 8px 0;"></div>
+            <h3 class="title-s">Matches Analyzed</h3>
+            <p class="body-xs" style="margin-top: 4px;">
+              30 international championships.
+            </p>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">/03</span>
+            <div class="bigstat bigstat-glow" style="font-size: clamp(1.8rem, 3.2vw, 3.2rem);"><span data-count="750" data-suffix="">750</span></div>
+            <div class="line-draw w-full" style="margin: 8px 0;"></div>
+            <h3 class="title-s">Monthly Picks</h3>
+            <p class="body-xs" style="margin-top: 4px;">
+              9,000+ for 2024–2025 alone.
+            </p>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">/04</span>
+            <div class="bigstat bigstat-glow" style="font-size: clamp(1.8rem, 3.2vw, 3.2rem);"><span data-count="25" data-suffix="">25</span><span class="unit">K</span></div>
+            <div class="line-draw w-full" style="margin: 8px 0;"></div>
+            <h3 class="title-s">Active Users</h3>
+            <p class="body-xs" style="margin-top: 4px;">
+              Growing global community.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ PERFORMANCE</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 8: REVOLUTIONARY UX ============== -->
+  <section class="slide" data-slide="8">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="noise"></div>
+      <div class="numeral" style="right:-3%; top:-10%;">07</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">07</span> / 14 — USER EXPERIENCE</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">User Experience</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">A Revolutionary</h1>
+        </div>
+        <div class="reveal">
+          <h1 class="title-xl accent">User Experience<span style="color:var(--text)">.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 24px;"></div>
+        <p class="body-sm anim d3" style="margin-top: 16px; max-width: 90ch;">
+          Pick6 redefines the user experience in sports predictions with three major innovations
+          that fundamentally distinguish the platform from its competitors.
+        </p>
+
+        <div class="three-col anim d4" style="margin-top: 22px; align-items: start; gap: 4%;">
+          <div>
+            <div class="phone floating" style="width: 52%; margin: 0 auto 14px;">
+              <div class="screen"><img src="assets/screen-soccer-detail.jpg" alt="Humanized analysis" loading="lazy"/></div>
+            </div>
+            <div class="ic-box" style="margin-top: 4px;">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/><path d="M16 14l3 3-3 3"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 10px;">Humanized Analysis</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Each prediction pairs with a detailed written analysis — not just raw stats. The
+              narrative reveals the reasoning behind every call.
+            </p>
+          </div>
+          <div>
+            <div class="phone floating d1" style="width: 52%; margin: 0 auto 14px;">
+              <div class="screen"><img src="assets/screen-favorites.jpg" alt="ProGen personalized picks" loading="lazy"/></div>
+            </div>
+            <div class="ic-box" style="margin-top: 4px;">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 10px;">ProGen Generator</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Users set their own criteria — profit targets, match counts, date ranges — and get
+              optimized combinations.
+            </p>
+          </div>
+          <div>
+            <div class="phone floating d2" style="width: 52%; margin: 0 auto 14px;">
+              <div class="screen"><img src="assets/screen-soccer-fixture.jpg" alt="Real-time updates" loading="lazy"/></div>
+            </div>
+            <div class="ic-box" style="margin-top: 4px;">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 3v6h-6"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 10px;">Real-Time Updates</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Pick6 recalculates its picks daily — users always see the most current analyses.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ USER EXPERIENCE</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 9: EXPANSION ============== -->
+  <section class="slide" data-slide="9">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="grid-bg"></div>
+      <div class="numeral" style="left:-2%; top:-10%;">08</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">08</span> / 14 — EXPANSION</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="two-col asym-r" style="align-items:start; height:auto; gap: 7%;">
+          <div>
+            <div class="kicker anim">Strategy</div>
+            <div class="reveal" style="margin-top: 10px;">
+              <h1 class="title-xl">Expansion</h1>
+            </div>
+            <div class="reveal">
+              <h1 class="title-xl">&amp; Target</h1>
+            </div>
+            <div class="reveal">
+              <h1 class="title-xl accent">Markets<span style="color:var(--text)">.</span></h1>
+            </div>
+            <div class="line-draw w-40" style="margin-top: 28px;"></div>
+            <p class="body-sm anim d4" style="margin-top: 20px;">
+              Pick6 develops an ambitious international expansion strategy, building on an
+              established presence in Western Europe — France, England, Belgium, Spain, Germany
+              and Italy.
+            </p>
+            <p class="body-xs anim d5" style="margin-top: 14px;">
+              Distribution via Apple Store and Google Play guarantees global accessibility, with
+              downloads recorded on all continents — a major competitive advantage.
+            </p>
+          </div>
+          <div class="anim d3">
+            <div class="stepblock" style="padding: 14px 0;">
+              <div class="idx">01</div>
+              <div>
+                <h3 class="title-m">Current Markets</h3>
+                <p class="body-xs" style="margin-top: 4px;">
+                  Strong Western Europe: France, England, Belgium, Spain, Germany, Italy.
+                </p>
+              </div>
+            </div>
+            <div class="stepblock" style="padding: 14px 0;">
+              <div class="idx">02</div>
+              <div>
+                <h3 class="title-m">2025-2026 Expansion</h3>
+                <p class="body-xs" style="margin-top: 4px;">
+                  Americas priority — Mexico, Australia, Argentina, Colombia.
+                </p>
+              </div>
+            </div>
+            <div class="stepblock" style="padding: 14px 0;">
+              <div class="idx">03</div>
+              <div>
+                <h3 class="title-m">2026 World Cup</h3>
+                <p class="body-xs" style="margin-top: 4px;">
+                  Positioning as a global player before the USA / Mexico / Canada tournament.
+                </p>
+              </div>
+            </div>
+            <div class="stepblock" style="padding: 14px 0;">
+              <div class="idx">04</div>
+              <div>
+                <h3 class="title-m">Sport Diversification</h3>
+                <p class="body-xs" style="margin-top: 4px;">
+                  International basketball and NBA — opening new user segments.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ EXPANSION</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 10: COMPETITIVE DIFFERENTIATION ============== -->
+  <section class="slide" data-slide="10">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="numeral" style="right:-3%; bottom:-10%;">09</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">09</span> / 14 — DIFFERENTIATION</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">Positioning</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">Major Competitive</h1>
+        </div>
+        <div class="reveal">
+          <h1 class="title-xl accent">Differentiation<span style="color:var(--text)">.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 24px;"></div>
+        <p class="body-sm anim d3" style="margin-top: 18px; max-width: 90ch;">
+          Pick6 positions itself in a competitive market through fundamental differentiating
+          advantages that create a real barrier to entry and strengthen its position against
+          established competitors.
+        </p>
+
+        <div class="anim d4" style="margin-top: 18px;">
+          <div class="stepblock" style="padding: 14px 0;">
+            <div style="font-family:'JetBrains Mono',monospace; color: var(--acid); font-size: .75rem; letter-spacing: 0.2em;">01 ▸</div>
+            <div>
+              <h3 class="title-m">Proprietary AI Technology</h3>
+              <p class="body-xs" style="margin-top: 3px;">
+                Complete ownership of AI — unlike competitors on generic algorithms. Rapid
+                evolution and precise adaptation to user needs.
+              </p>
+            </div>
+          </div>
+          <div class="stepblock" style="padding: 14px 0;">
+            <div style="font-family:'JetBrains Mono',monospace; color: var(--acid); font-size: .75rem; letter-spacing: 0.2em;">02 ▸</div>
+            <div>
+              <h3 class="title-m">Daily Updates</h3>
+              <p class="body-xs" style="margin-top: 3px;">
+                Pick6 refreshes its predictions daily; competitors rely on static or weekly data —
+                superior relevance.
+              </p>
+            </div>
+          </div>
+          <div class="stepblock" style="padding: 14px 0;">
+            <div style="font-family:'JetBrains Mono',monospace; color: var(--acid); font-size: .75rem; letter-spacing: 0.2em;">03 ▸</div>
+            <div>
+              <h3 class="title-m">Humanized Analysis</h3>
+              <p class="body-xs" style="margin-top: 3px;">
+                Narrative-first — written analyses that contextualize each prediction, versus
+                raw stat dumps elsewhere.
+              </p>
+            </div>
+          </div>
+          <div class="stepblock" style="padding: 14px 0;">
+            <div style="font-family:'JetBrains Mono',monospace; color: var(--acid); font-size: .75rem; letter-spacing: 0.2em;">04 ▸</div>
+            <div>
+              <h3 class="title-m">ProGen Exclusivity</h3>
+              <p class="body-xs" style="margin-top: 3px;">
+                No other market player offers such an advanced personalization tool for building
+                combinations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ DIFFERENTIATION</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 11: TEAM ============== -->
+  <section class="slide" data-slide="11">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="numeral" style="left:-2%; top:-10%;">10</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">10</span> / 14 — TEAM</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">Team &amp; Expertise</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">Team and <span class="accent">Technical Expertise</span><span>.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 24px;"></div>
+        <p class="body-sm anim d3" style="margin-top: 18px; max-width: 90ch;">
+          Pick6 relies on a team of 10 specialized professionals covering all critical skills for
+          the company&rsquo;s success — an optimized structure guaranteeing operational excellence
+          and the agility required for continuous innovation.
+        </p>
+
+        <div class="four-col anim d4" style="margin-top: 22px;">
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Technical Team</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              French developers selected for expertise and perfectionism — responsible for
+              developing and maintaining proprietary AI.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M3 20V10M9 20V4M15 20v-8M21 20v-5"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Data Science</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Supervises daily data integration and optimizes predictive algorithms — quality and
+              relevance at scale.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h4v-6h4v6h4v-9"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Marketing &amp; Comms</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Develops audience and engagement — network relations and influencer management.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Infrastructure</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Network infrastructure and architecture — performance and availability at scale.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ TEAM</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 12: ETHICS ============== -->
+  <section class="slide" data-slide="12">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="noise"></div>
+      <div class="numeral" style="right:-3%; top:-10%;">11</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">11</span> / 14 — ETHICS</span>
+      </div>
+
+      <div class="pad-sm" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">Responsibility</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-l">Responsibility and <span class="accent">Ethical Commitment</span><span>.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 20px;"></div>
+
+        <div class="two-col anim d3" style="margin-top: 18px; align-items:start; height:auto;">
+          <div>
+            <p class="body-xs">
+              Beyond its core activities, Pick6 is firmly committed to a rigorous ethical approach
+              based on <span style="color:var(--text); font-weight:600;">transparency, integrity,</span>
+              and <span style="color:var(--text); font-weight:600;">respect</span> for its users —
+              promoting an <span style="color:var(--text); font-weight:600;">informed and responsible</span>
+              approach to sports analysis.
+            </p>
+            <p class="body-xs" style="margin-top: 10px;">
+              The company positions itself as a
+              <span style="color:var(--text); font-weight:600;">sports prediction advisory platform</span>
+              — not a betting operator — dedicated to providing tools to enrich understanding of
+              sports and support thoughtful decision-making.
+            </p>
+          </div>
+          <div>
+            <p class="body-xs">
+              This consultative vocation distinguishes it from traditional online gaming operators;
+              Pick6 neither offers nor encourages betting, but reflection and learning. It places
+              particular emphasis on the
+              <span style="color:var(--text); font-weight:600;">education of its users</span>
+              and fosters a healthy sports community.
+            </p>
+            <p class="body-xs" style="margin-top: 10px;">
+              Concrete measures include a strict adult age limit and an in-development reinforced
+              ethical framework with adapted protection mechanisms.
+            </p>
+          </div>
+        </div>
+
+        <div class="three-col anim d4" style="margin-top: 16px;">
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">01</span>
+            <h3 class="title-m">Clear Positioning</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Expert analyses to inform enthusiast decisions — advisory, not gaming.
+            </p>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">02</span>
+            <h3 class="title-m">Protection Measures</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Strict adult age limit and risk-awareness messages integrated across the platform.
+            </p>
+          </div>
+          <div class="card" style="padding: 14px;">
+            <span class="corner-mark">03</span>
+            <h3 class="title-m">Ethical Framework</h3>
+            <div class="hair" style="margin: 8px 0;"></div>
+            <p class="body-xs">
+              Awareness tools and protection mechanisms tailored to the model&rsquo;s specificities.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ ETHICS</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 13: FUTURE VISION ============== -->
+  <section class="slide" data-slide="13">
+    <div class="canvas">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="orb acid" style="bottom:-20%; right:-10%; opacity: 0.18;"></div>
+      <div class="numeral" style="left:-2%; bottom:-10%;">12</div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">12</span> / 14 — VISION</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">Future Perspectives</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl">Strategic <span class="accent">Vision</span><span>.</span></h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 24px;"></div>
+        <p class="body-sm anim d3" style="margin-top: 18px; max-width: 90ch;">
+          Pick6 develops an ambitious vision articulated around three strategic axes that will
+          shape the company&rsquo;s evolution in the global sports prediction market.
+        </p>
+
+        <div class="three-col anim d4" style="margin-top: 22px;">
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Geographic Expansion</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Active deployment in the American market ahead of the 2026 World Cup — a unique
+              opportunity to position Pick6 globally.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M7.5 4.8c3 4 3 10.4 0 14.4M16.5 4.8c-3 4-3 10.4 0 14.4"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Sports Diversification</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Integration of international basketball and NBA — the first step toward covering
+              all major sports.
+            </p>
+          </div>
+          <div class="card" style="padding: 18px;">
+            <div class="ic-box">
+              <svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="M12 2l2 4 4 .5-3 3 .8 4.3L12 11.8l-3.8 2 .8-4.3-3-3 4-.5z"/><path d="M6 21h12"/></svg>
+            </div>
+            <h3 class="title-m" style="margin-top: 12px;">Technological Innovation</h3>
+            <div class="hair" style="margin: 10px 0;"></div>
+            <p class="body-xs">
+              Heavy investment in the second and third AI layers — permanent optimization and
+              sustainable advantage.
+            </p>
+          </div>
+        </div>
+
+        <div class="banner anim d6" style="margin-top: 18px;">
+          <p class="body-xs" style="color: var(--text);">
+            The objective — revolutionize the experience of sports enthusiasts by democratizing
+            access to professional-level predictive analyses, and transform Pick6 into a global
+            reference for technological sports innovation.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ VISION</span>
+        <span>PICK6.AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 14: CONTACT ============== -->
+  <section class="slide" data-slide="14">
+    <div class="canvas" style="background:
+      radial-gradient(900px 600px at 75% 45%, rgba(198,255,0,0.2), transparent 60%),
+      radial-gradient(600px 500px at 10% 100%, rgba(198,255,0,0.08), transparent 60%),
+      var(--ink);">
+      <div class="frame-mark tl"></div><div class="frame-mark tr"></div>
+      <div class="frame-mark bl"></div><div class="frame-mark br"></div>
+      <div class="noise"></div>
+
+      <div class="meta">
+        <span class="brand"><span class="dot"></span>PICK6 / DECK</span>
+        <span><span class="num">13</span> / 14 — CONTACT</span>
+      </div>
+
+      <div class="pad" style="display:flex; flex-direction:column; justify-content:center; flex:1; position:relative; z-index:2;">
+        <div class="kicker anim">Let&rsquo;s talk</div>
+        <div class="reveal" style="margin-top: 10px;">
+          <h1 class="title-xl" style="text-transform: uppercase;">Ready to Work</h1>
+        </div>
+        <div class="reveal">
+          <h1 class="title-xl accent" style="text-transform: uppercase;">with us ?</h1>
+        </div>
+        <div class="line-draw w-20" style="margin-top: 22px;"></div>
+
+        <div class="two-col anim d3" style="margin-top: 26px; align-items:start; height:auto; gap: 6%;">
+          <div>
+            <p class="body-sm" style="max-width: 42ch;">
+              If you have any questions or would like to collaborate, contact us at the emails
+              below.
+            </p>
+          </div>
+          <div>
+            <div class="contact-row" style="padding: 12px 0;">
+              <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              <div>
+                <p class="mono" style="color: var(--text-muted); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;">EMAIL · 01</p>
+                <p class="mono" style="color: var(--text); font-size: 0.95rem; margin-top: 2px;">Dovesebban@icloud.com</p>
+              </div>
+            </div>
+            <div class="contact-row" style="padding: 12px 0;">
+              <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              <div>
+                <p class="mono" style="color: var(--text-muted); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;">EMAIL · 02</p>
+                <p class="mono" style="color: var(--text); font-size: 0.95rem; margin-top: 2px;">dansebban@icloud.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="anim d5" style="margin-top: 28px; display:flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
+          <div style="font-family:'Archivo Black', sans-serif; font-size: clamp(1.8rem, 3.8vw, 3.8rem); line-height: 0.85; letter-spacing: -0.04em;">
+            <span style="color: var(--text);">PICK</span><span class="accent">6</span><span style="color:var(--text-muted);">.</span>
+          </div>
+          <div class="mono" style="color: var(--text-muted); font-size: .7rem; letter-spacing: 0.2em;">#&nbsp;WHO&rsquo;S THE WINNER</div>
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        <span class="mono">§ CONTACT</span>
+        <span>END — THANK YOU</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="progress"><div class="fill" id="progressFill"></div></div>
+<div class="hint">← → · SPACE · CLICK</div>
+<div class="nav">
+  <button id="prev" aria-label="Previous">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="count"><span id="current">1</span> / <span id="total">14</span></div>
+  <button id="next" aria-label="Next">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+</div>
+
+<script>
+(function(){
+  const slides = [...document.querySelectorAll('.slide')];
+  const total = slides.length;
+  document.getElementById('total').textContent = total;
+  let idx = 0;
+  const fill = document.getElementById('progressFill');
+  const currentEl = document.getElementById('current');
+
+  function render() {
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === idx);
+    });
+    fill.style.width = ((idx + 1) / total * 100) + '%';
+    currentEl.textContent = idx + 1;
+    if (slides[idx].dataset.slide === '7') runCounters(slides[idx]);
+  }
+  function go(delta) {
+    const next = Math.max(0, Math.min(total - 1, idx + delta));
+    if (next !== idx) { idx = next; render(); }
+  }
+  function goTo(i) { idx = Math.max(0, Math.min(total - 1, i)); render(); }
+
+  document.getElementById('prev').onclick = () => go(-1);
+  document.getElementById('next').onclick = () => go(1);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(-1); }
+    else if (e.key === 'Home') goTo(0);
+    else if (e.key === 'End') goTo(total - 1);
+  });
+  document.getElementById('stage').addEventListener('click', (e) => {
+    if (e.target.closest('.nav')) return;
+    go(1);
+  });
+
+  function runCounters(slide) {
+    slide.querySelectorAll('[data-count]').forEach(el => {
+      if (el.dataset.done) return;
+      const target = parseFloat(el.dataset.count);
+      const suffix = el.dataset.suffix || '';
+      const dur = 1200;
+      const t0 = performance.now();
+      function tick(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+        else el.dataset.done = '1';
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
