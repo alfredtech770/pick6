@@ -614,6 +614,140 @@
     .meta { padding: 18px 22px; }
     .pad { padding: 14% 7%; }
   }
+
+  /* ===================================================
+     MOBILE PORTRAIT — full responsive reflow
+     =================================================== */
+  @media (max-width: 600px) {
+    /* Slides become full-screen */
+    .slide {
+      width: 100vw !important;
+      height: 100dvh !important;
+      border-radius: 0 !important;
+      overflow: hidden !important;
+    }
+
+    /* Compact header/footer bars */
+    .meta {
+      padding: 11px 14px !important;
+      font-size: 0.55rem !important;
+    }
+    .footer-meta {
+      padding: 9px 14px !important;
+      font-size: 0.55rem !important;
+    }
+
+    /* Main content area */
+    .pad, .pad-sm {
+      padding: 17% 5% 13% !important;
+      overflow: hidden !important;
+    }
+
+    /* ---- Typography ---- */
+    .title-hero { font-size: clamp(1.9rem, 9.5vw, 2.8rem) !important; }
+    .title-xxl  { font-size: clamp(1.6rem, 8vw, 2.4rem) !important; }
+    .title-xl   { font-size: clamp(1.4rem, 7vw, 2rem) !important; }
+    .title-l    { font-size: clamp(1.1rem, 5.5vw, 1.5rem) !important; }
+    .title-m    { font-size: clamp(0.88rem, 4vw, 1.1rem) !important; }
+    .bigstat    { font-size: clamp(2rem, 9vw, 2.8rem) !important; }
+    .ordinal    { font-size: clamp(1.8rem, 7.5vw, 2.4rem) !important; }
+    .step       { font-size: 1.3rem !important; }
+    .numeral    { font-size: clamp(5rem, 22vw, 8rem) !important; }
+    .body       { font-size: 0.78rem !important; line-height: 1.45 !important; }
+    .body-sm    { font-size: 0.72rem !important; }
+    .body-xs    { font-size: 0.66rem !important; }
+    .kicker     { font-size: 0.58rem !important; letter-spacing: 0.18em !important; }
+
+    /* ---- Spacing ---- */
+    .hair       { margin: 8px 0 !important; }
+    .hair-acid  { margin: 10px 0 !important; }
+    .card       { padding: 12px !important; border-radius: 12px !important; }
+    .founder    { padding: 14px !important; border-radius: 14px !important; }
+    .pill       { padding: 4px 10px !important; font-size: 0.6rem !important; }
+
+    /* ---- Two-column → single column ---- */
+    .two-col,
+    .two-col.asym,
+    .two-col.asym-r {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 14px !important;
+      height: auto !important;
+    }
+
+    /* ---- Grid columns → 2-up ---- */
+    .three-col { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .four-col  { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+    /* ---- Step blocks ---- */
+    .stepblock {
+      grid-template-columns: 52px 1fr !important;
+      gap: 10px !important;
+      padding: 10px 0 !important;
+    }
+    .stepblock .idx { font-size: 1.4rem !important; }
+
+    /* ---- Frame marks ---- */
+    .frame-mark { width: 9px !important; height: 9px !important; }
+    .frame-mark.tl { top: 10px !important; left: 10px !important; }
+    .frame-mark.tr { top: 10px !important; right: 10px !important; }
+    .frame-mark.bl { bottom: 10px !important; left: 10px !important; }
+    .frame-mark.br { bottom: 10px !important; right: 10px !important; }
+
+    /* ---- Phone mockups ---- */
+    .phone { border-radius: 18px !important; }
+    .phone .screen { border-radius: 12px !important; }
+
+    /* Phone in right-column: constrain so it doesn't dominate */
+    .two-col .phone,
+    .two-col.asym .phone,
+    .two-col.asym-r .phone {
+      max-width: 44vw !important;
+      margin: 0 auto !important;
+    }
+
+    /* Phone row (3-up) */
+    .phone-row { gap: 3% !important; }
+
+    /* Cover phone fan — shrink */
+    .cover-canvas > div[style] {
+      flex-direction: column !important;
+      padding: 18% 5% 20% !important;
+      gap: 12px !important;
+    }
+    .cover-canvas [style*="min-height"] {
+      min-height: 150px !important;
+      height: 150px !important;
+      overflow: hidden !important;
+    }
+    .cover-mark { font-size: clamp(3.2rem, 16vw, 5.5rem) !important; }
+    .cover-tagline { font-size: 0.58rem !important; margin-top: 8px !important; }
+    .marquee { font-size: clamp(0.9rem, 4vw, 1.4rem) !important; bottom: 9% !important; }
+    .scan { display: none !important; }
+
+    /* Footnote: un-absolute it so it flows */
+    .footnote {
+      position: relative !important;
+      left: auto !important; right: auto !important; bottom: auto !important;
+      margin-top: 14px !important;
+      font-size: 0.66rem !important;
+    }
+
+    /* Floating callout bubbles (AI confidence, etc.) */
+    [style*="position:absolute"][style*="border-radius: 10px"],
+    [style*="position:absolute"][style*="border-radius:10px"] {
+      font-size: 0.7rem !important;
+    }
+
+    /* Nav */
+    .nav { bottom: 8px !important; right: 10px !important; gap: 6px !important; }
+    .nav button { width: 26px !important; height: 26px !important; border-radius: 6px !important; }
+    .nav .count { font-size: 0.58rem !important; min-width: 44px !important; }
+    .hint { display: none !important; }
+
+    /* Orbs — dial back on mobile */
+    .orb { opacity: 0.12 !important; width: 200px !important; height: 200px !important; }
+  }
 </style>
 </head>
 <body>
