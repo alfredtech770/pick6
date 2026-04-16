@@ -614,9 +614,96 @@
     .meta { padding: 18px 22px; }
     .pad { padding: 14% 7%; }
   }
+
+  /* ── CURSOR GLOW ── */
+  #cursor-glow {
+    position: fixed; pointer-events: none; z-index: 9998;
+    width: 420px; height: 420px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(198,255,0,.08) 0%, transparent 65%);
+    transform: translate(-50%,-50%);
+    mix-blend-mode: screen;
+    transition: opacity .4s;
+  }
+
+  /* ── FLOATING DOTS ── */
+  #floating-dots { position: fixed; inset: 0; pointer-events: none; z-index: 9997; overflow: hidden; }
+  .f-dot {
+    position: absolute; border-radius: 50%; background: var(--acid);
+    animation: fdot-rise linear infinite;
+  }
+  @keyframes fdot-rise {
+    0%   { transform: translateY(0) scale(0); opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: .35; }
+    100% { transform: translateY(-110vh) scale(1); opacity: 0; }
+  }
+
+  /* ── GLITCH ── */
+  @keyframes glitch-a {
+    0%,100% { clip-path: inset(0 0 92% 0);   transform: translate(-3px,0); }
+    20%     { clip-path: inset(50% 0 30% 0);  transform: translate(3px,0); }
+    40%     { clip-path: inset(20% 0 60% 0);  transform: translate(-2px,0); }
+    60%     { clip-path: inset(75% 0 5% 0);   transform: translate(2px,0); }
+    80%     { clip-path: inset(10% 0 80% 0);  transform: translate(-1px,0); }
+  }
+  @keyframes glitch-b {
+    0%,100% { clip-path: inset(55% 0 10% 0);  transform: translate(3px,0); }
+    25%     { clip-path: inset(80% 0 5% 0);   transform: translate(-3px,0); }
+    50%     { clip-path: inset(10% 0 70% 0);  transform: translate(2px,0); }
+    75%     { clip-path: inset(30% 0 50% 0);  transform: translate(-2px,0); }
+  }
+  .cover-mark { position: relative; }
+  .cover-mark.glitching::before,
+  .cover-mark.glitching::after {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: inherit; letter-spacing: inherit; line-height: inherit;
+    pointer-events: none;
+  }
+  .cover-mark.glitching::before { color: var(--acid);  animation: glitch-a .42s steps(1) forwards; }
+  .cover-mark.glitching::after  { color: #ff003c; opacity: .55; animation: glitch-b .42s steps(1) forwards; }
+
+  /* ── PROGRESS BAR GRADIENT ── */
+  .progress .fill {
+    background: linear-gradient(90deg, var(--acid), #d9ff3f) !important;
+    box-shadow: 0 0 18px var(--acid-glow), 0 0 6px var(--acid-glow) !important;
+  }
+
+  /* ── ENHANCED SLIDE TRANSITION ── */
+  .slide {
+    transition:
+      opacity .55s cubic-bezier(.2,.8,.2,1),
+      transform .7s cubic-bezier(.2,.8,.2,1),
+      filter .55s cubic-bezier(.2,.8,.2,1) !important;
+    filter: blur(4px) scale(.97);
+  }
+  .slide.active { filter: blur(0) scale(1) !important; }
+
+  /* ── CARD 3D TILT ── */
+  .card { transform-style: preserve-3d; will-change: transform; }
+
+  /* ── MAGNETIC NAV ── */
+  .nav button { will-change: transform; }
+
+  /* ── SHEEN ON PROGRESS ── */
+  .progress { overflow: hidden; }
+  .progress::after {
+    content: ""; position: absolute; top: 0; height: 100%; width: 60px;
+    background: linear-gradient(90deg, transparent, rgba(198,255,0,.5), transparent);
+    animation: prog-sheen 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes prog-sheen {
+    0%   { left: -60px; opacity: 0; }
+    10%  { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
 </style>
 </head>
 <body>
+<div id="cursor-glow"></div>
+<div id="floating-dots"></div>
 
 <div class="stage" id="stage">
 
@@ -645,7 +732,7 @@
               <span class="bullet"></span>THE FUTURE OF SPORTS PREDICTIONS
             </div>
           </div>
-          <div class="cover-mark anim d1" style="text-align:left; font-size: clamp(3.4rem, 9.5vw, 10rem); line-height: 0.88;">
+          <div class="cover-mark anim d1" id="cover-mark" data-text="PICK6" style="text-align:left; font-size: clamp(3.4rem, 9.5vw, 10rem); line-height: 0.88;">
             <span class="pick">PICK</span><span class="six">6</span>
           </div>
           <div class="cover-tagline anim d2" style="text-align:left; margin-top: 20px;">
@@ -1743,7 +1830,85 @@
   }
 
   render();
+
+  // ── TOUCH SWIPE ──
+  let touchX = 0;
+  document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
 })();
+
+// ── CURSOR GLOW ──
+(function(){
+  const glow = document.getElementById('cursor-glow');
+  let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  let tx = cx, ty = cy;
+  document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+  (function anim() {
+    cx += (tx - cx) * .1; cy += (ty - cy) * .1;
+    glow.style.left = cx + 'px'; glow.style.top = cy + 'px';
+    requestAnimationFrame(anim);
+  })();
+})();
+
+// ── FLOATING DOTS ──
+(function(){
+  const container = document.getElementById('floating-dots');
+  function makeDot() {
+    const d = document.createElement('div');
+    d.className = 'f-dot';
+    const size = Math.random() * 2.5 + 1;
+    const dur  = Math.random() * 10 + 7;
+    const delay = Math.random() * 8;
+    d.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;bottom:-6px;
+      opacity:${Math.random()*.35+.1};animation-duration:${dur}s;animation-delay:${delay}s`;
+    container.appendChild(d);
+    setTimeout(() => d.remove(), (dur + delay) * 1000 + 500);
+  }
+  for (let i = 0; i < 20; i++) makeDot();
+  setInterval(makeDot, 700);
+})();
+
+// ── GLITCH ON COVER MARK ──
+(function(){
+  const mark = document.getElementById('cover-mark');
+  if (!mark) return;
+  function glitch() {
+    mark.classList.add('glitching');
+    setTimeout(() => mark.classList.remove('glitching'), 440);
+  }
+  mark.addEventListener('mouseenter', glitch);
+  setInterval(() => { if (Math.random() < .18) glitch(); }, 2800);
+})();
+
+// ── 3D CARD TILT ──
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width  - .5;
+    const my = (e.clientY - r.top)  / r.height - .5;
+    card.style.transform = `perspective(500px) rotateY(${mx*10}deg) rotateX(${-my*8}deg) translateY(-3px) scale(1.015)`;
+    card.style.borderColor = 'rgba(198,255,0,.35)';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.borderColor = '';
+  });
+});
+
+// ── MAGNETIC NAV BUTTONS ──
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('mousemove', e => {
+    const r = btn.getBoundingClientRect();
+    const mx = (e.clientX - r.left - r.width  / 2) * .3;
+    const my = (e.clientY - r.top  - r.height / 2) * .3;
+    btn.style.transform = `translate(${mx}px,${my}px)`;
+  });
+  btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+});
 </script>
 </body>
 </html>
