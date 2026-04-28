@@ -372,22 +372,17 @@
     perspective: 1800px;
     perspective-origin: 50% 40%;
   }
-  /* Backlight glow */
+  /* Backlight glow — static, no pulse */
   .phone-wrap::before {
     content: "";
     position: absolute;
     inset: -80px -60px;
     background:
-      radial-gradient(closest-side at 50% 40%, rgba(212, 255, 58, 0.22), transparent 65%),
+      radial-gradient(closest-side at 50% 40%, rgba(212, 255, 58, 0.20), transparent 65%),
       radial-gradient(closest-side at 30% 70%, rgba(255, 90, 54, 0.10), transparent 60%);
     filter: blur(28px);
     pointer-events: none;
     z-index: 0;
-    animation: bglPulse 5s ease-in-out infinite;
-  }
-  @keyframes bglPulse {
-    0%, 100% { opacity: 0.7; transform: scale(1); }
-    50%      { opacity: 1; transform: scale(1.06); }
   }
   /* Reflective platform under the phone */
   .phone-wrap::after {
@@ -403,17 +398,11 @@
     opacity: 0.85;
   }
 
-  /* 3D stage container — applies the angle, perspective lives on .phone-wrap */
+  /* 3D stage container — fixed angle, no float or tilt */
   .phone-stage {
     transform-style: preserve-3d;
-    transform: rotateY(var(--phone-ry, -14deg)) rotateX(var(--phone-rx, 4deg));
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: rotateY(-12deg) rotateX(3deg);
     position: relative;
-    animation: phoneFloat 6s ease-in-out infinite;
-  }
-  @keyframes phoneFloat {
-    0%, 100% { transform: rotateY(var(--phone-ry, -14deg)) rotateX(var(--phone-rx, 4deg)) translateY(0); }
-    50%      { transform: rotateY(var(--phone-ry, -14deg)) rotateX(var(--phone-rx, 4deg)) translateY(-12px); }
   }
 
   .phone {
@@ -2909,32 +2898,7 @@
     }
   }
 
-  // ─── 5. Pointer tilt on the 3D phone-stage ──────────────
-  // Adds a small interactive rotation on top of the base 3D angle.
-  if (!window.matchMedia('(pointer: coarse)').matches &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const stage = document.getElementById('phoneStage');
-    if (stage) {
-      const wrap = stage.closest('.phone-wrap');
-      let raf;
-      wrap.addEventListener('pointermove', (e) => {
-        if (raf) return;
-        raf = requestAnimationFrame(() => {
-          const r = wrap.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width - 0.5;
-          const y = (e.clientY - r.top) / r.height - 0.5;
-          // base -14deg / 4deg, add up to ±6deg from pointer
-          stage.style.setProperty('--phone-ry', `${(-14 + x * 12).toFixed(2)}deg`);
-          stage.style.setProperty('--phone-rx', `${(4 - y * 8).toFixed(2)}deg`);
-          raf = null;
-        });
-      });
-      wrap.addEventListener('pointerleave', () => {
-        stage.style.setProperty('--phone-ry', '-14deg');
-        stage.style.setProperty('--phone-rx', '4deg');
-      });
-    }
-  }
+  // (Pointer-tilt removed — phone stays in its fixed 3D pose.)
 
   // ─── 7. Lightweight scroll: progress bar + hero parallax ─
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2948,14 +2912,8 @@
     const docH = document.documentElement.scrollHeight - window.innerHeight;
     const pct = docH > 0 ? Math.min(1, y / docH) : 0;
     if (progressEl) progressEl.style.width = (pct * 100).toFixed(2) + '%';
-
-    if (heroSection) {
-      heroSection.style.setProperty('--orb-x',  `${y * 0.10}px`);
-      heroSection.style.setProperty('--orb-y',  `${y * 0.35}px`);
-      heroSection.style.setProperty('--orb2-x', `${-y * 0.08}px`);
-      heroSection.style.setProperty('--orb2-y', `${-y * 0.20}px`);
-    }
     if (scrollHint) scrollHint.classList.toggle('fade', y > 80);
+    // Orb parallax disabled — backgrounds are static.
   };
 
   let scrollRaf = null;
