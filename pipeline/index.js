@@ -428,20 +428,33 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
 
   // Validate. The schema can't constrain probability to 65-97
   // (Anthropic structured outputs don't support min/max), so we
-  // enforce it here. For team sports the pick must equal one of the
-  // matchup names; F1 + research-mode picks are exempt because the
-  // pick is a driver/player name resolved from web search.
+  // enforce it here. The pick must equal one of the matchup names,
+  // but with case-insensitive + trimmed comparison so a tiny
+  // whitespace/case difference doesn't drop the entire response.
+  // F1 race-mode picks are exempt — the pick is a driver name.
+  const norm = (s) => (typeof s === 'string' ? s.trim().toLowerCase() : '');
+  const dropped = [];
   const picks = (parsed.picks || []).filter((p) => {
-    if (typeof p.probability !== 'number' || p.probability < 65 || p.probability > 97) return false;
-    if (!p.pick || typeof p.pick !== 'string') return false;
-    if (cfg.promptMode === 'race') return true;
-    if (useResearch) {
-      // Research mode — Claude resolved the matchup itself; just
-      // require pick to be one of the names it surfaced.
-      return p.pick === p.home_team || p.pick === p.away_team;
+    if (typeof p.probability !== 'number' || p.probability < 65 || p.probability > 97) {
+      dropped.push(`bad_prob(${p.probability})`); return false;
     }
-    return p.pick === p.home_team || p.pick === p.away_team;
+    if (!p.pick || typeof p.pick !== 'string') {
+      dropped.push('no_pick'); return false;
+    }
+    if (cfg.promptMode === 'race') return true;
+    const pickN = norm(p.pick);
+    const homeN = norm(p.home_team);
+    const awayN = norm(p.away_team);
+    if (pickN === homeN || pickN === awayN) return true;
+    // Allow partial match (covers "Nets" ⊂ "Brooklyn Nets", etc.)
+    if (homeN && (pickN.includes(homeN) || homeN.includes(pickN))) return true;
+    if (awayN && (pickN.includes(awayN) || awayN.includes(pickN))) return true;
+    dropped.push(`pick_mismatch(${p.pick}|${p.home_team}|${p.away_team})`);
+    return false;
   });
+  if (dropped.length) {
+    log(`Claude ${league}: dropped ${dropped.length} picks: ${dropped.slice(0, 5).join(' ')}`);
+  }
 
   log(`Generated ${picks.length} picks for ${league}${useResearch ? ' (research mode)' : ''}.`);
   return picks;
