@@ -28,7 +28,6 @@
     --nav-h: 64px;
   }
   * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-  html { scroll-behavior: smooth; }
   html, body {
     margin: 0; padding: 0;
     background:
@@ -38,8 +37,11 @@
     background-attachment: fixed;
     font-family: 'Archivo', system-ui, sans-serif;
     color: var(--ink);
-    min-height: 100vh;
     overflow-x: hidden;
+  }
+  /* Lock the page to the viewport on desktop so the hero never scrolls. */
+  @media (min-width: 881px) {
+    html, body { height: 100vh; overflow: hidden; }
   }
   a { color: inherit; text-decoration: none; }
   button { font-family: inherit; }
@@ -265,7 +267,7 @@
 
   /* ─── Hero ─── */
   .site-hero {
-    padding: calc(var(--ticker-h) + var(--nav-h) + 40px) 32px 64px;
+    padding: calc(var(--ticker-h) + var(--nav-h) + 24px) 32px 32px;
     max-width: 1320px;
     margin: 0 auto;
     display: grid;
@@ -273,7 +275,9 @@
     gap: 48px;
     align-items: center;
     position: relative;
-    min-height: calc(100vh - var(--ticker-h) - var(--nav-h));
+  }
+  @media (min-width: 881px) {
+    .site-hero { height: 100vh; }
   }
   .site-hero::before {
     content: "";
@@ -406,9 +410,17 @@
   }
 
   .phone {
-    width: 320px; height: 692px;
-    background: #0a0a0c; border-radius: 44px;
-    padding: 7px;
+    /* Sized to fit inside the hero on any reasonable viewport.
+       Aspect ratio 320/692 ≈ 0.462. Stepper + paddings reserve ~220px. */
+    --ph: min(580px, calc(100vh - 220px));
+    --pp: calc(var(--ph) * 0.011);
+    --pr: calc(var(--ph) * 0.063);
+    --sr: calc(var(--ph) * 0.055);
+    width: calc(var(--ph) * 0.462);
+    height: var(--ph);
+    background: #0a0a0c;
+    border-radius: var(--pr);
+    padding: var(--pp);
     box-shadow:
       /* Cast shadow */
       0 60px 120px -20px rgba(0,0,0,0.85),
@@ -429,8 +441,8 @@
   .phone::before {
     content: "";
     position: absolute;
-    inset: 4px;
-    border-radius: 41px;
+    inset: calc(var(--pp) * 0.6);
+    border-radius: calc(var(--pr) * 0.93);
     background: linear-gradient(115deg, rgba(255,255,255,0.06), transparent 25%, transparent 70%, rgba(255,255,255,0.04));
     pointer-events: none;
     z-index: 1;
@@ -440,8 +452,8 @@
   .phone::after {
     content: "";
     position: absolute;
-    inset: 7px;
-    border-radius: 38px;
+    inset: var(--pp);
+    border-radius: var(--sr);
     background: linear-gradient(118deg,
       rgba(255,255,255,0) 0%,
       rgba(255,255,255,0.02) 38%,
@@ -456,7 +468,7 @@
   .phone[data-tilt] { will-change: transform; }
   .screen {
     width: 100%; height: 100%;
-    border-radius: 38px;
+    border-radius: var(--sr);
     overflow: hidden;
     background: var(--bg);
     position: relative;
@@ -495,8 +507,8 @@
 
   /* ─── App launch overlay (lock-screen → tap → iris-open) ─── */
   .app-launch {
-    position: absolute; inset: 7px;
-    border-radius: 38px;
+    position: absolute; inset: var(--pp);
+    border-radius: var(--sr);
     background:
       radial-gradient(160% 80% at 50% 0%, #1a1f2c 0%, #0a0b0d 70%),
       #0a0b0d;
@@ -700,10 +712,14 @@
 
   /* ─── Phone stepper (under the 3D phone) ─── */
   .phone-stepper {
-    margin-top: 56px;
+    margin-top: 36px;
     display: flex; justify-content: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
+  }
+  @media (min-width: 881px) {
+    /* Page can't scroll on desktop, so these UI affordances are hidden. */
+    .scroll-progress, .scroll-hint { display: none; }
   }
   .phone-stepper .ps {
     display: inline-flex; align-items: center; gap: 8px;
@@ -736,8 +752,8 @@
   /* ─── Auto-cycling hero phone (4 stacked screens) ─── */
   .phone-cycler { position: relative; }
   .screen-state {
-    position: absolute; inset: 7px;
-    border-radius: 38px;
+    position: absolute; inset: var(--pp);
+    border-radius: var(--sr);
     overflow: hidden;
     opacity: 0;
     transform: scale(0.985);
