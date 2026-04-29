@@ -14,12 +14,14 @@ struct Pick: Identifiable, Codable {
     let sport: String
     let league: String
     let gameDate: String
+    let gameId: String?           // links pick → live_scores; populated by the AI pipeline
     let homeTeam: String
     let awayTeam: String
     let pick: String
     let probability: Double
     let confidence: String
     let reasoning: String
+    let keyFactor: String?        // short tagline ("Cole 2.34 ERA vs LAD")
     let result: String // "pending", "win", "loss"
     let homeScore: Int?
     let awayScore: Int?
@@ -29,9 +31,12 @@ struct Pick: Identifiable, Codable {
         case createdAt = "created_at"
         case sport, league
         case gameDate = "game_date"
+        case gameId = "game_id"
         case homeTeam = "home_team"
         case awayTeam = "away_team"
-        case pick, probability, confidence, reasoning, result
+        case pick, probability, confidence, reasoning
+        case keyFactor = "key_factor"
+        case result
         case homeScore = "home_score"
         case awayScore = "away_score"
     }

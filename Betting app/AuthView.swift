@@ -7,8 +7,8 @@ import AuthenticationServices
 struct AuthView: View {
     @Bindable var authManager: AuthManager
 
-    @State private var email = ""
-    @State private var otpSent = false
+    @State private var email: String
+    @State private var otpSent: Bool
     @State private var digits: [String] = Array(repeating: "", count: 8)
     @State private var timer = 59
     @State private var direction: Int = 1
@@ -16,6 +16,20 @@ struct AuthView: View {
 
     // Held across the Apple request → completion callback pair
     @State private var appleNonce = ""
+
+    init(authManager: AuthManager) {
+        self.authManager = authManager
+        // Debug-only: `-PreviewStep otp` jumps straight to the OTP screen
+        // with a stub email so it can be screenshotted in isolation.
+        let preview = UserDefaults.standard.string(forKey: "PreviewStep") ?? ""
+        if preview == "otp" {
+            _email = State(initialValue: "you@pick6.app")
+            _otpSent = State(initialValue: true)
+        } else {
+            _email = State(initialValue: "")
+            _otpSent = State(initialValue: false)
+        }
+    }
 
     private var isValidEmail: Bool {
         let pattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
@@ -34,276 +48,256 @@ struct AuthView: View {
         ZStack(alignment: .top) {
             Color.p6Ink.ignoresSafeArea()
 
+            // Top bar (back when on OTP step)
             VStack(spacing: 0) {
-                // Nav bar
-                HStack {
-                    if otpSent {
-                        Button {
-                            direction = -1
-                            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                otpSent = false
-                                digits = Array(repeating: "", count: 6)
-                                authManager.error = nil
-                            }
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 40, height: 40)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(Circle())
+                OBTopBar(
+                    canGoBack: otpSent,
+                    onBack: otpSent ? {
+                        direction = -1
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            otpSent = false
+                            digits = Array(repeating: "", count: 6)
+                            authManager.error = nil
                         }
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 56)
-                .padding(.bottom, 8)
+                    } : nil
+                )
+                .padding(.top, 8)
+                .padding(.bottom, 12)
 
                 // Content
                 ZStack {
                     if otpSent {
-                        otpView
-                            .transition(screenTransition)
+                        otpView.transition(screenTransition)
                     } else {
-                        emailView
-                            .transition(screenTransition)
+                        emailView.transition(screenTransition)
                     }
                 }
                 .animation(.spring(response: 0.38, dampingFraction: 0.82), value: otpSent)
             }
         }
         .preferredColorScheme(.dark)
+        .overlay(alignment: .bottom) {
+            OBStickyBar {
+                if otpSent {
+                    OBPrimaryButton(
+                        label: authManager.isLoading
+                            ? "Verifying..."
+                            : (isOTPComplete ? "Verify" : "Enter verification code"),
+                        disabled: !isOTPComplete || authManager.isLoading,
+                        action: verifyCode
+                    )
+                } else {
+                    OBPrimaryButton(
+                        label: authManager.isLoading
+                            ? "Sending..."
+                            : (isValidEmail ? "Send Verification Code" : "Enter your email"),
+                        disabled: !isValidEmail || authManager.isLoading
+                    ) {
+                        Task {
+                            await authManager.sendOTP(email: email)
+                            if authManager.error == nil {
+                                direction = 1
+                                withAnimation { otpSent = true }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Email Entry
 
     private var emailView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("CREATE YOUR")
-                .font(.custom("BarlowCondensed-Black", size: 38))
-                .kerning(-1)
-                .foregroundColor(.white)
-            Text("ACCOUNT")
-                .font(.custom("BarlowCondensed-Black", size: 38))
-                .kerning(-1)
-                .foregroundColor(Color.white.opacity(0.16))
-                .padding(.bottom, 24)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                OBKicker(text: "ACCOUNT · STEP 1 OF 3")
+                    .padding(.bottom, 14)
 
-            Text("Email address")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundColor(Color.white.opacity(0.45))
-                .padding(.bottom, 10)
+                OBTitle("CREATE", "YOUR ACCOUNT.", size: 56)
 
-            TextField("you@example.com", text: $email)
-                .keyboardType(.emailAddress)
-                .textContentType(.emailAddress)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .font(.custom("BarlowCondensed-Bold", size: 18))
-                .foregroundColor(.white)
-                .tint(.p6Red)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(Color.white.opacity(0.06))
+                Text("Get your first AI pick in 30 seconds.")
+                    .font(.system(size: 13.5))
+                    .foregroundColor(.p6Ink2)
+                    .padding(.top, 12)
+                    .padding(.bottom, 28)
+
+                // Apple Sign In (top per design "show all equally")
+                SignInWithAppleButton(.signIn) { request in
+                    let nonce = randomNonceString()
+                    appleNonce = nonce
+                    request.requestedScopes = [.fullName, .email]
+                    request.nonce = sha256Hex(nonce)
+                } onCompletion: { result in
+                    switch result {
+                    case .success(let auth):
+                        guard
+                            let credential = auth.credential as? ASAuthorizationAppleIDCredential,
+                            let tokenData = credential.identityToken,
+                            let idToken = String(data: tokenData, encoding: .utf8)
+                        else {
+                            authManager.error = "Apple Sign In failed. Please try again."
+                            return
+                        }
+                        Task {
+                            await authManager.signInWithApple(idToken: idToken, nonce: appleNonce)
+                        }
+                    case .failure(let error):
+                        if let authError = error as? ASAuthorizationError,
+                           authError.code == .canceled { return }
+                        authManager.error = error.localizedDescription
+                    }
+                }
+                .signInWithAppleButtonStyle(.white)
+                .frame(height: 46)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .disabled(authManager.isLoading)
+
+                // Divider
+                HStack(spacing: 10) {
+                    Rectangle().fill(Color.p6Line).frame(height: 1)
+                    Text("OR WITH EMAIL")
+                        .font(.custom("BarlowCondensed-Bold", size: 10))
+                        .kerning(2.2)
+                        .foregroundColor(.p6Mute)
+                    Rectangle().fill(Color.p6Line).frame(height: 1)
+                }
+                .padding(.vertical, 16)
+
+                Text("EMAIL")
+                    .font(.custom("BarlowCondensed-Bold", size: 10))
+                    .kerning(2.4)
+                    .foregroundColor(.p6Mute)
+                    .padding(.bottom, 8)
+
+                ZStack(alignment: .leading) {
+                    if email.isEmpty {
+                        Text(verbatim: "you@domain.com")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(red: 0.43, green: 0.43, blue: 0.46))
+                            .tint(Color(red: 0.43, green: 0.43, blue: 0.46))
+                            .padding(.leading, 14)
+                            .allowsHitTesting(false)
+                    }
+                    TextField("", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.p6Foreground)
+                        .tint(.p6Lime)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 13)
+                }
+                .background(Color.p6Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1.5)
+                        .stroke(isValidEmail ? Color.p6Lime : Color.p6Line, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .padding(.bottom, 14)
 
-            // Error
-            if let error = authManager.error {
-                Text(error)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.red)
-                    .padding(.bottom, 10)
-            }
-
-            P6Button(
-                authManager.isLoading
-                    ? "Sending..."
-                    : (isValidEmail ? "Send Verification Code \u{2192}" : "Enter your email"),
-                gradient: isValidEmail && !authManager.isLoading ? .redDeep : nil,
-                disabled: !isValidEmail || authManager.isLoading
-            ) {
-                Task {
-                    await authManager.sendOTP(email: email)
-                    if authManager.error == nil {
-                        direction = 1
-                        withAnimation { otpSent = true }
-                    }
+                if let error = authManager.error {
+                    Text(error)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.red)
+                        .padding(.top, 10)
                 }
+
+                Text("By continuing you agree to our Terms & Privacy Policy. Must be 21+ to use Pick6.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.p6Mute)
+                    .lineSpacing(3)
+                    .padding(.top, 16)
             }
-
-            // Divider
-            HStack(spacing: 12) {
-                Rectangle()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(height: 1)
-                Text("or")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(Color.white.opacity(0.3))
-                Rectangle()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(height: 1)
-            }
-            .padding(.vertical, 20)
-
-            // Apple Sign In
-            SignInWithAppleButton(.signIn) { request in
-                let nonce = randomNonceString()
-                appleNonce = nonce
-                request.requestedScopes = [.fullName, .email]
-                request.nonce = sha256Hex(nonce)
-            } onCompletion: { result in
-                switch result {
-                case .success(let auth):
-                    guard
-                        let credential = auth.credential as? ASAuthorizationAppleIDCredential,
-                        let tokenData = credential.identityToken,
-                        let idToken = String(data: tokenData, encoding: .utf8)
-                    else {
-                        authManager.error = "Apple Sign In failed. Please try again."
-                        return
-                    }
-                    Task {
-                        await authManager.signInWithApple(idToken: idToken, nonce: appleNonce)
-                    }
-                case .failure(let error):
-                    // Ignore user-cancelled
-                    if let authError = error as? ASAuthorizationError,
-                       authError.code == .canceled { return }
-                    authManager.error = error.localizedDescription
-                }
-            }
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 50)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .disabled(authManager.isLoading)
-
-            Spacer()
-
-            Text("By continuing you agree to our Terms of Service and Privacy Policy")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.white.opacity(0.22))
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+            .padding(.horizontal, 22)
+            .padding(.top, 4)
+            .padding(.bottom, 160)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 18)
     }
 
     // MARK: - OTP Verification
 
     private var otpView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Lock icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(Color.p6Red.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 15)
-                            .stroke(Color.p6Red.opacity(0.3), lineWidth: 1.5)
-                    )
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(.p6Red)
-            }
-            .frame(width: 54, height: 54)
-            .padding(.bottom, 22)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                OBKicker(text: "STEP 2 · VERIFY")
+                    .padding(.bottom, 14)
 
-            Text("VERIFY YOUR\nEMAIL")
-                .font(.custom("BarlowCondensed-Black", size: 38))
-                .kerning(-1)
-                .foregroundColor(.white)
-                .padding(.bottom, 10)
+                OBTitle("CHECK", "YOUR ", emphasis: "INBOX.", size: 56)
 
-            Text("We sent a 6-digit code to\n**\(email)**")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(Color.white.opacity(0.5))
-                .lineSpacing(3)
-                .padding(.bottom, 28)
-
-            // OTP boxes
-            HStack(spacing: 10) {
-                ForEach(0..<6, id: \.self) { i in
-                    OTPBox(
-                        digit: $digits[i],
-                        isFocused: focusedIndex == i,
-                        onFilled: {
-                            if i < 5 {
-                                focusedIndex = i + 1
-                            } else {
-                                verifyCode()
-                            }
-                        },
-                        onBackspace: {
-                            if i > 0 {
-                                digits[i - 1] = ""
-                                focusedIndex = i - 1
-                            }
-                        }
-                    )
-                    .focused($focusedIndex, equals: i)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("We sent a 6-digit code to")
+                        .foregroundColor(.p6Ink2)
+                    Text(email)
+                        .foregroundColor(.p6Foreground)
+                        .bold()
                 }
-            }
-            .padding(.bottom, 14)
+                .font(.system(size: 13.5))
+                .padding(.top, 12)
+                .padding(.bottom, 24)
 
-            // Error
-            if let error = authManager.error {
-                Text(error)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.red)
-                    .padding(.bottom, 10)
-            }
-
-            P6Button(
-                authManager.isLoading
-                    ? "Verifying..."
-                    : (isOTPComplete ? "Verify & Continue \u{2192}" : "Enter verification code"),
-                gradient: isOTPComplete && !authManager.isLoading ? .redDeep : nil,
-                disabled: !isOTPComplete || authManager.isLoading,
-                action: verifyCode
-            )
-
-            // Resend
-            VStack(spacing: 4) {
-                Text("Didn't receive it?")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(Color.white.opacity(0.4))
-                if timer > 0 {
-                    Text("Resend code in \(String(format: "0:%02d", timer))")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(Color.white.opacity(0.35))
-                } else {
-                    Button("Resend code") {
-                        digits = Array(repeating: "", count: 6)
-                        timer = 59
-                        focusedIndex = 0
-                        authManager.error = nil
-                        Task { await authManager.sendOTP(email: email) }
+                // OTP boxes
+                HStack(spacing: 8) {
+                    ForEach(0..<6, id: \.self) { i in
+                        OTPBox(
+                            digit: $digits[i],
+                            isFocused: focusedIndex == i,
+                            onFilled: {
+                                if i < 5 {
+                                    focusedIndex = i + 1
+                                } else {
+                                    verifyCode()
+                                }
+                            },
+                            onBackspace: {
+                                if i > 0 {
+                                    digits[i - 1] = ""
+                                    focusedIndex = i - 1
+                                }
+                            }
+                        )
+                        .focused($focusedIndex, equals: i)
                     }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.p6Red)
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 20)
-
-            Spacer()
-
-            Text("By verifying you agree to our Terms of Service and Privacy Policy")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Color.white.opacity(0.22))
-                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+
+                if let error = authManager.error {
+                    Text(error)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.red)
+                        .padding(.top, 12)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                // Resend
+                Group {
+                    if timer > 0 {
+                        HStack(spacing: 4) {
+                            Text("Resend code in").foregroundColor(.p6Mute)
+                            Text(String(format: "0:%02d", timer))
+                                .foregroundColor(.p6Ink2)
+                                .bold()
+                        }
+                        .font(.system(size: 12, design: .monospaced))
+                    } else {
+                        Button("Resend code") {
+                            digits = Array(repeating: "", count: 6)
+                            timer = 59
+                            focusedIndex = 0
+                            authManager.error = nil
+                            Task { await authManager.sendOTP(email: email) }
+                        }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.p6Lime)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 22)
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 4)
+            .padding(.bottom, 160)
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
         .onAppear {
             focusedIndex = 0
             startTimer()

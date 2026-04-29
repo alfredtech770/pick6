@@ -10,9 +10,11 @@ import CoreText
 
 @main
 struct Betting_appApp: App {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
-    @AppStorage("hasEverLoggedIn") private var hasEverLoggedIn = false
-    @AppStorage("hasSeenPaywall") private var hasSeenPaywall = false
+    // Set once the user finishes the post-OTP onboarding flow
+    // (PickSports → Notifications → Success). Until then, returning users
+    // who close the app mid-flow resume from PickSports.
+    @AppStorage("hasFinishedOnboarding") private var hasFinishedOnboarding = false
+    @AppStorage("selectedSports") private var selectedSports = ""
     @State private var authManager = AuthManager()
 
     init() {
@@ -25,25 +27,14 @@ struct Betting_appApp: App {
                 if authManager.isCheckingSession {
                     Pick6SplashLoader()
                         .preferredColorScheme(.dark)
-                } else if !hasCompletedOnboarding {
-                    Pick6OnboardingView { _ in
-                        hasCompletedOnboarding = true
-                    }
-                } else if !authManager.isAuthenticated && !hasEverLoggedIn {
-                    // Only show auth if the user has NEVER logged in before
-                    AuthView(authManager: authManager)
-                } else if !authManager.isProfileComplete && !hasEverLoggedIn {
-                    ProfileSetupView(authManager: authManager)
-                } else if !hasSeenPaywall && !hasEverLoggedIn {
-                    // Show paywall after account creation, before main app
-                    P6PaywallScreen { plan in
-                        UserDefaults.standard.set(plan, forKey: "selectedPlan")
-                        hasSeenPaywall = true
-                        hasEverLoggedIn = true
+                } else if !authManager.isAuthenticated || !hasFinishedOnboarding {
+                    // The single source of truth for everything pre-main:
+                    // welcome → value carousel → auth/OTP → sports → notifications → success.
+                    Pick6AuthFlow(authManager: authManager) { sports in
+                        selectedSports = sports.sorted().joined(separator: ",")
+                        hasFinishedOnboarding = true
                     }
                 } else {
-                    // User has logged in before — go straight to main view
-                    // Session refreshes in the background via auth listener
                     Pick6MainView()
                         .preferredColorScheme(.dark)
                 }
@@ -51,10 +42,6 @@ struct Betting_appApp: App {
             .environment(authManager)
             .task {
                 await authManager.checkSession()
-                // Remember once the user is fully authenticated + profile done
-                if authManager.isAuthenticated && authManager.isProfileComplete {
-                    hasEverLoggedIn = true
-                }
             }
         }
     }

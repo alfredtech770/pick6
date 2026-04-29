@@ -169,8 +169,10 @@ final class AuthManager {
             isAuthenticated = false
             isProfileComplete = false
             userEmail = nil
-            // Clear the "ever logged in" flag so auth screen shows next time
-            UserDefaults.standard.set(false, forKey: "hasEverLoggedIn")
+            // Reset the local onboarding flag so signing out returns the user
+            // to the welcome flow on next launch.
+            UserDefaults.standard.set(false, forKey: "hasFinishedOnboarding")
+            UserDefaults.standard.set("", forKey: "selectedSports")
         } catch {
             self.error = error.localizedDescription
         }
