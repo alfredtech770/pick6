@@ -130,6 +130,7 @@ button { font-family: inherit; }
 
 /* ─── Shared ─── */
 .section { max-width: var(--max-w); margin: 0 auto; padding: 120px 32px; position: relative; }
+.section.tight { padding: 80px 32px; }
 .kicker {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 6px 12px; border-radius: 999px;
@@ -154,14 +155,14 @@ h1.display, h2.display {
   text-transform: uppercase;
 }
 h1.display { font-size: clamp(56px, 8.5vw, 108px); }
-h2.display { font-size: clamp(40px, 5.5vw, 72px); }
+h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .display em { font-style: normal; color: var(--accent); }
 .lead {
   font-size: 17px; line-height: 1.55;
   color: var(--ink-2);
   max-width: 560px;
 }
-.eyebrow-block { text-align: center; max-width: 720px; margin: 0 auto 64px; }
+.eyebrow-block { text-align: center; max-width: 760px; margin: 0 auto 64px; }
 .eyebrow-block h2 { margin-top: 24px; }
 .eyebrow-block .lead { margin: 18px auto 0; }
 
@@ -181,7 +182,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 /* ─── Hero ─── */
 .hero {
   max-width: var(--max-w); margin: 0 auto;
-  padding: calc(var(--ticker-h) + var(--nav-h) + 72px) 32px 80px;
+  padding: calc(var(--ticker-h) + var(--nav-h) + 80px) 32px 64px;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   gap: 56px;
@@ -227,455 +228,207 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 }
 
 .trust-strip {
-  display: flex; gap: 32px; flex-wrap: wrap;
+  display: flex; gap: 28px; flex-wrap: wrap;
+  align-items: center;
   padding-top: 24px;
   border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--ink-2);
 }
-.trust-strip .ts { display: flex; flex-direction: column; gap: 4px; }
-.trust-strip .ts-num {
-  font-family: 'Anton', sans-serif;
-  font-size: 32px; line-height: 1;
-}
-.trust-strip .ts-num em { font-style: normal; color: var(--accent); }
-.trust-strip .ts-lbl {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.22em; text-transform: uppercase;
-  color: var(--mute);
-}
+.trust-strip svg { color: var(--accent); }
+.trust-strip .ts { display: inline-flex; align-items: center; gap: 8px; }
+.trust-strip b { color: var(--ink); font-weight: 700; }
 
-/* ─── Hero card stack (3 floating UI frames) ─── */
-.card-stack {
+/* Hero card — single big lime focal point */
+.hero-card-wrap {
+  display: flex; align-items: center; justify-content: center;
   position: relative;
-  width: 100%; max-width: 540px;
-  margin: 0 auto;
-  height: 540px;
   perspective: 1400px;
 }
-.frame {
+.hero-card-wrap::before {
+  content: "";
   position: absolute;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  box-shadow:
-    0 30px 80px -10px rgba(0,0,0,0.7),
-    0 8px 24px -6px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  inset: -10% -8%;
+  background: radial-gradient(closest-side, rgba(212,255,58,0.16), transparent 70%);
+  filter: blur(40px);
+  z-index: 0;
+  pointer-events: none;
 }
-
-/* Frame 1 — Top Pick (lime, front) */
-.frame-pick {
-  z-index: 3;
-  top: 30px;
-  right: 0;
-  width: 360px;
-  padding: 22px 22px 20px;
+.hero-card {
+  position: relative;
+  z-index: 1;
+  width: 100%; max-width: 480px;
+  padding: 32px 30px 28px;
+  border-radius: 28px;
   background:
     radial-gradient(140% 120% at 110% -20%, #eaff7a 0%, var(--accent) 45%, #a8e000 100%);
   color: var(--accent-ink);
-  border-color: rgba(0,0,0,0.1);
-  transform: rotate(2deg);
   box-shadow:
-    0 30px 80px -10px rgba(168, 224, 0, 0.35),
-    0 8px 24px -6px rgba(0,0,0,0.5);
+    0 50px 120px -20px rgba(168, 224, 0, 0.45),
+    0 16px 40px -8px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.45);
+  transform: rotate(-1.5deg);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.frame-pick:hover { transform: rotate(2deg) translateY(-6px); }
-.frame-pick::after {
+.hero-card:hover { transform: rotate(0deg) translateY(-4px); }
+.hero-card::after {
   content: "";
   position: absolute; top: 0; left: 0; right: 0; height: 50%;
   background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent);
   pointer-events: none;
   border-radius: inherit;
 }
-.fp-top {
+.hc-top {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16px; position: relative; z-index: 1;
-}
-.fp-tag {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(0,0,0,0.12);
-  border: 1px solid rgba(0,0,0,0.2);
-  padding: 5px 10px 5px 8px;
-  border-radius: 999px;
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
-}
-.fp-tag .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-ink); }
-.fp-time {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px; font-weight: 700;
-}
-.fp-body {
-  display: grid; grid-template-columns: 1fr auto;
-  gap: 14px; align-items: end;
+  margin-bottom: 22px;
   position: relative; z-index: 1;
 }
-.fp-lbl {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.22em; text-transform: uppercase;
-  color: rgba(0,0,0,0.6);
-  margin-bottom: 6px;
-}
-.fp-h {
-  font-family: 'Anton', sans-serif;
-  font-size: 38px; line-height: 0.88;
-  letter-spacing: -0.015em;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-.fp-h span { display: block; }
-.fp-meta {
-  display: inline-flex; gap: 10px; align-items: center;
+.hc-tag {
+  display: inline-flex; align-items: center; gap: 7px;
   background: var(--accent-ink);
-  padding: 8px 12px;
-  border-radius: 10px;
-}
-.fp-meta .t {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px; font-weight: 700;
+  padding: 7px 13px 7px 11px;
+  border-radius: 999px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
   color: var(--accent);
 }
-.fp-meta .ch {
+.hc-tag .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+.hc-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 800;
+}
+.hc-body {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 18px; align-items: end;
+  margin-bottom: 22px;
+}
+.hc-lbl {
   font-family: 'Archivo Narrow', sans-serif;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(0,0,0,0.6);
+  margin-bottom: 8px;
+}
+.hc-h {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(46px, 5.2vw, 60px);
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+}
+.hc-h span { display: block; }
+.hc-meta {
+  display: inline-flex; gap: 10px; align-items: center;
+  background: var(--accent-ink);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.hc-meta .t {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 800;
+  color: var(--accent);
+}
+.hc-meta .div { width: 3px; height: 3px; border-radius: 50%; background: #555; }
+.hc-meta .ch {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
   color: #bbb; text-transform: uppercase;
 }
-.fp-ring {
-  width: 90px; height: 90px;
+.hc-ring {
+  width: 110px; height: 110px;
   position: relative;
 }
-.fp-ring svg {
+.hc-ring svg {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   transform: rotate(-90deg);
 }
-.fp-ring .num {
+.hc-ring .num {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
 }
-.fp-ring .num b {
+.hc-ring .num b {
   font-family: 'Anton', sans-serif;
-  font-size: 30px; line-height: 1;
+  font-size: 38px; line-height: 1;
 }
-.fp-ring .num b i { font-style: normal; font-size: 16px; }
-.fp-ring .num small {
+.hc-ring .num b i { font-style: normal; font-size: 18px; }
+.hc-ring .num small {
   font-family: 'Archivo Narrow', sans-serif;
-  font-size: 8px; font-weight: 700; letter-spacing: 0.22em;
-  margin-top: 3px; opacity: 0.7;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.22em;
+  margin-top: 4px; opacity: 0.7;
 }
-
-/* Frame 2 — Live game (mid) */
-.frame-live {
-  z-index: 2;
-  bottom: 36px;
-  left: 0;
-  width: 320px;
-  padding: 18px;
-  transform: rotate(-3deg);
-}
-.frame-live:hover { transform: rotate(-3deg) translateY(-6px); }
-.fl-top {
+.hc-foot {
+  position: relative; z-index: 1;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0,0,0,0.12);
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 14px;
-}
-.fl-tag {
-  display: inline-flex; align-items: center; gap: 6px;
   font-family: 'Archivo Narrow', sans-serif;
-  font-size: 10px; font-weight: 800;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--hot);
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
 }
-.fl-tag .pulse {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--hot); box-shadow: 0 0 6px var(--hot);
-  animation: livePulse 1.4s ease-in-out infinite;
+.hc-foot .reasoning {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: rgba(0,0,0,0.7);
 }
-.fl-clock {
+.hc-foot .arrow {
+  width: 26px; height: 26px;
+  background: var(--accent-ink);
+  color: var(--accent);
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+/* Subtle floating "stat chip" peeking from behind */
+.hc-chip {
+  position: absolute;
+  z-index: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 18px 40px -10px rgba(0,0,0,0.6);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px; font-weight: 700;
   color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: 8px;
 }
-.fl-teams {
-  display: grid; grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.fl-team {
-  display: flex; flex-direction: column; gap: 4px;
-}
-.fl-team.right { align-items: flex-end; }
-.fl-team .nm {
-  font-family: 'Anton', sans-serif;
-  font-size: 18px; line-height: 1;
-  letter-spacing: -0.005em;
-}
-.fl-team .sub {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--mute);
-}
-.fl-score {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 26px; font-weight: 800;
-  display: flex; gap: 6px; align-items: center;
-}
-.fl-score .l { color: var(--ink-2); }
-.fl-score .w { color: var(--accent); }
-.fl-score .sep { color: var(--mute); font-weight: 500; }
-.fl-bar {
-  height: 4px; border-radius: 2px;
-  background: var(--line);
-  overflow: hidden; margin-bottom: 12px;
-}
-.fl-bar .fill {
-  height: 100%; width: 68%;
-  background: linear-gradient(90deg, var(--accent), #a8e000);
-  border-radius: inherit;
-}
-.fl-foot {
-  display: flex; justify-content: space-between; align-items: center;
-}
-.fl-pick {
-  font-size: 12px; color: var(--ink);
-}
-.fl-pick .k {
-  display: inline-block;
-  background: rgba(212,255,58,0.12);
-  color: var(--accent);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 9px; font-weight: 800;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  margin-right: 6px;
-}
-.fl-pick b { font-weight: 700; }
-.fl-status {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 9px; font-weight: 800;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(74, 222, 128, 0.1);
-  color: var(--win);
-  border: 1px solid rgba(74, 222, 128, 0.25);
-}
-
-/* Frame 3 — Cashed (back) */
-.frame-cash {
-  z-index: 1;
-  top: 0;
-  right: 60px;
-  width: 240px;
-  padding: 18px;
-  transform: rotate(8deg);
-  background:
-    radial-gradient(circle at 50% 30%, #143c1c 0%, var(--panel) 80%);
-  border-color: rgba(74, 222, 128, 0.18);
-}
-.frame-cash:hover { transform: rotate(8deg) translateY(-6px); }
-.fc-stamp {
-  display: inline-block;
-  font-family: 'Anton', sans-serif;
-  font-size: 22px; letter-spacing: 0.06em;
-  color: var(--win);
-  border: 2px solid var(--win);
-  padding: 5px 10px 3px;
-  border-radius: 6px;
-  transform: rotate(-3deg);
-  margin-bottom: 14px;
-}
-.fc-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--mute);
-  margin-bottom: 10px;
-}
-.fc-h {
-  font-family: 'Anton', sans-serif;
-  font-size: 36px; line-height: 0.88;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-.fc-h em { font-style: normal; color: var(--win); }
-.fc-pl {
-  font-family: 'Anton', sans-serif;
-  font-size: 22px; color: var(--accent);
-  margin-bottom: 2px;
-}
-.fc-pl-lbl {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--ink-2);
-}
-
-/* Decorative orbiting dots in card stack background */
-.card-stack::before {
-  content: "";
-  position: absolute;
-  inset: 20% -10% 20% 10%;
-  background:
-    radial-gradient(closest-side, rgba(212,255,58,0.12), transparent 70%);
-  filter: blur(20px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* ─── Features ─── */
-.features {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 56px;
-}
-.feature {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 28px;
-  display: flex; flex-direction: column;
-  gap: 24px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s;
-}
-.feature:hover { transform: translateY(-4px); border-color: var(--line-2); }
-.feature::before {
-  content: "";
-  position: absolute;
-  top: -50%; right: -50%;
-  width: 100%; height: 100%;
-  background: radial-gradient(closest-side, rgba(212,255,58,0.06), transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-.feature-visual {
-  height: 200px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-}
-.feature-body { position: relative; z-index: 1; }
-.feature h3 {
-  font-family: 'Anton', sans-serif;
-  font-size: 28px; line-height: 1;
-  letter-spacing: -0.005em;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-.feature h3 em { font-style: normal; color: var(--accent); }
-.feature p {
-  font-size: 14px; line-height: 1.55;
-  color: var(--ink-2);
-  margin: 0;
-}
-
-/* Confidence ring widget */
-.viz-ring { width: 140px; height: 140px; position: relative; }
-.viz-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-.viz-ring .num {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-}
-.viz-ring .num b {
-  font-family: 'Anton', sans-serif;
-  font-size: 38px; line-height: 1;
-  color: var(--ink);
-}
-.viz-ring .num b i { font-style: normal; font-size: 18px; color: var(--accent); }
-.viz-ring .num small {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.22em;
-  margin-top: 3px; color: var(--mute);
-}
-
-/* Live mini card */
-.viz-live {
-  width: 100%; padding: 0 16px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.viz-live .row {
-  display: flex; justify-content: space-between; align-items: center;
-}
-.viz-live .pulse {
+.hc-chip b { color: var(--win); font-weight: 800; }
+.hc-chip-1 { top: -28px; right: -32px; transform: rotate(6deg); }
+.hc-chip-2 { bottom: -24px; left: -28px; transform: rotate(-5deg); }
+.hc-chip .pulse {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--hot); box-shadow: 0 0 6px var(--hot);
+  background: var(--win); box-shadow: 0 0 6px var(--win);
   animation: livePulse 1.4s ease-in-out infinite;
-  display: inline-block; margin-right: 6px;
 }
-.viz-live .lbl {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--hot);
-}
-.viz-live .clock {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--ink-2);
-}
-.viz-live .teams {
-  display: grid; grid-template-columns: 1fr auto 1fr;
-  align-items: center; gap: 8px;
-}
-.viz-live .nm {
-  font-family: 'Anton', sans-serif;
-  font-size: 16px; line-height: 1;
-}
-.viz-live .right { text-align: right; }
-.viz-live .score {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 22px; font-weight: 800;
-  display: flex; gap: 4px;
-}
-.viz-live .w { color: var(--accent); }
-.viz-live .l { color: var(--ink-2); }
-.viz-live .bar {
-  height: 4px; border-radius: 2px;
-  background: var(--line);
-}
-.viz-live .bar .fill {
-  height: 100%; width: 0;
-  background: linear-gradient(90deg, var(--accent), #a8e000);
-  border-radius: inherit;
-  transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.feature.in .viz-live .bar .fill { width: 68%; }
 
-/* Sports grid */
-.viz-sports {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  width: 100%; padding: 0 14px;
-}
-.viz-sports .sp {
-  aspect-ratio: 1.4;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
+.hero-tagline {
+  margin-top: 18px;
+  display: flex; align-items: center; gap: 10px;
   font-family: 'Archivo Narrow', sans-serif;
-  font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--ink-2);
-  transition: all 0.2s;
 }
-.viz-sports .sp.hot { color: var(--accent); border-color: rgba(212,255,58,0.3); background: rgba(212,255,58,0.05); }
+.hero-tagline .num {
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 13px;
+}
 
-/* ─── Stats strip ─── */
+/* ─── Stats strip (between hero and receipts) ─── */
 .stats-strip {
   max-width: var(--max-w);
   margin: 0 auto;
-  padding: 80px 32px;
+  padding: 56px 32px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 32px;
@@ -686,7 +439,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 .stats-strip .stat-num {
   font-family: 'Anton', sans-serif;
   font-size: 64px; line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .stats-strip .stat-num em { font-style: normal; color: var(--accent); }
 .stats-strip .stat-lbl {
@@ -696,11 +449,390 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   color: var(--mute);
 }
 
-/* ─── Pricing ─── */
-.pricing {
-  max-width: 540px;
-  margin: 64px auto 0;
+/* ─── Receipts (real cashed bets) ─── */
+.receipts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 56px;
 }
+.receipt {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(74, 222, 128, 0.08), transparent 60%),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 26px 24px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s;
+}
+.receipt:hover { transform: translateY(-4px); border-color: rgba(74, 222, 128, 0.3); }
+.receipt::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--win), transparent);
+  opacity: 0.6;
+}
+.r-stamp {
+  display: inline-block;
+  font-family: 'Anton', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: var(--win);
+  border: 2px solid var(--win);
+  padding: 4px 10px 2px;
+  border-radius: 6px;
+  transform: rotate(-3deg);
+  margin-bottom: 18px;
+}
+.r-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+  margin-bottom: 12px;
+}
+.r-pick {
+  font-family: 'Anton', sans-serif;
+  font-size: 28px; line-height: 0.95;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+.r-pick em { font-style: normal; color: var(--ink-2); font-weight: normal; }
+.r-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--ink-2);
+  margin-bottom: 22px;
+}
+.r-score {
+  display: flex; gap: 14px; align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.r-score .team {
+  font-size: 11px; color: var(--mute); font-weight: 800;
+  letter-spacing: 0.18em;
+}
+.r-score .num {
+  font-family: 'Anton', sans-serif;
+  font-size: 24px; line-height: 1;
+}
+.r-score .win { color: var(--accent); }
+.r-score .div { color: var(--mute); margin: 0 4px; }
+.r-pl {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.r-pl-num {
+  font-family: 'Anton', sans-serif;
+  font-size: 32px; color: var(--accent);
+  letter-spacing: -0.005em;
+}
+.r-pl-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--ink-2);
+  text-align: right;
+}
+.receipts-foot {
+  margin-top: 28px;
+  text-align: center;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--mute);
+}
+.receipts-foot b { color: var(--accent); font-weight: 800; }
+
+/* ─── Live AI feed ─── */
+.feed {
+  max-width: 920px;
+  margin: 56px auto 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+}
+.feed-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(255,255,255,0.02);
+}
+.feed-header .l {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ink);
+}
+.feed-header .l .pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--hot); box-shadow: 0 0 8px var(--hot);
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+.feed-header .r {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--mute);
+}
+.feed-list {
+  position: relative;
+  height: 360px;
+  overflow: hidden;
+}
+.feed-row {
+  display: grid;
+  grid-template-columns: 78px 64px 1fr 80px 110px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.feed-row:hover { background: rgba(255,255,255,0.02); }
+.feed-row.new {
+  animation: feedIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes feedIn {
+  from { opacity: 0; transform: translateY(-12px); background: rgba(212,255,58,0.05); }
+  to   { opacity: 1; transform: translateY(0); background: transparent; }
+}
+.feed-time { color: var(--mute); font-size: 11px; }
+.feed-sport {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--ink-2);
+  background: var(--panel-2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+.feed-pick { color: var(--ink); font-weight: 700; font-size: 13px; }
+.feed-pick small { color: var(--mute); font-weight: 500; margin-left: 6px; font-size: 11px; }
+.feed-conf {
+  font-family: 'Anton', sans-serif;
+  font-size: 18px; color: var(--accent);
+  text-align: right;
+}
+.feed-status {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+.fs-cashed { background: rgba(74, 222, 128, 0.1); color: var(--win); border: 1px solid rgba(74, 222, 128, 0.25); }
+.fs-live { background: rgba(255, 90, 54, 0.1); color: var(--hot); border: 1px solid rgba(255, 90, 54, 0.25); }
+.fs-pending { background: rgba(255,255,255,0.04); color: var(--ink-2); border: 1px solid var(--line); }
+.fs-missed { background: rgba(255, 90, 54, 0.05); color: var(--mute); border: 1px solid var(--line); }
+
+/* ─── How it works (3 steps) ─── */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 56px;
+}
+.step {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.step::before {
+  content: attr(data-num);
+  position: absolute;
+  top: -18px; right: 20px;
+  font-family: 'Anton', sans-serif;
+  font-size: 130px; line-height: 1;
+  color: rgba(212, 255, 58, 0.08);
+  pointer-events: none;
+  letter-spacing: -0.02em;
+}
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.step h3 {
+  font-family: 'Anton', sans-serif;
+  font-size: 28px; line-height: 1;
+  letter-spacing: -0.005em;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+}
+.step h3 em { font-style: normal; color: var(--accent); }
+.step p {
+  font-size: 14px; line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0 0 20px;
+}
+.step-stat {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.step-stat-num {
+  font-family: 'Anton', sans-serif;
+  font-size: 32px; line-height: 1;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.step-stat-num em { font-style: normal; color: var(--accent); }
+.step-stat-lbl {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* ─── Comparison table ─── */
+.compare {
+  margin-top: 56px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-row.head {
+  background: rgba(255,255,255,0.02);
+}
+.compare-cell {
+  padding: 18px 22px;
+  font-size: 14px;
+  border-right: 1px solid var(--line);
+}
+.compare-cell:last-child { border-right: none; }
+.compare-cell.k {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.compare-cell.us {
+  background: rgba(212,255,58,0.04);
+  border-left: 1px solid rgba(212,255,58,0.18);
+  border-right: 1px solid rgba(212,255,58,0.18);
+}
+.compare-row.head .compare-cell.us {
+  background: rgba(212,255,58,0.08);
+}
+.compare-cell.us-head {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.compare-cell.us-head .nm {
+  font-family: 'Anton', sans-serif;
+  font-size: 24px; line-height: 1;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.compare-cell.us-head .badge {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+.compare-cell.them-head {
+  font-family: 'Anton', sans-serif;
+  font-size: 22px; line-height: 1;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+.icon-yes { color: var(--win); }
+.icon-no { color: var(--loss); }
+.icon-mid { color: var(--mute); }
+
+/* ─── Testimonials ─── */
+.quotes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 56px;
+}
+.quote {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 28px 26px 24px;
+  position: relative;
+  display: flex; flex-direction: column;
+  gap: 20px;
+}
+.quote::before {
+  content: """;
+  position: absolute;
+  top: 0; left: 22px;
+  font-family: 'Anton', sans-serif;
+  font-size: 90px;
+  color: var(--accent);
+  line-height: 1;
+}
+.quote-stat {
+  font-family: 'Anton', sans-serif;
+  font-size: 36px; line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.005em;
+  margin-top: 24px;
+}
+.quote-text {
+  font-size: 15px; line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+  flex: 1;
+}
+.quote-attrib {
+  display: flex; align-items: center; gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.quote-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Anton', sans-serif;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.quote-name {
+  font-size: 13px; font-weight: 700; color: var(--ink);
+}
+.quote-loc {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--mute);
+}
+.quote-stars {
+  display: inline-flex; gap: 2px;
+  color: var(--accent);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* ─── Pricing ─── */
+.pricing { max-width: 540px; margin: 56px auto 0; }
 .plan-toggle {
   display: flex;
   background: var(--panel);
@@ -720,16 +852,14 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   cursor: pointer;
   transition: all 0.25s;
 }
-.plan-toggle .seg.active {
-  background: var(--accent); color: var(--accent-ink);
-}
+.plan-toggle .seg.active { background: var(--accent); color: var(--accent-ink); }
 .plan {
   background:
     radial-gradient(140% 100% at 100% 0%, rgba(212,255,58,0.08), transparent 50%),
     var(--panel);
   border: 1px solid var(--line);
   border-radius: 28px;
-  padding: 36px 32px;
+  padding: 40px 32px 32px;
   position: relative;
   text-align: center;
 }
@@ -747,40 +877,24 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 }
 .plan h3 {
   font-family: 'Anton', sans-serif;
-  font-size: 28px;
-  margin: 0 0 4px;
+  font-size: 28px; margin: 0 0 4px;
   text-transform: uppercase;
 }
-.plan .sub {
-  font-size: 13px;
-  color: var(--ink-2);
-  margin-bottom: 24px;
-}
+.plan .sub { font-size: 13px; color: var(--ink-2); margin-bottom: 24px; }
 .plan .price {
   font-family: 'Anton', sans-serif;
-  font-size: 88px;
-  line-height: 1;
+  font-size: 88px; line-height: 1;
   margin-bottom: 4px;
   display: inline-flex; align-items: flex-start;
 }
-.plan .price .cur {
-  font-size: 32px;
-  margin-top: 14px;
-  margin-right: 4px;
-  color: var(--ink-2);
-}
+.plan .price .cur { font-size: 32px; margin-top: 14px; margin-right: 4px; color: var(--ink-2); }
 .plan .price .per {
   font-family: 'Archivo Narrow', sans-serif;
   font-size: 14px; font-weight: 700; letter-spacing: 0.18em;
-  color: var(--ink-2);
-  text-transform: uppercase;
+  color: var(--ink-2); text-transform: uppercase;
   margin-top: 28px; margin-left: 6px;
 }
-.plan .billed {
-  font-size: 13px;
-  color: var(--mute);
-  margin-bottom: 28px;
-}
+.plan .billed { font-size: 13px; color: var(--mute); margin-bottom: 28px; }
 .plan ul {
   list-style: none; padding: 0; margin: 0 0 28px;
   display: flex; flex-direction: column; gap: 12px;
@@ -790,11 +904,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   display: flex; align-items: flex-start; gap: 12px;
   font-size: 14px; color: var(--ink);
 }
-.plan ul li svg {
-  width: 18px; height: 18px;
-  flex-shrink: 0; margin-top: 1px;
-  color: var(--accent);
-}
+.plan ul li svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: var(--accent); }
 .plan-cta {
   display: block; width: 100%;
   background: var(--accent); color: var(--accent-ink);
@@ -808,9 +918,73 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 }
 .plan-cta:hover { box-shadow: 0 12px 30px rgba(212,255,58,0.3); transform: translateY(-1px); }
 .plan-cta:active { transform: scale(0.98); }
-.plan .trial {
-  font-size: 12px; color: var(--mute);
-  margin-top: 12px;
+.plan .trial { font-size: 12px; color: var(--mute); margin-top: 12px; }
+
+/* ─── FAQ ─── */
+.faq {
+  max-width: 720px;
+  margin: 56px auto 0;
+  display: flex; flex-direction: column;
+  gap: 12px;
+}
+.faq-item {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item.open { border-color: var(--line-2); }
+.faq-q {
+  width: 100%;
+  padding: 20px 24px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer;
+  font-family: 'Archivo', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--ink);
+  transition: color 0.2s;
+}
+.faq-q:hover { color: var(--accent); }
+.faq-q .plus {
+  width: 24px; height: 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-q .plus::before, .faq-q .plus::after {
+  content: "";
+  position: absolute;
+  background: var(--ink-2);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-q .plus::before { width: 10px; height: 1.5px; }
+.faq-q .plus::after { width: 1.5px; height: 10px; }
+.faq-item.open .faq-q .plus {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: rotate(45deg);
+}
+.faq-item.open .faq-q .plus::before,
+.faq-item.open .faq-q .plus::after {
+  background: var(--accent-ink);
+}
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-item.open .faq-a { max-height: 280px; }
+.faq-a-inner {
+  padding: 0 24px 22px;
+  font-size: 15px; line-height: 1.6;
+  color: var(--ink-2);
 }
 
 /* ─── Final CTA ─── */
@@ -848,9 +1022,25 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 .foot-links a { transition: color 0.15s; }
 .foot-links a:hover { color: var(--ink); }
 
+/* Sticky download bar (mobile only) */
+.sticky-cta {
+  display: none;
+  position: fixed;
+  bottom: 16px; left: 16px; right: 16px;
+  z-index: 100;
+  background: var(--accent); color: var(--accent-ink);
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 13px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  text-align: center;
+  box-shadow: 0 16px 36px rgba(212,255,58,0.25), 0 4px 12px rgba(0,0,0,0.4);
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 1100px) {
-  .features { grid-template-columns: repeat(3, 1fr); }
+  .receipts-grid, .steps, .quotes { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 920px) {
   .hero {
@@ -863,29 +1053,32 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   .cta-row { justify-content: center; }
   .trust-strip { justify-content: center; }
   .nav-links { display: none; }
-  .card-stack { height: 480px; max-width: 460px; }
-  .frame-pick { right: 0; }
-  .frame-live { left: 0; }
-  .frame-cash { right: 80px; }
-  .features { grid-template-columns: 1fr; }
-  .feature { max-width: 540px; margin: 0 auto; width: 100%; }
+  .receipts-grid, .steps, .quotes { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
   .stats-strip .stat-num { font-size: 48px; }
+  .compare-row { grid-template-columns: 1.2fr 1fr 1fr 1fr; }
+  .compare-cell { padding: 14px 12px; font-size: 12px; }
+  .compare-cell.us-head .nm, .compare-cell.them-head { font-size: 16px; }
+  .feed-row { grid-template-columns: 60px 50px 1fr 60px 90px; gap: 8px; padding: 12px 16px; font-size: 11px; }
+  .feed-pick { font-size: 11px; }
+  .feed-conf { font-size: 14px; }
+  .sticky-cta { display: block; }
 }
 @media (max-width: 560px) {
   .section { padding: 80px 20px; }
   .nav { padding: 0 20px; }
   .hero { padding: calc(var(--ticker-h) + var(--nav-h) + 40px) 20px 56px; }
-  .card-stack { height: 420px; max-width: 360px; }
-  .frame-pick { width: 280px; padding: 18px; }
-  .frame-pick .fp-h { font-size: 30px; }
-  .frame-pick .fp-ring { width: 72px; height: 72px; }
-  .frame-pick .fp-ring .num b { font-size: 24px; }
-  .frame-live { width: 260px; padding: 16px; }
-  .frame-cash { width: 200px; padding: 16px; right: 40px; }
-  .frame-cash .fc-h { font-size: 28px; }
+  .hero-card { max-width: 380px; padding: 26px 22px 22px; }
+  .hero-card .hc-h { font-size: 38px; }
+  .hero-card .hc-ring { width: 84px; height: 84px; }
+  .hero-card .hc-ring .num b { font-size: 28px; }
+  .hc-chip { display: none; }
+  .feed-list { height: 320px; }
+  .feed-row { grid-template-columns: 50px 1fr 80px; }
+  .feed-row .feed-sport, .feed-row .feed-conf { display: none; }
+  .compare-row { grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr; }
+  .compare-cell { padding: 12px 8px; font-size: 11px; }
   .final-cta { padding: 80px 20px 40px; }
-  .final-cta h2 { font-size: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -939,11 +1132,12 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 <header class="nav">
   <a class="logo" href="#top">PICK<span class="six">6</span></a>
   <nav class="nav-links">
-    <a href="#features">Features</a>
+    <a href="#receipts">Receipts</a>
+    <a href="#how">How it works</a>
     <a href="#pricing">Pricing</a>
-    <a href="#download">Download</a>
+    <a href="#faq">FAQ</a>
   </nav>
-  <a class="cta-pill" href="#pricing">Start Free</a>
+  <a class="cta-pill" href="#download">Start Free</a>
 </header>
 
 <a id="top"></a>
@@ -955,7 +1149,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   <div class="hero-text">
     <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> AI · LIVE · 9 SPORTS</div>
     <h1 class="display" data-reveal data-reveal-delay="2">BEAT THE <em>BOOK.</em></h1>
-    <p class="lead" data-reveal data-reveal-delay="3">AI-powered picks across NBA, NFL, EPL, MLB, UFC and more. Confidence scores, live tracking, unlimited daily picks.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">AI-powered picks across NBA, NFL, EPL, MLB, UFC and more. Confidence scores. Live tracking. Public results — wins <em style="font-style:normal;color:var(--win)">and</em> losses.</p>
     <div class="cta-row" data-reveal data-reveal-delay="4">
       <a class="store-btn" href="#download">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
@@ -967,69 +1161,32 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
       </a>
     </div>
     <div class="trust-strip" data-reveal data-reveal-delay="5">
-      <div class="ts">
-        <div class="ts-num"><em data-counter="68" data-suffix="%">0</em></div>
-        <div class="ts-lbl">Pick Accuracy</div>
-      </div>
-      <div class="ts">
-        <div class="ts-num"><em data-counter="9">0</em></div>
-        <div class="ts-lbl">Sports</div>
-      </div>
-      <div class="ts">
-        <div class="ts-num"><em data-counter="24">0</em>/7</div>
-        <div class="ts-lbl">Live Tracking</div>
-      </div>
+      <span class="ts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.7 6.3 6.8.5-5.2 4.4 1.6 6.7L12 17.5 6.1 20.9 7.7 14.2 2.5 9.8l6.8-.5L12 2z"/></svg>
+        <b>4.8</b> on App Store · 12k+ reviews
+      </span>
+      <span class="ts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        7-day free trial
+      </span>
     </div>
   </div>
 
-  <!-- Card stack: 3 floating UI frames -->
-  <div class="card-stack" data-reveal data-reveal-delay="3">
-    <!-- Frame 3: Cashed (back) -->
-    <div class="frame frame-cash">
-      <div class="fc-stamp">CASHED.</div>
-      <div class="fc-meta">FINAL · APR 27 · GAME 2</div>
-      <h3 class="fc-h">PICK<br/><em>HIT.</em></h3>
-      <div class="fc-pl">+18.4u</div>
-      <div class="fc-pl-lbl">$50 → $284</div>
-    </div>
-
-    <!-- Frame 2: Live game (mid) -->
-    <div class="frame frame-live">
-      <div class="fl-top">
-        <span class="fl-tag"><span class="pulse"></span> LIVE · NBA</span>
-        <span class="fl-clock">Q3 · 4:22</span>
+  <div class="hero-card-wrap" data-reveal data-reveal-delay="3">
+    <div class="hero-card">
+      <div class="hc-top">
+        <span class="hc-tag"><span class="dot"></span> TOP PICK · TONIGHT</span>
+        <span class="hc-time">7:30 PM ET</span>
       </div>
-      <div class="fl-teams">
-        <div class="fl-team">
-          <div class="nm">HEAT</div>
-          <div class="sub">22-14</div>
-        </div>
-        <div class="fl-score"><span class="l">88</span><span class="sep">–</span><span class="w">91</span></div>
-        <div class="fl-team right">
-          <div class="nm">NUGGETS</div>
-          <div class="sub">28-9</div>
-        </div>
-      </div>
-      <div class="fl-bar"><div class="fill"></div></div>
-      <div class="fl-foot">
-        <div class="fl-pick"><span class="k">AI</span><b>NUGGETS +2.5</b></div>
-        <span class="fl-status">● ON TRACK</span>
-      </div>
-    </div>
-
-    <!-- Frame 1: Top Pick (front) -->
-    <div class="frame frame-pick">
-      <div class="fp-top">
-        <span class="fp-tag"><span class="dot"></span> TOP PICK · TONIGHT</span>
-        <span class="fp-time">7:30 PM</span>
-      </div>
-      <div class="fp-body">
+      <div class="hc-body">
         <div>
-          <div class="fp-lbl">★ AI Confidence</div>
-          <h2 class="fp-h">CELTICS<span>OVER LAKERS</span></h2>
-          <span class="fp-meta"><span class="t">−6.5</span><span class="ch">SPREAD · TNT</span></span>
+          <div class="hc-lbl">★ AI Confidence</div>
+          <h2 class="hc-h">CELTICS<span>OVER LAKERS</span></h2>
+          <span class="hc-meta">
+            <span class="t">−6.5</span><span class="div"></span><span class="ch">SPREAD · TNT</span>
+          </span>
         </div>
-        <div class="fp-ring">
+        <div class="hc-ring">
           <svg viewBox="0 0 120 120">
             <circle cx="60" cy="60" r="52" stroke="rgba(0,0,0,0.15)" stroke-width="6" fill="none"/>
             <circle class="ring-progress" cx="60" cy="60" r="52" stroke="var(--accent-ink)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="52"/>
@@ -1037,74 +1194,13 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
           <div class="num"><b>84<i>%</i></b><small>AI CONF</small></div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- FEATURES                                                      -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<section class="section" id="features">
-  <div class="eyebrow-block">
-    <div class="kicker" data-reveal>HOW IT WORKS</div>
-    <h2 class="display" data-reveal data-reveal-delay="2">EVERY GAME,<br/>ONE TAP <em>AWAY.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">From AI picks to live tracking — your full betting workflow in one app.</p>
-  </div>
-  <div class="features">
-    <div class="feature" data-reveal>
-      <div class="feature-visual">
-        <div class="viz-ring in-view">
-          <svg viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" stroke="var(--line)" stroke-width="8" fill="none"/>
-            <circle class="ring-anim" cx="60" cy="60" r="52" stroke="var(--accent)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="326.73" transform="rotate(-90 60 60)"/>
-          </svg>
-          <div class="num"><b>84<i>%</i></b><small>AI CONF</small></div>
-        </div>
-      </div>
-      <div class="feature-body">
-        <h3>AI <em>CONFIDENCE.</em></h3>
-        <p>Every pick comes with a confidence score from 0–100% so you know where to lean — and where to fold.</p>
+      <div class="hc-foot">
+        <span class="reasoning">SEE AI BREAKDOWN</span>
+        <span class="arrow">→</span>
       </div>
     </div>
-    <div class="feature" data-reveal data-reveal-delay="2">
-      <div class="feature-visual">
-        <div class="viz-live">
-          <div class="row">
-            <span><span class="pulse"></span><span class="lbl">LIVE</span></span>
-            <span class="clock">Q3 · 4:22</span>
-          </div>
-          <div class="teams">
-            <div class="nm">HEAT</div>
-            <div class="score"><span class="l">88</span><span style="color:var(--mute)">–</span><span class="w">91</span></div>
-            <div class="nm right">NUGGETS</div>
-          </div>
-          <div class="bar"><div class="fill"></div></div>
-        </div>
-      </div>
-      <div class="feature-body">
-        <h3>LIVE <em>TRACKING.</em></h3>
-        <p>Watch every pick play out in real-time. Win probability updates as the game moves, with on-track / sweating / cooling status pills.</p>
-      </div>
-    </div>
-    <div class="feature" data-reveal data-reveal-delay="3">
-      <div class="feature-visual">
-        <div class="viz-sports">
-          <div class="sp hot">NBA</div>
-          <div class="sp">NFL</div>
-          <div class="sp hot">EPL</div>
-          <div class="sp">MLB</div>
-          <div class="sp hot">UFC</div>
-          <div class="sp">NHL</div>
-          <div class="sp">F1</div>
-          <div class="sp hot">TENNIS</div>
-          <div class="sp">CRICKET</div>
-        </div>
-      </div>
-      <div class="feature-body">
-        <h3>9 SPORTS, <em>ONE APP.</em></h3>
-        <p>NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis and cricket — covered every day, all year.</p>
-      </div>
-    </div>
+    <div class="hc-chip hc-chip-1"><span class="pulse"></span> <span><b>+18.4u</b> last 7 days</span></div>
+    <div class="hc-chip hc-chip-2">📊 <span>72% hit rate · 30 days</span></div>
   </div>
 </section>
 
@@ -1114,10 +1210,10 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 <div class="stats-strip">
   <div class="stat" data-reveal>
     <div class="stat-num"><em data-counter="72" data-suffix="%">0</em></div>
-    <div class="stat-lbl">7-Day Hit Rate</div>
+    <div class="stat-lbl">30-Day Hit Rate</div>
   </div>
   <div class="stat" data-reveal data-reveal-delay="2">
-    <div class="stat-num">+<em data-counter="18" data-suffix=".4u">0</em></div>
+    <div class="stat-num">+<em data-counter="18.4">0</em>u</div>
     <div class="stat-lbl">Last 7 Days</div>
   </div>
   <div class="stat" data-reveal data-reveal-delay="3">
@@ -1125,10 +1221,244 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
     <div class="stat-lbl">Sports Covered</div>
   </div>
   <div class="stat" data-reveal data-reveal-delay="4">
-    <div class="stat-num"><em data-counter="24">0</em>/7</div>
-    <div class="stat-lbl">Live Picks</div>
+    <div class="stat-num"><em data-counter="12">0</em>k+</div>
+    <div class="stat-lbl">Active Users</div>
   </div>
 </div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- RECEIPTS                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="receipts">
+  <div class="eyebrow-block">
+    <div class="kicker" data-reveal>RECEIPTS</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">REAL PICKS.<br/>REAL <em>MONEY.</em></h2>
+    <p class="lead" data-reveal data-reveal-delay="3">We track every pick publicly — wins and losses. Here's a sample from the last 7 days.</p>
+  </div>
+  <div class="receipts-grid">
+    <div class="receipt" data-reveal>
+      <div class="r-stamp">CASHED.</div>
+      <div class="r-meta">APR 27 · NBA · GAME 2</div>
+      <h3 class="r-pick">CELTICS −6.5<br/><em>vs Lakers</em></h3>
+      <div class="r-line">$50 stake · -110 odds · 84% AI conf</div>
+      <div class="r-score">
+        <div><div class="team">BOS</div><div class="num win">121</div></div>
+        <div class="div">–</div>
+        <div><div class="team">LAL</div><div class="num">110</div></div>
+      </div>
+      <div class="r-pl">
+        <div class="r-pl-num">+$45.45</div>
+        <div class="r-pl-sub">+1.0u<br/>balance: $50 → $95</div>
+      </div>
+    </div>
+    <div class="receipt" data-reveal data-reveal-delay="2">
+      <div class="r-stamp">CASHED.</div>
+      <div class="r-meta">APR 26 · EPL · MATCHWEEK 35</div>
+      <h3 class="r-pick">BTTS YES<br/><em>Liverpool vs Spurs</em></h3>
+      <div class="r-line">$100 stake · -140 odds · 78% AI conf</div>
+      <div class="r-score">
+        <div><div class="team">LIV</div><div class="num win">3</div></div>
+        <div class="div">–</div>
+        <div><div class="team">TOT</div><div class="num win">2</div></div>
+      </div>
+      <div class="r-pl">
+        <div class="r-pl-num">+$71.43</div>
+        <div class="r-pl-sub">+0.7u<br/>balance: $100 → $171</div>
+      </div>
+    </div>
+    <div class="receipt" data-reveal data-reveal-delay="3">
+      <div class="r-stamp">CASHED.</div>
+      <div class="r-meta">APR 25 · UFC 301 · MAIN CARD</div>
+      <h3 class="r-pick">MAKHACHEV ML<br/><em>vs Volkanovski</em></h3>
+      <div class="r-line">$75 stake · -180 odds · 91% AI conf</div>
+      <div class="r-score">
+        <div><div class="team">MAK</div><div class="num win">SUB R3</div></div>
+        <div class="div">–</div>
+        <div><div class="team">VOL</div><div class="num">L</div></div>
+      </div>
+      <div class="r-pl">
+        <div class="r-pl-num">+$41.67</div>
+        <div class="r-pl-sub">+0.55u<br/>balance: $75 → $116</div>
+      </div>
+    </div>
+  </div>
+  <div class="receipts-foot" data-reveal>
+    <b>+$2,847</b> total profit · last 30 days · 27W · 11L
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LIVE AI FEED                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section tight">
+  <div class="eyebrow-block">
+    <div class="kicker live" data-reveal><span class="dot"></span> LIVE</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">AI WORKS <em>24/7.</em></h2>
+    <p class="lead" data-reveal data-reveal-delay="3">Every pick the AI makes — public, timestamped, and tracked. No selective sharing.</p>
+  </div>
+  <div class="feed" data-reveal data-reveal-delay="2">
+    <div class="feed-header">
+      <span class="l"><span class="pulse"></span> AI PICKS · LAST 24 HOURS</span>
+      <span class="r" id="feedClock">—</span>
+    </div>
+    <div class="feed-list" id="feedList">
+      <!-- Rows injected by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- HOW IT WORKS                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="how">
+  <div class="eyebrow-block">
+    <div class="kicker" data-reveal>THE EDGE</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">HOW WE <em>BEAT</em><br/>THE BOOK.</h2>
+    <p class="lead" data-reveal data-reveal-delay="3">Three things the AI does that you can't — and that most tipsters don't.</p>
+  </div>
+  <div class="steps">
+    <div class="step" data-num="01" data-reveal>
+      <div class="step-num">01 · DATA</div>
+      <h3>1.2M GAMES <em>STUDIED.</em></h3>
+      <p>Trained on every NBA, NFL, EPL, MLB, UFC and NHL game since 2018 — over 1.2 million matchups, with player stats, weather, injuries, and market data.</p>
+      <div class="step-stat">
+        <div class="step-stat-num"><em>1.2M</em></div>
+        <div class="step-stat-lbl">Historical Games</div>
+      </div>
+    </div>
+    <div class="step" data-num="02" data-reveal data-reveal-delay="2">
+      <div class="step-num">02 · CALIBRATION</div>
+      <h3>RECALIBRATED <em>DAILY.</em></h3>
+      <p>The model retrains every night on closing-line value (CLV) — the gold standard for measuring sports-betting edge. If the AI loses its edge, we know in 24 hours.</p>
+      <div class="step-stat">
+        <div class="step-stat-num"><em>+3.8%</em></div>
+        <div class="step-stat-lbl">Avg CLV Edge</div>
+      </div>
+    </div>
+    <div class="step" data-num="03" data-reveal data-reveal-delay="3">
+      <div class="step-num">03 · TRANSPARENCY</div>
+      <h3>EVERY PICK <em>PUBLIC.</em></h3>
+      <p>We post every pick — wins and losses — to a public ledger you can audit. No "today's lock" sales pitches. No ghost-deleted misses. Just receipts.</p>
+      <div class="step-stat">
+        <div class="step-stat-num"><em>100%</em></div>
+        <div class="step-stat-lbl">Picks Published</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- COMPARISON                                                    -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section tight">
+  <div class="eyebrow-block">
+    <div class="kicker" data-reveal>VS THE FIELD</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">PICK6 <em>WINS.</em></h2>
+    <p class="lead" data-reveal data-reveal-delay="3">Stack us against the alternatives — random tipsters, doing it yourself, or a sportsbook's house picks.</p>
+  </div>
+  <div class="compare" data-reveal data-reveal-delay="2">
+    <div class="compare-row head">
+      <div class="compare-cell k">&nbsp;</div>
+      <div class="compare-cell us us-head">
+        <span class="nm">PICK6</span>
+        <span class="badge">YOU ARE HERE</span>
+      </div>
+      <div class="compare-cell them-head">Random Tipster</div>
+      <div class="compare-cell them-head">DIY Research</div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Sports covered</div>
+      <div class="compare-cell us"><b style="color:var(--accent)">9 sports</b></div>
+      <div class="compare-cell">1–2 sports</div>
+      <div class="compare-cell">Whatever you watch</div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">AI-driven model</div>
+      <div class="compare-cell us"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-yes"><path d="M5 12l5 5 9-9"/></svg></div>
+      <div class="compare-cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-no"><path d="M6 6l12 12M6 18L18 6"/></svg></div>
+      <div class="compare-cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-no"><path d="M6 6l12 12M6 18L18 6"/></svg></div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Confidence scores</div>
+      <div class="compare-cell us"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-yes"><path d="M5 12l5 5 9-9"/></svg></div>
+      <div class="compare-cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-no"><path d="M6 6l12 12M6 18L18 6"/></svg></div>
+      <div class="compare-cell"><span class="icon-mid">Vibes</span></div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Live tracking</div>
+      <div class="compare-cell us"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-yes"><path d="M5 12l5 5 9-9"/></svg></div>
+      <div class="compare-cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-no"><path d="M6 6l12 12M6 18L18 6"/></svg></div>
+      <div class="compare-cell"><span class="icon-mid">Manual</span></div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Public win/loss record</div>
+      <div class="compare-cell us"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-yes"><path d="M5 12l5 5 9-9"/></svg></div>
+      <div class="compare-cell"><span class="icon-mid">Cherry-picked</span></div>
+      <div class="compare-cell">It's just you</div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Time to a pick</div>
+      <div class="compare-cell us"><b>10 seconds</b></div>
+      <div class="compare-cell">Wait for DM</div>
+      <div class="compare-cell">2–3 hours</div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-cell k">Cost</div>
+      <div class="compare-cell us"><b style="color:var(--accent)">$39.99/mo</b></div>
+      <div class="compare-cell">$50–$500/mo</div>
+      <div class="compare-cell">Free (your time)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TESTIMONIALS                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="eyebrow-block">
+    <div class="kicker" data-reveal>WHAT PEOPLE SAY</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">UP <em>BIG.</em></h2>
+    <p class="lead" data-reveal data-reveal-delay="3">From hobbyists to high-stakes — what early users are doing with Pick6.</p>
+  </div>
+  <div class="quotes">
+    <div class="quote" data-reveal>
+      <div class="quote-stat">+$340</div>
+      <p class="quote-text">"Up $340 in my first week. Cancelled my $200/mo tipster the next day. The AI confidence scores tell you when to step on the gas — and when to fold."</p>
+      <div class="quote-attrib">
+        <div class="quote-avatar" style="background: linear-gradient(135deg, #f472b6, #db2777);">JK</div>
+        <div>
+          <div class="quote-name">James K.</div>
+          <div class="quote-loc">Sacramento, CA</div>
+        </div>
+        <span class="quote-stars">★★★★★</span>
+      </div>
+    </div>
+    <div class="quote" data-reveal data-reveal-delay="2">
+      <div class="quote-stat">73% W</div>
+      <p class="quote-text">"I've tried every picks service. Pick6 is the only one that publishes losses too. That's how you know the wins are real. Hit 73% across 142 NBA picks last month."</p>
+      <div class="quote-attrib">
+        <div class="quote-avatar" style="background: linear-gradient(135deg, #60a5fa, #2563eb);">MR</div>
+        <div>
+          <div class="quote-name">Marcus R.</div>
+          <div class="quote-loc">Brooklyn, NY</div>
+        </div>
+        <span class="quote-stars">★★★★★</span>
+      </div>
+    </div>
+    <div class="quote" data-reveal data-reveal-delay="3">
+      <div class="quote-stat">+12.8u</div>
+      <p class="quote-text">"Live tracking is the killer feature. The win-probability bar updates in real time. Saved me from chasing losses on 3 different games already this week."</p>
+      <div class="quote-attrib">
+        <div class="quote-avatar" style="background: linear-gradient(135deg, #fb923c, #ea580c);">SP</div>
+        <div>
+          <div class="quote-name">Sara P.</div>
+          <div class="quote-loc">Austin, TX</div>
+        </div>
+        <span class="quote-stars">★★★★★</span>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ════════════════════════════════════════════════════════════ -->
 <!-- PRICING                                                       -->
@@ -1137,7 +1467,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   <div class="eyebrow-block">
     <div class="kicker" data-reveal>PRICING</div>
     <h2 class="display" data-reveal data-reveal-delay="2">7 DAYS <em>FREE.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Then $39.99/mo. Unlimited picks, live tracking, all 9 sports. Cancel anytime.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Then $39.99/mo. Unlimited picks, live tracking, all 9 sports. Cancel anytime — no questions asked.</p>
   </div>
   <div class="pricing" data-reveal data-reveal-delay="2">
     <div class="plan-toggle">
@@ -1148,7 +1478,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
       <h3>Pro · All-Access</h3>
       <div class="sub">Everything Pick6 has to offer</div>
       <div class="price"><span class="cur">$</span><span data-price>39.99</span><span class="per" data-per>/mo</span></div>
-      <div class="billed" data-billed>Billed monthly · Best value</div>
+      <div class="billed" data-billed>Billed monthly · Cancel anytime</div>
       <ul>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Unlimited AI picks across <b>all 9 sports</b></span></li>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Live tracking</b> with confidence scores</span></li>
@@ -1156,7 +1486,43 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Full P&L history & analytics</span></li>
       </ul>
       <a class="plan-cta" href="#download">Start 7-Day Free Trial</a>
-      <div class="trial">Cancel anytime · No commitment</div>
+      <div class="trial">No credit card required · Cancel anytime</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- FAQ                                                           -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section tight" id="faq">
+  <div class="eyebrow-block">
+    <div class="kicker" data-reveal>FAQ</div>
+    <h2 class="display" data-reveal data-reveal-delay="2">QUESTIONS, <em>ANSWERED.</em></h2>
+  </div>
+  <div class="faq">
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">Is this legal? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">Pick6 provides AI-driven sports analysis and predictions. We don't take or place bets — we just show you what the model thinks. You bet (or don't) on whatever sportsbook is legal in your state. Must be 21+.</div></div>
+    </div>
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">How is this different from a tipster on Telegram? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">Three things: (1) every pick is published — wins <em>and</em> losses, no cherry-picking; (2) it's an AI model trained on 1.2M historical games, not someone's gut; (3) you get unlimited picks across 9 sports for $39.99/mo, not $200+ for one sport.</div></div>
+    </div>
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">Do I have to bet on every pick? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">No. The confidence score (0–100%) tells you which picks the AI is sure about. Most users only act on picks above 75% confidence. Bet what you're comfortable with — or just track them and watch.</div></div>
+    </div>
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">What if the AI loses? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">It will. Even a 65% hit rate means losing 35% of the time. We track every loss publicly. The edge is over volume — bet small per pick, follow the confidence scores, and the model's been profitable across 11,000+ tracked picks since 2023.</div></div>
+    </div>
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">Can I cancel? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">Yes — one tap in the app. No questions, no retention calls, no "are you sure?" loops. If you cancel during your 7-day free trial, you're not charged a cent.</div></div>
+    </div>
+    <div class="faq-item" data-reveal>
+      <button class="faq-q">How accurate is the AI, really? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">72% hit rate over the last 30 days, +3.8% average closing-line value (CLV), and +18.4 units up over the last 7 days at -110 odds. Full live ledger is in the app — every pick, every result, no edits.</div></div>
     </div>
   </div>
 </section>
@@ -1190,6 +1556,9 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   </div>
 </footer>
 
+<!-- Mobile sticky CTA -->
+<a href="#download" class="sticky-cta">START 7-DAY FREE TRIAL →</a>
+
 <script>
 (() => {
   // Reveal on scroll
@@ -1205,9 +1574,10 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
 
   // Counter animations
   const animateCount = (el) => {
-    const target = parseFloat(el.dataset.counter);
+    const targetStr = el.dataset.counter;
+    const target = parseFloat(targetStr);
+    const isFloat = targetStr.includes('.');
     const suffix = el.dataset.suffix || '';
-    const isFloat = String(target).includes('.') || (suffix && /[a-z]/i.test(suffix));
     const duration = 1400;
     const start = performance.now();
     const tick = (now) => {
@@ -1226,22 +1596,91 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
   }, { threshold: 0.5 });
   document.querySelectorAll('[data-counter]').forEach(el => counterObs.observe(el));
 
-  // Animate confidence ring on view
-  const ringObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const ring = e.target.querySelector('.ring-anim');
-        if (ring) {
-          // 326.73 - 326.73 * 0.84 = 52.28
-          ring.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(0.22, 1, 0.36, 1)';
-          ring.style.strokeDashoffset = '52.28';
-        }
-      }
-    });
-  }, { threshold: 0.5 });
-  document.querySelectorAll('.feature').forEach(el => ringObs.observe(el));
+  // ─── Live AI feed (auto-prepending rows) ─────────────────
+  const FEED_DATA = [
+    { time: '9:42 AM', sport: 'NBA',    pick: 'Celtics −6.5',         line: 'vs Lakers',     conf: 84, status: 'live' },
+    { time: '9:18 AM', sport: 'EPL',    pick: 'BTTS YES',              line: 'LIV vs TOT',    conf: 78, status: 'live' },
+    { time: '8:55 AM', sport: 'MLB',    pick: 'Yankees ML',            line: 'vs Dodgers',    conf: 71, status: 'pending' },
+    { time: '8:34 AM', sport: 'UFC',    pick: 'Makhachev SUB',         line: 'vs Volkanovski',conf: 91, status: 'cashed' },
+    { time: '8:12 AM', sport: 'NHL',    pick: 'Oilers PL +1.5',        line: 'vs Rangers',    conf: 76, status: 'cashed' },
+    { time: '7:48 AM', sport: 'F1',     pick: 'Verstappen P1',         line: 'Monaco GP',     conf: 88, status: 'pending' },
+    { time: '7:22 AM', sport: 'TENNIS', pick: 'Alcaraz −1.5 sets',    line: 'vs Sinner',     conf: 73, status: 'cashed' },
+    { time: '7:01 AM', sport: 'EPL',    pick: 'Arsenal ML',            line: 'vs Chelsea',    conf: 82, status: 'cashed' },
+    { time: '6:38 AM', sport: 'NBA',    pick: 'Suns OVER 224.5',      line: 'vs Warriors',   conf: 69, status: 'missed' },
+    { time: '6:14 AM', sport: 'MLB',    pick: 'Red Sox −1.5',         line: 'vs Orioles',    conf: 75, status: 'cashed' },
+    { time: '5:52 AM', sport: 'NBA',    pick: 'Doncic OVER 32.5 pts', line: 'vs Pelicans',   conf: 80, status: 'cashed' },
+    { time: '5:30 AM', sport: 'EPL',    pick: 'Man City −1.5',        line: 'vs Brighton',   conf: 86, status: 'cashed' },
+    { time: '5:08 AM', sport: 'NHL',    pick: 'Bruins ML',             line: 'vs Sabres',     conf: 72, status: 'cashed' },
+    { time: '4:41 AM', sport: 'UFC',    pick: 'Whittaker DEC',         line: 'vs Aliskerov',  conf: 70, status: 'missed' },
+    { time: '4:15 AM', sport: 'CRICKET',pick: 'MUM −5.5',              line: 'vs CSK',        conf: 77, status: 'cashed' },
+    { time: '3:48 AM', sport: 'NBA',    pick: 'Bucks ML',              line: 'vs Pacers',     conf: 81, status: 'cashed' },
+  ];
+  const STATUS_LABEL = { cashed: 'CASHED ✓', live: '● IN PLAY', pending: '○ PENDING', missed: 'MISSED' };
+  const STATUS_CLASS = { cashed: 'fs-cashed', live: 'fs-live', pending: 'fs-pending', missed: 'fs-missed' };
 
-  // Pricing toggle
+  const feedList = document.getElementById('feedList');
+  const renderRow = (item, isNew = false) => {
+    const row = document.createElement('div');
+    row.className = 'feed-row' + (isNew ? ' new' : '');
+    row.innerHTML = `
+      <div class="feed-time">${item.time}</div>
+      <div class="feed-sport">${item.sport}</div>
+      <div class="feed-pick">${item.pick} <small>${item.line}</small></div>
+      <div class="feed-conf">${item.conf}<span style="font-size:11px;color:var(--mute)">%</span></div>
+      <div class="feed-status ${STATUS_CLASS[item.status]}">${STATUS_LABEL[item.status]}</div>
+    `;
+    return row;
+  };
+  if (feedList) {
+    // Initial fill
+    FEED_DATA.slice(0, 8).forEach(item => feedList.appendChild(renderRow(item)));
+    // Cycle: every 4s, prepend a "new" pick (cycling through the dataset)
+    let cursor = 8;
+    const cycleNew = () => {
+      const item = { ...FEED_DATA[cursor % FEED_DATA.length] };
+      // Generate a fresh "just now" timestamp
+      const now = new Date();
+      const hh = ((now.getHours() + 11) % 12) + 1;
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+      item.time = `${hh}:${mm} ${ampm}`;
+      // For freshest entries we want them to look "live" or "pending"
+      item.status = Math.random() > 0.5 ? 'live' : 'pending';
+      const row = renderRow(item, true);
+      feedList.insertBefore(row, feedList.firstChild);
+      // Trim to keep height stable
+      while (feedList.children.length > 9) {
+        feedList.lastChild.remove();
+      }
+      cursor++;
+    };
+    // Pause when offscreen
+    let timer = null;
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          timer = setInterval(cycleNew, 4000);
+        } else {
+          clearInterval(timer); timer = null;
+        }
+      });
+    }, { threshold: 0.2 });
+    obs.observe(feedList);
+  }
+  // Live clock for feed header
+  const updateClock = () => {
+    const el = document.getElementById('feedClock');
+    if (!el) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    el.textContent = `${hh}:${mm}:${ss} · LIVE`;
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ─── Pricing toggle ───────────────────────────────────────
   const PLANS = {
     weekly:  { price: '14.99', per: '/wk', billed: 'Billed weekly · Cancel anytime' },
     monthly: { price: '39.99', per: '/mo', billed: 'Billed monthly · Best value'    },
@@ -1260,7 +1699,18 @@ h2.display { font-size: clamp(40px, 5.5vw, 72px); }
     });
   });
 
-  // Smooth-scroll for anchors
+  // ─── FAQ accordion ────────────────────────────────────────
+  document.querySelectorAll('.faq-item').forEach(item => {
+    const q = item.querySelector('.faq-q');
+    q.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      // Close all others
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // ─── Smooth scroll for anchors ────────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       const id = a.getAttribute('href');
