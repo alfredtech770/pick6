@@ -1045,7 +1045,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 @media (max-width: 920px) {
   .hero {
     grid-template-columns: 1fr;
-    gap: 64px;
+    gap: 56px;
     padding-top: calc(var(--ticker-h) + var(--nav-h) + 56px);
     text-align: center;
   }
@@ -1053,32 +1053,120 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   .cta-row { justify-content: center; }
   .trust-strip { justify-content: center; }
   .nav-links { display: none; }
-  .receipts-grid, .steps, .quotes { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
-  .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
-  .stats-strip .stat-num { font-size: 48px; }
-  .compare-row { grid-template-columns: 1.2fr 1fr 1fr 1fr; }
-  .compare-cell { padding: 14px 12px; font-size: 12px; }
-  .compare-cell.us-head .nm, .compare-cell.them-head { font-size: 16px; }
-  .feed-row { grid-template-columns: 60px 50px 1fr 60px 90px; gap: 8px; padding: 12px 16px; font-size: 11px; }
-  .feed-pick { font-size: 11px; }
-  .feed-conf { font-size: 14px; }
-  .sticky-cta { display: block; }
-}
-@media (max-width: 560px) {
-  .section { padding: 80px 20px; }
-  .nav { padding: 0 20px; }
-  .hero { padding: calc(var(--ticker-h) + var(--nav-h) + 40px) 20px 56px; }
-  .hero-card { max-width: 380px; padding: 26px 22px 22px; }
-  .hero-card .hc-h { font-size: 38px; }
-  .hero-card .hc-ring { width: 84px; height: 84px; }
-  .hero-card .hc-ring .num b { font-size: 28px; }
+  /* Hero stat-chips can clip on tablets — hide them once stacked */
   .hc-chip { display: none; }
-  .feed-list { height: 320px; }
-  .feed-row { grid-template-columns: 50px 1fr 80px; }
-  .feed-row .feed-sport, .feed-row .feed-conf { display: none; }
-  .compare-row { grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr; }
-  .compare-cell { padding: 12px 8px; font-size: 11px; }
-  .final-cta { padding: 80px 20px 40px; }
+  .receipts-grid, .steps, .quotes { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; padding: 40px 24px; }
+  .stats-strip .stat-num { font-size: 48px; }
+  /* Live feed: keep all 5 columns, just shrink */
+  .feed-row { grid-template-columns: 60px 48px 1fr 50px 86px; gap: 8px; padding: 12px 16px; font-size: 12px; }
+  .feed-pick { font-size: 12px; }
+  .feed-pick small { display: block; margin-left: 0; margin-top: 2px; }
+  .feed-conf { font-size: 16px; }
+  .feed-status { font-size: 9px; padding: 3px 6px; }
+  /* Sticky CTA appears — leave room for it at the bottom of the page */
+  .sticky-cta { display: block; }
+  body { padding-bottom: 76px; }
+}
+
+/* ─── Comparison: convert to stacked cards on mobile ──────── */
+@media (max-width: 760px) {
+  .compare {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+  /* Header row reformatted: one wide row with the 3 column titles only */
+  .compare-row.head {
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--panel);
+  }
+  .compare-row.head .compare-cell.k { display: none; }
+  .compare-cell {
+    padding: 12px 10px;
+    font-size: 12px;
+    border-right: 1px solid var(--line);
+    border-bottom: none;
+    text-align: center;
+  }
+  .compare-cell:last-child { border-right: none; }
+  .compare-cell.us-head .nm, .compare-cell.them-head { font-size: 14px; }
+  .compare-cell.us-head { align-items: center; }
+  .compare-cell.us-head .badge { font-size: 8px; padding: 2px 5px; }
+  /* Each non-header row: full-width key label across the top, then 3 cells below */
+  .compare-row:not(.head) {
+    grid-template-columns: 1fr;
+  }
+  .compare-row:not(.head) .compare-cell.k {
+    grid-column: 1 / -1;
+    text-align: left;
+    padding: 12px 16px 8px;
+    font-size: 10px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,0.02);
+  }
+  .compare-row:not(.head) .compare-cell:not(.k) {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 14px 8px;
+    border-top: none;
+  }
+  /* Use a wrapper grid for the 3 value cells in each row */
+  .compare-row:not(.head) {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+      "k k k"
+      "us them1 them2";
+  }
+  .compare-row:not(.head) .compare-cell.k { grid-area: k; }
+  .compare-row:not(.head) .compare-cell.us { grid-area: us; }
+  .compare-row:not(.head) .compare-cell:nth-child(3) { grid-area: them1; border-right: 1px solid var(--line); }
+  .compare-row:not(.head) .compare-cell:nth-child(4) { grid-area: them2; }
+  .compare-cell.us {
+    background: rgba(212,255,58,0.05);
+    border-right: 1px solid rgba(212,255,58,0.18);
+  }
+}
+
+@media (max-width: 560px) {
+  .section { padding: 72px 20px; }
+  .section.tight { padding: 56px 20px; }
+  .nav { padding: 0 20px; }
+  .hero { padding: calc(var(--ticker-h) + var(--nav-h) + 32px) 20px 48px; gap: 48px; }
+  h1.display { font-size: clamp(48px, 13vw, 72px); }
+  h2.display { font-size: clamp(36px, 11vw, 56px); }
+  .hero-card { max-width: 360px; padding: 24px 20px 20px; }
+  .hero-card .hc-h { font-size: clamp(34px, 9vw, 42px); }
+  .hero-card .hc-body { gap: 14px; }
+  .hero-card .hc-ring { width: 80px; height: 80px; }
+  .hero-card .hc-ring .num b { font-size: 26px; }
+  .hero-card .hc-ring .num b i { font-size: 14px; }
+  .feed-list { height: 380px; }
+  .feed-row { grid-template-columns: 54px 1fr 70px; gap: 8px; padding: 12px 14px; font-size: 11px; }
+  .feed-row .feed-sport { display: none; }
+  /* Move conf into the pick cell on the smallest screens */
+  .feed-conf { display: none; }
+  .feed-pick::after {
+    content: " · " attr(data-conf) "%";
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 11px;
+  }
+  .compare-cell { padding: 12px 6px; font-size: 11px; }
+  .compare-cell.us-head .nm, .compare-cell.them-head { font-size: 13px; }
+  .final-cta { padding: 72px 20px 40px; }
+  .stats-strip .stat-num { font-size: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1625,7 +1713,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     row.innerHTML = `
       <div class="feed-time">${item.time}</div>
       <div class="feed-sport">${item.sport}</div>
-      <div class="feed-pick">${item.pick} <small>${item.line}</small></div>
+      <div class="feed-pick" data-conf="${item.conf}">${item.pick} <small>${item.line}</small></div>
       <div class="feed-conf">${item.conf}<span style="font-size:11px;color:var(--mute)">%</span></div>
       <div class="feed-status ${STATUS_CLASS[item.status]}">${STATUS_LABEL[item.status]}</div>
     `;
