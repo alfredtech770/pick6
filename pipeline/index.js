@@ -662,7 +662,13 @@ cron.schedule('* * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-cron.schedule('0 10,14,18,22 * * *', runPipeline, { timezone: TZ });
+// Pick generation 3× daily — morning, afternoon, night.
+// 9am  → catches all afternoon starts (MLB, EPL, NHL day games)
+// 3pm  → catches evening starts + late injury/lineup news
+// 9pm  → catches west-coast late games + UFC main cards
+cron.schedule('0 9,15,21 * * *', runPipeline, { timezone: TZ });
+
+// Daily performance snapshot at midnight ET (after final games grade)
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 
 runPipeline();
@@ -673,5 +679,5 @@ log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
 log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
 log(`   Timezone: ${TZ}`);
 log('   Live scores: every 60s during game hours');
-log('   AI picks:    10am, 2pm, 6pm, 10pm ET');
+log('   AI picks:    9am, 3pm, 9pm ET (3× daily)');
 log('   Snapshot:    midnight ET');
