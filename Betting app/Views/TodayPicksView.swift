@@ -256,7 +256,7 @@ struct TodayPicksView: View {
             Text("Picks generating...")
                 .font(.headline)
                 .foregroundColor(.white)
-            Text("New picks drop 3× daily — 9am, 3pm, 9pm ET")
+            Text("New picks drop 3× daily — 5am, 12pm, 7pm ET")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
