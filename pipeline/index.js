@@ -380,12 +380,15 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const stats7 = await getPerformanceStats(league, 7);
   const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch);
 
+  // max_tokens=32000 + effort=high: gives the agentic web_search loop
+  // enough headroom to think AND emit the final JSON. effort=max +
+  // 16k was burning all output on reasoning, leaving no text block.
   const stream = anthropic.messages.stream({
     model: ANTHROPIC_MODEL,
-    max_tokens: 16000,
+    max_tokens: 32000,
     thinking: { type: 'adaptive' },
     output_config: {
-      effort: 'max',
+      effort: 'high',
       format: { type: 'json_schema', schema: PICK_SCHEMA },
     },
     tools: [
@@ -410,7 +413,8 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
 
   const text = final.content.find((b) => b.type === 'text')?.text;
   if (!text) {
-    err(`Claude ${league}: no text block in response`);
+    const blockTypes = final.content.map((b) => b.type).join(',');
+    err(`Claude ${league}: no text block. stop_reason=${final.stop_reason} blocks=[${blockTypes}]`);
     return [];
   }
 
