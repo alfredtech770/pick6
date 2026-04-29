@@ -17,16 +17,23 @@ struct TodayPicksView: View {
             ScrollView {
                 VStack(spacing: 20) {
 
-                    // Header
+                    // Header — date + streak + live indicator
                     headerSection
 
-                    // Stats bar
+                    // Stats bar — wins / losses / win rate / pending (30-day)
                     statsBar
+
+                    // Yesterday's results card (only when there's data)
+                    if !vm.filteredYesterdayPicks.isEmpty {
+                        yesterdayCard
+                    }
 
                     // Sport filter
                     sportFilter
 
-                    // Picks list
+                    // Today's picks list
+                    todaySectionHeader
+
                     if vm.isLoading {
                         ProgressView()
                             .tint(Color(hex: "#22C55E"))
@@ -50,7 +57,7 @@ struct TodayPicksView: View {
 
     // MARK: - Header
     var headerSection: some View {
-        HStack {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("TODAY'S PICKS")
                     .font(.caption)
@@ -65,6 +72,11 @@ struct TodayPicksView: View {
             }
             Spacer()
 
+            // Streak badge — visible when there's a current streak
+            if vm.currentStreak > 0 {
+                streakBadge
+            }
+
             // Live indicator
             HStack(spacing: 6) {
                 Circle()
@@ -78,6 +90,101 @@ struct TodayPicksView: View {
             }
         }
         .padding(.horizontal)
+    }
+
+    // MARK: - Streak badge
+    var streakBadge: some View {
+        HStack(spacing: 4) {
+            Text("🔥")
+                .font(.system(size: 14))
+            Text("\(vm.currentStreak)")
+                .font(.caption)
+                .fontWeight(.black)
+                .foregroundColor(Color(hex: "#FF8000"))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Color(hex: "#FF8000").opacity(0.12))
+        .overlay(
+            Capsule().stroke(Color(hex: "#FF8000").opacity(0.4), lineWidth: 1)
+        )
+        .clipShape(Capsule())
+    }
+
+    // MARK: - Yesterday's results
+    var yesterdayCard: some View {
+        let wins = vm.yesterdayWins
+        let losses = vm.yesterdayLosses
+        let pending = vm.filteredYesterdayPicks.filter { $0.isPending }.count
+        let total = wins + losses
+        let rate = vm.yesterdayWinRate
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("YESTERDAY")
+                    .font(.caption2)
+                    .fontWeight(.black)
+                    .kerning(2)
+                    .foregroundColor(.gray)
+                Spacer()
+                if let r = rate {
+                    Text(String(format: "%.0f%% win rate", r))
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(r >= 60 ? Color(hex: "#22C55E") : Color(hex: "#FF8000"))
+                }
+            }
+
+            HStack(spacing: 12) {
+                yesterdayChip(value: "\(wins)", label: total == 1 ? "Win" : "Wins", color: "#22C55E")
+                yesterdayChip(value: "\(losses)", label: losses == 1 ? "Loss" : "Losses", color: "#FF4444")
+                if pending > 0 {
+                    yesterdayChip(value: "\(pending)", label: "Pending", color: "#6B7280")
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(hex: "#0f1117"))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal)
+    }
+
+    func yesterdayChip(value: String, label: String, color: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.title3)
+                .fontWeight(.black)
+                .foregroundColor(Color(hex: color))
+            Text(label.uppercased())
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .kerning(1)
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - "Today's picks" section header
+    var todaySectionHeader: some View {
+        HStack {
+            Text("TODAY")
+                .font(.caption2)
+                .fontWeight(.black)
+                .kerning(2)
+                .foregroundColor(.gray)
+            Spacer()
+            if vm.totalPending > 0 {
+                Text("\(vm.totalPending) pending")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 4)
     }
 
     // MARK: - Stats Bar
@@ -149,7 +256,7 @@ struct TodayPicksView: View {
             Text("Picks generating...")
                 .font(.headline)
                 .foregroundColor(.white)
-            Text("New picks drop at 10am, 2pm, 6pm and 10pm")
+            Text("New picks drop 3× daily — 9am, 3pm, 9pm ET")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
