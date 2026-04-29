@@ -29,8 +29,12 @@ class PicksViewModel: ObservableObject {
         return d
     }()
 
-    // Sports filter options
-    let sports = ["all", "basketball", "hockey", "soccer", "tennis", "mma"]
+    // Sports filter options — match the 8 sports the AI pipeline writes.
+    let sports = [
+        "all",
+        "basketball", "soccer", "baseball", "football",
+        "combat",     "f1",     "tennis",   "hockey",
+    ]
 
     // Filtered picks based on selected sport
     var filteredPicks: [Pick] {

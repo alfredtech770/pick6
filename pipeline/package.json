@@ -1,0 +1,21 @@
+{
+  "name": "pick6-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI prediction pipeline for the Pick6 app — fetches games, asks Claude for picks, writes to Supabase.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "once": "node -e \"require('./index.js')\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "node-cron": "^3.0.3"
+  }
+}
