@@ -734,3 +734,32 @@ log(`   Timezone: ${TZ}`);
 log('   Live scores: every 60s during game hours');
 log('   AI picks:    5am, 12pm, 7pm ET (3× daily, optimized for EU + US slates)');
 log('   Snapshot:    midnight ET');
+
+// ─── Boot-time Supabase diagnostic (safe — no secrets logged) ──
+(async () => {
+  try {
+    const url = process.env.SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
+    const urlHost = url.replace(/^https?:\/\//, '').split('/')[0] || '(unset)';
+    const keyLen = key.length;
+    const keyHead = key.slice(0, 4);
+    const keyTail = key.slice(-4);
+    let jwtRef = '(not-jwt)';
+    let jwtRole = '(not-jwt)';
+    try {
+      const payload = JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString('utf8'));
+      jwtRef = payload.ref || '(no-ref-claim)';
+      jwtRole = payload.role || '(no-role-claim)';
+    } catch (_) { /* not a JWT */ }
+    log(`🔎 Supabase diag: url_host=${urlHost} key_len=${keyLen} key_head=${keyHead} key_tail=${keyTail} jwt_ref=${jwtRef} jwt_role=${jwtRole}`);
+    // Live REST round-trip
+    const test = await axios.get(`${url}/rest/v1/picks?select=id&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      timeout: 10000,
+      validateStatus: () => true,
+    });
+    log(`🔎 Supabase REST test: status=${test.status} body=${JSON.stringify(test.data).slice(0, 200)}`);
+  } catch (e) {
+    err('Supabase diag failed:', e.message);
+  }
+})();
