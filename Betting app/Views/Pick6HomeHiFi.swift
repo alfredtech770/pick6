@@ -55,13 +55,17 @@ extension Font {
 // MARK: - Root
 
 struct Pick6HomeHiFi: View {
-    enum Tab: Hashable { case home, picks, profile }
+    enum Tab: Hashable { case home, picks, live, profile }
     @State private var tab: Tab = .home
+    @State private var detailPick: Pick?           // game-card tap → detail sheet
+    @State private var sportHub: String?           // sport-chip tap → hub sheet
+    @State private var showPaywall: Bool = false
+    @State private var showWins: Bool = false
     @StateObject private var vm = PicksViewModel()
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Dark canvas with subtle radial bloom (matches HTML body bg)
+            // Dark canvas with subtle radial bloom
             Color(hex: "#07080a").ignoresSafeArea()
             RadialGradient(
                 colors: [Color(hex: "#1a1c21").opacity(0.9), .clear],
@@ -81,36 +85,97 @@ struct Pick6HomeHiFi: View {
             // Content per tab
             Group {
                 switch tab {
-                case .home:    HomeHiFiContent(vm: vm)
-                case .picks:   TodayPicksView()
-                case .profile: ProfilePlaceholder()
+                case .home:
+                    HomeHiFiContent(vm: vm,
+                                    onTapPick: { detailPick = $0 },
+                                    onTapSport: { sportHub = $0 })
+                case .picks:
+                    AllPicksView(vm: vm, onTapPick: { detailPick = $0 })
+                case .live:
+                    LiveView(vm: vm, onTapPick: { detailPick = $0 })
+                case .profile:
+                    ProfileView(vm: vm,
+                                onShowWins: { showWins = true },
+                                onShowPaywall: { showPaywall = true },
+                                onSignOut: { /* hook to AuthManager later */ })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            FloatingNav(tab: $tab)
+            FloatingNav(tab: $tab, liveCount: liveCount)
                 .padding(.bottom, 14)
         }
         .preferredColorScheme(.dark)
-        .task {
-            await vm.startLiveSession()
+        .task { await vm.startLiveSession() }
+        .sheet(item: $detailPick) { pick in
+            MatchDetailView(pick: pick,
+                            liveScore: liveScore(for: pick),
+                            onClose: { detailPick = nil })
+        }
+        .sheet(item: Binding(
+            get: { sportHub.map { SportHubID(id: $0) } },
+            set: { sportHub = $0?.id }
+        )) { id in
+            SportHubView(sport: id.id, vm: vm,
+                         onClose: { sportHub = nil },
+                         onTapPick: { p in
+                            sportHub = nil
+                            detailPick = p
+                         })
+        }
+        .sheet(isPresented: $showPaywall) {
+            OBPaywallScreen(
+                onBack: { showPaywall = false },
+                onSubscribe: { _ in showPaywall = false },
+                onSkip: { showPaywall = false }
+            )
+        }
+        .sheet(isPresented: $showWins) {
+            WinsView(vm: vm,
+                     onClose: { showWins = false },
+                     onTapPick: { p in
+                        showWins = false
+                        detailPick = p
+                     })
         }
     }
+
+    private var liveCount: Int {
+        vm.todayPicks.filter { p in
+            guard let gid = p.gameId,
+                  let s = vm.liveScores.first(where: { $0.gameId == gid })
+            else { return false }
+            return s.isLive
+        }.count
+    }
+
+    private func liveScore(for pick: Pick) -> LiveScore? {
+        guard let gid = pick.gameId else { return nil }
+        return vm.liveScores.first { $0.gameId == gid }
+    }
 }
+
+/// Identifiable wrapper so we can drive a sheet from an Optional<String>.
+private struct SportHubID: Identifiable { let id: String }
 
 // MARK: - Home content
 
 struct HomeHiFiContent: View {
     @ObservedObject var vm: PicksViewModel
+    let onTapPick: (Pick) -> Void
+    let onTapSport: (String) -> Void
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                if let top = topPick {
-                    HeroCard(pick: top, isLive: isLive(top))
-                } else {
-                    HeroCard.empty
+                Button(action: { if let t = topPick { onTapPick(t) } }) {
+                    if let top = topPick {
+                        HeroCard(pick: top, isLive: isLive(top))
+                    } else {
+                        HeroCard.empty
+                    }
                 }
+                .buttonStyle(.plain)
 
                 StatsRow(streak: vm.currentStreak,
                          best: vm.longestStreak,
@@ -119,7 +184,7 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                SportFilter(vm: vm)
+                SportFilter(vm: vm, onLongPress: { onTapSport($0) })
                     .padding(.top, 4)
 
                 SectionHeader(title: "TODAY'S GAMES",
@@ -135,9 +200,12 @@ struct HomeHiFiContent: View {
                         EmptyTodayState()
                             .padding(.top, 40)
                     } else {
-                        ForEach(vm.filteredTodayPicks.dropFirst(0).indices, id: \.self) { idx in
+                        ForEach(vm.filteredTodayPicks.indices, id: \.self) { idx in
                             let pick = vm.filteredTodayPicks[idx]
-                            GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                            Button { onTapPick(pick) } label: {
+                                GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -721,6 +789,8 @@ struct SparklineView: View {
 
 struct SportFilter: View {
     @ObservedObject var vm: PicksViewModel
+    /// Optional long-press handler — used by Home to push a sport hub.
+    var onLongPress: ((String) -> Void)? = nil
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -735,6 +805,9 @@ struct SportFilter: View {
                               icon: sportIcon(sport),
                               isActive: vm.selectedSport == sport) {
                         vm.selectedSport = sport
+                    }
+                    .onLongPressGesture(minimumDuration: 0.4) {
+                        onLongPress?(sport)
                     }
                 }
             }
@@ -1064,6 +1137,7 @@ struct MiniRing: View {
 
 struct FloatingNav: View {
     @Binding var tab: Pick6HomeHiFi.Tab
+    let liveCount: Int
 
     var body: some View {
         HStack(spacing: 2) {
@@ -1071,6 +1145,8 @@ struct FloatingNav: View {
                     isActive: tab == .home) { tab = .home }
             NavItem(icon: "sparkles", label: "Picks",
                     isActive: tab == .picks) { tab = .picks }
+            NavItem(icon: "dot.radiowaves.left.and.right", label: "Live",
+                    isActive: tab == .live, badge: liveCount > 0 ? "\(liveCount)" : nil) { tab = .live }
             NavItem(icon: "person.fill", label: "Profile",
                     isActive: tab == .profile) { tab = .profile }
         }
@@ -1092,20 +1168,32 @@ struct NavItem: View {
     let icon: String
     let label: String
     let isActive: Bool
+    var badge: String? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
+            HStack(spacing: 6) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .medium))
+                    if let b = badge {
+                        Text(b)
+                            .font(.mono(8, weight: .heavy))
+                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Color(hex: "#FF5A36")))
+                            .offset(x: 8, y: -6)
+                    }
+                }
                 if isActive {
                     Text(label)
                         .font(.archivo(13, weight: .bold))
                 }
             }
             .foregroundColor(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#6E6F75"))
-            .padding(.horizontal, isActive ? 18 : 14)
+            .padding(.horizontal, isActive ? 16 : 12)
             .padding(.vertical, 10)
             .background(
                 Capsule()
@@ -1138,24 +1226,6 @@ struct EmptyTodayState: View {
     }
 }
 
-struct ProfilePlaceholder: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "person.crop.circle")
-                .font(.system(size: 72))
-                .foregroundColor(Color(hex: "#6E6F75"))
-            Text("PROFILE")
-                .font(.anton(36))
-                .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("Coming soon")
-                .font(.archivo(13))
-                .foregroundColor(Color(hex: "#6E6F75"))
-            Spacer().frame(height: 140)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
 
 // MARK: - Preview
 
