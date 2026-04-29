@@ -1,0 +1,1165 @@
+// Pick6HomeHiFi.swift
+// "Home Hi-Fi" main screen — implements the design from
+// `pick6/project/Pick6 Home HiFi.html` (Anton-driven, lime accent,
+// scoreboard-bold). Replaces the old Pick6MainView as the post-onboarding
+// landing screen.
+//
+// Wires to PicksViewModel:
+//   - top pick           = highest-probability pick in todayPicks
+//   - streak             = vm.currentStreak (consecutive wins from latest settled)
+//   - accuracy           = vm.winRate (% over rolling 30-day history)
+//   - game cards         = vm.todayPicks (filtered by selectedSport)
+//   - LIVE / SCHEDULED   = lookup pick.gameId in vm.liveScores
+
+import SwiftUI
+
+// MARK: - Type stack
+
+extension Font {
+    static func anton(_ size: CGFloat) -> Font {
+        .custom("Anton-Regular", size: size, relativeTo: .body)
+    }
+    static func archivo(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        let name: String
+        switch weight {
+        case .black:       name = "Archivo-Black"
+        case .heavy:       name = "Archivo-ExtraBold"
+        case .bold:        name = "Archivo-Bold"
+        case .semibold:    name = "Archivo-SemiBold"
+        case .medium:      name = "Archivo-Medium"
+        default:           name = "Archivo-Regular"
+        }
+        return .custom(name, size: size).weight(weight)
+    }
+    static func archivoNarrow(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+        let name: String
+        switch weight {
+        case .bold:     name = "ArchivoNarrow-Bold"
+        case .medium:   name = "ArchivoNarrow-Medium"
+        default:        name = "ArchivoNarrow-SemiBold"
+        }
+        return .custom(name, size: size).weight(weight)
+    }
+    static func mono(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        let name: String
+        switch weight {
+        case .heavy:    name = "JetBrainsMono-ExtraBold"
+        case .bold:     name = "JetBrainsMono-Bold"
+        case .medium:   name = "JetBrainsMono-Medium"
+        default:        name = "JetBrainsMono-Regular"
+        }
+        return .custom(name, size: size).weight(weight)
+    }
+}
+
+// MARK: - Root
+
+struct Pick6HomeHiFi: View {
+    enum Tab: Hashable { case home, picks, profile }
+    @State private var tab: Tab = .home
+    @StateObject private var vm = PicksViewModel()
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            // Dark canvas with subtle radial bloom (matches HTML body bg)
+            Color(hex: "#07080a").ignoresSafeArea()
+            RadialGradient(
+                colors: [Color(hex: "#1a1c21").opacity(0.9), .clear],
+                center: .topLeading,
+                startRadius: 0,
+                endRadius: 800
+            )
+            .ignoresSafeArea()
+            RadialGradient(
+                colors: [Color(hex: "#151821").opacity(0.7), .clear],
+                center: UnitPoint(x: 1.05, y: 0.3),
+                startRadius: 0,
+                endRadius: 700
+            )
+            .ignoresSafeArea()
+
+            // Content per tab
+            Group {
+                switch tab {
+                case .home:    HomeHiFiContent(vm: vm)
+                case .picks:   TodayPicksView()
+                case .profile: ProfilePlaceholder()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            FloatingNav(tab: $tab)
+                .padding(.bottom, 14)
+        }
+        .preferredColorScheme(.dark)
+        .task {
+            await vm.startLiveSession()
+        }
+    }
+}
+
+// MARK: - Home content
+
+struct HomeHiFiContent: View {
+    @ObservedObject var vm: PicksViewModel
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                if let top = topPick {
+                    HeroCard(pick: top, isLive: isLive(top))
+                } else {
+                    HeroCard.empty
+                }
+
+                StatsRow(streak: vm.currentStreak,
+                         best: vm.longestStreak,
+                         accuracy: vm.winRate,
+                         pickCount: vm.todayPicks.count)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
+                SportFilter(vm: vm)
+                    .padding(.top, 4)
+
+                SectionHeader(title: "TODAY'S GAMES",
+                              cta: "SEE ALL →")
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+
+                LazyVStack(spacing: 10) {
+                    if vm.isLoading && vm.filteredTodayPicks.isEmpty {
+                        ProgressView().tint(Color(hex: "#D4FF3A"))
+                            .padding(.top, 40)
+                    } else if vm.filteredTodayPicks.isEmpty {
+                        EmptyTodayState()
+                            .padding(.top, 40)
+                    } else {
+                        ForEach(vm.filteredTodayPicks.dropFirst(0).indices, id: \.self) { idx in
+                            let pick = vm.filteredTodayPicks[idx]
+                            GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 120)
+            }
+        }
+    }
+
+    private var topPick: Pick? {
+        // Highest-probability pick from today (already returned ordered desc by API)
+        vm.filteredTodayPicks.max(by: { $0.probability < $1.probability })
+    }
+
+    private func isLive(_ pick: Pick) -> Bool {
+        guard let gid = pick.gameId,
+              let score = vm.liveScores.first(where: { $0.gameId == gid })
+        else { return false }
+        return score.isLive
+    }
+
+    private func liveScore(for pick: Pick) -> LiveScore? {
+        guard let gid = pick.gameId else { return nil }
+        return vm.liveScores.first { $0.gameId == gid }
+    }
+}
+
+// MARK: - Hero card
+
+struct HeroCard: View {
+    let pick: Pick?
+    let isLive: Bool
+
+    static var empty: HeroCard { HeroCard(pick: nil, isLive: false) }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Lime gradient background
+            heroGradient
+                .clipShape(BottomRoundedShape(radius: 32))
+
+            // Subtle diagonal stripe overlay (matches CSS ::before)
+            DiagonalStripe()
+                .clipShape(BottomRoundedShape(radius: 32))
+                .blendMode(.multiply)
+                .opacity(0.08)
+
+            // Top sheen
+            LinearGradient(
+                colors: [Color.white.opacity(0.25), .clear],
+                startPoint: .top,
+                endPoint: .center
+            )
+            .clipShape(BottomRoundedShape(radius: 32))
+            .allowsHitTesting(false)
+
+            VStack(alignment: .leading, spacing: 22) {
+                heroTopBar
+                heroBody
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 56)        // status-bar inset
+            .padding(.bottom, 32)
+        }
+        .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 20, x: 0, y: 20)
+    }
+
+    private var heroGradient: some View {
+        // Radial as in CSS: 140% 120% at 110% -20%, eaff7a → D4FF3A → a8e000
+        ZStack {
+            Color(hex: "#D4FF3A")
+            RadialGradient(
+                colors: [
+                    Color(hex: "#eaff7a"),
+                    Color(hex: "#D4FF3A").opacity(0.0)
+                ],
+                center: UnitPoint(x: 1.1, y: -0.2),
+                startRadius: 30,
+                endRadius: 500
+            )
+            RadialGradient(
+                colors: [.clear, Color(hex: "#a8e000").opacity(0.4)],
+                center: UnitPoint(x: 0.5, y: 1.0),
+                startRadius: 100,
+                endRadius: 500
+            )
+        }
+    }
+
+    private var heroTopBar: some View {
+        HStack(alignment: .center) {
+            Pick6Logo()
+            Spacer()
+            HeroPill()
+        }
+    }
+
+    private var heroBody: some View {
+        HStack(alignment: .bottom, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("★ TOP PICK · TONIGHT")
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundColor(Color.black.opacity(0.6))
+
+                Text(headlineText)
+                    .font(.anton(50))
+                    .lineSpacing(-6)
+                    .tracking(-0.7)
+                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HeroMetaPill(time: timeText, channel: channelText)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                HiFiConfidenceRing(percent: pick?.probability ?? 0,
+                               color: Color(hex: "#0A0B0D"),
+                               trackColor: Color.black.opacity(0.15),
+                               size: 110,
+                               stroke: 6,
+                               numberColor: Color(hex: "#0A0B0D"))
+                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam)
+            }
+            .frame(width: 130)
+        }
+    }
+
+    private var headlineText: String {
+        guard let pick = pick else { return "NO PICKS\nYET" }
+        // "AWAY OVER HOME" if pick is away; "HOME OVER AWAY" if pick is home
+        let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
+            || pick.homeTeam.lowercased().contains(pick.pick.lowercased())
+        let other = pickedHome ? pick.awayTeam : pick.homeTeam
+        return "\(pick.pick.uppercased())\nOVER \(other.uppercased())"
+    }
+
+    private var timeText: String {
+        guard let date = pick?.createdAt else { return "TONIGHT" }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
+    }
+
+    private var channelText: String {
+        guard let pick = pick else { return "" }
+        switch pick.league.uppercased() {
+        case "NBA":  return "TNT"
+        case "NFL":  return "ESPN"
+        case "NHL":  return "ESPN"
+        case "MLB":  return "MLB.TV"
+        case "EPL":  return "PEACOCK"
+        case "UFC":  return "ESPN+"
+        case "ATP":  return "TENNIS"
+        case "F1":   return "F1TV"
+        default:     return ""
+        }
+    }
+}
+
+// Bottom-rounded shape for hero
+struct BottomRoundedShape: Shape {
+    let radius: CGFloat
+    func path(in rect: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: 0, y: 0))
+            p.addLine(to: CGPoint(x: rect.maxX, y: 0))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius))
+            p.addQuadCurve(to: CGPoint(x: rect.maxX - radius, y: rect.maxY),
+                           control: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: radius, y: rect.maxY))
+            p.addQuadCurve(to: CGPoint(x: 0, y: rect.maxY - radius),
+                           control: CGPoint(x: 0, y: rect.maxY))
+            p.closeSubpath()
+        }
+    }
+}
+
+struct DiagonalStripe: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let pitch: CGFloat = 41
+            for x in stride(from: -size.height, through: size.width + size.height, by: pitch) {
+                var path = Path()
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x + size.height, y: size.height))
+                ctx.stroke(path, with: .color(.black.opacity(0.5)), lineWidth: 1)
+            }
+        }
+    }
+}
+
+// MARK: - Hero subviews
+
+struct Pick6Logo: View {
+    var body: some View {
+        HStack(alignment: .lastTextBaseline, spacing: 0) {
+            Text("PICK")
+                .font(.anton(34))
+                .tracking(-0.34)
+                .foregroundColor(Color(hex: "#0A0B0D"))
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(hex: "#0A0B0D"))
+                    .frame(width: 30, height: 30)
+                Text("6")
+                    .font(.anton(22))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .padding(.bottom, 2)
+            }
+            .padding(.leading, 4)
+        }
+    }
+}
+
+struct HeroPill: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Color(hex: "#0A0B0D"))
+                .frame(width: 6, height: 6)
+            Text("AI · LIVE")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2)
+                .foregroundColor(Color(hex: "#0A0B0D"))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.black.opacity(0.12))
+        .overlay(
+            Capsule().stroke(Color.black.opacity(0.2), lineWidth: 1)
+        )
+        .clipShape(Capsule())
+    }
+}
+
+struct HeroMetaPill: View {
+    let time: String
+    let channel: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(time)
+                .font(.mono(12, weight: .bold))
+                .foregroundColor(Color(hex: "#D4FF3A"))
+            if !channel.isEmpty {
+                Circle().fill(Color(hex: "#555555")).frame(width: 3, height: 3)
+                Text(channel)
+                    .font(.archivoNarrow(11, weight: .semibold))
+                    .tracking(1.2)
+                    .foregroundColor(Color(hex: "#BBBBBB"))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(hex: "#0A0B0D"))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+// MARK: - Confidence ring
+
+struct HiFiConfidenceRing: View {
+    let percent: Double
+    let color: Color
+    let trackColor: Color
+    let size: CGFloat
+    let stroke: CGFloat
+    let numberColor: Color
+    let label: String
+
+    init(percent: Double,
+         color: Color,
+         trackColor: Color = Color.white.opacity(0.1),
+         size: CGFloat = 110,
+         stroke: CGFloat = 6,
+         numberColor: Color = .white,
+         label: String = "AI CONF") {
+        self.percent = percent
+        self.color = color
+        self.trackColor = trackColor
+        self.size = size
+        self.stroke = stroke
+        self.numberColor = numberColor
+        self.label = label
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(trackColor, lineWidth: stroke)
+                .frame(width: size, height: size)
+
+            Circle()
+                .trim(from: 0, to: max(0.05, min(1, percent / 100)))
+                .stroke(color, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
+                .frame(width: size, height: size)
+                .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 1.0), value: percent)
+
+            VStack(spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("\(Int(percent.rounded()))")
+                        .font(.anton(36))
+                        .foregroundColor(numberColor)
+                    Text("%")
+                        .font(.archivo(18, weight: .regular))
+                        .foregroundColor(numberColor)
+                }
+                Text(label)
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundColor(numberColor.opacity(0.7))
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+// MARK: - Crests
+
+struct CrestPair: View {
+    let home: String?
+    let away: String?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Crest(team: away ?? "—", size: .small)
+            Text("VS")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(Color.black.opacity(0.55))
+            Crest(team: home ?? "—", size: .small)
+        }
+    }
+}
+
+struct Crest: View {
+    enum Size { case small, big
+        var w: CGFloat { self == .small ? 32 : 52 }
+        var h: CGFloat { self == .small ? 36 : 58 }
+        var fontSize: CGFloat { self == .small ? 12 : 17 }
+    }
+    let team: String
+    let size: Size
+
+    var body: some View {
+        ZStack {
+            CrestShape()
+                .fill(crestColor(for: team))
+                .overlay(
+                    CrestShape()
+                        .fill(LinearGradient(colors: [
+                            Color.white.opacity(0.18),
+                            Color.clear,
+                            Color.black.opacity(0.18)
+                        ], startPoint: .top, endPoint: .bottom))
+                )
+                .overlay(
+                    CrestShape()
+                        .stroke(Color.black.opacity(0.25), lineWidth: 0.8)
+                )
+            Text(crestAbbrev(team))
+                .font(.anton(size.fontSize))
+                .tracking(0.24)
+                .foregroundColor(.white)
+                .padding(.bottom, size == .small ? 4 : 6)
+        }
+        .frame(width: size.w, height: size.h)
+    }
+}
+
+struct CrestShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        return Path { p in
+            // Mirror of CSS clipPath: M 16 1 L 30 5 L 30 20 Q 30 30 16 35 Q 2 30 2 20 L 2 5 Z
+            p.move(to: CGPoint(x: 0.5*w, y: 0.02*h))
+            p.addLine(to: CGPoint(x: 0.96*w, y: 0.14*h))
+            p.addLine(to: CGPoint(x: 0.96*w, y: 0.56*h))
+            p.addQuadCurve(to: CGPoint(x: 0.5*w, y: 0.98*h),
+                           control: CGPoint(x: 0.96*w, y: 0.82*h))
+            p.addQuadCurve(to: CGPoint(x: 0.04*w, y: 0.56*h),
+                           control: CGPoint(x: 0.04*w, y: 0.82*h))
+            p.addLine(to: CGPoint(x: 0.04*w, y: 0.14*h))
+            p.closeSubpath()
+        }
+    }
+}
+
+private func crestAbbrev(_ team: String) -> String {
+    let upper = team.uppercased()
+    // Already an abbreviation? (3 caps or fewer)
+    let alpha = upper.filter { $0.isLetter }
+    if alpha.count <= 4 { return alpha }
+    // Otherwise pull initials of words (NBA "Brooklyn Nets" → "BN" — fall back to first 3)
+    let parts = team.split(separator: " ")
+    let initials = parts.compactMap { $0.first }.prefix(3).map(String.init).joined()
+    return initials.isEmpty ? String(upper.prefix(3)) : initials.uppercased()
+}
+
+private func crestColor(for team: String) -> Color {
+    // Stable palette per team: use simple hash → curated palette of bold sports hues
+    let palette: [Color] = [
+        Color(hex: "#552583"), Color(hex: "#007a33"), Color(hex: "#98002e"),
+        Color(hex: "#0e2240"), Color(hex: "#ef0107"), Color(hex: "#034694"),
+        Color(hex: "#e31837"), Color(hex: "#00338d"), Color(hex: "#f9a01b"),
+        Color(hex: "#ce1141"), Color(hex: "#1d428a"), Color(hex: "#006bb6"),
+        Color(hex: "#23375b"), Color(hex: "#860038"), Color(hex: "#fdb927"),
+    ]
+    var hash = 0
+    for c in team.unicodeScalars { hash = (hash &* 31) &+ Int(c.value) }
+    return palette[abs(hash) % palette.count]
+}
+
+// MARK: - Stats row
+
+struct StatsRow: View {
+    let streak: Int
+    let best: Int
+    let accuracy: Double
+    let pickCount: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            StreakTile(streak: streak, best: best)
+            AccuracyTile(accuracy: accuracy, delta: nil)
+        }
+    }
+}
+
+struct StreakTile: View {
+    let streak: Int
+    let best: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                Text("STREAK")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(streak)")
+                    .font(.anton(72))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .tracking(-1.4)
+                Text(streak == 1 ? "day" : "days")
+                    .font(.archivo(18, weight: .bold))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
+            // 10-segment progress bar
+            HStack(spacing: 3) {
+                ForEach(0..<10) { i in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(i < min(streak, 10) ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
+                        .frame(height: 5)
+                }
+            }
+            HStack {
+                Text("BEST: \(max(best, streak))")
+                    .font(.mono(10, weight: .medium))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Spacer()
+                if best > streak {
+                    Text("↑ \(best - streak) TO RECORD")
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tileBackground)
+    }
+}
+
+struct AccuracyTile: View {
+    let accuracy: Double
+    let delta: Double?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                    Text("ACCURACY")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
+                Spacer()
+                if let d = delta {
+                    Text(d >= 0 ? "↑ \(Int(d.rounded()))%" : "↓ \(Int((-d).rounded()))%")
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "#D4FF3A").opacity(0.12))
+                        .overlay(
+                            Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.25), lineWidth: 1)
+                        )
+                        .clipShape(Capsule())
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(Int(accuracy.rounded()))")
+                    .font(.anton(72))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .tracking(-1.4)
+                Text("%")
+                    .font(.archivo(18, weight: .bold))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
+            // Sparkline placeholder — flat until we have day-over-day data
+            SparklineView()
+                .frame(height: 26)
+                .padding(.top, 4)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tileBackground)
+    }
+}
+
+private var tileBackground: some View {
+    RoundedRectangle(cornerRadius: 22, style: .continuous)
+        .fill(Color(hex: "#101114"))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.6), radius: 14, x: 0, y: 10)
+}
+
+struct SparklineView: View {
+    let points: [CGFloat] = [20, 16, 18, 14, 15, 10, 12, 8, 10, 6, 4]
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let maxY = points.max() ?? 1
+            let minY = points.min() ?? 0
+            let span = max(maxY - minY, 1)
+            let step = w / CGFloat(max(points.count - 1, 1))
+            let coords: [CGPoint] = points.enumerated().map { i, p in
+                CGPoint(x: CGFloat(i) * step, y: h - ((p - minY) / span) * h)
+            }
+            // Fill
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: h))
+                for c in coords { p.addLine(to: c) }
+                p.addLine(to: CGPoint(x: w, y: h))
+                p.closeSubpath()
+            }
+            .fill(Color(hex: "#D4FF3A").opacity(0.1))
+            // Line
+            Path { p in
+                p.move(to: coords[0])
+                for c in coords.dropFirst() { p.addLine(to: c) }
+            }
+            .stroke(Color(hex: "#D4FF3A"), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+        }
+    }
+}
+
+// MARK: - Sport filter
+
+struct SportFilter: View {
+    @ObservedObject var vm: PicksViewModel
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                HiFiSportChip(label: "ALL · \(vm.todayPicks.count)",
+                          icon: "circle.grid.cross",
+                          isActive: vm.selectedSport == "all") {
+                    vm.selectedSport = "all"
+                }
+                ForEach(visibleSports, id: \.self) { sport in
+                    HiFiSportChip(label: leagueLabel(sport),
+                              icon: sportIcon(sport),
+                              isActive: vm.selectedSport == sport) {
+                        vm.selectedSport = sport
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+    }
+
+    /// Only show sport chips for sports that actually have picks today.
+    private var visibleSports: [String] {
+        let active = Set(vm.todayPicks.map { $0.sport })
+        let order = ["basketball", "football", "soccer", "baseball", "hockey", "combat", "f1", "tennis"]
+        return order.filter { active.contains($0) }
+    }
+
+    private func leagueLabel(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "NBA"
+        case "football":   return "NFL"
+        case "soccer":     return "EPL"
+        case "baseball":   return "MLB"
+        case "hockey":     return "NHL"
+        case "combat":     return "UFC"
+        case "f1":         return "F1"
+        case "tennis":     return "ATP"
+        default:           return sport.uppercased()
+        }
+    }
+
+    private func sportIcon(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "basketball.fill"
+        case "football":   return "football.fill"
+        case "soccer":     return "soccerball"
+        case "baseball":   return "baseball.fill"
+        case "hockey":     return "hockey.puck.fill"
+        case "combat":     return "figure.boxing"
+        case "f1":         return "car.fill"
+        case "tennis":     return "tennis.racket"
+        default:           return "circle"
+        }
+    }
+}
+
+struct HiFiSportChip: View {
+    let label: String
+    let icon: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .semibold))
+                Text(label)
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(1.5)
+            }
+            .padding(.leading, 10)
+            .padding(.trailing, 13)
+            .padding(.vertical, 7)
+            .foregroundColor(isActive ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+            .background(
+                Capsule()
+                    .fill(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#101114"))
+            )
+            .overlay(
+                Capsule().stroke(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#22252B"), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Section header
+
+struct SectionHeader: View {
+    let title: String
+    let cta: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.anton(30))
+                .tracking(-0.15)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            Spacer()
+            Text(cta)
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+        }
+    }
+}
+
+// MARK: - Game card
+
+struct GameCard: View {
+    let pick: Pick
+    let isLive: Bool
+    let score: LiveScore?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top row
+            HStack {
+                if isLive, let s = score {
+                    LivePulseBadge(label: livePulseText(s))
+                    Text(pick.league)
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                } else {
+                    Text(scheduledTopLine)
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
+                Spacer()
+                ConfChip(percent: pick.probability, hot: pick.probability >= 80)
+            }
+            .padding(.bottom, 14)
+
+            // Teams + score
+            HStack(alignment: .center, spacing: 14) {
+                TeamColumn(team: pick.awayTeam, isAway: true)
+                ScoreView(pick: pick, isLive: isLive, score: score)
+                    .frame(maxWidth: .infinity)
+                TeamColumn(team: pick.homeTeam, isAway: false)
+            }
+
+            // AI pick + mini ring
+            Divider()
+                .background(Color(hex: "#22252B"))
+                .padding(.top, 14)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AI PICKS")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                    Text(pick.pick.uppercased())
+                        .font(.anton(17))
+                        .tracking(0.17)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                }
+                Spacer()
+                MiniRing(percent: pick.probability)
+            }
+            .padding(.top, 12)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.4), radius: 14, x: 0, y: 8)
+        )
+    }
+
+    private var scheduledTopLine: String {
+        let league = pick.league.uppercased()
+        switch league {
+        case "EPL": return "EPL · MATCHDAY"
+        case "NFL": return "NFL · PRIMETIME"
+        case "MLB": return "MLB · TODAY"
+        case "NBA": return "NBA · TONIGHT"
+        case "NHL": return "NHL · TONIGHT"
+        case "UFC": return "UFC · MAIN CARD"
+        case "F1":  return "F1 · RACE WEEKEND"
+        case "ATP": return "ATP · TODAY"
+        default:    return league
+        }
+    }
+
+    private func livePulseText(_ s: LiveScore) -> String {
+        let q = s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? (s.status ?? "LIVE").uppercased()
+        return "LIVE · \(q)"
+    }
+}
+
+struct LivePulseBadge: View {
+    let label: String
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(Color(hex: "#FF5A36"))
+                .frame(width: 6, height: 6)
+                .overlay(
+                    Circle()
+                        .stroke(Color(hex: "#FF5A36").opacity(0.5), lineWidth: 4)
+                        .scaleEffect(pulse ? 2 : 1)
+                        .opacity(pulse ? 0 : 1)
+                )
+                .onAppear {
+                    withAnimation(.easeOut(duration: 1.4).repeatForever(autoreverses: false)) {
+                        pulse = true
+                    }
+                }
+            Text(label)
+                .font(.archivoNarrow(10, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(Color(hex: "#FF5A36"))
+        }
+    }
+}
+
+struct ConfChip: View {
+    let percent: Double
+    let hot: Bool
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Text("AI")
+                .font(.mono(11, weight: .medium))
+                .foregroundColor(hot ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+            Text("\(Int(percent.rounded()))%")
+                .font(.mono(11, weight: .bold))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(hot ? Color(hex: "#D4FF3A").opacity(0.08) : Color(hex: "#16181C"))
+        )
+        .overlay(
+            Capsule()
+                .stroke(hot ? Color(hex: "#D4FF3A").opacity(0.4) : Color(hex: "#2D3038"), lineWidth: 1)
+        )
+    }
+}
+
+struct TeamColumn: View {
+    let team: String
+    let isAway: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Crest(team: team, size: .big)
+            Text(crestAbbrev(team).count >= team.count ? team.uppercased() : team.uppercased())
+                .font(.anton(16))
+                .tracking(0.16)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(isAway ? "AWAY" : "HOME")
+                .font(.mono(9, weight: .medium))
+                .tracking(0.4)
+                .foregroundColor(Color(hex: "#6E6F75"))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct ScoreView: View {
+    let pick: Pick
+    let isLive: Bool
+    let score: LiveScore?
+
+    var body: some View {
+        if isLive, let s = score, let h = s.homeScore, let a = s.awayScore {
+            HStack(spacing: 8) {
+                Text("\(a)").font(.anton(28)).tracking(-0.28)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Text("–").font(.archivoNarrow(16, weight: .bold))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text("\(h)").font(.anton(28)).tracking(-0.28)
+                    .foregroundColor(pickWon(home: h, away: a, pick: pick) ? Color(hex: "#D4FF3A") : Color(hex: "#F5F3EE"))
+            }
+        } else {
+            VStack(spacing: 2) {
+                Text("VS")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text(timeText)
+                    .font(.mono(11, weight: .bold))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
+        }
+    }
+
+    private var timeText: String {
+        // Use createdAt as a placeholder for tip/start time in absence of an explicit field
+        guard let date = pick.createdAt else { return "—" }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
+    }
+
+    private func pickWon(home: Int, away: Int, pick: Pick) -> Bool {
+        let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
+            || pick.homeTeam.lowercased().contains(pick.pick.lowercased())
+        return pickedHome ? home > away : away > home
+    }
+}
+
+struct MiniRing: View {
+    let percent: Double
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color(hex: "#2D3038"), lineWidth: 3)
+            Circle()
+                .trim(from: 0, to: max(0.05, min(1, percent / 100)))
+                .stroke(Color(hex: "#D4FF3A"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text("\(Int(percent.rounded()))")
+                .font(.mono(11, weight: .heavy))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+        }
+        .frame(width: 38, height: 38)
+    }
+}
+
+// MARK: - Floating glass nav
+
+struct FloatingNav: View {
+    @Binding var tab: Pick6HomeHiFi.Tab
+
+    var body: some View {
+        HStack(spacing: 2) {
+            NavItem(icon: "house.fill", label: "Home",
+                    isActive: tab == .home) { tab = .home }
+            NavItem(icon: "sparkles", label: "Picks",
+                    isActive: tab == .picks) { tab = .picks }
+            NavItem(icon: "person.fill", label: "Profile",
+                    isActive: tab == .profile) { tab = .profile }
+        }
+        .padding(8)
+        .background(
+            Capsule()
+                .fill(Color(hex: "#16181C").opacity(0.82))
+                .background(.ultraThinMaterial)
+                .overlay(
+                    Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1)
+                )
+        )
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.45), radius: 20, x: 0, y: 20)
+    }
+}
+
+struct NavItem: View {
+    let icon: String
+    let label: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                if isActive {
+                    Text(label)
+                        .font(.archivo(13, weight: .bold))
+                }
+            }
+            .foregroundColor(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#6E6F75"))
+            .padding(.horizontal, isActive ? 18 : 14)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(isActive ? Color.white.opacity(0.08) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Empty + Profile placeholder
+
+struct EmptyTodayState: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 38))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text("PICKS GENERATING")
+                .font(.archivoNarrow(13, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            Text("New picks drop 3× daily — 5am, 12pm, 7pm ET")
+                .font(.archivo(12, weight: .regular))
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 40)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct ProfilePlaceholder: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "person.crop.circle")
+                .font(.system(size: 72))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text("PROFILE")
+                .font(.anton(36))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            Text("Coming soon")
+                .font(.archivo(13))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Spacer().frame(height: 140)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    Pick6HomeHiFi()
+        .preferredColorScheme(.dark)
+}

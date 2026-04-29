@@ -35,7 +35,7 @@ struct Betting_appApp: App {
                         hasFinishedOnboarding = true
                     }
                 } else {
-                    Pick6MainView()
+                    Pick6HomeHiFi()
                         .preferredColorScheme(.dark)
                 }
             }
@@ -47,7 +47,24 @@ struct Betting_appApp: App {
     }
 
     private func registerCustomFonts() {
-        let fontNames = ["BarlowCondensed-Black", "BarlowCondensed-Bold", "BarlowCondensed-SemiBold"]
+        // The Anton / Archivo / ArchivoNarrow / JetBrainsMono families drive
+        // the new Pick6 Home Hi-Fi design (Anton = display, Archivo = UI,
+        // ArchivoNarrow = small-caps labels, JetBrainsMono = stats/numbers).
+        // BarlowCondensed remains for legacy onboarding screens.
+        let fontNames = [
+            // Display
+            "Anton-Regular",
+            // UI sans
+            "Archivo-Regular", "Archivo-Medium", "Archivo-SemiBold",
+            "Archivo-Bold", "Archivo-ExtraBold", "Archivo-Black",
+            // Narrow labels
+            "ArchivoNarrow-Medium", "ArchivoNarrow-SemiBold", "ArchivoNarrow-Bold",
+            // Stats / numbers
+            "JetBrainsMono-Regular", "JetBrainsMono-Medium",
+            "JetBrainsMono-Bold", "JetBrainsMono-ExtraBold",
+            // Legacy onboarding
+            "BarlowCondensed-Black", "BarlowCondensed-Bold", "BarlowCondensed-SemiBold",
+        ]
         for name in fontNames {
             guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
