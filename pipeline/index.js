@@ -76,10 +76,11 @@ const fetchEPL = () => sdFetch(`soccer/scores/json/GamesByDate/EPL/${todayISO()}
 // MMA: sportsdata.io exposes fights by date. Each row is one bout.
 const fetchUFC = () => sdFetch(`mma/scores/json/FightsByDate/${todayISO()}`);
 
-// F1: Ergast API. Pulls next race within a 3-day window. Free, no auth.
+// F1: Ergast API (now hosted at jolpi.ca after Ergast deprecated their
+// domain in 2024). Pulls next race within a 3-day window. Free, no auth.
 async function fetchF1() {
   try {
-    const res = await axios.get('https://ergast.com/api/f1/current.json', { timeout: 15000 });
+    const res = await axios.get('https://api.jolpi.ca/ergast/f1/current.json', { timeout: 15000 });
     const races = res.data?.MRData?.RaceTable?.Races || [];
     const now = new Date();
     const window = 3 * 24 * 60 * 60 * 1000; // next 72h
