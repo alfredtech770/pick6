@@ -313,7 +313,10 @@ const PICK_SCHEMA = {
           home_team: { type: 'string' },
           away_team: { type: 'string' },
           pick: { type: 'string', description: 'The team/fighter/driver picked. For team sports must equal home_team or away_team. For F1, the driver name.' },
-          probability: { type: 'integer', minimum: 65, maximum: 97 },
+          probability: {
+            type: 'integer',
+            description: 'Integer 65-97. Below 65 means skip the matchup, do not return a pick.',
+          },
           confidence: { type: 'string', enum: ['***', '**'] },
           reasoning: { type: 'string' },
           key_factor: { type: 'string' },
@@ -401,9 +404,12 @@ async function getClaudePicks(league, games) {
     return [];
   }
 
-  // Validate. For team sports the pick must equal one of the matchup
-  // names. F1 is exempt because the pick is a driver, not a team.
+  // Validate. The schema can't constrain probability to 65-97
+  // (Anthropic structured outputs don't support min/max), so we
+  // enforce it here. For team sports the pick must equal one of the
+  // matchup names; F1 is exempt because the pick is a driver name.
   const picks = (parsed.picks || []).filter((p) => {
+    if (typeof p.probability !== 'number' || p.probability < 65 || p.probability > 97) return false;
     if (cfg.promptMode === 'race') return !!p.pick;
     return p.pick === p.home_team || p.pick === p.away_team;
   });
