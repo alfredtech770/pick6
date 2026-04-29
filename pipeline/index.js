@@ -252,7 +252,7 @@ async function getPerformanceStats(league, days = 30) {
 
 function performanceContext(stats30, stats7) {
   if (!stats30 || stats30.total < 5) {
-    return 'No meaningful track record yet for this league. Be conservative — favor higher-confidence picks until calibration is established.';
+    return 'No meaningful track record yet for this league — this is the early-calibration window. Surface picks normally so we can build a track record. Aim for a mix of high-confidence (80%+) and modest-edge (55–70%) picks across the slate.';
   }
   const lines = [
     'Your historical performance for this league:',
@@ -280,37 +280,36 @@ function performanceContext(stats30, stats7) {
 // CLAUDE — pick generation
 // ════════════════════════════════════════════════════════════════
 
-const SYSTEM_PROMPT = `You are the prediction engine behind Pick6, a premium sports prediction app.
-
-Your job: analyze each matchup and return picks ONLY where you have genuine, calibrated edge.
+const SYSTEM_PROMPT = `You are the prediction engine behind Pick6, a premium sports prediction app. Users open the app every day expecting picks. Your job is to surface the BEST matchups available — not to return an empty list.
 
 Required reasoning before committing to a pick:
 1. Recent form, records, and head-to-head history.
 2. Sport-specific context (home advantage, weather, fatigue, surface, circuit, weight class…).
 3. Personnel: injuries, scratches, rest, probable starters/lineups. USE web_search to verify late-breaking news.
-4. Calibration: if you say 80%, you should win 80% of the time long-run.
+4. Calibration: if you say 70%, you should win 70% of the time long-run.
 
 Hard rules:
-- Only return picks where your true probability is ≥ 65%. Skip coin flips.
+- For ANY league with multiple matchups today, you MUST return AT LEAST ONE pick — pick the strongest opportunity even if your edge is modest.
+- Aim for 2–4 picks per league when the slate is full (5+ games). Be selective but not silent.
+- Probability floor is 55%. Anything 55%+ is fair game for a pick.
 - Singles only — no parlays, no multi-leg.
-- The "pick" field MUST be EXACTLY one of {home_team, away_team} from the input. Do not invent strings.
-- Probability is an integer 65–97.
-- Confidence: "***" for 80%+, "**" for 65–79%. Never "*".
+- The "pick" field MUST be one of {home_team, away_team} from the input. Casing/whitespace can vary slightly but the team must clearly match.
+- Probability is an integer 55–97.
+- Confidence: "***" for 75%+, "**" for 65–74%, "*" for 55–64%.
 - Reasoning: 2–3 punchy sentences explaining WHY.
 - Key factor: the single biggest reason in 6–10 words.
-- When uncertain, return fewer picks. Skipping is always allowed and often correct.
 
-For SOCCER (EPL): if you expect a draw, do not return a pick for that match.
-For COMBAT (UFC): treat each fight as an independent prediction.
+For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
+For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
 For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick).
-For TENNIS: research today's slate via web_search; only surface notable matches with clear edges.`;
+For TENNIS: research today's slate via web_search; surface the strongest match-ups with clear edges (top seeds vs lower-ranked, ranking gaps, surface specialists).`;
 
 const PICK_SCHEMA = {
   type: 'object',
   properties: {
     picks: {
       type: 'array',
-      description: 'Array of high-confidence picks. May be empty if no matchup clears the bar.',
+      description: 'Array of picks for today. SHOULD contain at least 1 pick whenever multiple matchups exist; empty only if the slate is genuinely empty or every game is a true coin-flip.',
       items: {
         type: 'object',
         properties: {
@@ -320,9 +319,9 @@ const PICK_SCHEMA = {
           pick: { type: 'string', description: 'The team/fighter/driver picked. For team sports must equal home_team or away_team. For F1, the driver name.' },
           probability: {
             type: 'integer',
-            description: 'Integer 65-97. Below 65 means skip the matchup, do not return a pick.',
+            description: 'Integer 55-97. 55-64 is a slight edge, 65-74 is a strong lean, 75-89 is high confidence, 90+ is overwhelming.',
           },
-          confidence: { type: 'string', enum: ['***', '**'] },
+          confidence: { type: 'string', enum: ['***', '**', '*'] },
           reasoning: { type: 'string' },
           key_factor: { type: 'string' },
         },
@@ -359,7 +358,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) 
       : `${league} matches`;
     return [
       ...header,
-      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}. Predict winners only where you have a clear, justifiable edge (≥65%). Return your picks via the structured output schema.`,
+      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}, then return picks for the best matchups (probability ≥55%). Aim for at least 1 pick if any games exist; 2–4 if the slate is full. Use the structured output schema. Empty array is only correct if literally zero games are scheduled today.`,
       'For each pick, populate game_id with a stable identifier you derive from the date and matchup',
       `(e.g. "${league.toLowerCase()}-${todayISO()}-${'home-vs-away'}"), and home_team/away_team with the team or player names exactly as they appear in the source. Do NOT invent matchups — if you can\'t confirm a matchup via web_search, skip it.`,
     ].join('\n');
@@ -435,7 +434,7 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const norm = (s) => (typeof s === 'string' ? s.trim().toLowerCase() : '');
   const dropped = [];
   const picks = (parsed.picks || []).filter((p) => {
-    if (typeof p.probability !== 'number' || p.probability < 65 || p.probability > 97) {
+    if (typeof p.probability !== 'number' || p.probability < 55 || p.probability > 97) {
       dropped.push(`bad_prob(${p.probability})`); return false;
     }
     if (!p.pick || typeof p.pick !== 'string') {
