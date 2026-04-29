@@ -98,17 +98,22 @@ async function fetchF1() {
 // LEAGUE REGISTRY
 // ════════════════════════════════════════════════════════════════
 // Each league defines:
-//   sport         — canonical sport name written into picks.sport
-//   promptMode    — 'team' | 'race' | 'research'
-//   fetcher       — async () returning raw events (or null in research mode)
-//   normalizer    — (raw) → { game_id, home_team, away_team, status, ... }
-//   notes         — sport-specific context fed to the model
-//   liveFetcher   — optional separate fetcher for in-play scores; defaults to fetcher
+//   sport             — canonical sport name written into picks.sport
+//   promptMode        — 'team' | 'race' | 'research'
+//   fetcher           — async () returning raw events (or null in research mode)
+//   normalizer        — (raw) → { game_id, home_team, away_team, status, ... }
+//   notes             — sport-specific context fed to the model
+//   researchFallback  — if true and the primary fetcher returns no scheduled
+//                       games (e.g. sportsdata.io 403 / 404), fall through
+//                       to Claude `web_search` research mode for the day.
+//                       This is what keeps NBA/NHL/MLB usable without paying
+//                       for the missing sportsdata.io subscription tiers.
+//   liveFetcher       — optional separate fetcher for in-play scores; defaults to fetcher
 
 const LEAGUES = {
   // ─── Team sports — picks are home_team or away_team ────────────
   NBA: {
-    sport: 'basketball', promptMode: 'team', fetcher: fetchNBA,
+    sport: 'basketball', promptMode: 'team', fetcher: fetchNBA, researchFallback: true,
     notes: 'Home teams win ~58% in the NBA. Watch for back-to-backs and load management on stars.',
     normalizer: (g) => ({
       game_id: g.GameID?.toString(),
@@ -122,7 +127,7 @@ const LEAGUES = {
     }),
   },
   NHL: {
-    sport: 'hockey', promptMode: 'team', fetcher: fetchNHL,
+    sport: 'hockey', promptMode: 'team', fetcher: fetchNHL, researchFallback: true,
     notes: 'Home teams win ~55% in the NHL. Goalie matchups can swing odds 5–8 points.',
     normalizer: (g) => ({
       game_id: g.GameID?.toString(),
@@ -133,7 +138,7 @@ const LEAGUES = {
     }),
   },
   NFL: {
-    sport: 'football', promptMode: 'team', fetcher: fetchNFL,
+    sport: 'football', promptMode: 'team', fetcher: fetchNFL, researchFallback: true,
     notes: 'Home teams win ~57% in the NFL. Weather (wind > 15mph, sub-freezing temps) materially shifts totals; check it.',
     normalizer: (g) => ({
       game_id: g.GameID?.toString(),
@@ -145,7 +150,7 @@ const LEAGUES = {
     }),
   },
   MLB: {
-    sport: 'baseball', promptMode: 'team', fetcher: fetchMLB,
+    sport: 'baseball', promptMode: 'team', fetcher: fetchMLB, researchFallback: true,
     notes: 'Home teams win ~54% in MLB. Starting pitcher matchup is the dominant variable — verify probable starters.',
     normalizer: (g) => ({
       game_id: g.GameID?.toString(),
@@ -158,7 +163,7 @@ const LEAGUES = {
     }),
   },
   EPL: {
-    sport: 'soccer', promptMode: 'team', fetcher: fetchEPL,
+    sport: 'soccer', promptMode: 'team', fetcher: fetchEPL, researchFallback: true,
     notes: 'Home teams win ~46% in the EPL, draws ~25%, away wins ~29%. SKIP games where you expect a draw — only return picks where one side is clearly favored.',
     normalizer: (g) => ({
       game_id: g.GameId?.toString(),
@@ -171,7 +176,7 @@ const LEAGUES = {
 
   // ─── Combat — multiple bouts per card; one pick per bout ───────
   UFC: {
-    sport: 'combat', promptMode: 'team', fetcher: fetchUFC,
+    sport: 'combat', promptMode: 'team', fetcher: fetchUFC, researchFallback: true,
     notes: 'Treat each fight as an independent prediction. Reach, age, fight IQ, recent form, layoff length, and weight cuts all matter. Skip prelims or matchups with sparse data.',
     normalizer: (f) => ({
       game_id: f.FightId?.toString(),
@@ -330,8 +335,9 @@ const PICK_SCHEMA = {
   additionalProperties: false,
 };
 
-function buildUserPrompt(league, games, stats30, stats7) {
+function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) {
   const cfg = LEAGUES[league];
+  const useResearch = cfg.promptMode === 'research' || forceResearch;
   const header = [
     `League: ${league}`,
     `Date: ${todayISO()}`,
@@ -340,11 +346,22 @@ function buildUserPrompt(league, games, stats30, stats7) {
     performanceContext(stats30, stats7),
     '',
   ];
-  if (cfg.promptMode === 'research') {
+  if (useResearch) {
+    // Tennis-style instructions tailored to the league when invoked as
+    // a fallback for a team sport.
+    const sportPlural = league === 'ATP' ? 'ATP and WTA tournaments'
+      : league === 'NBA' ? 'NBA games'
+      : league === 'NHL' ? 'NHL games'
+      : league === 'NFL' ? 'NFL games'
+      : league === 'MLB' ? 'MLB games'
+      : league === 'EPL' ? 'EPL fixtures'
+      : league === 'UFC' ? 'UFC fights'
+      : `${league} matches`;
     return [
       ...header,
-      `MODE: research. There is no curated game feed for ${league}. Use web_search to find today's notable matches across active ATP and WTA tournaments. Predict winners only where you have a clear, justifiable edge (≥65%). Return your picks via the structured output schema.`,
-      'For each match, populate game_id with a stable identifier you derive (e.g. "atp-2026-monte-carlo-r2-alcaraz-djokovic"), and home_team/away_team with the player names alphabetically.',
+      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}. Predict winners only where you have a clear, justifiable edge (≥65%). Return your picks via the structured output schema.`,
+      'For each pick, populate game_id with a stable identifier you derive from the date and matchup',
+      `(e.g. "${league.toLowerCase()}-${todayISO()}-${'home-vs-away'}"), and home_team/away_team with the team or player names exactly as they appear in the source. Do NOT invent matchups — if you can\'t confirm a matchup via web_search, skip it.`,
     ].join('\n');
   }
   return [
@@ -356,11 +373,12 @@ function buildUserPrompt(league, games, stats30, stats7) {
   ].join('\n');
 }
 
-async function getClaudePicks(league, games) {
+async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const cfg = LEAGUES[league];
+  const useResearch = cfg.promptMode === 'research' || forceResearch;
   const stats30 = await getPerformanceStats(league, 30);
   const stats7 = await getPerformanceStats(league, 7);
-  const userPrompt = buildUserPrompt(league, games, stats30, stats7);
+  const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch);
 
   const stream = anthropic.messages.stream({
     model: ANTHROPIC_MODEL,
@@ -407,14 +425,21 @@ async function getClaudePicks(league, games) {
   // Validate. The schema can't constrain probability to 65-97
   // (Anthropic structured outputs don't support min/max), so we
   // enforce it here. For team sports the pick must equal one of the
-  // matchup names; F1 is exempt because the pick is a driver name.
+  // matchup names; F1 + research-mode picks are exempt because the
+  // pick is a driver/player name resolved from web search.
   const picks = (parsed.picks || []).filter((p) => {
     if (typeof p.probability !== 'number' || p.probability < 65 || p.probability > 97) return false;
-    if (cfg.promptMode === 'race') return !!p.pick;
+    if (!p.pick || typeof p.pick !== 'string') return false;
+    if (cfg.promptMode === 'race') return true;
+    if (useResearch) {
+      // Research mode — Claude resolved the matchup itself; just
+      // require pick to be one of the names it surfaced.
+      return p.pick === p.home_team || p.pick === p.away_team;
+    }
     return p.pick === p.home_team || p.pick === p.away_team;
   });
 
-  log(`Generated ${picks.length} picks for ${league}.`);
+  log(`Generated ${picks.length} picks for ${league}${useResearch ? ' (research mode)' : ''}.`);
   return picks;
 }
 
@@ -581,38 +606,50 @@ async function runPipeline() {
   log('▶ Pipeline run starting');
   try {
     for (const [league, cfg] of Object.entries(LEAGUES)) {
-      // 1. Pull events.
+      // 1. Pull events from primary source.
       const raw = cfg.fetcher ? await cfg.fetcher() : [];
 
-      // 2. Refresh live scores for sports that have them.
+      // 2. Refresh live scores for sports that return them.
       await upsertLiveScores(league, raw);
 
-      // 3. Decide which events to ask Claude about.
-      let games;
+      // 3. Decide path: primary mode, race mode, or research mode.
+      let games = [];
+      let forceResearch = false;
+
       if (cfg.promptMode === 'research') {
-        games = []; // Claude will research itself.
+        // Always research mode (e.g. ATP/Tennis).
+        forceResearch = true;
       } else {
         const scheduled = raw.filter((g) => (g.Status || 'Scheduled') === 'Scheduled');
-        if (!scheduled.length) continue;
-        games = scheduled.map(cfg.normalizer);
-
-        // De-dup against today's already-saved picks.
-        const { data: existing } = await supabase
-          .from('picks')
-          .select('game_id')
-          .eq('league', league)
-          .eq('game_date', todayISO());
-        const seen = new Set((existing || []).map((p) => p.game_id));
-        games = games.filter((g) => !seen.has(g.game_id));
-        if (!games.length) {
-          log(`${league}: all ${scheduled.length} scheduled events already covered.`);
+        if (scheduled.length) {
+          // Primary path: we have scheduled events from the feed.
+          games = scheduled.map(cfg.normalizer);
+          // De-dup against today's already-saved picks.
+          const { data: existing } = await supabase
+            .from('picks')
+            .select('game_id')
+            .eq('league', league)
+            .eq('game_date', todayISO());
+          const seen = new Set((existing || []).map((p) => p.game_id));
+          games = games.filter((g) => !seen.has(g.game_id));
+          if (!games.length) {
+            log(`${league}: all ${scheduled.length} scheduled events already covered.`);
+            continue;
+          }
+        } else if (cfg.researchFallback) {
+          // Primary feed returned nothing (404, 403, or empty). Fall
+          // through to Claude web_search research mode.
+          log(`${league}: primary feed empty, falling back to Anthropic research mode.`);
+          forceResearch = true;
+        } else {
+          // No primary games + no fallback configured → skip league.
           continue;
         }
       }
 
       // 4. Ask Claude.
-      log(`Analyzing ${cfg.promptMode === 'research' ? 'today\'s slate' : `${games.length} ${league} event(s)`}…`);
-      const picks = await getClaudePicks(league, games);
+      log(`Analyzing ${forceResearch ? `today's ${league} slate (research)` : `${games.length} ${league} event(s)`}…`);
+      const picks = await getClaudePicks(league, games, { forceResearch });
       await savePicks(league, picks);
     }
 
