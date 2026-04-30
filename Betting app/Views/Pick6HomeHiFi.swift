@@ -582,9 +582,9 @@ struct CrestPair: View {
 
 struct Crest: View {
     enum Size { case small, big
-        var w: CGFloat { self == .small ? 32 : 52 }
-        var h: CGFloat { self == .small ? 36 : 58 }
-        var fontSize: CGFloat { self == .small ? 12 : 17 }
+        var w: CGFloat { self == .small ? 40 : 68 }
+        var h: CGFloat { self == .small ? 44 : 76 }
+        var fontSize: CGFloat { self == .small ? 13 : 22 }
     }
     let team: String
     let size: Size
@@ -643,6 +643,24 @@ private func crestAbbrev(_ team: String) -> String {
     let parts = team.split(separator: " ")
     let initials = parts.compactMap { $0.first }.prefix(3).map(String.init).joined()
     return initials.isEmpty ? String(upper.prefix(3)) : initials.uppercased()
+}
+
+/// Short uppercase label for a team — uses the nickname (last token)
+/// when available so all card labels render at the same font size with
+/// no auto-shrink. Falls back to the 3-letter abbreviation for very
+/// long names.
+///   "Brooklyn Nets"        → "NETS"
+///   "Cleveland Cavaliers"  → "CAVALIERS"
+///   "Tampa Bay Lightning"  → "LIGHTNING"
+///   "Jannik Sinner"        → "SINNER"
+///   "CLE" (already short)  → "CLE"
+func teamShortName(_ team: String) -> String {
+    let trimmed = team.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.count <= 12 { return trimmed.uppercased() }
+    if let last = trimmed.split(separator: " ").last, last.count <= 12 {
+        return String(last).uppercased()
+    }
+    return crestAbbrev(trimmed)
 }
 
 private func crestColor(for team: String) -> Color {
@@ -1095,14 +1113,16 @@ struct TeamColumn: View {
     var sport: String = ""
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             TeamLogo(sport: sport, team: team, size: .big)
-            Text(crestAbbrev(team).count >= team.count ? team.uppercased() : team.uppercased())
+            // teamShortName keeps every card's name slot at the same
+            // 16pt font height — no auto-shrink, so HEAT, CAVALIERS,
+            // LIGHTNING, ARSENAL all render uniformly.
+            Text(teamShortName(team))
                 .font(.anton(16))
                 .tracking(0.16)
                 .foregroundColor(Color(hex: "#F5F3EE"))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
             Text(isAway ? "AWAY" : "HOME")
                 .font(.mono(9, weight: .medium))
                 .tracking(0.4)

@@ -920,17 +920,20 @@ struct CompactPickCard: View {
                 ConfPill(probability: pick.probability)
             }
             .padding(.bottom, 10)
-            HStack(alignment: .center, spacing: 10) {
-                Text(pick.awayTeam.uppercased())
-                    .font(.anton(18))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                    Text(teamShortName(pick.awayTeam))
+                        .font(.anton(16))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
                 if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
                     HStack(spacing: 6) {
-                        Text("\(a)").font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
+                        Text("\(a)").font(.anton(22)).foregroundColor(Color(hex: "#F5F3EE"))
                         Text("–").font(.archivoNarrow(13)).foregroundColor(Color(hex: "#6E6F75"))
-                        Text("\(h)").font(.anton(20)).foregroundColor(Color(hex: "#B9B7B0"))
+                        Text("\(h)").font(.anton(22)).foregroundColor(Color(hex: "#B9B7B0"))
                     }
                 } else {
                     Text("VS")
@@ -938,11 +941,14 @@ struct CompactPickCard: View {
                         .tracking(2)
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
-                Text(pick.homeTeam.uppercased())
-                    .font(.anton(18))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam))
+                        .font(.anton(16))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
             }
             HStack {
                 HStack(spacing: 6) {
@@ -1419,28 +1425,34 @@ struct WinsView: View {
             }
             .padding(.bottom, 12)
 
-            HStack(alignment: .center, spacing: 10) {
-                Text(pick.awayTeam.uppercased())
-                    .font(.anton(20))
-                    .foregroundColor(pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
-                    .strikethrough(!pickedAway(pick), color: Color(hex: "#2D3038"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                    Text(teamShortName(pick.awayTeam))
+                        .font(.anton(16))
+                        .foregroundColor(pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
+                        .strikethrough(!pickedAway(pick), color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
                 if let h = pick.homeScore, let a = pick.awayScore {
                     HStack(spacing: 6) {
-                        Text("\(a)").font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
+                        Text("\(a)").font(.anton(24)).foregroundColor(Color(hex: "#F5F3EE"))
                         Text("–").font(.anton(14)).foregroundColor(Color(hex: "#6E6F75"))
-                        Text("\(h)").font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
+                        Text("\(h)").font(.anton(24)).foregroundColor(Color(hex: "#F5F3EE"))
                     }
                 } else {
                     Text("✓").font(.anton(20)).foregroundColor(Color(hex: "#4ade80"))
                 }
-                Text(pick.homeTeam.uppercased())
-                    .font(.anton(20))
-                    .foregroundColor(!pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
-                    .strikethrough(pickedAway(pick), color: Color(hex: "#2D3038"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam))
+                        .font(.anton(16))
+                        .foregroundColor(!pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
+                        .strikethrough(pickedAway(pick), color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
             }
 
             HStack {
@@ -1570,28 +1582,34 @@ struct LiveView: View {
                 }
             }
             .padding(.bottom, 12)
-            HStack(alignment: .center, spacing: 10) {
-                Text(pick.awayTeam.uppercased())
-                    .font(.anton(20))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                    Text(teamShortName(pick.awayTeam))
+                        .font(.anton(16))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
                 if let s = score, let h = s.homeScore, let a = s.awayScore {
                     HStack(spacing: 6) {
                         Text("\(a)")
-                            .font(.anton(30))
+                            .font(.anton(28))
                             .foregroundColor(a > h ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
                         Text("–").font(.anton(16)).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(h)")
-                            .font(.anton(30))
+                            .font(.anton(28))
                             .foregroundColor(h > a ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
                     }
                 }
-                Text(pick.homeTeam.uppercased())
-                    .font(.anton(20))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                VStack(spacing: 6) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam))
+                        .font(.anton(16))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
             }
             HStack {
                 Text("YOUR PICK")
