@@ -1022,6 +1022,105 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .foot-links a { transition: color 0.15s; }
 .foot-links a:hover { color: var(--ink); }
 
+/* ─── Waitlist form ─── */
+.waitlist-wrap { max-width: 480px; }
+.hero-text .waitlist-wrap, .final-cta .waitlist-wrap { margin-bottom: 24px; }
+.final-cta .waitlist-wrap { margin-left: auto; margin-right: auto; }
+.waitlist-form {
+  display: flex; gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 6px 6px 6px 18px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.waitlist-form:focus-within {
+  border-color: rgba(212,255,58,0.45);
+  box-shadow: 0 0 0 4px rgba(212,255,58,0.08);
+}
+.waitlist-form input {
+  flex: 1; min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 12px 0;
+}
+.waitlist-form input::placeholder { color: var(--mute); }
+.waitlist-form button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+.waitlist-form button:hover { box-shadow: 0 8px 24px rgba(212,255,58,0.25); transform: translateY(-1px); }
+.waitlist-form button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+.waitlist-note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.waitlist-note .accent { color: var(--accent); font-weight: 800; }
+.waitlist-note svg { color: var(--accent); }
+.waitlist-error {
+  min-height: 20px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--loss);
+}
+.waitlist-success {
+  background: rgba(74, 222, 128, 0.06);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex; align-items: flex-start; gap: 14px;
+  font-size: 15px; line-height: 1.5;
+  color: var(--ink);
+  max-width: 480px;
+}
+.waitlist-success .check {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--win);
+  color: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800;
+  flex-shrink: 0;
+  margin-top: -1px;
+}
+.waitlist-success strong { color: var(--win); display: block; margin-bottom: 2px; font-weight: 800; }
+.coming-soon-line {
+  margin-top: 18px;
+  display: flex; align-items: center; gap: 12px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--mute);
+}
+.coming-soon-line svg { width: 14px; height: 14px; opacity: 0.55; }
+
+@media (max-width: 920px) {
+  .waitlist-wrap { margin-left: auto; margin-right: auto; }
+  .waitlist-form { padding-left: 14px; }
+  .coming-soon-line { justify-content: center; flex-wrap: wrap; }
+  .waitlist-note { justify-content: center; }
+}
+@media (max-width: 480px) {
+  .waitlist-form { flex-direction: column; padding: 6px; gap: 6px; }
+  .waitlist-form input { padding: 12px 14px; font-size: 16px; /* prevent iOS zoom */ }
+  .waitlist-form button { padding: 14px; }
+}
+
 /* Sticky download bar (mobile only) */
 .sticky-cta {
   display: none;
@@ -1225,7 +1324,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </nav>
-  <a class="cta-pill" href="#download">Start Free</a>
+  <a class="cta-pill" href="#download">Join Waitlist</a>
 </header>
 
 <a id="top"></a>
@@ -1235,28 +1334,28 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="hero">
   <div class="hero-text">
-    <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> AI · LIVE · 9 SPORTS</div>
+    <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> LAUNCHING SOON · 1 WEEK FREE</div>
     <h1 class="display" data-reveal data-reveal-delay="2">BEAT THE <em>BOOK.</em></h1>
-    <p class="lead" data-reveal data-reveal-delay="3">AI-powered picks across NBA, NFL, EPL, MLB, UFC and more. Confidence scores. Live tracking. Public results — wins <em style="font-style:normal;color:var(--win)">and</em> losses.</p>
-    <div class="cta-row" data-reveal data-reveal-delay="4">
-      <a class="store-btn" href="#download">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-        <div><div class="sb-top">Download on the</div><div class="sb-bot">App Store</div></div>
-      </a>
-      <a class="store-btn" href="#download">
-        <svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z" fill="currentColor"/></svg>
-        <div><div class="sb-top">Get it on</div><div class="sb-bot">Google Play</div></div>
-      </a>
+    <p class="lead" data-reveal data-reveal-delay="3">AI-powered picks across NBA, NFL, EPL, MLB, UFC and more. Drop your email — be the first to know when Pick1 launches and get your <em style="font-style:normal;color:var(--accent)">first week free</em>.</p>
+
+    <div class="waitlist-wrap" data-reveal data-reveal-delay="4">
+      <form class="waitlist-form" data-source="hero" novalidate>
+        <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
+        <button type="submit">Join Waitlist →</button>
+      </form>
+      <div class="waitlist-error" role="alert"></div>
+      <div class="waitlist-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
+        <span><span class="accent">1 week free</span> at launch · No spam · Unsubscribe anytime</span>
+      </div>
     </div>
-    <div class="trust-strip" data-reveal data-reveal-delay="5">
-      <span class="ts">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.7 6.3 6.8.5-5.2 4.4 1.6 6.7L12 17.5 6.1 20.9 7.7 14.2 2.5 9.8l6.8-.5L12 2z"/></svg>
-        <b>4.8</b> on App Store · 12k+ reviews
-      </span>
-      <span class="ts">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        7-day free trial
-      </span>
+
+    <div class="coming-soon-line" data-reveal data-reveal-delay="5">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+      <span>Coming to App Store</span>
+      <span style="opacity:0.4">·</span>
+      <svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z" fill="currentColor"/></svg>
+      <span>Google Play</span>
     </div>
   </div>
 
@@ -1573,8 +1672,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Parlay builder + line comparison</span></li>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Full P&L history & analytics</span></li>
       </ul>
-      <a class="plan-cta" href="#download">Start 7-Day Free Trial</a>
-      <div class="trial">No credit card required · Cancel anytime</div>
+      <a class="plan-cta" href="#download">Join Waitlist · 1 Week Free</a>
+      <div class="trial">Free at launch · No card required · Cancel anytime</div>
     </div>
   </div>
 </section>
@@ -1619,17 +1718,18 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- FINAL CTA                                                     -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="final-cta" id="download">
-  <h2 class="display" data-reveal>READY TO <em>WIN?</em></h2>
-  <p class="lead" data-reveal data-reveal-delay="2">Download Pick1 and start your 7-day free trial. No credit card needed.</p>
-  <div class="cta-row" data-reveal data-reveal-delay="3">
-    <a class="store-btn" href="#">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-      <div><div class="sb-top">Download on the</div><div class="sb-bot">App Store</div></div>
-    </a>
-    <a class="store-btn" href="#">
-      <svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z" fill="currentColor"/></svg>
-      <div><div class="sb-top">Get it on</div><div class="sb-bot">Google Play</div></div>
-    </a>
+  <h2 class="display" data-reveal>BE FIRST <em>IN.</em></h2>
+  <p class="lead" data-reveal data-reveal-delay="2">Pick1 launches soon. Join the waitlist and get your <em style="font-style:normal;color:var(--accent)">first week free</em> the moment we go live.</p>
+  <div class="waitlist-wrap" data-reveal data-reveal-delay="3">
+    <form class="waitlist-form" data-source="final" novalidate>
+      <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
+      <button type="submit">Join Waitlist →</button>
+    </form>
+    <div class="waitlist-error" role="alert"></div>
+    <div class="waitlist-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
+      <span><span class="accent">1 week free</span> at launch · No spam · Unsubscribe anytime</span>
+    </div>
   </div>
 </section>
 
@@ -1645,7 +1745,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 </footer>
 
 <!-- Mobile sticky CTA -->
-<a href="#download" class="sticky-cta">START 7-DAY FREE TRIAL →</a>
+<a href="#download" class="sticky-cta">JOIN WAITLIST · 1 WEEK FREE →</a>
 
 <script>
 (() => {
@@ -1795,6 +1895,111 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       // Close all others
       document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
       if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // ─── Klaviyo waitlist signup ──────────────────────────────
+  // Replace with your real values from https://www.klaviyo.com/account#api-keys-tab
+  // - PUBLIC_KEY: 6-character public API key (safe to expose; starts with letters/digits, not "pk_")
+  // - LIST_ID:    6-character ID of the waitlist List (Lists & Segments → click list → "list ID" in URL)
+  const KLAVIYO_PUBLIC_KEY = window.KLAVIYO_PUBLIC_KEY || 'REPLACE_WITH_PUBLIC_KEY';
+  const KLAVIYO_LIST_ID    = window.KLAVIYO_LIST_ID    || 'REPLACE_WITH_LIST_ID';
+
+  const subscribeEmail = async (email, source) => {
+    const url = `https://a.klaviyo.com/client/subscriptions/?company_id=${encodeURIComponent(KLAVIYO_PUBLIC_KEY)}`;
+    const body = {
+      data: {
+        type: 'subscription',
+        attributes: {
+          custom_source: `Pick1 Waitlist · ${source || 'site'}`,
+          profile: {
+            data: {
+              type: 'profile',
+              attributes: {
+                email,
+                subscriptions: {
+                  email: { marketing: { consent: 'SUBSCRIBED' } }
+                }
+              }
+            }
+          }
+        },
+        relationships: {
+          list: { data: { type: 'list', id: KLAVIYO_LIST_ID } }
+        }
+      }
+    };
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'revision': '2024-10-15',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (resp.status === 202 || resp.ok) return { ok: true };
+      let detail = '';
+      try {
+        const j = await resp.json();
+        detail = j?.errors?.[0]?.detail || '';
+      } catch {}
+      return { ok: false, detail };
+    } catch (err) {
+      return { ok: false, detail: 'Network error. Please try again.' };
+    }
+  };
+
+  const showSuccess = (wrap) => {
+    wrap.innerHTML = `
+      <div class="waitlist-success">
+        <span class="check">✓</span>
+        <div>
+          <strong>You're on the list.</strong>
+          We'll email you the moment Pick1 launches — and your <span style="color:var(--accent);font-weight:800">first week is free</span>.
+        </div>
+      </div>
+    `;
+  };
+
+  document.querySelectorAll('.waitlist-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const wrap   = form.closest('.waitlist-wrap');
+      const input  = form.querySelector('input[type=email]');
+      const button = form.querySelector('button');
+      const errorEl = wrap.querySelector('.waitlist-error');
+      const email = (input.value || '').trim();
+      const source = form.dataset.source || 'site';
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errorEl.textContent = 'Please enter a valid email.';
+        input.focus();
+        return;
+      }
+      errorEl.textContent = '';
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Joining…';
+
+      // Guard: if creds aren't set yet, fall back to a local-only success state
+      // so the form still feels alive in preview. Replace creds in the constants
+      // above to enable real Klaviyo submissions.
+      if (KLAVIYO_PUBLIC_KEY === 'REPLACE_WITH_PUBLIC_KEY' || KLAVIYO_LIST_ID === 'REPLACE_WITH_LIST_ID') {
+        console.warn('[Pick1] Klaviyo credentials not configured — using preview success state.');
+        setTimeout(() => showSuccess(wrap), 600);
+        return;
+      }
+
+      const result = await subscribeEmail(email, source);
+      if (result.ok) {
+        showSuccess(wrap);
+      } else {
+        errorEl.textContent = result.detail || 'Something went wrong. Please try again.';
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
     });
   });
 
