@@ -74,6 +74,42 @@ class PicksViewModel: ObservableObject {
         return historyPicks.filter { $0.sport == selectedSport }
     }
 
+    // MARK: - Free-tier filter
+    //
+    // Free users see exactly ONE pick per sport: the highest-confidence
+    // pick (probability) of the day. If `selectedSport` is something
+    // other than "all", we still surface only that single best pick for
+    // the chosen sport.
+
+    /// One pick per sport — the AI's most confident call. Used as the
+    /// Free-tier feed.
+    var freeTierTodayPicks: [Pick] {
+        let bySport = Dictionary(grouping: todayPicks, by: { $0.sport })
+        let topPerSport = bySport.values.compactMap {
+            $0.max(by: { $0.probability < $1.probability })
+        }
+        return topPerSport.sorted { $0.probability > $1.probability }
+    }
+
+    /// Free-tier list filtered by `selectedSport` chip.
+    var freeTierFilteredPicks: [Pick] {
+        if selectedSport == "all" { return freeTierTodayPicks }
+        return freeTierTodayPicks.filter { $0.sport == selectedSport }
+    }
+
+    /// Returns the picks the user is allowed to see. Pro users get
+    /// `filteredTodayPicks`; Free users get `freeTierFilteredPicks`.
+    func visiblePicks(isPro: Bool) -> [Pick] {
+        isPro ? filteredTodayPicks : freeTierFilteredPicks
+    }
+
+    /// Picks beyond the Free-tier cap. Free users see these as locked
+    /// "Unlock with Pro" placeholders; Pro users never call this.
+    var lockedTodayPicks: [Pick] {
+        let visibleIds = Set(freeTierTodayPicks.map { $0.id })
+        return filteredTodayPicks.filter { !visibleIds.contains($0.id) }
+    }
+
     // MARK: - Stats (over the rolling 30-day history)
 
     /// Settled = W or L (not pending). All-time win rate over the window.

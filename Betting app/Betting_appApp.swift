@@ -16,6 +16,7 @@ struct Betting_appApp: App {
     @AppStorage("hasFinishedOnboarding") private var hasFinishedOnboarding = false
     @AppStorage("selectedSports") private var selectedSports = ""
     @State private var authManager = AuthManager()
+    @StateObject private var subscriptions = SubscriptionManager()
 
     init() {
         registerCustomFonts()
@@ -40,8 +41,10 @@ struct Betting_appApp: App {
                 }
             }
             .environment(authManager)
+            .environmentObject(subscriptions)
             .task {
                 await authManager.checkSession()
+                await subscriptions.bootstrap()
             }
         }
     }

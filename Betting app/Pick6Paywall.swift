@@ -16,6 +16,7 @@
 //   Sticky bottom bar (CTA + then-pricing)
 
 import SwiftUI
+import StoreKit
 
 enum PaywallPlan: String { case weekly, monthly }
 
@@ -39,6 +40,7 @@ struct OBPaywallScreen: View {
     let onSkip: () -> Void
 
     @State private var plan: PaywallPlan = .monthly
+    @EnvironmentObject private var subs: SubscriptionManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -465,7 +467,9 @@ struct OBPaywallScreen: View {
     }
 
     private var restorePurchases: some View {
-        Button(action: { /* TODO: hook to StoreKit restore */ }) {
+        Button {
+            Task { await subs.restorePurchases() }
+        } label: {
             Text("Restore Purchases")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.p6Ink2)
@@ -473,28 +477,45 @@ struct OBPaywallScreen: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .disabled(subs.purchasing)
     }
 
     // MARK: - Sticky CTA
 
     private var stickyBar: some View {
         VStack(spacing: 8) {
-            Button(action: { onSubscribe(plan.rawValue) }) {
-                Text("Start 7-Day Free Trial")
-                    .font(.custom("BarlowCondensed-Black", size: 15))
-                    .kerning(2.6)
-                    .textCase(.uppercase)
-                    .foregroundColor(.p6LimeInk)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.p6Lime)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Button(action: triggerPurchase) {
+                Group {
+                    if subs.purchasing {
+                        ProgressView()
+                            .tint(.p6LimeInk)
+                    } else {
+                        Text("Start 7-Day Free Trial")
+                            .font(.custom("BarlowCondensed-Black", size: 15))
+                            .kerning(2.6)
+                            .textCase(.uppercase)
+                            .foregroundColor(.p6LimeInk)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.p6Lime)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
+            .disabled(subs.purchasing)
 
-            Text("Then \(plan == .weekly ? "$14.99/week" : "$39.99/month") · Cancel anytime")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.p6Mute)
+            if let err = subs.lastError {
+                Text(err)
+                    .font(.system(size: 11))
+                    .foregroundColor(.p6Hot)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            } else {
+                Text("Then \(plan == .weekly ? "$14.99/week" : "$39.99/month") · Cancel anytime")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.p6Mute)
+            }
         }
         .padding(.horizontal, 22)
         .padding(.top, 14)
@@ -509,6 +530,25 @@ struct OBPaywallScreen: View {
         .overlay(alignment: .top) {
             Rectangle().fill(Color.white.opacity(0.05)).frame(height: 1)
         }
+        .onChange(of: subs.isPro) { _, nowPro in
+            // The instant Apple confirms the purchase, dismiss the paywall.
+            if nowPro { onSubscribe(plan.rawValue) }
+        }
+    }
+
+    private var selectedProduct: Product? {
+        let needle = plan == .weekly
+            ? "weekly"
+            : "monthly"
+        return subs.products.first { $0.id.lowercased().contains(needle) }
+    }
+
+    private func triggerPurchase() {
+        guard let product = selectedProduct else {
+            subs.lastError = "Couldn't find that product. Make sure App Store Connect has \(SubscriptionManager.productIds.joined(separator: ", ")) configured."
+            return
+        }
+        Task { await subs.purchase(product) }
     }
 }
 

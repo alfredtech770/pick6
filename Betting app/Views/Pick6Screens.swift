@@ -684,8 +684,10 @@ private struct EmptyPanel: View {
 struct SportHubView: View {
     let sport: String
     @ObservedObject var vm: PicksViewModel
+    var isPro: Bool = true
     let onClose: () -> Void
     let onTapPick: (Pick) -> Void
+    var onUnlock: () -> Void = {}
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -713,14 +715,25 @@ struct SportHubView: View {
                             .padding(.horizontal, 16)
                             .padding(.bottom, 18)
                     }
-                    HubSectionHead(title: "TODAY", meta: "\(picksForSport.count) PICKS")
+                    HubSectionHead(title: isPro ? "TODAY" : "FREE PICK",
+                                   meta: "\(picksForSport.count) PICK\(picksForSport.count == 1 ? "" : "S")")
                         .padding(.bottom, 10)
                     LazyVStack(spacing: 8) {
-                        ForEach(picksForSport) { p in
+                        let visible = isPro ? picksForSport : Array(topPick.map { [$0] } ?? [])
+                        ForEach(visible) { p in
                             Button { onTapPick(p) } label: {
                                 CompactPickCard(pick: p, liveScore: liveScore(for: p))
                             }
                             .buttonStyle(.plain)
+                        }
+                        if !isPro {
+                            let lockedRest = picksForSport.filter { $0.id != topPick?.id }
+                            if !lockedRest.isEmpty {
+                                ProUnlockCard(lockedCount: lockedRest.count, onUnlock: onUnlock)
+                                ForEach(lockedRest.prefix(3)) { p in
+                                    LockedPickCard(pick: p, onUnlock: onUnlock)
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -981,6 +994,7 @@ struct ConfPill: View {
 
 struct ProfileView: View {
     @ObservedObject var vm: PicksViewModel
+    var isPro: Bool = false
     let onShowWins: () -> Void
     let onShowPaywall: () -> Void
     let onSignOut: () -> Void
@@ -1216,7 +1230,7 @@ struct ProfileView: View {
         VStack(spacing: 8) {
             settingsRow(icon: "bell.fill", title: "Notifications", trailing: "ON")
             settingsRow(icon: "moon.fill", title: "Dark Mode", trailing: "ON")
-            settingsRow(icon: "creditcard.fill", title: "Subscription", trailing: "FREE", action: onShowPaywall)
+            settingsRow(icon: "creditcard.fill", title: "Subscription", trailing: isPro ? "PRO" : "FREE", action: onShowPaywall)
             settingsRow(icon: "lock.fill", title: "Privacy & Security", trailing: nil)
             settingsRow(icon: "questionmark.circle.fill", title: "Help Center", trailing: nil)
             settingsRow(icon: "rectangle.portrait.and.arrow.right.fill", title: "Sign Out", trailing: nil, danger: true, action: onSignOut)
@@ -1403,7 +1417,9 @@ struct WinsView: View {
 
 struct LiveView: View {
     @ObservedObject var vm: PicksViewModel
+    var isPro: Bool = true
     let onTapPick: (Pick) -> Void
+    var onUnlock: () -> Void = {}
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1422,11 +1438,21 @@ struct LiveView: View {
                     HubSectionHead(title: "IN PLAY", meta: "\(livePicks.count) GAMES", live: true)
                         .padding(.bottom, 10)
                     LazyVStack(spacing: 8) {
-                        ForEach(livePicks) { p in
+                        let visible = isPro ? livePicks : Array(livePicks.max(by: { $0.probability < $1.probability }).map { [$0] } ?? [])
+                        ForEach(visible) { p in
                             Button { onTapPick(p) } label: {
                                 liveCard(pick: p, score: liveScore(for: p))
                             }
                             .buttonStyle(.plain)
+                        }
+                        if !isPro {
+                            let locked = livePicks.filter { p in !visible.contains(where: { $0.id == p.id }) }
+                            if !locked.isEmpty {
+                                ProUnlockCard(lockedCount: locked.count, onUnlock: onUnlock)
+                                ForEach(locked.prefix(3)) { p in
+                                    LockedPickCard(pick: p, onUnlock: onUnlock)
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -1551,7 +1577,9 @@ struct LiveView: View {
 
 struct AllPicksView: View {
     @ObservedObject var vm: PicksViewModel
+    var isPro: Bool = true
     let onTapPick: (Pick) -> Void
+    var onUnlock: () -> Void = {}
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1564,7 +1592,8 @@ struct AllPicksView: View {
                     .padding(.bottom, 18)
                 SportFilter(vm: vm)
                     .padding(.bottom, 12)
-                if vm.filteredTodayPicks.isEmpty {
+                let visible = vm.visiblePicks(isPro: isPro)
+                if visible.isEmpty {
                     Text("No picks for the selected sport.")
                         .font(.archivo(12, weight: .regular))
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1572,11 +1601,17 @@ struct AllPicksView: View {
                         .frame(maxWidth: .infinity)
                 } else {
                     LazyVStack(spacing: 8) {
-                        ForEach(vm.filteredTodayPicks) { p in
+                        ForEach(visible) { p in
                             Button { onTapPick(p) } label: {
                                 CompactPickCard(pick: p, liveScore: liveScore(for: p))
                             }
                             .buttonStyle(.plain)
+                        }
+                        if !isPro && !vm.lockedTodayPicks.isEmpty {
+                            ProUnlockCard(lockedCount: vm.lockedTodayPicks.count, onUnlock: onUnlock)
+                            ForEach(vm.lockedTodayPicks.prefix(4)) { p in
+                                LockedPickCard(pick: p, onUnlock: onUnlock)
+                            }
                         }
                     }
                     .padding(.horizontal, 16)

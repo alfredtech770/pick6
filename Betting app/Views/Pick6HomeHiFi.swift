@@ -62,6 +62,7 @@ struct Pick6HomeHiFi: View {
     @State private var showPaywall: Bool = false
     @State private var showWins: Bool = false
     @StateObject private var vm = PicksViewModel()
+    @EnvironmentObject private var subs: SubscriptionManager
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -87,14 +88,23 @@ struct Pick6HomeHiFi: View {
                 switch tab {
                 case .home:
                     HomeHiFiContent(vm: vm,
+                                    isPro: subs.isPro,
                                     onTapPick: { detailPick = $0 },
-                                    onTapSport: { sportHub = $0 })
+                                    onTapSport: { sportHub = $0 },
+                                    onUnlock: { showPaywall = true })
                 case .picks:
-                    AllPicksView(vm: vm, onTapPick: { detailPick = $0 })
+                    AllPicksView(vm: vm,
+                                 isPro: subs.isPro,
+                                 onTapPick: { detailPick = $0 },
+                                 onUnlock: { showPaywall = true })
                 case .live:
-                    LiveView(vm: vm, onTapPick: { detailPick = $0 })
+                    LiveView(vm: vm,
+                             isPro: subs.isPro,
+                             onTapPick: { detailPick = $0 },
+                             onUnlock: { showPaywall = true })
                 case .profile:
                     ProfileView(vm: vm,
+                                isPro: subs.isPro,
                                 onShowWins: { showWins = true },
                                 onShowPaywall: { showPaywall = true },
                                 onSignOut: { /* hook to AuthManager later */ })
@@ -162,8 +172,10 @@ private struct SportHubID: Identifiable { let id: String }
 
 struct HomeHiFiContent: View {
     @ObservedObject var vm: PicksViewModel
+    let isPro: Bool
     let onTapPick: (Pick) -> Void
     let onTapSport: (String) -> Void
+    let onUnlock: () -> Void
 
     var body: some View {
         ScrollView {
@@ -187,25 +199,41 @@ struct HomeHiFiContent: View {
                 SportFilter(vm: vm, onLongPress: { onTapSport($0) })
                     .padding(.top, 4)
 
-                SectionHeader(title: "TODAY'S GAMES",
-                              cta: "SEE ALL →")
+                SectionHeader(title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
+                              cta: isPro ? "SEE ALL →" : nil)
                     .padding(.horizontal, 20)
                     .padding(.top, 18)
 
                 LazyVStack(spacing: 10) {
-                    if vm.isLoading && vm.filteredTodayPicks.isEmpty {
+                    let visible = vm.visiblePicks(isPro: isPro)
+                    if vm.isLoading && visible.isEmpty {
                         ProgressView().tint(Color(hex: "#D4FF3A"))
                             .padding(.top, 40)
-                    } else if vm.filteredTodayPicks.isEmpty {
+                    } else if visible.isEmpty {
                         EmptyTodayState()
                             .padding(.top, 40)
                     } else {
-                        ForEach(vm.filteredTodayPicks.indices, id: \.self) { idx in
-                            let pick = vm.filteredTodayPicks[idx]
+                        ForEach(visible.indices, id: \.self) { idx in
+                            let pick = visible[idx]
                             Button { onTapPick(pick) } label: {
                                 GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
                             }
                             .buttonStyle(.plain)
+                        }
+                        // Free tier: show locked picks beneath as Pro upsell
+                        if !isPro && !vm.lockedTodayPicks.isEmpty {
+                            ProUnlockCard(lockedCount: vm.lockedTodayPicks.count,
+                                          onUnlock: onUnlock)
+                            ForEach(vm.lockedTodayPicks.prefix(3), id: \.id) { pick in
+                                LockedPickCard(pick: pick, onUnlock: onUnlock)
+                            }
+                            if vm.lockedTodayPicks.count > 3 {
+                                Text("+ \(vm.lockedTodayPicks.count - 3) more locked")
+                                    .font(.archivoNarrow(10, weight: .bold))
+                                    .tracking(2)
+                                    .foregroundColor(Color(hex: "#6E6F75"))
+                                    .padding(.top, 4)
+                            }
                         }
                     }
                 }
@@ -889,7 +917,12 @@ struct HiFiSportChip: View {
 
 struct SectionHeader: View {
     let title: String
-    let cta: String
+    let cta: String?
+
+    init(title: String, cta: String? = nil) {
+        self.title = title
+        self.cta = cta
+    }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -898,10 +931,12 @@ struct SectionHeader: View {
                 .tracking(-0.15)
                 .foregroundColor(Color(hex: "#F5F3EE"))
             Spacer()
-            Text(cta)
-                .font(.archivoNarrow(11, weight: .bold))
-                .tracking(2)
-                .foregroundColor(Color(hex: "#B9B7B0"))
+            if let cta = cta {
+                Text(cta)
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
         }
     }
 }
@@ -1200,6 +1235,132 @@ struct NavItem: View {
             .background(
                 Capsule()
                     .fill(isActive ? Color.white.opacity(0.08) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Locked Pro picks (Free tier)
+
+/// Lime banner card shown above the locked picks list. Tapping it
+/// presents the paywall.
+struct ProUnlockCard: View {
+    let lockedCount: Int
+    let onUnlock: () -> Void
+
+    var body: some View {
+        Button(action: onUnlock) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("PICK6 PRO")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                }
+                .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
+
+                Text("Unlock \(lockedCount) more pick\(lockedCount == 1 ? "" : "s")")
+                    .font(.anton(28))
+                    .foregroundColor(Color(hex: "#0A0B0D"))
+
+                HStack(spacing: 6) {
+                    Text("7-day free trial")
+                        .font(.archivo(12, weight: .bold))
+                        .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(
+                ZStack {
+                    Color(hex: "#D4FF3A")
+                    RadialGradient(
+                        colors: [Color(hex: "#eaff7a"), Color(hex: "#D4FF3A").opacity(0)],
+                        center: UnitPoint(x: 1.1, y: -0.2),
+                        startRadius: 30,
+                        endRadius: 350
+                    )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 14, x: 0, y: 12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// A blurred, locked version of a real pick card. Same dimensions as
+/// `GameCard` so the list rhythm is preserved.
+struct LockedPickCard: View {
+    let pick: Pick
+    let onUnlock: () -> Void
+
+    var body: some View {
+        Button(action: onUnlock) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(pick.league.uppercased())
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Spacer()
+                    HStack(spacing: 5) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9, weight: .bold))
+                        Text("PRO")
+                            .font(.mono(10, weight: .heavy))
+                    }
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.08)))
+                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+                }
+                .padding(.bottom, 14)
+
+                // Blurred matchup line — show team names but obscured
+                HStack(alignment: .center, spacing: 14) {
+                    Text(pick.awayTeam.uppercased())
+                        .font(.anton(18))
+                        .foregroundColor(Color(hex: "#F5F3EE").opacity(0.4))
+                        .blur(radius: 5)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text("VS")
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text(pick.homeTeam.uppercased())
+                        .font(.anton(18))
+                        .foregroundColor(Color(hex: "#F5F3EE").opacity(0.4))
+                        .blur(radius: 5)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                HStack {
+                    Text("UNLOCK WITH PRO →")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                    Spacer()
+                }
+                .padding(.top, 12)
+                .overlay(alignment: .top) {
+                    Rectangle().frame(height: 1).foregroundColor(Color(hex: "#22252B"))
+                }
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color(hex: "#101114"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    )
             )
         }
         .buttonStyle(.plain)
