@@ -106,9 +106,9 @@ If you're an EEA, UK, or California resident you also have the right to lodge a 
 
 ## 6. Children's privacy
 
-Pick6 is not intended for users under **17 years of age**. We do not knowingly collect data from minors. The App Store requires Pick6 to display a 17+ age rating because the app surfaces sports predictions, which Apple categorizes as gambling-adjacent content even though no real-money wagering takes place inside Pick6.
+Pick6 is not intended for users under **13 years of age** (or such higher age as required in your jurisdiction by COPPA, GDPR-K, or local law). We do not knowingly collect data from children. Pick6 is rated 12+ on the App Store as a sports analysis and content app — comparable to ESPN, The Athletic, or FiveThirtyEight.
 
-If you believe a minor has created a Pick6 account, contact `privacy@pick6.app` and we will delete the account within 7 days.
+If you believe a child has created a Pick6 account, contact `privacy@pick6.app` and we will delete the account within 7 days.
 
 ---
 

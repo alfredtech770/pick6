@@ -265,11 +265,11 @@ struct OBPaywallScreen: View {
                 .padding(.bottom, 18)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    feature(boldPrefix: "Unlimited AI picks", suffix: " across all 9 sports")
-                    feature(boldPrefix: "Confidence scores & reasoning", suffix: " on every pick")
+                    feature(boldPrefix: "Unlimited AI picks", suffix: " across all 8 sports")
+                    feature(boldPrefix: "Confidence scores & reasoning", suffix: " on every recommendation")
                     feature(boldPrefix: "Live game tracking", suffix: " with in-play updates")
-                    feature(boldPrefix: "Full stats & ROI dashboard", suffix: " — all-time history")
-                    feature(boldPrefix: "Parlay builder", suffix: " + sportsbook line comparison")
+                    feature(boldPrefix: "Full stats dashboard", suffix: " — track every pick over time")
+                    feature(boldPrefix: "Deep matchup analysis", suffix: " · form, trends, key factors")
                     feature(boldPrefix: "Ad-free experience", suffix: " · Early access to new sports")
                 }
             }
@@ -338,12 +338,12 @@ struct OBPaywallScreen: View {
     }
 
     private let compareRows: [CompareRow] = [
-        .init(feature: "AI predictions",        free: "1 per sport/day", pro: "∞ Unlimited", proIsCheck: false),
+        .init(feature: "AI recommendations",    free: "1 per sport/day", pro: "∞ Unlimited", proIsCheck: false),
         .init(feature: "Live game tracking",    free: nil,               pro: "✓",           proIsCheck: true),
         .init(feature: "Confidence scores",     free: "Partial",         pro: "Full",        proIsCheck: false),
-        .init(feature: "Stats & ROI dashboard", free: "7 days",          pro: "All-time",    proIsCheck: false),
-        .init(feature: "Parlay builder",        free: nil,               pro: "✓",           proIsCheck: true),
-        .init(feature: "Line comparison",       free: nil,               pro: "✓",           proIsCheck: true),
+        .init(feature: "Stats dashboard",       free: "7 days",          pro: "All-time",    proIsCheck: false),
+        .init(feature: "Deep matchup analysis", free: nil,               pro: "✓",           proIsCheck: true),
+        .init(feature: "Saved picks history",   free: nil,               pro: "✓",           proIsCheck: true),
         .init(feature: "Ad-free",               free: nil,               pro: "✓",           proIsCheck: true),
     ]
 

@@ -177,7 +177,7 @@ struct MatchDetailView: View {
     let liveScore: LiveScore?
     let onClose: () -> Void
 
-    enum Tab: String, CaseIterable { case summary = "SUMMARY", lineups = "LINEUPS", odds = "ODDS", h2h = "H2H" }
+    enum Tab: String, CaseIterable { case summary = "SUMMARY", lineups = "LINEUPS", analysis = "ANALYSIS", h2h = "H2H" }
     @State private var tab: Tab = .summary
     @State private var starred: Bool = false
     @State private var showToast: Bool = false
@@ -197,10 +197,10 @@ struct MatchDetailView: View {
                     tabsRow
                     Group {
                         switch tab {
-                        case .summary: summaryPanel
-                        case .lineups: lineupsPanel
-                        case .odds:    oddsPanel
-                        case .h2h:     h2hPanel
+                        case .summary:  summaryPanel
+                        case .lineups:  lineupsPanel
+                        case .analysis: analysisPanel
+                        case .h2h:      h2hPanel
                         }
                     }
                     .padding(.horizontal, 16)
@@ -210,7 +210,7 @@ struct MatchDetailView: View {
 
             // Toast
             if showToast {
-                Text("PICK SAVED · \(Int(pick.probability))% AI")
+                Text("SAVED · \(Int(pick.probability))% AI CONFIDENCE")
                     .font(.archivo(12, weight: .bold))
                     .foregroundColor(Color(hex: "#0A0B0D"))
                     .padding(.horizontal, 16)
@@ -223,8 +223,8 @@ struct MatchDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            // Sticky CTA
-            VStack { Spacer(); betCTA }
+            // Sticky save-to-favorites CTA
+            VStack { Spacer(); savePickCTA }
         }
         .preferredColorScheme(.dark)
     }
@@ -566,8 +566,9 @@ struct MatchDetailView: View {
     }
 
     @ViewBuilder
-    private var oddsPanel: some View {
-        EmptyPanel(title: "ODDS", caption: "Sportsbook lines integration coming soon.")
+    private var analysisPanel: some View {
+        EmptyPanel(title: "DEEPER ANALYSIS",
+                   caption: "Per-team trends, recent form charts, and matchup deltas coming soon.")
     }
 
     @ViewBuilder
@@ -575,7 +576,9 @@ struct MatchDetailView: View {
         EmptyPanel(title: "HEAD TO HEAD", caption: "Last-5 series view coming soon.")
     }
 
-    private var betCTA: some View {
+    /// "Save Pick" — adds the pick to the user's tracked list. Pick6 does
+    /// not place wagers; this is a save-to-favorites action.
+    private var savePickCTA: some View {
         Button {
             withAnimation { showToast = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
@@ -584,11 +587,11 @@ struct MatchDetailView: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("AI PICK · \(pick.confidence)")
+                    Text("AI RECOMMENDS · \(pick.confidence)")
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
-                    Text(pick.pick.uppercased())
+                    Text("SAVE THIS PICK")
                         .font(.anton(20))
                         .foregroundColor(Color(hex: "#0A0B0D"))
                 }
@@ -597,7 +600,7 @@ struct MatchDetailView: View {
                     Text("\(Int(pick.probability))%")
                         .font(.archivo(15, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D"))
-                    Image(systemName: "arrow.right")
+                    Image(systemName: "bookmark.fill")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D"))
                 }
@@ -1178,7 +1181,7 @@ struct ProfileView: View {
             ("diamond.fill", "Diamond Tier", vm.totalWins >= 50),
             ("trophy.fill", "Century Club", vm.totalWins >= 100),
             ("drop.fill", "First Blood", vm.totalWins >= 1),
-            ("link", "Parlay King", false),
+            ("books.vertical.fill", "Sport Scholar", false),
             ("number", "1000 Club", vm.totalWins >= 1000),
             ("flag.fill", "Underdog", false),
             ("calendar", "Perfect Week", false),

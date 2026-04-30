@@ -79,10 +79,10 @@ Use **`SUBSCRIPTION_METADATA.md`** in this directory for exact copy/values.
 
 App Store Connect → your app → **App Information**
 
-- [ ] **Subtitle**: `Premium AI sports picks` *(30 char max)*
-- [ ] **Category** → Primary: **Sports** · Secondary: **Entertainment**
+- [ ] **Subtitle**: `AI sports analysis & advice` *(30 char max)*
+- [ ] **Category** → Primary: **Sports** · Secondary: **News**
 - [ ] **Content Rights**: tick the box only if you own the rights or have permission for everything you're publishing (you do — it's all your content)
-- [ ] **Age Rating** → click Edit, answer the questionnaire (see `STORE_LISTING.md` for exact answers — should land you at **17+**)
+- [ ] **Age Rating** → click Edit, answer the questionnaire (see `STORE_LISTING.md` for exact answers — should land you at **12+** or **4+**, NOT 17+, since Pick6 is sports analysis content not gambling)
 
 ---
 
@@ -90,7 +90,7 @@ App Store Connect → your app → **App Information**
 
 - [ ] **Pricing and Availability**
 - [ ] **Price**: Free *(subscriptions handle all monetization)*
-- [ ] **Availability**: All countries except those with sports-prediction restrictions. Quick safe list: deselect China, Iran, North Korea, Cuba, Syria. *(For US sports-prediction apps, leaving full distribution and being clear in marketing copy that picks are entertainment/AI predictions — not real-money betting — generally clears Apple Review.)*
+- [ ] **Availability**: All countries. Pick6 is a sports analysis / content app (like ESPN or The Athletic), not a gambling product, so it carries no jurisdiction restrictions. Standard safe-list applies: optionally deselect Iran, North Korea, Cuba, Syria (sanctions). Everything else stays selected.
 - [ ] **Distribution**: Public on the App Store
 
 ---

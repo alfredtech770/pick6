@@ -64,7 +64,7 @@ Before each shot:
 
 You can either submit raw screenshots OR overlay marketing copy on each. The dark Pick6 aesthetic looks great with:
 
-- Anton 80pt headline at top in lime `#D4FF3A` ("AI THAT BEATS THE BOOK.")
+- Anton 80pt headline at top in lime `#D4FF3A` ("PICK SHARPER TODAY." or "AI SPORTS, ELEVATED.")
 - Original screenshot framed below
 
 I recommend doing 5 raw screenshots first (faster to ship), then iterating on overlay versions in v1.1 once you have App Store conversion data.

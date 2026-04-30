@@ -411,12 +411,12 @@ struct OBWelcomeScreen: View {
                         OBKicker(text: "WELCOME TO PICK6")
                             .padding(.bottom, 14)
 
-                        OBTitle("BEAT", "THE ", emphasis: "BOOK.", size: 78)
+                        OBTitle("PICK", "SHARPER", emphasis: "TODAY.", size: 78)
                             .opacity(appeared ? 1 : 0)
                             .offset(y: appeared ? 0 : 14)
                             .animation(.easeOut(duration: 0.45).delay(0.05), value: appeared)
 
-                        Text("AI-powered picks across 9 sports.\nBuilt for people who hate losing.")
+                        Text("AI sports analysis across 8 leagues.\nClear reasoning on every recommendation.")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.p6Ink2)
                             .lineSpacing(4)
@@ -507,7 +507,7 @@ private struct ValueSlide {
 private let valueSlides: [ValueSlide] = [
     .init(kicker: "01 · AI PICKS",
           line1: "NINE SPORTS,", line2: "ONE BRAIN.",
-          body: "Every pick backed by 10,000+ data points across NBA, EPL, MLB, NFL, NHL, UFC, F1, Tennis & Cricket.",
+          body: "Every recommendation backed by 10,000+ data points across NBA, EPL, MLB, NFL, NHL, UFC, F1 & Cricket.",
           visual: .sports),
     .init(kicker: "02 · LIVE TRACKING",
           line1: "IN THE", line2: "MOMENT.",
@@ -515,11 +515,11 @@ private let valueSlides: [ValueSlide] = [
           visual: .live),
     .init(kicker: "03 · CONFIDENCE",
           line1: "NO MORE", line2: "GUESSING.",
-          body: "Every pick comes with a confidence score and plain-English reasoning. Know WHY before you bet.",
+          body: "Every pick comes with a confidence score and plain-English reasoning. Know WHY behind every call.",
           visual: .confidence),
     .init(kicker: "04 · YOUR TEAMS",
           line1: "NEVER MISS", line2: "A GAME.",
-          body: "Follow your teams. Get alerts 30 min before tip-off, live score updates, and AI picks for every match.",
+          body: "Follow your teams. Get alerts 30 min before tip-off, live score updates, and AI insights for every match.",
           visual: .teams),
 ]
 

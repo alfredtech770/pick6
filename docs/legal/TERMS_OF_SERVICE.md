@@ -12,7 +12,7 @@ By creating a Pick6 account or otherwise using the Service, you agree to be boun
 
 Pick6 is an entertainment and informational service that uses artificial intelligence to generate sports predictions for major leagues including NBA, NFL, NHL, MLB, EPL, UFC, F1, and IPL Cricket.
 
-**Pick6 is not a sportsbook.** Pick6 does not accept wagers, hold funds, or facilitate real-money gambling of any kind. The "place pick" and similar in-app actions save your interest in a prediction within Pick6 — they do not place bets with any third party.
+**Pick6 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" and similar in-app actions add a recommendation to your tracked-picks list inside Pick6 only — they do not interact with any third-party platform. Pick6 does not facilitate, accept, or process wagers of any kind, and we do not integrate with any sportsbook, betting service, or financial-transaction platform beyond the Pick6 Pro subscription, which Apple processes directly through StoreKit.
 
 **Pick6 is not financial or investment advice.** AI predictions are statistical estimates with documented uncertainty. Past performance does not predict future results. Use Pick6 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
 
@@ -20,12 +20,11 @@ Pick6 is an entertainment and informational service that uses artificial intelli
 
 ## 2. Eligibility
 
-You must be **at least 17 years old** to use Pick6. By using the Service you represent and warrant that:
+You must be **at least 13 years old** (or the minimum age required by your jurisdiction's data-protection law — for example, 16 under GDPR for users in some EU member states) to use Pick6. By using the Service you represent and warrant that:
 
-- You are at least 17 years old
-- You have full legal capacity to enter into these Terms
+- You meet the minimum age requirement above
+- You have full legal capacity (or your parent/legal guardian has provided consent on your behalf) to enter into these Terms
 - You will use Pick6 in compliance with all applicable laws in your jurisdiction
-- If you are in a jurisdiction where AI sports predictions or sports prediction apps are restricted, you will not use the Service from that jurisdiction
 
 ---
 
@@ -113,7 +112,7 @@ We reserve the right to investigate and take legal action against anyone who, in
 
 By using Pick6 you acknowledge that:
 
-- You are not relying on Pick6 predictions as the sole basis for any betting, financial, or other decision
+- You are not relying on Pick6 recommendations as the sole basis for any sports-related decision
 - Pick6 is not liable for losses arising from decisions you make based on AI predictions
 
 ---
