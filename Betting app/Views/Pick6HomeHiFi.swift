@@ -191,6 +191,12 @@ struct HomeHiFiContent: View {
                     }
                 }
                 .buttonStyle(.plain)
+                // The hero already has 56pt internal padding-top to clear
+                // the status bar / notch, so we extend the scroll content
+                // up under the safe area. Without this the hero gets
+                // pushed down ~50pt by the system safe-area inset and
+                // there's a dark band above the lime card.
+                .ignoresSafeArea(edges: .top)
 
                 StatsRow(streak: vm.currentStreak,
                          best: vm.longestStreak,
