@@ -199,6 +199,7 @@ struct MatchDetailView: View {
     /// UFC, ROSTERS for cricket/tennis, LINEUPS for everything else.
     enum Tab: String, CaseIterable { case summary, roster, analysis, h2h }
     @State private var tab: Tab = .summary
+    @State private var showBookmakers: Bool = false
     @State private var starred: Bool = false
     @State private var showToast: Bool = false
 
@@ -259,10 +260,23 @@ struct MatchDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            // Sticky save-to-favorites CTA
+            // Sticky save-to-favorites CTA — sits flush with the bottom
+            // safe-area edge (lower than before; no extra padding above
+            // the home indicator) so the analysis content above gets
+            // more vertical room.
             VStack { Spacer(); savePickCTA }
         }
         .preferredColorScheme(.dark)
+        // Bookmaker frame — opens when the CTA is tapped. Lists the
+        // major sportsbooks with deep-links so the user can place the
+        // pick at the platform of their choice. Pick6 itself never
+        // processes wagers (see disclaimer in the sheet header).
+        .sheet(isPresented: $showBookmakers) {
+            BookmakerSheet(pick: pick, isOpen: $showBookmakers)
+                .presentationDragIndicator(.visible)
+                .presentationContentInteraction(.scrolls)
+                .presentationDetents([.medium, .large])
+        }
     }
 
     private var detailTopNav: some View {
@@ -661,14 +675,14 @@ struct MatchDetailView: View {
         EmptyPanel(title: "HEAD TO HEAD", caption: "Last-5 series view coming soon.")
     }
 
-    /// "Save Pick" — adds the pick to the user's tracked list. Pick6 does
-    /// not place wagers; this is a save-to-favorites action.
+    /// Sticky bottom CTA. Tapping opens the BookmakerSheet so the user
+    /// can place the pick at their preferred sportsbook. Pick6 itself
+    /// does NOT process the wager — see disclaimer in the sheet header.
+    /// CTA sits low (4pt above the home-indicator safe area) so the
+    /// content above gets more breathing room.
     private var savePickCTA: some View {
         Button {
-            withAnimation { showToast = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                withAnimation { showToast = false }
-            }
+            showBookmakers = true
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -676,7 +690,7 @@ struct MatchDetailView: View {
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
-                    Text("SAVE THIS PICK")
+                    Text("PLACE THIS PICK")
                         .font(.anton(20))
                         .foregroundColor(Color(hex: "#0A0B0D"))
                 }
@@ -685,8 +699,8 @@ struct MatchDetailView: View {
                     Text("\(Int(pick.probability))%")
                         .font(.archivo(15, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D"))
-                    Image(systemName: "bookmark.fill")
-                        .font(.system(size: 13, weight: .bold))
+                    Image(systemName: "arrow.up.right.square.fill")
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D"))
                 }
             }
@@ -700,7 +714,7 @@ struct MatchDetailView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
-        .padding(.bottom, 16)
+        .padding(.bottom, 4)   // hugs the home indicator — was 16
     }
 }
 
@@ -2224,5 +2238,255 @@ enum BarSet {
                 .init(label: "CORNERS",    homeText: "6",   awayText: "4",   homePct: 0.60),
             ]
         }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Bookmaker Sheet
+// ════════════════════════════════════════════════════════════════
+
+/// Modal sheet listing major sportsbooks with deep-links so the user
+/// can place the AI-recommended pick at the platform of their choice.
+///
+/// Pick6 itself does NOT process wagers, hold funds, or facilitate
+/// gambling. We surface AI predictions; bookmakers handle settlement.
+/// The disclaimer at the top of the sheet makes that explicit.
+///
+/// The sportsbook URLs in `Bookmaker.all` are public homepage / app
+/// universal-link URLs. Once you sign up with each sportsbook's
+/// affiliate program, swap them with your tracked links so referral
+/// revenue gets credited.
+struct BookmakerSheet: View {
+    let pick: Pick
+    @Binding var isOpen: Bool
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#07080a").ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    sheetHeader
+                        .padding(.horizontal, 18)
+                        .padding(.top, 12)
+                        .padding(.bottom, 18)
+
+                    pickSummary
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 14)
+
+                    disclaimerRow
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 18)
+
+                    Text("CHOOSE A SPORTSBOOK")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 10)
+
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10),
+                    ], spacing: 10) {
+                        ForEach(Bookmaker.all) { book in
+                            BookmakerTile(book: book)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 24)
+
+                    fineprint
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 32)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var sheetHeader: some View {
+        HStack {
+            Button { isOpen = false } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .frame(width: 38, height: 38)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            Text("PLACE PICK")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2.4)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+            Spacer()
+            Color.clear.frame(width: 38, height: 38)
+        }
+    }
+
+    /// Big AI-pick card at top: predicted winner + confidence + key factor.
+    private var pickSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("AI PICK")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                Spacer()
+                Text("\(Int(pick.probability))% CONFIDENCE")
+                    .font(.mono(11, weight: .bold))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.1)))
+                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+            }
+            Text(pick.pick.uppercased())
+                .font(.anton(34))
+                .tracking(-0.3)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .lineLimit(2).minimumScaleFactor(0.6)
+            if let factor = pick.keyFactor, !factor.isEmpty {
+                Text(factor)
+                    .font(.archivo(12, weight: .regular))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                    startPoint: .top, endPoint: .bottom
+                ))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+        )
+    }
+
+    /// Required-by-Apple disclaimer. Without this Apple Review will
+    /// reject any app surfacing sportsbook deep-links.
+    private var disclaimerRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Color(hex: "#FF8000"))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("21+ ONLY · GAMBLE RESPONSIBLY")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Text("Pick6 surfaces AI predictions for entertainment. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick6 — wagers are settled by the sportsbook, not by us.")
+                    .font(.archivo(11, weight: .regular))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(hex: "#FF8000").opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color(hex: "#FF8000").opacity(0.25), lineWidth: 1)
+                )
+        )
+    }
+
+    private var fineprint: some View {
+        VStack(spacing: 8) {
+            Text("If gambling is a problem, call 1-800-GAMBLER (US) or 1-800-522-4700 (NCPG).")
+                .font(.archivo(10, weight: .regular))
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .multilineTextAlignment(.center)
+            Text("Sportsbook availability depends on your jurisdiction. Pick6 is not affiliated with the sportsbooks listed.")
+                .font(.archivo(10, weight: .regular))
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Bookmaker model + tile
+// ════════════════════════════════════════════════════════════════
+
+struct Bookmaker: Identifiable {
+    let id: String
+    let name: String
+    let url: URL
+    let tint: Color
+
+    /// Major US/intl sportsbooks. Replace these URLs with your affiliate-
+    /// tracked links once you've signed up with each book's program.
+    static let all: [Bookmaker] = [
+        .init(id: "draftkings",  name: "DraftKings",  url: URL(string: "https://sportsbook.draftkings.com/")!,  tint: Color(hex: "#00B14F")),
+        .init(id: "fanduel",     name: "FanDuel",     url: URL(string: "https://sportsbook.fanduel.com/")!,     tint: Color(hex: "#1493FF")),
+        .init(id: "betmgm",      name: "BetMGM",      url: URL(string: "https://sports.betmgm.com/")!,           tint: Color(hex: "#B98C40")),
+        .init(id: "caesars",     name: "Caesars",     url: URL(string: "https://sportsbook.caesars.com/")!,     tint: Color(hex: "#C4A95E")),
+        .init(id: "espnbet",     name: "ESPN BET",    url: URL(string: "https://espnbet.com/")!,                 tint: Color(hex: "#D60808")),
+        .init(id: "betrivers",   name: "BetRivers",   url: URL(string: "https://www.betrivers.com/")!,           tint: Color(hex: "#0066B3")),
+        .init(id: "hardrock",    name: "Hard Rock",   url: URL(string: "https://hardrock.bet/")!,                tint: Color(hex: "#C8102E")),
+        .init(id: "bet365",      name: "bet365",      url: URL(string: "https://www.bet365.com/")!,              tint: Color(hex: "#14854F")),
+    ]
+}
+
+struct BookmakerTile: View {
+    let book: Bookmaker
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        Button {
+            openURL(book.url)
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                // Branded color dot — until logos are licensed
+                ZStack {
+                    Circle().fill(book.tint)
+                        .frame(width: 38, height: 38)
+                    Text(String(book.name.prefix(1)))
+                        .font(.anton(20))
+                        .foregroundColor(.white)
+                }
+                Text(book.name)
+                    .font(.archivo(14, weight: .heavy))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                HStack(spacing: 4) {
+                    Text("OPEN")
+                        .font(.archivoNarrow(9, weight: .bold))
+                        .tracking(1.8)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundColor(Color(hex: "#D4FF3A"))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                        startPoint: .top, endPoint: .bottom
+                    ))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
