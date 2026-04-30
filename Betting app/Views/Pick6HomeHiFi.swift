@@ -1384,74 +1384,145 @@ struct ProUnlockCard: View {
 
 /// A blurred, locked version of a real pick card. Same dimensions as
 /// `GameCard` so the list rhythm is preserved.
+/// Locked Pro pick card. Renders the full GameCard layout (real team
+/// logos, team names, score/VS area, AI PICKS footer with mini-ring) but
+/// blurred so the user can sense the pick exists, then overlays a
+/// centered lime "UNLOCK WITH PRO" capsule as the focal CTA. Tap →
+/// presents the paywall.
 struct LockedPickCard: View {
     let pick: Pick
     let onUnlock: () -> Void
 
     var body: some View {
         Button(action: onUnlock) {
-            VStack(spacing: 0) {
-                HStack {
-                    Text(pick.league.uppercased())
-                        .font(.archivoNarrow(10, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Spacer()
-                    HStack(spacing: 5) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 9, weight: .bold))
-                        Text("PRO")
-                            .font(.mono(10, weight: .heavy))
+            ZStack {
+                // ─── Real card content, blurred ────────────────
+                VStack(spacing: 0) {
+                    // Top row — league kicker + AI confidence chip
+                    HStack {
+                        Text(scheduledTopLine)
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .tracking(2.2)
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                        Spacer()
+                        ConfChip(percent: pick.probability,
+                                 hot: pick.probability >= 80)
                     }
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.08)))
-                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
-                }
-                .padding(.bottom, 14)
+                    .padding(.bottom, 14)
 
-                // Blurred matchup line — show team names but obscured
-                HStack(alignment: .center, spacing: 14) {
-                    Text(pick.awayTeam.uppercased())
-                        .font(.anton(18))
-                        .foregroundColor(Color(hex: "#F5F3EE").opacity(0.4))
-                        .blur(radius: 5)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Text("VS")
+                    // Teams row — real logos + names, will be blurred
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(spacing: 6) {
+                            TeamLogo(sport: pick.sport,
+                                     team: pick.awayTeam,
+                                     size: .big)
+                            Text(teamShortName(pick.awayTeam))
+                                .font(.anton(16))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Text("VS")
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(Color(hex: "#6E6F75"))
+
+                        VStack(spacing: 6) {
+                            TeamLogo(sport: pick.sport,
+                                     team: pick.homeTeam,
+                                     size: .big)
+                            Text(teamShortName(pick.homeTeam))
+                                .font(.anton(16))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    // Divider + AI PICKS footer (mirrors GameCard)
+                    Divider()
+                        .background(Color(hex: "#22252B"))
+                        .padding(.top, 14)
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("AI PICKS")
+                                .font(.archivoNarrow(10, weight: .bold))
+                                .tracking(2)
+                                .foregroundColor(Color(hex: "#B9B7B0"))
+                            Text(pick.pick.uppercased())
+                                .font(.anton(17))
+                                .tracking(0.17)
+                                .foregroundColor(Color(hex: "#D4FF3A"))
+                        }
+                        Spacer()
+                        MiniRing(percent: pick.probability)
+                    }
+                    .padding(.top, 12)
+                }
+                // The blur happens here — entire card content goes
+                // soft so the user can see structure + crests but
+                // can't read the pick or score.
+                .blur(radius: 7)
+                .opacity(0.6)
+
+                // ─── Centered Unlock CTA — never blurred ────────
+                VStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                    Text("UNLOCK WITH PRO")
                         .font(.archivoNarrow(11, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.homeTeam.uppercased())
-                        .font(.anton(18))
-                        .foregroundColor(Color(hex: "#F5F3EE").opacity(0.4))
-                        .blur(radius: 5)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-
-                HStack {
-                    Text("UNLOCK WITH PRO →")
-                        .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                    Spacer()
+                        .foregroundColor(Color(hex: "#0A0B0D"))
                 }
-                .padding(.top, 12)
-                .overlay(alignment: .top) {
-                    Rectangle().frame(height: 1).foregroundColor(Color(hex: "#22252B"))
-                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(Color(hex: "#D4FF3A"))
+                .clipShape(Capsule())
+                .shadow(color: Color(hex: "#D4FF3A").opacity(0.5),
+                        radius: 14, x: 0, y: 8)
             }
-            .padding(14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .background(
+                // Same gradient + 4-shadow stack as GameCard so the
+                // locked card doesn't look like a different surface.
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color(hex: "#101114"))
+                    .fill(LinearGradient(
+                        colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                        startPoint: .top, endPoint: .bottom
+                    ))
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .stroke(Color(hex: "#22252B"), lineWidth: 1)
                     )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                            .mask(LinearGradient(colors: [.white, .clear],
+                                                 startPoint: .top, endPoint: .center))
+                    )
+                    .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 10)
+                    .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Same scheduled-top-line mapping as GameCard.
+    private var scheduledTopLine: String {
+        let league = pick.league.uppercased()
+        switch league {
+        case "EPL": return "EPL · MATCHDAY"
+        case "NFL": return "NFL · PRIMETIME"
+        case "MLB": return "MLB · TODAY"
+        case "NBA": return "NBA · TONIGHT"
+        case "NHL": return "NHL · TONIGHT"
+        case "UFC": return "UFC · MAIN CARD"
+        case "F1":  return "F1 · RACE WEEKEND"
+        case "IPL": return "IPL · MATCH DAY"
+        default:    return league
+        }
     }
 }
 
