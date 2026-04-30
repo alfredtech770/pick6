@@ -194,10 +194,29 @@ struct MatchDetailView: View {
     let liveScore: LiveScore?
     let onClose: () -> Void
 
-    enum Tab: String, CaseIterable { case summary = "SUMMARY", lineups = "LINEUPS", analysis = "ANALYSIS", h2h = "H2H" }
+    /// Tab identity is sport-agnostic; per-sport labels are derived
+    /// in `tabLabel(for:)` so we can show GRID for F1, FIGHTERS for
+    /// UFC, ROSTERS for cricket/tennis, LINEUPS for everything else.
+    enum Tab: String, CaseIterable { case summary, roster, analysis, h2h }
     @State private var tab: Tab = .summary
     @State private var starred: Bool = false
     @State private var showToast: Bool = false
+
+    /// Sport-aware label for each tab.
+    private func tabLabel(_ t: Tab) -> String {
+        switch t {
+        case .summary:  return "SUMMARY"
+        case .analysis: return "ANALYSIS"
+        case .h2h:      return "H2H"
+        case .roster:
+            switch pick.sport {
+            case "f1":      return "GRID"
+            case "combat":  return "FIGHTERS"
+            case "tennis", "cricket": return "ROSTERS"
+            default:        return "LINEUPS"
+            }
+        }
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -215,7 +234,7 @@ struct MatchDetailView: View {
                     Group {
                         switch tab {
                         case .summary:  summaryPanel
-                        case .lineups:  lineupsPanel
+                        case .roster:   lineupsPanel
                         case .analysis: analysisPanel
                         case .h2h:      h2hPanel
                         }
@@ -283,121 +302,153 @@ struct MatchDetailView: View {
         return "TODAY"
     }
 
+    /// Score header — `home` always renders on the LEFT, `away` on the RIGHT.
+    /// Each team gets a real `TeamLogo` (uses our ESPN-CDN wrapper, falls back
+    /// to the colored shield for individual-athlete sports). Team names are
+    /// fixed 30pt Anton (26pt for tennis/UFC/F1 where names are longer).
     private var scoreHeader: some View {
         HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .trailing, spacing: 6) {
-                Text(isAway ? "AWAY" : "HOME")
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.6)
-                    .foregroundColor(Color(hex: "#6E6F75"))
-                Text(pick.awayTeam.uppercased())
-                    .font(.anton(28))
-                    .lineSpacing(-3)
-                    .tracking(-0.05)
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .multilineTextAlignment(.trailing)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-
+            // HOME column (always left)
             VStack(spacing: 8) {
-                if let s = liveScore, s.isLive {
-                    Text(s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE")
-                        .font(.mono(12, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "#D4FF3A").opacity(0.08))
-                        .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1))
-                        .clipShape(Capsule())
-                }
-                if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text("\(a)").font(.anton(56)).foregroundColor(Color(hex: "#F5F3EE"))
-                        Text("–").font(.anton(28)).foregroundColor(Color(hex: "#6E6F75"))
-                        Text("\(h)").font(.anton(56)).foregroundColor(Color(hex: "#B9B7B0"))
-                    }
-                } else {
-                    Text("VS")
-                        .font(.anton(28))
-                        .tracking(2.8)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                }
+                TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
+                Text("HOME")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.8)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text(teamShortName(pick.homeTeam))
+                    .font(.anton(teamTight ? 26 : 30))
+                    .tracking(-0.15)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+
+            // CENTER score / VS column
+            VStack(spacing: 8) {
+                clockPill
+                scoreCenter
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(isAway ? "HOME" : "AWAY")
+            // AWAY column (always right)
+            VStack(spacing: 8) {
+                TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
+                Text("AWAY")
                     .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.6)
+                    .tracking(2.8)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(pick.homeTeam.uppercased())
-                    .font(.anton(28))
-                    .lineSpacing(-3)
-                    .tracking(-0.05)
+                Text(teamShortName(pick.awayTeam))
+                    .font(.anton(teamTight ? 26 : 30))
+                    .tracking(-0.15)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 20)
         .padding(.top, 4)
         .padding(.bottom, 18)
     }
 
-    private var isAway: Bool {
-        pick.pick.lowercased().contains(pick.awayTeam.lowercased())
-            || pick.awayTeam.lowercased().contains(pick.pick.lowercased())
+    /// Sport-specific layouts use slightly tighter Anton (26pt vs 30pt)
+    /// because individual-athlete names tend to be longer.
+    private var teamTight: Bool {
+        ["combat", "tennis", "f1"].contains(pick.sport)
     }
 
+    /// "LIVE · Q3" / clock pill above the score, lime variant when live and
+    /// neutral grey-on-panel variant when scheduled (per design `.clock`).
+    @ViewBuilder
+    private var clockPill: some View {
+        if let s = liveScore, s.isLive {
+            Text(s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE")
+                .font(.mono(12, weight: .bold))
+                .foregroundColor(Color(hex: "#D4FF3A"))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#D4FF3A").opacity(0.08))
+                .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1))
+                .clipShape(Capsule())
+        } else if let label = scheduledClockText {
+            Text(label)
+                .font(.mono(11, weight: .bold))
+                .foregroundColor(Color(hex: "#B9B7B0"))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#101114"))
+                .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                .clipShape(Capsule())
+        }
+    }
+
+    /// Score in the center column. Numeric for team sports, "VS" for
+    /// scheduled. Scores use design's 56pt Anton with home in white,
+    /// away in `--ink-2` mute.
+    @ViewBuilder
+    private var scoreCenter: some View {
+        if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("\(h)").font(.anton(56)).foregroundColor(Color(hex: "#F5F3EE"))
+                Text("–").font(.anton(28)).foregroundColor(Color(hex: "#6E6F75"))
+                Text("\(a)").font(.anton(56)).foregroundColor(Color(hex: "#B9B7B0"))
+            }
+        } else {
+            Text("VS")
+                .font(.anton(28))
+                .tracking(2.8)
+                .foregroundColor(Color(hex: "#D4FF3A"))
+        }
+    }
+
+    /// Localized weekday + time string for scheduled games (e.g. "SUN · 8:20 PM").
+    private var scheduledClockText: String? {
+        guard let date = pick.createdAt else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "EEE · h:mm a"
+        return f.string(from: date).uppercased()
+    }
+
+    /// Stat icon row — 4-6 sport-specific tiles. Tile 0 always renders
+    /// in the lime "active" state per the design.
     private var statIconRow: some View {
-        HStack(spacing: 4) {
-            ForEach(["chart.bar.fill", "flame.fill", "bolt.fill", "person.fill"], id: \.self) { icon in
-                VStack(spacing: 4) {
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                        .frame(width: 34, height: 34)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(hex: "#101114"))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                                )
-                        )
-                    Text(statLabel(for: icon))
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(1.8)
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                    Text(statValue(for: icon))
-                        .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                }
-                .frame(maxWidth: .infinity)
+        let tiles = StatTiles.tiles(for: pick.sport, liveScore: liveScore)
+        return HStack(spacing: 4) {
+            ForEach(tiles.indices, id: \.self) { i in
+                statTile(tiles[i], active: i == 0)
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 18)
     }
 
-    private func statLabel(for icon: String) -> String {
-        switch icon {
-        case "chart.bar.fill": return "FORM"
-        case "flame.fill":     return "STREAK"
-        case "bolt.fill":      return "PACE"
-        default:               return "ROSTER"
+    private func statTile(_ tile: StatTile, active: Bool) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: tile.icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                .frame(width: 34, height: 34)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(active
+                              ? Color(hex: "#D4FF3A").opacity(0.1)
+                              : Color(hex: "#101114"))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(active
+                                        ? Color(hex: "#D4FF3A").opacity(0.3)
+                                        : Color(hex: "#22252B"), lineWidth: 1)
+                        )
+                )
+            Text(tile.label)
+                .font(.archivoNarrow(9, weight: .bold))
+                .tracking(1.6)
+                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+            Text(tile.value)
+                .font(.mono(10, weight: .bold))
+                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#F5F3EE"))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-    }
-
-    private func statValue(for icon: String) -> String {
-        switch icon {
-        case "chart.bar.fill": return "8-2"
-        case "flame.fill":     return "+5"
-        case "bolt.fill":      return "108.4"
-        default:               return "FULL"
-        }
+        .frame(maxWidth: .infinity)
     }
 
     private var pickHeroCard: some View {
@@ -417,13 +468,20 @@ struct MatchDetailView: View {
                     .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
                     .clipShape(Capsule())
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Text(pickTitleLine1)
+            VStack(alignment: .leading, spacing: -3) {
+                // Pick title — line 1 in white, line 2 in lime.
+                // Falls back gracefully when keyFactor is short/nil.
+                Text(pick.pick.uppercased())
                     .font(.anton(40))
+                    .tracking(-0.4)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                Text(pickTitleLine2)
-                    .font(.anton(40))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                if let factor = pick.keyFactor, !factor.isEmpty {
+                    Text(factor.uppercased())
+                        .font(.anton(28))
+                        .tracking(-0.2)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .lineLimit(2)
+                }
             }
 
             // Reasoning block (replaces the "stake/win" mock with real Claude reasoning)
@@ -490,15 +548,6 @@ struct MatchDetailView: View {
         )
     }
 
-    private var pickTitleLine1: String {
-        let parts = pick.pick.uppercased().split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
-        return String(parts.first ?? Substring(pick.pick.uppercased()))
-    }
-    private var pickTitleLine2: String {
-        let opp = isAway ? pick.homeTeam : pick.awayTeam
-        return "OVER \(opp.uppercased())"
-    }
-
     private func pickStatCol(label: String, value: String, twoLine: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
@@ -514,11 +563,13 @@ struct MatchDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Tabs row — centered (per design `.tabs { justify-content: center }`),
+    /// labels are sport-aware via `tabLabel(:)`.
     private var tabsRow: some View {
         HStack(spacing: 6) {
             ForEach(Tab.allCases, id: \.self) { t in
                 Button { tab = t } label: {
-                    Text(t.rawValue)
+                    Text(tabLabel(t))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.5)
                         .foregroundColor(tab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
@@ -534,8 +585,8 @@ struct MatchDetailView: View {
                 }
                 .buttonStyle(.plain)
             }
-            Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.horizontal, 16)
         .padding(.bottom, 14)
     }
@@ -560,21 +611,8 @@ struct MatchDetailView: View {
         .background(cardBackground)
     }
 
-    private struct StatRow {
-        let label: String
-        let homeText: String
-        let awayText: String
-        let homePct: Double
-    }
-
     private var summaryStats: [StatRow] {
-        // Static placeholders — wire real boxscore later.
-        [
-            StatRow(label: "POSSESSION", homeText: "54%", awayText: "46%", homePct: 0.54),
-            StatRow(label: "SHOTS",      homeText: "12",  awayText: "9",   homePct: 0.57),
-            StatRow(label: "PASS ACC",   homeText: "88%", awayText: "84%", homePct: 0.51),
-            StatRow(label: "CORNERS",    homeText: "6",   awayText: "4",   homePct: 0.60),
-        ]
+        BarSet.bars(for: pick.sport)
     }
 
     @ViewBuilder
@@ -1970,6 +2008,191 @@ struct EditProfileSheet: View {
             } else {
                 localError = auth.error
             }
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Match Detail support models + per-sport data
+// ════════════════════════════════════════════════════════════════
+
+/// One tile in the stat-icon row above the pick-hero card.
+struct StatTile {
+    let icon: String
+    let label: String
+    let value: String
+}
+
+/// One row in the MATCH STATS card (horizontal bar with home/away values).
+struct StatRow {
+    let label: String
+    let homeText: String
+    let awayText: String
+    let homePct: Double
+}
+
+/// Per-sport stat tiles for the icon row. Tile 0 always renders in the
+/// lime "active" state per design. Values are reasonable defaults until
+/// we wire a real boxscore feed — the design's spec values are already
+/// stylized fixtures.
+enum StatTiles {
+    static func tiles(for sport: String, liveScore: LiveScore?) -> [StatTile] {
+        switch sport {
+        case "basketball":
+            return [
+                .init(icon: "scope",                  label: "POINTS",  value: "88-91"),
+                .init(icon: "circle.dashed",          label: "3-PT",    value: "11-13"),
+                .init(icon: "arrow.up.and.down",      label: "REB",     value: "38-42"),
+                .init(icon: "arrowshape.turn.up.right", label: "AST",   value: "21-25"),
+                .init(icon: "arrow.uturn.backward",   label: "TO",      value: "9-7"),
+                .init(icon: "person.3.fill",          label: "BENCH",   value: "24-31"),
+            ]
+        case "football":
+            return [
+                .init(icon: "chart.line.uptrend.xyaxis", label: "PROJ",    value: "27-24"),
+                .init(icon: "scope",                     label: "TD %",   value: "68-64"),
+                .init(icon: "ruler",                     label: "YDS/G",   value: "387"),
+                .init(icon: "exclamationmark.shield",    label: "SACKS",   value: "3.2"),
+                .init(icon: "cross.case",                label: "INJ",     value: "2-3"),
+            ]
+        case "baseball":
+            return [
+                .init(icon: "circle.fill",        label: "HITS",    value: "8-7"),
+                .init(icon: "arrow.up.right.circle", label: "HR",   value: "2-1"),
+                .init(icon: "xmark.circle",       label: "K",       value: "6-8"),
+                .init(icon: "arrow.right.circle", label: "BASES",   value: "2-1"),
+                .init(icon: "figure.walk",        label: "WALKS",   value: "3-2"),
+                .init(icon: "exclamationmark.circle", label: "ERR", value: "0-1"),
+            ]
+        case "hockey":
+            return [
+                .init(icon: "scope",              label: "GOALS",   value: "3-2"),
+                .init(icon: "target",             label: "SHOTS",   value: "28-24"),
+                .init(icon: "shield.fill",        label: "SAVES",   value: "22-25"),
+                .init(icon: "bolt.fill",          label: "PP G",    value: "1-0"),
+                .init(icon: "exclamationmark.circle", label: "PIM", value: "6-10"),
+                .init(icon: "figure.hockey",      label: "HITS",    value: "18-22"),
+            ]
+        case "soccer":
+            return [
+                .init(icon: "soccerball",         label: "GOALS",   value: "2-1"),
+                .init(icon: "square.fill",        label: "YEL",     value: "3-2"),
+                .init(icon: "square.fill",        label: "RED",     value: "0-1"),
+                .init(icon: "flag.fill",          label: "CORNERS", value: "6-4"),
+                .init(icon: "scope",              label: "PEN",     value: "1-0"),
+                .init(icon: "person.2.fill",      label: "SUBS",    value: "2-3"),
+            ]
+        case "combat":
+            return [
+                .init(icon: "bolt.fill",          label: "STR/M",   value: "6.1-5.4"),
+                .init(icon: "scope",              label: "ACC",     value: "58-51%"),
+                .init(icon: "arrow.down.forward", label: "TD AVG",  value: "0.3-2.4"),
+                .init(icon: "flame.fill",         label: "KO %",    value: "65-47%"),
+                .init(icon: "ruler",              label: "REACH",   value: "79-75\""),
+            ]
+        case "f1":
+            return [
+                .init(icon: "1.circle.fill",      label: "POS",      value: "P1"),
+                .init(icon: "stopwatch",          label: "FAST LAP", value: "1:12.4"),
+                .init(icon: "wrench.fill",        label: "PIT",      value: "1-1"),
+                .init(icon: "arrow.left.arrow.right", label: "GAP",  value: "+1.24"),
+                .init(icon: "circle.grid.2x2",    label: "TYRES",    value: "MED"),
+            ]
+        case "cricket":
+            return [
+                .init(icon: "scope",              label: "RUNS",    value: "142-178"),
+                .init(icon: "xmark.circle",       label: "WICKETS", value: "4-10"),
+                .init(icon: "stopwatch",          label: "OVERS",   value: "14.3"),
+                .init(icon: "arrow.up.circle",    label: "SIXES",   value: "7-9"),
+                .init(icon: "rectangle.portrait", label: "FOURS",   value: "12-14"),
+                .init(icon: "speedometer",        label: "RR",      value: "9.8/9.0"),
+            ]
+        default:
+            return [
+                .init(icon: "chart.bar.fill",  label: "FORM",   value: "8-2"),
+                .init(icon: "flame.fill",      label: "STREAK", value: "+5"),
+                .init(icon: "bolt.fill",       label: "PACE",   value: "108.4"),
+                .init(icon: "person.fill",     label: "ROSTER", value: "FULL"),
+            ]
+        }
+    }
+}
+
+/// Per-sport horizontal bar rows for the MATCH STATS card. Static
+/// fixtures until a real boxscore feed is wired.
+enum BarSet {
+    static func bars(for sport: String) -> [StatRow] {
+        switch sport {
+        case "basketball":
+            return [
+                .init(label: "FG %",       homeText: "47%", awayText: "44%", homePct: 0.52),
+                .init(label: "3-PT %",     homeText: "38%", awayText: "33%", homePct: 0.54),
+                .init(label: "REBOUNDS",   homeText: "42",  awayText: "38",  homePct: 0.53),
+                .init(label: "ASSISTS",    homeText: "25",  awayText: "21",  homePct: 0.54),
+                .init(label: "TURNOVERS",  homeText: "7",   awayText: "9",   homePct: 0.44),
+            ]
+        case "football":
+            return [
+                .init(label: "OFF YDS/G",  homeText: "387", awayText: "352", homePct: 0.52),
+                .init(label: "PPG",        homeText: "27",  awayText: "24",  homePct: 0.53),
+                .init(label: "DEF YDS",    homeText: "318", awayText: "342", homePct: 0.48),
+                .init(label: "TURNOVER ±", homeText: "+8",  awayText: "+3",  homePct: 0.55),
+                .init(label: "3RD DOWN %", homeText: "44%", awayText: "39%", homePct: 0.53),
+            ]
+        case "baseball":
+            return [
+                .init(label: "HITS",       homeText: "8",   awayText: "7",   homePct: 0.53),
+                .init(label: "RBI",        homeText: "5",   awayText: "4",   homePct: 0.55),
+                .init(label: "OBP",        homeText: ".380", awayText: ".342", homePct: 0.53),
+                .init(label: "LOB",        homeText: "6",   awayText: "8",   homePct: 0.43),
+                .init(label: "PITCHES",    homeText: "94",  awayText: "108", homePct: 0.46),
+            ]
+        case "hockey":
+            return [
+                .init(label: "SHOTS",      homeText: "28",  awayText: "24",  homePct: 0.54),
+                .init(label: "SAVE %",     homeText: ".920", awayText: ".895", homePct: 0.51),
+                .init(label: "FACEOFF %",  homeText: "54%", awayText: "46%", homePct: 0.54),
+                .init(label: "HITS",       homeText: "22",  awayText: "18",  homePct: 0.55),
+                .init(label: "PP %",       homeText: "33%", awayText: "20%", homePct: 0.62),
+            ]
+        case "soccer":
+            return [
+                .init(label: "POSSESSION", homeText: "54%", awayText: "46%", homePct: 0.54),
+                .init(label: "SHOTS",      homeText: "12",  awayText: "9",   homePct: 0.57),
+                .init(label: "ON TARGET",  homeText: "5",   awayText: "3",   homePct: 0.62),
+                .init(label: "PASS ACC",   homeText: "88%", awayText: "84%", homePct: 0.51),
+            ]
+        case "combat":
+            return [
+                .init(label: "STR/MIN",    homeText: "6.1", awayText: "5.4", homePct: 0.53),
+                .init(label: "STR ACC",    homeText: "58%", awayText: "51%", homePct: 0.53),
+                .init(label: "STR DEF",    homeText: "62%", awayText: "57%", homePct: 0.52),
+                .init(label: "TD DEF",     homeText: "82%", awayText: "68%", homePct: 0.55),
+                .init(label: "KO WINS",    homeText: "11",  awayText: "8",   homePct: 0.58),
+            ]
+        case "f1":
+            return [
+                .init(label: "AVG LAP",    homeText: "1:12.4", awayText: "1:12.7", homePct: 0.51),
+                .init(label: "TOP SPEED",  homeText: "338",    awayText: "335",    homePct: 0.51),
+                .init(label: "QUALI POS",  homeText: "P1",     awayText: "P2",     homePct: 0.55),
+                .init(label: "SECTOR 1",   homeText: "23.1",   awayText: "23.4",   homePct: 0.51),
+                .init(label: "TYRE LIFE",  homeText: "MED",    awayText: "HARD",   homePct: 0.50),
+            ]
+        case "cricket":
+            return [
+                .init(label: "RUNS",       homeText: "142",  awayText: "178",  homePct: 0.44),
+                .init(label: "RUN RATE",   homeText: "9.8",  awayText: "9.0",  homePct: 0.52),
+                .init(label: "BOUNDARY %", homeText: "42%",  awayText: "38%",  homePct: 0.52),
+                .init(label: "DOT BALL %", homeText: "31%",  awayText: "36%",  homePct: 0.46),
+                .init(label: "WICKETS",    homeText: "4",    awayText: "10",   homePct: 0.55),
+            ]
+        default:
+            return [
+                .init(label: "POSSESSION", homeText: "54%", awayText: "46%", homePct: 0.54),
+                .init(label: "SHOTS",      homeText: "12",  awayText: "9",   homePct: 0.57),
+                .init(label: "PASS ACC",   homeText: "88%", awayText: "84%", homePct: 0.51),
+                .init(label: "CORNERS",    homeText: "6",   awayText: "4",   homePct: 0.60),
+            ]
         }
     }
 }
