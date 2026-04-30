@@ -42,6 +42,12 @@ struct OBPaywallScreen: View {
     @State private var plan: PaywallPlan = .monthly
     @EnvironmentObject private var subs: SubscriptionManager
 
+    /// "Access Free" skip button reveals 7 seconds after the paywall opens.
+    /// Lets users dismiss the paywall without subscribing — required for
+    /// good UX (and several App Review precedents).
+    @State private var skipUnlocked: Bool = false
+    private let skipDelay: Double = 7.0
+
     var body: some View {
         VStack(spacing: 0) {
             paywallTopNav
@@ -101,9 +107,42 @@ struct OBPaywallScreen: View {
 
             Spacer()
 
-            Color.clear.frame(width: 38, height: 38)
+            // Right slot: 38pt placeholder until the 7s skip-delay elapses,
+            // then fades in as an "Access Free" pill that dismisses the
+            // paywall via onSkip().
+            ZStack {
+                Color.clear.frame(width: 96, height: 38)
+                if skipUnlocked {
+                    Button(action: onSkip) {
+                        HStack(spacing: 4) {
+                            Text("Access Free")
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10, weight: .heavy))
+                        }
+                        .foregroundColor(.p6Ink2)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule().fill(Color.p6Panel)
+                                .overlay(Capsule().stroke(Color.p6Line, lineWidth: 1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .scale(scale: 0.94)))
+                }
+            }
         }
         .padding(.horizontal, 18)
+        .onAppear {
+            // Reset on each presentation so the delay always plays.
+            skipUnlocked = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + skipDelay) {
+                withAnimation(.easeOut(duration: 0.35)) {
+                    skipUnlocked = true
+                }
+            }
+        }
     }
 
     // MARK: - Hero
