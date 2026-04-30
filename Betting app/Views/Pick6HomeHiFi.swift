@@ -63,6 +63,7 @@ struct Pick6HomeHiFi: View {
     @State private var showWins: Bool = false
     @StateObject private var vm = PicksViewModel()
     @EnvironmentObject private var subs: SubscriptionManager
+    @Environment(AuthManager.self) private var auth
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -107,7 +108,9 @@ struct Pick6HomeHiFi: View {
                                 isPro: subs.isPro,
                                 onShowWins: { showWins = true },
                                 onShowPaywall: { showPaywall = true },
-                                onSignOut: { /* hook to AuthManager later */ })
+                                onSignOut: {
+                                    Task { await auth.signOut() }
+                                })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -844,13 +847,12 @@ struct SportFilter: View {
         }
     }
 
-    /// Only show sport chips for sports that actually have picks today.
-    /// Order = user's preferred order (Football, Basketball, Baseball, F1,
-    /// Combat, Soccer, Cricket, Hockey).
+    /// All 8 sport chips, always visible. Order matches the user's
+    /// preferred order (Football, Basketball, Baseball, F1, Combat,
+    /// Soccer, Cricket, Hockey). Tapping a sport with no picks today
+    /// shows the empty state — better discovery than hiding the chip.
     private var visibleSports: [String] {
-        let active = Set(vm.todayPicks.map { $0.sport })
-        let order = ["football", "basketball", "baseball", "f1", "combat", "soccer", "cricket", "hockey"]
-        return order.filter { active.contains($0) }
+        ["football", "basketball", "baseball", "f1", "combat", "soccer", "cricket", "hockey"]
     }
 
     private func leagueLabel(_ sport: String) -> String {

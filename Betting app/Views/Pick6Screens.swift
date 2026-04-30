@@ -1002,8 +1002,13 @@ struct ProfileView: View {
     let onShowPaywall: () -> Void
     let onSignOut: () -> Void
 
+    /// Live, mutable user state. Read for display, mutated via the
+    /// Edit Profile sheet (which calls auth.saveProfile).
+    @Environment(AuthManager.self) private var auth
+
     enum Tab: String, CaseIterable { case stats = "STATS", badges = "BADGES", settings = "SETTINGS" }
     @State private var tab: Tab = .stats
+    @State private var showEditProfile: Bool = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1027,6 +1032,9 @@ struct ProfileView: View {
                 Spacer().frame(height: 140)
             }
         }
+        .sheet(isPresented: $showEditProfile) {
+            EditProfileSheet(auth: auth, isOpen: $showEditProfile)
+        }
     }
 
     private var profileHead: some View {
@@ -1037,52 +1045,81 @@ struct ProfileView: View {
                 startRadius: 0,
                 endRadius: 220
             )
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(LinearGradient(
-                            colors: [Color(hex: "#D4FF3A"), Color(hex: "#a8e000")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.3), radius: 10, x: 0, y: 8)
-                    Text(initial)
-                        .font(.anton(32))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-                }
-                .frame(width: 72, height: 72)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("PICK6 USER")
-                        .font(.anton(28))
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                    Text("Member · \(memberSince)")
-                        .font(.mono(11, weight: .medium))
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                    HStack(spacing: 4) {
-                        Image(systemName: "diamond.fill")
-                            .font(.system(size: 9, weight: .bold))
-                        Text("DIAMOND · L\(diamondLevel)")
-                            .font(.archivoNarrow(9, weight: .bold))
-                            .tracking(1.8)
+            Button { showEditProfile = true } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [Color(hex: "#D4FF3A"), Color(hex: "#a8e000")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .shadow(color: Color(hex: "#D4FF3A").opacity(0.3), radius: 10, x: 0, y: 8)
+                        Text(initial)
+                            .font(.anton(32))
+                            .foregroundColor(Color(hex: "#0A0B0D"))
                     }
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color(hex: "#D4FF3A").opacity(0.08))
-                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
-                    .clipShape(Capsule())
+                    .frame(width: 72, height: 72)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(displayName)
+                            .font(.anton(28))
+                            .foregroundColor(Color(hex: "#F5F3EE"))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        Text(emailLine)
+                            .font(.mono(11, weight: .medium))
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            Image(systemName: isPro ? "diamond.fill" : "person.fill")
+                                .font(.system(size: 9, weight: .bold))
+                            Text(isPro ? "PICK6 PRO · ALL ACCESS" : "FREE · TAP TO EDIT")
+                                .font(.archivoNarrow(9, weight: .bold))
+                                .tracking(1.8)
+                        }
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "#D4FF3A").opacity(0.08))
+                        .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+                        .clipShape(Capsule())
+                    }
+                    Spacer()
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .padding(8)
+                        .background(Circle().fill(Color(hex: "#101114")))
+                        .overlay(Circle().stroke(Color(hex: "#22252B"), lineWidth: 1))
                 }
-                Spacer()
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .buttonStyle(.plain)
         }
     }
 
-    private var initial: String { "P" }
-    private var memberSince: String { "2026" }
-    private var diamondLevel: Int { max(1, vm.totalWins / 10) }
+    private var initial: String {
+        if let f = auth.firstName, let c = f.first { return String(c).uppercased() }
+        if let e = auth.userEmail, let c = e.first { return String(c).uppercased() }
+        return "P"
+    }
+
+    private var displayName: String {
+        if let f = auth.firstName, !f.isEmpty,
+           let l = auth.lastName,  !l.isEmpty {
+            return "\(f) \(l)".uppercased()
+        }
+        if let e = auth.userEmail {
+            return e.split(separator: "@").first.map { String($0).uppercased() } ?? e.uppercased()
+        }
+        return "PICK6 FAN"
+    }
+
+    private var emailLine: String {
+        auth.userEmail ?? "Sign in to sync your picks"
+    }
 
     private var statStrip: some View {
         HStack(spacing: 0) {
@@ -1652,5 +1689,252 @@ struct AllPicksView: View {
     private func liveScore(for pick: Pick) -> LiveScore? {
         guard let gid = pick.gameId else { return nil }
         return vm.liveScores.first { $0.gameId == gid }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Edit Profile sheet
+// ════════════════════════════════════════════════════════════════
+
+/// Modal sheet that lets users see + edit their profile data. Backed
+/// by `AuthManager.saveProfile`, which upserts the row in Pick1's
+/// `profiles` table. Email is shown but not editable here — it's
+/// tied to the Apple ID / OTP-verified address.
+struct EditProfileSheet: View {
+    let auth: AuthManager
+    @Binding var isOpen: Bool
+
+    @State private var firstName: String = ""
+    @State private var lastName: String = ""
+    @State private var phone: String = ""
+    @State private var dob: Date = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    @State private var saving: Bool = false
+    @State private var localError: String?
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#07080a").ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    sheetHeader
+                        .padding(.horizontal, 18)
+                        .padding(.top, 12)
+                        .padding(.bottom, 22)
+
+                    // Avatar preview
+                    HStack {
+                        Spacer()
+                        ZStack {
+                            Circle()
+                                .fill(LinearGradient(
+                                    colors: [Color(hex: "#D4FF3A"), Color(hex: "#a8e000")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ))
+                                .shadow(color: Color(hex: "#D4FF3A").opacity(0.3), radius: 14, x: 0, y: 12)
+                            Text(initialPreview)
+                                .font(.anton(46))
+                                .foregroundColor(Color(hex: "#0A0B0D"))
+                        }
+                        .frame(width: 100, height: 100)
+                        Spacer()
+                    }
+                    .padding(.bottom, 28)
+
+                    // Email — read-only
+                    fieldLabel("EMAIL")
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                        Text(auth.userEmail ?? "—")
+                            .font(.archivo(14, weight: .medium))
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                            .lineLimit(1)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 14)
+
+                    // First / Last name
+                    fieldLabel("FIRST NAME")
+                    profileField(text: $firstName, placeholder: "First name", icon: "person.fill")
+                    fieldLabel("LAST NAME")
+                    profileField(text: $lastName, placeholder: "Last name", icon: "person.fill")
+
+                    // Phone
+                    fieldLabel("PHONE / WHATSAPP (OPTIONAL)")
+                    profileField(text: $phone, placeholder: "+1 (555) 555-1234",
+                                 icon: "phone.fill", keyboard: .phonePad)
+
+                    // DOB
+                    fieldLabel("DATE OF BIRTH")
+                    HStack {
+                        Image(systemName: "calendar")
+                            .foregroundColor(Color(hex: "#D4FF3A"))
+                        DatePicker("", selection: $dob,
+                                   in: ...Date(),
+                                   displayedComponents: .date)
+                            .labelsHidden()
+                            .colorScheme(.dark)
+                            .datePickerStyle(.compact)
+                            .accentColor(Color(hex: "#D4FF3A"))
+                        Spacer()
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 16)
+
+                    if let err = localError ?? auth.error {
+                        Text(err)
+                            .font(.archivo(12, weight: .regular))
+                            .foregroundColor(Color(hex: "#FF5A36"))
+                            .padding(.horizontal, 18)
+                            .padding(.bottom, 8)
+                    }
+
+                    // Save CTA
+                    Button(action: save) {
+                        Group {
+                            if saving {
+                                ProgressView().tint(Color(hex: "#0A0B0D"))
+                            } else {
+                                Text("Save Changes")
+                                    .font(.archivo(14, weight: .heavy))
+                            }
+                        }
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(canSave ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSave || saving)
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 30)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            firstName = auth.firstName ?? ""
+            lastName  = auth.lastName  ?? ""
+            phone     = auth.whatsapp  ?? ""
+        }
+    }
+
+    private var sheetHeader: some View {
+        HStack {
+            Button { isOpen = false } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .frame(width: 38, height: 38)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            Text("EDIT PROFILE")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2.4)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+            Spacer()
+            Color.clear.frame(width: 38, height: 38)
+        }
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.archivoNarrow(10, weight: .bold))
+            .tracking(2.2)
+            .foregroundColor(Color(hex: "#6E6F75"))
+            .padding(.horizontal, 22)
+            .padding(.bottom, 6)
+    }
+
+    private func profileField(text: Binding<String>, placeholder: String,
+                              icon: String,
+                              keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .foregroundColor(Color(hex: "#D4FF3A"))
+            TextField("", text: text, prompt:
+                Text(placeholder).foregroundColor(Color(hex: "#6E6F75")))
+                .font(.archivo(14, weight: .medium))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .keyboardType(keyboard)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(keyboard == .phonePad ? .never : .words)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private var initialPreview: String {
+        if let c = firstName.first { return String(c).uppercased() }
+        if let e = auth.userEmail, let c = e.first { return String(c).uppercased() }
+        return "P"
+    }
+
+    private var canSave: Bool {
+        !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !lastName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func save() {
+        guard canSave else { return }
+        saving = true
+        localError = nil
+        Task {
+            await auth.saveProfile(
+                firstName: firstName.trimmingCharacters(in: .whitespaces),
+                lastName:  lastName.trimmingCharacters(in: .whitespaces),
+                whatsapp:  phone.trimmingCharacters(in: .whitespaces),
+                dateOfBirth: dob
+            )
+            saving = false
+            if auth.error == nil {
+                isOpen = false
+            } else {
+                localError = auth.error
+            }
+        }
     }
 }
