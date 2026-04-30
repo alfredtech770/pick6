@@ -451,118 +451,41 @@ struct MatchDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Pick hero — minimal, two things only:
+    ///   1. The predicted winner (huge Anton on the left)
+    ///   2. AI confidence (110pt animated ring on the right)
+    /// Anything else (key factor, reasoning, tipoff) lives in the tabs
+    /// below so the hero can breathe.
     private var pickHeroCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("★ AI PICK · TONIGHT")
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.4)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                Spacer()
-                Text("\(Int(pick.probability))% CONF")
-                    .font(.mono(11, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color(hex: "#D4FF3A").opacity(0.1))
-                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
-                    .clipShape(Capsule())
-            }
-            VStack(alignment: .leading, spacing: -3) {
-                // Pick title — line 1 in white, line 2 in lime.
-                // Falls back gracefully when keyFactor is short/nil.
+        VStack(alignment: .leading, spacing: 16) {
+            // Tiny kicker, single line — gives context without crowding.
+            Text("AI PICK")
+                .font(.archivoNarrow(10, weight: .bold))
+                .tracking(2.4)
+                .foregroundColor(Color(hex: "#D4FF3A"))
+
+            // The two big things: predicted winner + confidence ring.
+            HStack(alignment: .center, spacing: 16) {
+                // Predicted winner — fills available space on the left.
                 Text(pick.pick.uppercased())
-                    .font(.anton(40))
-                    .tracking(-0.4)
+                    .font(.anton(50))
+                    .tracking(-0.5)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                if let factor = pick.keyFactor, !factor.isEmpty {
-                    Text(factor.uppercased())
-                        .font(.anton(28))
-                        .tracking(-0.2)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                        .lineLimit(2)
-                }
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.6)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Confidence ring — same component used on the home hero,
+                // sized 110pt so the % reads from across the room.
+                HiFiConfidenceRing(percent: pick.probability,
+                                   color: Color(hex: "#D4FF3A"),
+                                   trackColor: Color.white.opacity(0.08),
+                                   size: 110,
+                                   stroke: 6,
+                                   numberColor: Color(hex: "#F5F3EE"),
+                                   label: "AI CONF")
             }
-
-            // ─── Win block (3-col with lime arrow medallion) ──────
-            // Mirrors the design's `.win-block` exactly — same lime-tinted
-            // box, same 1fr/auto/1fr grid, same 36pt arrow medallion in
-            // the middle. Reframed for the advisory positioning: instead
-            // of STAKE / arrow / POSSIBLE WIN (gambling), shows AI
-            // CONFIDENCE / arrow / AI EDGE.
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("AI CONFIDENCE")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Text("\(Int(pick.probability))%")
-                        .font(.mono(22, weight: .bold))
-                        .tracking(-0.22)
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: "#D4FF3A"))
-                        .frame(width: 36, height: 36)
-                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.45),
-                                radius: 12, x: 0, y: 0)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                                .mask(LinearGradient(colors: [.white, .clear],
-                                                     startPoint: .top, endPoint: .center))
-                        )
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 14, weight: .heavy))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-                }
-
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("AI EDGE")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.keyFactor?.uppercased() ?? "STRONG")
-                        .font(.anton(20))
-                        .tracking(-0.1)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.35),
-                                radius: 14, x: 0, y: 0)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.trailing)
-                        .minimumScaleFactor(0.7)
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(hex: "#D4FF3A").opacity(0.06))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1)
-                    )
-            )
-
-            // ─── Pick row (3 small stats with top border) ────────
-            // Matches design `.pick-row` — 9pt narrow caps key + 18pt
-            // Anton value, 3 columns separated by hairline above.
-            HStack(alignment: .top, spacing: 6) {
-                pickStatCol(label: "TIER",       value: pick.confidence)
-                pickStatCol(label: "PROB",       value: "\(Int(pick.probability))%")
-                pickStatCol(label: scheduledOrLiveLabelShort,
-                            value: tipoffText, twoLine: true)
-            }
-            .padding(.top, 14)
-            .overlay(
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(Color(hex: "#22252B")),
-                alignment: .top
-            )
         }
         .padding(18)
         .background(
