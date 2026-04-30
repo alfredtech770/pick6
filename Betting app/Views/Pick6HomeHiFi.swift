@@ -363,7 +363,7 @@ struct HeroCard: View {
                                size: 110,
                                stroke: 6,
                                numberColor: Color(hex: "#0A0B0D"))
-                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam)
+                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam, sport: pick?.sport ?? "")
             }
             .frame(width: 130)
         }
@@ -566,15 +566,16 @@ struct HiFiConfidenceRing: View {
 struct CrestPair: View {
     let home: String?
     let away: String?
+    var sport: String = ""
 
     var body: some View {
         HStack(spacing: 4) {
-            Crest(team: away ?? "—", size: .small)
+            TeamLogo(sport: sport, team: away ?? "—", size: .small)
             Text("VS")
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(1.5)
                 .foregroundColor(Color.black.opacity(0.55))
-            Crest(team: home ?? "—", size: .small)
+            TeamLogo(sport: sport, team: home ?? "—", size: .small)
         }
     }
 }
@@ -973,10 +974,10 @@ struct GameCard: View {
 
             // Teams + score
             HStack(alignment: .center, spacing: 14) {
-                TeamColumn(team: pick.awayTeam, isAway: true)
+                TeamColumn(team: pick.awayTeam, isAway: true, sport: pick.sport)
                 ScoreView(pick: pick, isLive: isLive, score: score)
                     .frame(maxWidth: .infinity)
-                TeamColumn(team: pick.homeTeam, isAway: false)
+                TeamColumn(team: pick.homeTeam, isAway: false, sport: pick.sport)
             }
 
             // AI pick + mini ring
@@ -1091,10 +1092,11 @@ struct ConfChip: View {
 struct TeamColumn: View {
     let team: String
     let isAway: Bool
+    var sport: String = ""
 
     var body: some View {
         VStack(spacing: 8) {
-            Crest(team: team, size: .big)
+            TeamLogo(sport: sport, team: team, size: .big)
             Text(crestAbbrev(team).count >= team.count ? team.uppercased() : team.uppercased())
                 .font(.anton(16))
                 .tracking(0.16)
