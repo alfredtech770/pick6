@@ -484,37 +484,79 @@ struct MatchDetailView: View {
                 }
             }
 
-            // Reasoning block (replaces the "stake/win" mock with real Claude reasoning)
-            if !pick.reasoning.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("WHY")
+            // ─── Win block (3-col with lime arrow medallion) ──────
+            // Mirrors the design's `.win-block` exactly — same lime-tinted
+            // box, same 1fr/auto/1fr grid, same 36pt arrow medallion in
+            // the middle. Reframed for the advisory positioning: instead
+            // of STAKE / arrow / POSSIBLE WIN (gambling), shows AI
+            // CONFIDENCE / arrow / AI EDGE.
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AI CONFIDENCE")
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.reasoning)
-                        .font(.archivo(13, weight: .regular))
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                        .lineSpacing(2)
+                    Text("\(Int(pick.probability))%")
+                        .font(.mono(22, weight: .bold))
+                        .tracking(-0.22)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
                 }
-                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(hex: "#D4FF3A").opacity(0.06))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1)
-                        )
-                )
-            }
 
-            // Pick stats: confidence / probability / key factor
-            HStack(alignment: .top, spacing: 0) {
-                pickStatCol(label: "CONFIDENCE", value: pick.confidence)
-                pickStatCol(label: "PROBABILITY", value: "\(Int(pick.probability))%")
-                pickStatCol(label: "EDGE", value: pick.keyFactor ?? "—", twoLine: true)
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#D4FF3A"))
+                        .frame(width: 36, height: 36)
+                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.45),
+                                radius: 12, x: 0, y: 0)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                                .mask(LinearGradient(colors: [.white, .clear],
+                                                     startPoint: .top, endPoint: .center))
+                        )
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                }
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("AI EDGE")
+                        .font(.archivoNarrow(9, weight: .bold))
+                        .tracking(2)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text(pick.keyFactor?.uppercased() ?? "STRONG")
+                        .font(.anton(20))
+                        .tracking(-0.1)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.35),
+                                radius: 14, x: 0, y: 0)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.trailing)
+                        .minimumScaleFactor(0.7)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.top, 10)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(hex: "#D4FF3A").opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1)
+                    )
+            )
+
+            // ─── Pick row (3 small stats with top border) ────────
+            // Matches design `.pick-row` — 9pt narrow caps key + 18pt
+            // Anton value, 3 columns separated by hairline above.
+            HStack(alignment: .top, spacing: 6) {
+                pickStatCol(label: "TIER",       value: pick.confidence)
+                pickStatCol(label: "PROB",       value: "\(Int(pick.probability))%")
+                pickStatCol(label: scheduledOrLiveLabelShort,
+                            value: tipoffText, twoLine: true)
+            }
+            .padding(.top, 14)
             .overlay(
                 Rectangle()
                     .frame(height: 1)
@@ -552,15 +594,34 @@ struct MatchDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.archivoNarrow(9, weight: .bold))
-                .tracking(1.8)
+                .tracking(1.6)
                 .foregroundColor(Color(hex: "#6E6F75"))
             Text(value)
                 .font(.anton(18))
                 .foregroundColor(Color(hex: "#F5F3EE"))
                 .lineLimit(twoLine ? 2 : 1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Compact label for the 3rd pick-row column. "LIVE", "TONIGHT",
+    /// "TOMORROW", or the day-of-week, depending on the game state.
+    private var scheduledOrLiveLabelShort: String {
+        if liveScore?.isLive == true { return "STATUS" }
+        return "TIPOFF"
+    }
+
+    /// Short scheduled time string for the 3rd pick-row column.
+    /// Live: shows the quarter / period; scheduled: shows the time.
+    private var tipoffText: String {
+        if let s = liveScore, s.isLive {
+            return s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE"
+        }
+        guard let date = pick.createdAt else { return "TODAY" }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
     }
 
     /// Tabs row — centered (per design `.tabs { justify-content: center }`),
@@ -620,10 +681,56 @@ struct MatchDetailView: View {
         EmptyPanel(title: "LINEUPS", caption: "Roster + boxscore wiring coming soon.")
     }
 
+    /// ANALYSIS tab — Claude's plain-English reasoning + key factor.
+    /// Moved here from the pick-hero so the hero can mirror the design's
+    /// title → win-block → pick-row layout exactly.
     @ViewBuilder
     private var analysisPanel: some View {
-        EmptyPanel(title: "DEEPER ANALYSIS",
-                   caption: "Per-team trends, recent form charts, and matchup deltas coming soon.")
+        VStack(alignment: .leading, spacing: 14) {
+            if let factor = pick.keyFactor, !factor.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("KEY FACTOR")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                    Text(factor)
+                        .font(.anton(22))
+                        .tracking(-0.1)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(hex: "#D4FF3A").opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1)
+                        )
+                )
+            }
+
+            if !pick.reasoning.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI REASONING")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text(pick.reasoning)
+                        .font(.archivo(13, weight: .regular))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(cardBackground)
+            } else {
+                EmptyPanel(title: "ANALYSIS PENDING",
+                           caption: "The AI is still working on this matchup. Reasoning will appear here once the prediction is generated.")
+            }
+        }
     }
 
     @ViewBuilder
