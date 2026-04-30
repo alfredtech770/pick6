@@ -764,7 +764,7 @@ struct SportHubView: View {
         case "hockey":     return "NHL"
         case "combat":     return "UFC"
         case "f1":         return "F1"
-        case "tennis":     return "TENNIS"
+        case "cricket":    return "IPL"
         default:           return sport.uppercased()
         }
     }
@@ -794,7 +794,7 @@ struct SportHubView: View {
         case "hockey":     return Color(hex: "#5B8CFF")    // blue
         case "combat":     return Color(hex: "#FF3C28")    // red
         case "f1":         return Color(hex: "#E10600")    // ferrari red
-        case "tennis":     return Color(hex: "#D4FF3A")    // lime
+        case "cricket":    return Color(hex: "#FFD93D")    // saffron / cricket yellow
         default:           return Color(hex: "#D4FF3A")
         }
     }

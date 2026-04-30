@@ -363,7 +363,7 @@ struct HeroCard: View {
         case "MLB":  return "MLB.TV"
         case "EPL":  return "PEACOCK"
         case "UFC":  return "ESPN+"
-        case "ATP":  return "TENNIS"
+        case "IPL":  return "STAR SPORTS"
         case "F1":   return "F1TV"
         default:     return ""
         }
@@ -817,9 +817,11 @@ struct SportFilter: View {
     }
 
     /// Only show sport chips for sports that actually have picks today.
+    /// Order = user's preferred order (Football, Basketball, Baseball, F1,
+    /// Combat, Soccer, Cricket, Hockey).
     private var visibleSports: [String] {
         let active = Set(vm.todayPicks.map { $0.sport })
-        let order = ["basketball", "football", "soccer", "baseball", "hockey", "combat", "f1", "tennis"]
+        let order = ["football", "basketball", "baseball", "f1", "combat", "soccer", "cricket", "hockey"]
         return order.filter { active.contains($0) }
     }
 
@@ -832,7 +834,7 @@ struct SportFilter: View {
         case "hockey":     return "NHL"
         case "combat":     return "UFC"
         case "f1":         return "F1"
-        case "tennis":     return "ATP"
+        case "cricket":    return "IPL"
         default:           return sport.uppercased()
         }
     }
@@ -846,7 +848,7 @@ struct SportFilter: View {
         case "hockey":     return "hockey.puck.fill"
         case "combat":     return "figure.boxing"
         case "f1":         return "car.fill"
-        case "tennis":     return "tennis.racket"
+        case "cricket":    return "figure.cricket"
         default:           return "circle"
         }
     }
@@ -984,7 +986,7 @@ struct GameCard: View {
         case "NHL": return "NHL · TONIGHT"
         case "UFC": return "UFC · MAIN CARD"
         case "F1":  return "F1 · RACE WEEKEND"
-        case "ATP": return "ATP · TODAY"
+        case "IPL": return "IPL · MATCH DAY"
         default:    return league
         }
     }

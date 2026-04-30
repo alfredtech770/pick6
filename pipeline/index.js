@@ -12,7 +12,7 @@
 //   soccer      EPL   sportsdata.io (soccer endpoint)
 //   combat      UFC   sportsdata.io (MMA endpoint)
 //   f1          F1    Ergast API (free, no auth)
-//   tennis      ATP   Claude's web_search tool (no public schedule API)
+//   cricket     IPL   Claude's web_search tool (no public schedule API)
 //
 // Add a new league by appending to the LEAGUES registry below.
 
@@ -205,10 +205,10 @@ const LEAGUES = {
     }),
   },
 
-  // ─── Tennis — research mode; Claude web-searches today's slate ─
-  ATP: {
-    sport: 'tennis', promptMode: 'research', fetcher: null,
-    notes: 'Use web_search to find today\'s notable matches (Grand Slams, ATP/WTA 1000s/500s). Surface 3–8 picks max — quality over quantity.',
+  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
+  IPL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
   },
 };
 
@@ -348,7 +348,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) 
   if (useResearch) {
     // Tennis-style instructions tailored to the league when invoked as
     // a fallback for a team sport.
-    const sportPlural = league === 'ATP' ? 'ATP and WTA tournaments'
+    const sportPlural = league === 'IPL' ? 'IPL cricket fixtures (and any notable T20I/Test internationals)'
       : league === 'NBA' ? 'NBA games'
       : league === 'NHL' ? 'NHL games'
       : league === 'NFL' ? 'NFL games'

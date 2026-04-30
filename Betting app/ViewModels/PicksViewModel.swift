@@ -44,10 +44,11 @@ class PicksViewModel: ObservableObject {
     }()
 
     /// All sports the AI pipeline produces predictions for.
+    /// Order matches the user's preferred chip order.
     let sports = [
         "all",
-        "basketball", "soccer", "baseball", "football",
-        "combat",     "f1",     "tennis",   "hockey",
+        "football", "basketball", "baseball", "f1",
+        "combat",   "soccer",     "cricket",  "hockey",
     ]
 
     // MARK: - Filters
