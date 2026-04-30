@@ -532,6 +532,84 @@ async function upsertLiveScores(league, games) {
 
 const FINAL_STATUSES = new Set(['Final', 'F', 'FT', 'closed', 'Final OT', 'Final SO', 'F/OT', 'F/SO']);
 
+/// Looks for live_scores rows whose status indicates the game is over
+/// but where home_score / away_score are NULL — sportsdata.io sometimes
+/// flips a game to "Final" before populating the score. We use Claude
+/// web_search to fill the missing scores so gradePicks() can run.
+async function backfillMissingScores() {
+  const finalsArr = [...FINAL_STATUSES];
+  const { data: missing, error } = await supabase
+    .from('live_scores')
+    .select('game_id, league, home_team, away_team, start_time, status')
+    .in('status', finalsArr)
+    .or('home_score.is.null,away_score.is.null')
+    .limit(20);
+  if (error) { err('Backfill scan failed:', error.message); return 0; }
+  if (!missing?.length) return 0;
+
+  log(`🔁 Backfilling ${missing.length} final game(s) with missing scores via web_search…`);
+
+  let filled = 0;
+  for (const row of missing) {
+    const dateStr = (row.start_time || '').slice(0, 10) || todayISO();
+    const userPrompt = [
+      `What was the FINAL score of the ${row.league} game between ${row.away_team} (away) and ${row.home_team} (home) on ${dateStr}?`,
+      `Use web_search to verify. Reply with ONLY a JSON object of the form {"home_score": <int>, "away_score": <int>}.`,
+      `If you cannot confirm the final score (game postponed, didn't happen, or no source), reply {"home_score": null, "away_score": null}.`,
+    ].join('\n');
+
+    try {
+      const stream = anthropic.messages.stream({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 4000,
+        thinking: { type: 'adaptive' },
+        output_config: {
+          effort: 'high',
+          format: { type: 'json_schema', schema: {
+            type: 'object',
+            properties: {
+              home_score: { type: ['integer', 'null'] },
+              away_score: { type: ['integer', 'null'] },
+            },
+            required: ['home_score', 'away_score'],
+            additionalProperties: false,
+          } },
+        },
+        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
+        messages: [{ role: 'user', content: userPrompt }],
+      });
+      const final = await stream.finalMessage();
+      const text = final.content.find((b) => b.type === 'text')?.text;
+      if (!text) continue;
+      const parsed = JSON.parse(text);
+      if (parsed.home_score == null || parsed.away_score == null) continue;
+      const { error: e } = await supabase
+        .from('live_scores')
+        .update({ home_score: parsed.home_score, away_score: parsed.away_score })
+        .eq('game_id', row.game_id);
+      if (e) { err(`Score backfill update failed for ${row.game_id}:`, e.message); continue; }
+      log(`📊 Backfilled ${row.away_team} ${parsed.away_score} – ${parsed.home_score} ${row.home_team} (${row.league})`);
+      filled++;
+    } catch (e) {
+      err(`Score backfill failed for ${row.game_id}:`, e.message);
+    }
+  }
+  if (filled) log(`Backfilled ${filled}/${missing.length} game(s).`);
+  return filled;
+}
+
+/// Lenient string match used when comparing pick text to team text.
+/// Same algorithm as the pick-validator: trim+lowercase, then exact or
+/// substring-either-way (e.g. "Cavaliers" matches "Cleveland Cavaliers").
+function teamsMatch(pick, team) {
+  if (!pick || !team) return false;
+  const a = String(pick).trim().toLowerCase();
+  const b = String(team).trim().toLowerCase();
+  if (a === b) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  return false;
+}
+
 async function gradePicks() {
   const { data: pending, error: e1 } = await supabase
     .from('picks')
@@ -559,14 +637,14 @@ async function gradePicks() {
     if (!score || !FINAL_STATUSES.has(score.status)) continue;
     if (score.home_score == null || score.away_score == null) continue;
 
-    // F1 / tennis / non-team picks: pick is a name, not home/away.
-    // Skip auto-grading for these — flag them for manual review or
-    // hook up a sport-specific grader later.
-    const isHeadToHead = pick.pick === pick.home_team || pick.pick === pick.away_team;
-    if (!isHeadToHead) continue;
+    // F1 / non-team picks: pick is a driver name, not home/away.
+    // We can grade with lenient string matching on team names.
+    const matchesHome = teamsMatch(pick.pick, pick.home_team);
+    const matchesAway = teamsMatch(pick.pick, pick.away_team);
+    if (!matchesHome && !matchesAway) continue;
 
     const homeWon = score.home_score > score.away_score;
-    const pickedHome = pick.pick === pick.home_team;
+    const pickedHome = matchesHome;
     const won = pickedHome === homeWon;
 
     const { error: e3 } = await supabase
@@ -672,6 +750,7 @@ async function runPipeline() {
       await savePicks(league, picks);
     }
 
+    await backfillMissingScores();
     await gradePicks();
   } catch (e) {
     err('Pipeline crashed:', e.stack || e.message);
@@ -697,6 +776,10 @@ async function liveTick() {
       const raw = await cfg.fetcher();
       if (raw.length) await upsertLiveScores(league, raw);
     }
+    // Some sportsdata.io endpoints flip games to "Final" before scores
+    // are populated. Backfill any Final-status rows still missing scores
+    // via Claude web_search BEFORE we attempt to grade.
+    await backfillMissingScores();
     await gradePicks();
   } catch (e) {
     err('Live tick crashed:', e.message);
