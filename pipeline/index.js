@@ -4,15 +4,32 @@
 // asks Claude Opus 4.7 for calibrated picks, writes them to
 // Supabase, and grades completed picks against final scores.
 //
-// Coverage: 8 sports across 8 leagues
-//   basketball  NBA   sportsdata.io
-//   hockey      NHL   sportsdata.io
-//   football    NFL   sportsdata.io
-//   baseball    MLB   sportsdata.io
-//   soccer      EPL   sportsdata.io (soccer endpoint)
-//   combat      UFC   sportsdata.io (MMA endpoint)
-//   f1          F1    Ergast API (free, no auth)
-//   cricket     IPL   Claude's web_search tool (no public schedule API)
+// Coverage: 8 sports × ~10 leagues each (F1 = 1) = 71 leagues total.
+// Primary leagues run sportsdata.io with research-mode fallback; the
+// rest run pure research mode (Claude web_search). Each league is
+// processed every cron tick — most return empty during off-season,
+// which is a cheap Claude call with no rows written.
+//
+// Primary leagues (sportsdata.io feeds):
+//   basketball  NBA      hockey   NHL      football  NFL
+//   baseball    MLB      soccer   EPL      combat    UFC
+//   f1          F1 (Ergast / jolpi.ca, free)
+//
+// Research-mode leagues (per sport, no fetcher):
+//   basketball  NCAAB · EuroLeague · WNBA · NBL · CBA · Liga ACB ·
+//               BSL · LBA · LNB Pro A
+//   football    NCAAF · CFL · UFL · NCAA FCS · ELF · AFL (Aus) ·
+//               Arena FB · LFA Brasil · CFB Bowl/CFP
+//   baseball    NCAA · NPB · KBO · CPBL · LMB · LIDOM · ABL ·
+//               MiLB · Cuban Serie Nacional
+//   combat      Bellator · ONE · PFL · Boxing · Cage Warriors ·
+//               RIZIN · KSW · K-1 · GLORY
+//   soccer      La Liga · Bundesliga · Serie A · Ligue 1 · UCL ·
+//               UEL · MLS · Liga MX · Brasileirão
+//   cricket     IPL · BBL · PSL · CPL · The Hundred · T20 Blast ·
+//               SA20 · ILT20 · MLC · International (Test/ODI/T20I)
+//   hockey      KHL · SHL · Liiga · NL · DEL · Czech Extraliga ·
+//               AHL · NCAA · IIHF (Worlds/Olympics/U20)
 //
 // Add a new league by appending to the LEAGUES registry below.
 
@@ -205,10 +222,276 @@ const LEAGUES = {
     }),
   },
 
-  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
-  IPL: {
+  // ════════════════════════════════════════════════════════════════
+  // RESEARCH-MODE LEAGUES — Claude web_search drives the slate.
+  // No sportsdata.io subscription required. Most are seasonal — they
+  // return empty when off-season (cheap Claude call, no picks generated).
+  // ════════════════════════════════════════════════════════════════
+
+  // ─── BASKETBALL — 9 more (NBA already above) ─────────────────────
+  NCAAB: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I Men\'s Basketball — peaks during March Madness (Mar–Apr). Use web_search for today\'s games. AP Top 25 + KenPom rankings are key signals.',
+  },
+  EUROLEAGUE: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'EuroLeague — top European club basketball. Season Sep–Jun, regular season + playoffs. Real Madrid, Olympiacos, Panathinaikos, Fenerbahçe are perennial contenders.',
+  },
+  WNBA: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'WNBA — primary US women\'s basketball league. Season May–Sep. Use web_search for today\'s games.',
+  },
+  NBL_AU: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'NBL — Australian National Basketball League. Season Sep–Mar (so off-season Apr–Aug).',
+  },
+  CBA_CN: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'CBA — Chinese Basketball Association. Season Oct–Apr.',
+  },
+  LIGA_ACB: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'Liga ACB — top Spanish basketball league. Season Sep–Jun.',
+  },
+  BSL_TR: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'BSL — Turkish Basketball Süper Lig. Season Sep–May.',
+  },
+  LBA_IT: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'Lega Basket Serie A — top Italian basketball league. Season Sep–Jun.',
+  },
+  LNB_FR: {
+    sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'LNB Pro A (now Betclic Élite) — top French basketball league.',
+  },
+
+  // ─── FOOTBALL (American football, 9 more — NFL already above) ────
+  NCAAF: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I FBS Football — College Football. Season Aug–Jan (peak Sep–Dec, bowl games + CFP playoff Dec–Jan).',
+  },
+  CFL: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'CFL — Canadian Football League. Season Jun–Nov (Grey Cup ~Nov). Note: 12 men, 3 downs, 110-yard field — different strategy than NFL.',
+  },
+  UFL: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'UFL — United Football League (US spring football, merger of XFL + USFL). Season Mar–Jun.',
+  },
+  NCAA_FCS: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I FCS Football — second tier of college football. Smaller schools, FCS Championship Jan.',
+  },
+  ELF: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'European League of Football — American football across Europe. Season Jun–Sep, championship game Sep.',
+  },
+  AFL_AU: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'AFL — Australian Football League (Australian Rules football). Season Mar–Sep, Grand Final ~late Sep.',
+  },
+  ARENA_FB: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'Arena Football League — indoor football. Season May–Aug.',
+  },
+  LFA_BR: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'Liga BFA / LFA Brasil — Brazilian American football league. Season Apr–Sep.',
+  },
+  CFB_BOWL: {
+    sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Bowl Games + College Football Playoff — Dec–Jan only. Includes CFP semifinals, national championship, and ~40 minor bowl games.',
+  },
+
+  // ─── BASEBALL — 9 more (MLB already above) ───────────────────────
+  NCAA_BSB: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I Baseball — College World Series in June. Regular season Feb–May.',
+  },
+  NPB: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'NPB — Nippon Professional Baseball (Japan). Two leagues: Central + Pacific. Season Mar–Oct, Japan Series late Oct.',
+  },
+  KBO: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'KBO — Korea Baseball Organization. 10 teams. Season Mar–Oct.',
+  },
+  CPBL: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'CPBL — Chinese Professional Baseball League (Taiwan). Season Mar–Oct.',
+  },
+  LMB: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'LMB — Liga Mexicana de Béisbol. Season Apr–Sep.',
+  },
+  LIDOM: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'LIDOM — Dominican Winter League. Season Oct–Jan, Caribbean Series Feb.',
+  },
+  ABL_AU: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'ABL — Australian Baseball League. Season Nov–Feb.',
+  },
+  MILB: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'MiLB — Minor League Baseball (Triple-A, Double-A, etc.). Season Apr–Sep. Many MLB call-up signals.',
+  },
+  CUBAN_BSB: {
+    sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'Cuban National Series (Serie Nacional). Season Sep–Apr.',
+  },
+
+  // ─── COMBAT — 9 more (UFC already above) ─────────────────────────
+  BELLATOR: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'Bellator MMA — second-largest MMA promotion in North America (now PFL-owned). One pick per main-card bout. Treat each fight independently.',
+  },
+  ONE_FC: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'ONE Championship — Asia\'s largest MMA + Muay Thai + kickboxing promotion. Pick winners of main + co-main events.',
+  },
+  PFL: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'PFL — Professional Fighters League. Regular-season + playoff format with $1M prizes per weight class.',
+  },
+  BOXING_WBC: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'Boxing — major world title fights (WBC/WBA/IBF/WBO). Pick winners of high-profile cards. Reach + style matchup + recent form.',
+  },
+  CAGE_WARRIORS: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'Cage Warriors — top European MMA promotion (UFC pipeline).',
+  },
+  RIZIN: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'RIZIN FF — Japan\'s top MMA promotion. Year-end show is a major event.',
+  },
+  KSW: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'KSW — Konfrontacja Sztuk Walki, Poland\'s top MMA promotion.',
+  },
+  K1: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'K-1 — kickboxing organization. Heavyweight + Lightweight Grand Prix tournaments.',
+  },
+  GLORY: {
+    sport: 'combat', promptMode: 'research', fetcher: null,
+    notes: 'GLORY Kickboxing — top international kickboxing promotion.',
+  },
+
+  // ─── SOCCER — 9 more (EPL already above) ─────────────────────────
+  LA_LIGA: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'La Liga (Spain) — Real Madrid, Barcelona, Atlético Madrid lead. Season Aug–May. Skip likely draws.',
+  },
+  BUNDESLIGA: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Bundesliga (Germany) — Bayern Munich dominant. Season Aug–May (winter break Dec–mid Jan).',
+  },
+  SERIE_A: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Serie A (Italy) — Juventus, Inter Milan, AC Milan, Napoli, Roma top. Season Aug–May.',
+  },
+  LIGUE_1: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Ligue 1 (France) — PSG dominant. Season Aug–May.',
+  },
+  UCL: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'UEFA Champions League — top European club competition. Group stage Sep–Dec, knockouts Feb–May, final ~late May.',
+  },
+  UEL: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'UEFA Europa League — second-tier European club competition.',
+  },
+  MLS: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'MLS — Major League Soccer (US/Canada). Season Feb–Dec, MLS Cup playoffs Oct–Dec.',
+  },
+  LIGA_MX: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Liga MX (Mexico) — split into Apertura (Jul–Dec) + Clausura (Jan–May) tournaments.',
+  },
+  BRASILEIRAO: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Brazilian Série A (Brasileirão) — top Brazilian league. Season Apr–Dec.',
+  },
+
+  // ─── CRICKET — 9 more (IPL already above) ────────────────────────
+  BBL_CRK: {
     sport: 'cricket', promptMode: 'research', fetcher: null,
-    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
+    notes: 'BBL — Big Bash League (Australia). T20. Season Dec–Jan.',
+  },
+  PSL_CRK: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'PSL — Pakistan Super League. T20. Season Feb–Mar.',
+  },
+  CPL_CRK: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'CPL — Caribbean Premier League. T20. Season Aug–Sep.',
+  },
+  HUNDRED: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'The Hundred — England 100-ball cricket tournament. Season Aug.',
+  },
+  T20_BLAST: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Vitality T20 Blast — England county T20 league. Season May–Sep.',
+  },
+  SA20: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'SA20 — South Africa T20 league. Season Jan–Feb.',
+  },
+  ILT20: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'ILT20 — International League T20 (UAE). Season Jan–Feb.',
+  },
+  MLC: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'MLC — Major League Cricket (USA). T20. Season Jul.',
+  },
+  CRICKET_INTL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'International cricket — Test, ODI, and T20I matches between national teams. Always check the Future Tours Programme for today\'s fixtures.',
+  },
+
+  // ─── HOCKEY — 9 more (NHL already above) ─────────────────────────
+  KHL: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'KHL — Kontinental Hockey League (Russia + neighbours). Season Sep–Apr.',
+  },
+  SHL: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'SHL — Svenska Hockeyligan (Sweden). Season Sep–Apr.',
+  },
+  LIIGA: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'Liiga — Finnish top hockey league. Season Sep–Apr.',
+  },
+  NL_CH: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'NL — National League (Switzerland). Season Sep–Apr.',
+  },
+  DEL: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'DEL — Deutsche Eishockey Liga (Germany). Season Sep–Apr.',
+  },
+  CZECH_EXTRA: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'Czech Extraliga — top Czech hockey league. Season Sep–Apr.',
+  },
+  AHL: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'AHL — American Hockey League (top NHL minor league). Season Oct–Apr + Calder Cup.',
+  },
+  NCAA_HKY: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I Men\'s Hockey. Season Oct–Apr, Frozen Four early Apr.',
+  },
+  IIHF: {
+    sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'IIHF — International Ice Hockey Federation tournaments (World Championship May, Olympics every 4 years, World Juniors Dec/Jan).',
   },
 };
 
@@ -744,8 +1027,15 @@ runPipeline();
 
 log('⚡ Pick6 AI pipeline online');
 log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, max effort)`);
-log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
-log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
+{
+  const bySport = Object.values(LEAGUES).reduce((acc, c) => {
+    acc[c.sport] = (acc[c.sport] || 0) + 1; return acc;
+  }, {});
+  const sportSummary = Object.entries(bySport)
+    .map(([s, n]) => `${s}(${n})`)
+    .join(', ');
+  log(`   Coverage: ${Object.keys(LEAGUES).length} leagues — ${sportSummary}`);
+}
 log(`   Timezone: ${TZ}`);
 log('   Live scores: every 60s during game hours');
 log('   AI picks:    5am, 12pm, 7pm ET (3× daily, optimized for EU + US slates)');
