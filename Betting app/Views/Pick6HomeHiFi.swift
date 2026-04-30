@@ -84,7 +84,12 @@ struct Pick6HomeHiFi: View {
             )
             .ignoresSafeArea()
 
-            // Content per tab
+            // Content per tab.
+            // Home extends through the top safe area so the lime hero
+            // reaches all the way to the top edge of the device (the
+            // status bar `9:41 + signal/wifi/battery` overlays the lime
+            // card directly). Other tabs keep their TopNavBar inside
+            // the safe area.
             Group {
                 switch tab {
                 case .home:
@@ -93,6 +98,7 @@ struct Pick6HomeHiFi: View {
                                     onTapPick: { detailPick = $0 },
                                     onTapSport: { sportHub = $0 },
                                     onUnlock: { showPaywall = true })
+                        .ignoresSafeArea(edges: .top)
                 case .picks:
                     AllPicksView(vm: vm,
                                  isPro: subs.isPro,
@@ -191,12 +197,6 @@ struct HomeHiFiContent: View {
                     }
                 }
                 .buttonStyle(.plain)
-                // The hero already has 56pt internal padding-top to clear
-                // the status bar / notch, so we extend the scroll content
-                // up under the safe area. Without this the hero gets
-                // pushed down ~50pt by the system safe-area inset and
-                // there's a dark band above the lime card.
-                .ignoresSafeArea(edges: .top)
 
                 StatsRow(streak: vm.currentStreak,
                          best: vm.longestStreak,
