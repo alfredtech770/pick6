@@ -158,14 +158,31 @@ struct HubSectionHead: View {
     }
 }
 
-/// Reusable card-tile background.
+/// Reusable card background — matches the design spec for `.gcard`:
+/// vertical gradient #14161a → #0e0f12, --line border, plus a 4-shadow
+/// stack (inset top white highlight + drop shadow main + drop secondary)
+/// to give every card the "stadium-scoreboard 3D lift" the design calls
+/// for. Used by every list/card surface in the app for visual consistency.
 private var cardBackground: some View {
-    RoundedRectangle(cornerRadius: 16, style: .continuous)
-        .fill(Color(hex: "#101114"))
+    RoundedRectangle(cornerRadius: 22, style: .continuous)
+        .fill(LinearGradient(
+            colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+            startPoint: .top, endPoint: .bottom
+        ))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(Color(hex: "#22252B"), lineWidth: 1)
         )
+        // Inset top highlight — a 1pt bright stroke faded to clear in the
+        // top half of the card. Mimics CSS `inset 0 1px 0 rgba(255,255,255,0.07)`.
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                .mask(LinearGradient(colors: [.white, .clear],
+                                     startPoint: .top, endPoint: .center))
+        )
+        .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 10)
+        .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
 }
 
 // ════════════════════════════════════════════════════════════════

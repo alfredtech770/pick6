@@ -278,17 +278,18 @@ struct HeroCard: View {
             heroGradient
                 .clipShape(BottomRoundedShape(radius: 32))
 
-            // Subtle diagonal stripe overlay (matches CSS ::before)
+            // Diagonal stripe overlay — near-vertical (100° from horizontal),
+            // 41pt pitch, very faint dark lines (per spec opacity 0.03).
             DiagonalStripe()
                 .clipShape(BottomRoundedShape(radius: 32))
-                .blendMode(.multiply)
-                .opacity(0.08)
+                .allowsHitTesting(false)
 
-            // Top sheen
+            // Top sheen — tight inset edge (≈8% of height), per spec
+            // `inset 0 2px 0 rgba(255,255,255,0.35)`.
             LinearGradient(
-                colors: [Color.white.opacity(0.25), .clear],
+                colors: [Color.white.opacity(0.35), .clear],
                 startPoint: .top,
-                endPoint: .center
+                endPoint: UnitPoint(x: 0.5, y: 0.08)
             )
             .clipShape(BottomRoundedShape(radius: 32))
             .allowsHitTesting(false)
@@ -301,7 +302,9 @@ struct HeroCard: View {
             .padding(.top, 56)        // status-bar inset
             .padding(.bottom, 32)
         }
-        .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 20, x: 0, y: 20)
+        // Single soft lime-green glow under the hero (spec
+        // `0 20px 40px -10px rgba(168,224,0,0.35)`).
+        .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 12, x: 0, y: 16)
     }
 
     private var heroGradient: some View {
@@ -341,15 +344,21 @@ struct HeroCard: View {
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(2.4)
                     .foregroundColor(Color.black.opacity(0.6))
+                    .padding(.bottom, -8)  // tighten spec gap of 6 vs VStack's 14
 
-                Text(headlineText)
-                    .font(.anton(50))
-                    .lineSpacing(-6)
-                    .tracking(-0.7)
-                    .foregroundColor(Color(hex: "#0A0B0D"))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Two-line headline (50pt Anton, line-height 0.86 → spec).
+                // SwiftUI clamps lineSpacing to ≥0, so split the lines into
+                // a VStack with negative spacing to actually achieve the
+                // tight stadium-scoreboard line-height the design specifies.
+                VStack(alignment: .leading, spacing: -7) {
+                    ForEach(headlineLines, id: \.self) { line in
+                        Text(line)
+                            .font(.anton(50))
+                            .tracking(-0.7)
+                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .lineLimit(1)
+                    }
+                }
 
                 HeroMetaPill(time: timeText, channel: channelText)
             }
@@ -376,6 +385,12 @@ struct HeroCard: View {
             || pick.homeTeam.lowercased().contains(pick.pick.lowercased())
         let other = pickedHome ? pick.awayTeam : pick.homeTeam
         return "\(pick.pick.uppercased())\nOVER \(other.uppercased())"
+    }
+
+    /// Split the headline into individual lines so we can render them in
+    /// a VStack with negative spacing (SwiftUI clamps lineSpacing to ≥0).
+    private var headlineLines: [String] {
+        headlineText.split(separator: "\n").map(String.init)
     }
 
     private var timeText: String {
@@ -419,15 +434,20 @@ struct BottomRoundedShape: Shape {
     }
 }
 
+/// Diagonal stripe overlay — matches the CSS `repeating-linear-gradient`
+/// at 100° (near-vertical, 10° lean to the right) with a 41pt pitch and
+/// a very faint dark stroke (rgba(0,0,0,0.03)).
 struct DiagonalStripe: View {
     var body: some View {
         Canvas { ctx, size in
             let pitch: CGFloat = 41
-            for x in stride(from: -size.height, through: size.width + size.height, by: pitch) {
+            // 100° from horizontal → ~10° past vertical, slight rightward lean.
+            let dx = tan(10 * .pi / 180) * size.height
+            for x in stride(from: -dx, through: size.width + size.height, by: pitch) {
                 var path = Path()
                 path.move(to: CGPoint(x: x, y: 0))
-                path.addLine(to: CGPoint(x: x + size.height, y: size.height))
-                ctx.stroke(path, with: .color(.black.opacity(0.5)), lineWidth: 1)
+                path.addLine(to: CGPoint(x: x + dx, y: size.height))
+                ctx.stroke(path, with: .color(.black.opacity(0.03)), lineWidth: 1)
             }
         }
     }
@@ -726,7 +746,7 @@ struct StreakTile: View {
                 }
             }
             HStack {
-                Text("BEST: \(max(best, streak))")
+                Text("BEST: \(best)")
                     .font(.mono(10, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Spacer()
@@ -793,6 +813,8 @@ struct AccuracyTile: View {
     }
 }
 
+/// Stats-tile background. Spec calls for `.tile` with flat --panel fill
+/// + 4-shadow stack (inset top white + inset bottom black + drop 10/24 + drop 2/6).
 private var tileBackground: some View {
     RoundedRectangle(cornerRadius: 22, style: .continuous)
         .fill(Color(hex: "#101114"))
@@ -800,7 +822,22 @@ private var tileBackground: some View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(Color(hex: "#22252B"), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.6), radius: 14, x: 0, y: 10)
+        // Inset top highlight — bright stroke faded to clear in the top half
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .mask(LinearGradient(colors: [.white, .clear],
+                                     startPoint: .top, endPoint: .center))
+        )
+        // Inset bottom shadow — dark stroke faded to clear in the bottom half
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.black.opacity(0.5), lineWidth: 1)
+                .mask(LinearGradient(colors: [.clear, .black],
+                                     startPoint: .center, endPoint: .bottom))
+        )
+        .shadow(color: .black.opacity(0.6), radius: 12, x: 0, y: 10)
+        .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 2)
 }
 
 struct SparklineView: View {
@@ -1022,13 +1059,25 @@ struct GameCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .background(
+            // `.gcard` per spec: vertical gradient bg #14161a → #0e0f12,
+            // line border, inset top highlight, drop-shadow stack.
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                    startPoint: .top, endPoint: .bottom
+                ))
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(Color(hex: "#22252B"), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.4), radius: 14, x: 0, y: 8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                        .mask(LinearGradient(colors: [.white, .clear],
+                                             startPoint: .top, endPoint: .center))
+                )
+                .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 10)
+                .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
         )
     }
 
@@ -1212,16 +1261,25 @@ struct FloatingNav: View {
                     isActive: tab == .profile) { tab = .profile }
         }
         .padding(8)
+        // Floating glass capsule. Spec layers: blur material BELOW the
+        // tinted fill — but if we set both via .background and .fill the
+        // tint overrides the blur. Stack them in a ZStack so the blur
+        // shows through the 82%-opaque tint.
         .background(
-            Capsule()
-                .fill(Color(hex: "#16181C").opacity(0.82))
-                .background(.ultraThinMaterial)
-                .overlay(
-                    Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1)
-                )
+            ZStack {
+                Capsule().fill(.ultraThinMaterial)
+                Capsule().fill(Color(hex: "#16181C").opacity(0.82))
+            }
+            .overlay(
+                Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
         )
         .clipShape(Capsule())
+        // Spec uses two shadow layers (`0 20px 40px rgba(0,0,0,0.45),
+        // 0 4px 10px rgba(0,0,0,0.3)`) — first is the soft drop, second
+        // gives a tighter contact shadow.
         .shadow(color: .black.opacity(0.45), radius: 20, x: 0, y: 20)
+        .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 4)
     }
 }
 
