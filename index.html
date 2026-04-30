@@ -790,11 +790,20 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   line-height: 1;
 }
 .quote-stat {
+  margin-top: 28px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.quote-stat .amt {
   font-family: 'Anton', sans-serif;
-  font-size: 36px; line-height: 1;
+  font-size: 48px; line-height: 1;
   color: var(--accent);
-  letter-spacing: -0.005em;
-  margin-top: 24px;
+  letter-spacing: -0.01em;
+}
+.quote-stat .lbl {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mute);
 }
 .quote-text {
   font-size: 15px; line-height: 1.55;
@@ -1609,7 +1618,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   </div>
   <div class="quotes">
     <div class="quote" data-reveal>
-      <div class="quote-stat">+$340</div>
+      <div class="quote-stat"><span class="amt">+$340</span><span class="lbl">Won · Week 1</span></div>
       <p class="quote-text">"Up $340 in my first week. Cancelled my $200/mo tipster the next day. The AI confidence scores tell you when to step on the gas — and when to fold."</p>
       <div class="quote-attrib">
         <div class="quote-avatar" style="background: linear-gradient(135deg, #f472b6, #db2777);">JK</div>
@@ -1621,8 +1630,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       </div>
     </div>
     <div class="quote" data-reveal data-reveal-delay="2">
-      <div class="quote-stat">73% W</div>
-      <p class="quote-text">"I've tried every picks service. Pick1 is the only one that publishes losses too. That's how you know the wins are real. Hit 73% across 142 NBA picks last month."</p>
+      <div class="quote-stat"><span class="amt">+$1,420</span><span class="lbl">Won · 30 days</span></div>
+      <p class="quote-text">"Walked away $1,420 ahead last month following the high-confidence picks. Pick1 is the only service that publishes losses too — that's how you know the wins are real."</p>
       <div class="quote-attrib">
         <div class="quote-avatar" style="background: linear-gradient(135deg, #60a5fa, #2563eb);">MR</div>
         <div>
@@ -1633,8 +1642,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       </div>
     </div>
     <div class="quote" data-reveal data-reveal-delay="3">
-      <div class="quote-stat">+12.8u</div>
-      <p class="quote-text">"Live tracking is the killer feature. The win-probability bar updates in real time. Saved me from chasing losses on 3 different games already this week."</p>
+      <div class="quote-stat"><span class="amt">+$640</span><span class="lbl">Won · 2 weeks</span></div>
+      <p class="quote-text">"Cleared $640 in two weeks. The live win-probability bar saved me from chasing losses on three different games — best feature in any picks app I've used."</p>
       <div class="quote-attrib">
         <div class="quote-avatar" style="background: linear-gradient(135deg, #fb923c, #ea580c);">SP</div>
         <div>
