@@ -130,6 +130,15 @@ struct Pick6HomeHiFi: View {
             MatchDetailView(pick: pick,
                             liveScore: liveScore(for: pick),
                             onClose: { detailPick = nil })
+                // Constrain the sheet to vertical-only interaction.
+                // Without these, iOS' interactive-dismiss gesture can pick
+                // up small horizontal motion in the rubber-band and the
+                // whole sheet appears to drift left/right while held.
+                // .scrolls makes drag-to-dismiss fire only when the inner
+                // scroll is pinned at the top, and .visible draws the
+                // standard pull handle so vertical intent stays obvious.
+                .presentationDragIndicator(.visible)
+                .presentationContentInteraction(.scrolls)
         }
         .sheet(item: Binding(
             get: { sportHub.map { SportHubID(id: $0) } },
@@ -141,6 +150,8 @@ struct Pick6HomeHiFi: View {
                             sportHub = nil
                             detailPick = p
                          })
+                .presentationDragIndicator(.visible)
+                .presentationContentInteraction(.scrolls)
         }
         .sheet(isPresented: $showPaywall) {
             OBPaywallScreen(
@@ -148,6 +159,8 @@ struct Pick6HomeHiFi: View {
                 onSubscribe: { _ in showPaywall = false },
                 onSkip: { showPaywall = false }
             )
+            .presentationDragIndicator(.visible)
+            .presentationContentInteraction(.scrolls)
         }
         .sheet(isPresented: $showWins) {
             WinsView(vm: vm,
@@ -156,6 +169,8 @@ struct Pick6HomeHiFi: View {
                         showWins = false
                         detailPick = p
                      })
+                .presentationDragIndicator(.visible)
+                .presentationContentInteraction(.scrolls)
         }
     }
 
