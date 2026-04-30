@@ -57,10 +57,11 @@ final class SubscriptionManager: ObservableObject {
     // MARK: - Product IDs
 
     /// All Pick6 Pro product identifiers, in display order.
-    /// Update these to match your App Store Connect setup.
+    /// These match the bundle identifier `com.pick6.app`. Configure both
+    /// in App Store Connect → My App → Subscriptions → "Pick6 Pro" group.
     static let productIds: [String] = [
-        "com.alfredtech770.pick6.pro.weekly",
-        "com.alfredtech770.pick6.pro.monthly",
+        "com.pick6.app.pro.weekly",
+        "com.pick6.app.pro.monthly",
     ]
 
     // MARK: - Lifecycle

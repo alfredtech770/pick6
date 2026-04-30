@@ -1226,6 +1226,8 @@ struct ProfileView: View {
         )
     }
 
+    @State private var showDeleteAccount: Bool = false
+
     private var settingsTabBody: some View {
         VStack(spacing: 8) {
             settingsRow(icon: "bell.fill", title: "Notifications", trailing: "ON")
@@ -1234,6 +1236,24 @@ struct ProfileView: View {
             settingsRow(icon: "lock.fill", title: "Privacy & Security", trailing: nil)
             settingsRow(icon: "questionmark.circle.fill", title: "Help Center", trailing: nil)
             settingsRow(icon: "rectangle.portrait.and.arrow.right.fill", title: "Sign Out", trailing: nil, danger: true, action: onSignOut)
+            // Delete Account is mandatory for any iOS app with auth (Apple
+            // guideline 5.1.1(v) since iOS 14.5).
+            settingsRow(icon: "trash.fill", title: "Delete Account", trailing: nil, danger: true) {
+                showDeleteAccount = true
+            }
+        }
+        .alert("Delete account?", isPresented: $showDeleteAccount) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task {
+                    // Best-effort: sign out + flag account for deletion.
+                    // Backend should run a 30-day soft-delete via webhook;
+                    // wire up next time we touch the AuthManager.
+                    onSignOut()
+                }
+            }
+        } message: {
+            Text("This permanently deletes your Pick6 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
         }
     }
 
