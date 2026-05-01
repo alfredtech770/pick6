@@ -1026,7 +1026,6 @@ struct SportHubView: View {
             ForEach(visible) { p in
                 Button { onTapPick(p) } label: {
                     CompactPickCard(pick: p, liveScore: liveScore(for: p))
-                        .screenshotProtectedForPro()
                 }
                 .buttonStyle(.plain)
             }
@@ -1122,7 +1121,6 @@ struct SportHubView: View {
                 Button { onTapPick(p) } label: {
                     CompactPickCard(pick: p, liveScore: nil)
                         .opacity(p.isPending ? 1.0 : 0.85)
-                        .screenshotProtectedForPro()
                 }
                 .buttonStyle(.plain)
             }

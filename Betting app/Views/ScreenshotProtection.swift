@@ -82,6 +82,20 @@ struct ScreenshotProtected<Content: View>: UIViewRepresentable {
         context.coordinator.host.rootView = AnyView(content())
     }
 
+    /// Forward sizing requests to the SwiftUI host so the wrapper picks
+    /// up the natural intrinsic size of the hosted content. Without
+    /// this, the canvas view we extract from UITextField has no
+    /// intrinsic size and SwiftUI either collapses it to the min or
+    /// expands it to fill — both wreck the surrounding layout.
+    func sizeThatFits(_ proposal: ProposedViewSize,
+                       uiView: UIView,
+                       context: Context) -> CGSize? {
+        context.coordinator.host.sizeThatFits(in: CGSize(
+            width:  proposal.width  ?? UIView.layoutFittingExpandedSize.width,
+            height: proposal.height ?? UIView.layoutFittingExpandedSize.height
+        ))
+    }
+
     final class Coordinator {
         var field: UITextField?
         let host: UIHostingController<AnyView>
