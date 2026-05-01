@@ -141,12 +141,12 @@ struct Pick6HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                // Sit just above the home indicator. The design spec
-                // calls for 20pt, but in the actual iOS render that
-                // looks too high above the gesture bar — the user has
-                // explicitly asked for it lower twice. Keeping 0 here
-                // pushes the pill down against the safe-area bottom.
-                .padding(.bottom, 0)
+                // Low enough to feel anchored to the bottom (per the
+                // user's "lower the sticky menu" request) but high
+                // enough to leave a thin gap above the home indicator
+                // gesture bar. 6pt sits just above the home-indicator
+                // hit zone without leaving an awkward floating gap.
+                .padding(.bottom, 6)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
@@ -402,6 +402,11 @@ struct HeroCard: View {
                             .tracking(-0.7)
                             .foregroundColor(Color(hex: "#0A0B0D"))
                             .lineLimit(1)
+                            // Long team names ("PHILADELPHIA 76ERS") still
+                            // overflow even after teamShortName trimming —
+                            // shrink down to ~30pt when needed instead of
+                            // truncating to "BOSTON…".
+                            .minimumScaleFactor(0.6)
                     }
                 }
 
@@ -425,11 +430,16 @@ struct HeroCard: View {
 
     private var headlineText: String {
         guard let pick = pick else { return "NO PICKS\nYET" }
-        // "AWAY OVER HOME" if pick is away; "HOME OVER AWAY" if pick is home
+        // "AWAY OVER HOME" if pick is away; "HOME OVER AWAY" if pick is home.
+        // Use teamShortName so "BOSTON CELTICS" / "PHILADELPHIA 76ERS" don't
+        // overflow the 50pt Anton at our hero width — we just want
+        // "CELTICS / OVER 76ERS".
         let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
             || pick.homeTeam.lowercased().contains(pick.pick.lowercased())
         let other = pickedHome ? pick.awayTeam : pick.homeTeam
-        return "\(pick.pick.uppercased())\nOVER \(other.uppercased())"
+        let pickShort = teamShortName(pick.pick).uppercased()
+        let otherShort = teamShortName(other).uppercased()
+        return "\(pickShort)\nOVER \(otherShort)"
     }
 
     /// Split the headline into individual lines so we can render them in
