@@ -141,7 +141,9 @@ struct Pick6HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                .padding(.bottom, 4)
+                // Spec: `.navbar { bottom: 20px }` — 20pt above the
+                // safe-area bottom edge. Matches Pick6 Account Pages.
+                .padding(.bottom, 20)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
@@ -1301,24 +1303,41 @@ struct MiniRing: View {
 
 // MARK: - Floating glass nav
 
+/// Floating bottom-nav pill — matches `Pick6 Account Pages.html` spec
+/// exactly: 4 fixed items (Home / Picks / Live / Profile) on a glass
+/// capsule. Live is a permanent red `live-btn` (always visible, always
+/// pulsing) — not a conditional badge on a normal tab.
+///
+/// Spec values (account-pages.jsx + accompanying CSS):
+///   • Container: bottom: 20px, blur(22) saturate(160), bg
+///     rgba(22,24,28,0.82), border rgba(255,255,255,0.06), padding 8px
+///   • Inactive item: padding 10×14, mute color, icon-only (no label)
+///   • Active item:   padding 10×18, lime-tint bg (.14 alpha), inset
+///                    lime stroke (.25 alpha), label visible, ink text,
+///                    lime icon
+///   • Live button:   padding 10×14, always red `#ff3b3b` text on
+///                    .10-alpha red bg with .28-alpha red inset stroke,
+///                    pulsing red dot, "LIVE" label always visible
+///   • Live active:   solid red bg, white text, white dot
 struct FloatingNav: View {
     @Binding var tab: Pick6HomeHiFi.Tab
     let liveCount: Int
 
     var body: some View {
-        HStack(spacing: 4) {
-            NavItem(icon: "house.fill", label: "Home",
+        HStack(spacing: 2) {
+            NavItem(icon: "house",
+                    label: "Home",
                     isActive: tab == .home) { tab = .home }
-            NavItem(icon: "star.fill", label: "Picks",
+            NavItem(icon: "star",
+                    label: "Picks",
                     isActive: tab == .picks) { tab = .picks }
-            NavItem(icon: "star.fill", label: "Live",
-                    isActive: tab == .live,
-                    badge: liveCount > 0 ? "\(liveCount)" : nil) { tab = .live }
-            NavItem(icon: "person.fill", label: "Profile",
+            LiveNavItem(isActive: tab == .live,
+                        liveCount: liveCount) { tab = .live }
+            NavItem(icon: "person",
+                    label: "Profile",
                     isActive: tab == .profile) { tab = .profile }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(8)   // spec: padding 8px around the row
         // Floating glass capsule. Spec layers: blur material BELOW the
         // tinted fill — but if we set both via .background and .fill the
         // tint overrides the blur. Stack them in a ZStack so the blur
@@ -1341,49 +1360,120 @@ struct FloatingNav: View {
     }
 }
 
+/// Standard nav item (Home / Picks / Profile). Icon-only when inactive,
+/// icon + label when active. Active state uses a lime *tint* (not solid
+/// lime) with an inset lime stroke — matches `.nav-item.active` in the
+/// design CSS.
 struct NavItem: View {
     let icon: String
     let label: String
     let isActive: Bool
-    var badge: String? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
-                    if let b = badge {
-                        Text(b)
-                            .font(.mono(8, weight: .heavy))
-                            .foregroundColor(Color(hex: "#F5F3EE"))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color(hex: "#FF5A36")))
-                            .offset(x: 8, y: -6)
-                    }
-                }
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    // Active icon turns lime; inactive stays mute.
+                    .foregroundColor(isActive ? Color(hex: "#D4FF3A")
+                                              : Color(hex: "#6E6F75"))
                 if isActive {
                     Text(label)
-                        .font(.archivo(14, weight: .bold))
+                        .font(.archivo(13, weight: .bold))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
                 }
             }
-            // Active pill: solid lime fill with dark ink (matches the
-            // green capsule in the design). Inactive: muted icon on a
-            // transparent background.
-            .foregroundColor(isActive ? Color(hex: "#0A0B0D") : Color(hex: "#8E9098"))
-            .padding(.horizontal, isActive ? 18 : 14)
             .padding(.vertical, 10)
+            .padding(.horizontal, isActive ? 18 : 14)
             .background(
                 Capsule()
-                    .fill(isActive ? Color(hex: "#D4FF3A") : .clear)
-                    .shadow(color: isActive ? Color(hex: "#D4FF3A").opacity(0.35)
-                                            : .clear,
-                            radius: 12, x: 0, y: 4)
+                    .fill(isActive ? Color(hex: "#D4FF3A").opacity(0.14)
+                                   : Color.clear)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(isActive ? Color(hex: "#D4FF3A").opacity(0.25)
+                                     : Color.clear,
+                            lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Live nav item — always red, always shows the "LIVE" label and a
+/// pulsing dot. Active state flips to a solid red bg with white text.
+/// Mirrors `.nav-item.live-btn` in the design CSS.
+struct LiveNavItem: View {
+    let isActive: Bool
+    let liveCount: Int
+    let action: () -> Void
+
+    /// Drives the dot's pulse halo (spec uses a CSS keyframe).
+    @State private var pulse: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                ZStack {
+                    // Outer halo — pulses out from the dot.
+                    Circle()
+                        .fill(haloColor.opacity(0.55))
+                        .frame(width: pulse ? 22 : 8, height: pulse ? 22 : 8)
+                        .opacity(pulse ? 0 : 1)
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: 8, height: 8)
+                }
+                .frame(width: 14, height: 14)
+                Text(labelText)
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundColor(textColor)
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, isActive ? 16 : 14)
+            .background(Capsule().fill(bgColor))
+            .overlay(Capsule().stroke(strokeColor, lineWidth: 1))
+            .shadow(color: isActive
+                        ? Color(hex: "#FF3B3B").opacity(0.45)
+                        : .clear,
+                    radius: isActive ? 10 : 0, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.6)
+                .repeatForever(autoreverses: false)) {
+                pulse = true
+            }
+        }
+    }
+
+    private var labelText: String {
+        liveCount > 0 ? "LIVE \(liveCount)" : "LIVE"
+    }
+
+    private var bgColor: Color {
+        isActive ? Color(hex: "#FF3B3B")
+                 : Color(hex: "#FF3B3B").opacity(0.10)
+    }
+
+    private var strokeColor: Color {
+        isActive ? Color(hex: "#FF5A5A").opacity(0.6)
+                 : Color(hex: "#FF3B3B").opacity(0.28)
+    }
+
+    private var textColor: Color {
+        isActive ? .white : Color(hex: "#FF5A5A")
+    }
+
+    private var dotColor: Color {
+        isActive ? .white : Color(hex: "#FF3B3B")
+    }
+
+    private var haloColor: Color {
+        isActive ? .white : Color(hex: "#FF3B3B")
     }
 }
 
