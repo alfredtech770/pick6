@@ -141,9 +141,12 @@ struct Pick6HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                // Spec: `.navbar { bottom: 20px }` — 20pt above the
-                // safe-area bottom edge. Matches Pick6 Account Pages.
-                .padding(.bottom, 20)
+                // Sit just above the home indicator. The design spec
+                // calls for 20pt, but in the actual iOS render that
+                // looks too high above the gesture bar — the user has
+                // explicitly asked for it lower twice. Keeping 0 here
+                // pushes the pill down against the safe-area bottom.
+                .padding(.bottom, 0)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
@@ -392,7 +395,7 @@ struct HeroCard: View {
                 // Empty state ("NO PICKS / YET") uses extra-tight spacing
                 // so the two short words read as one block, not as a
                 // sentence with a gap.
-                VStack(alignment: .leading, spacing: pick == nil ? -16 : -7) {
+                VStack(alignment: .leading, spacing: pick == nil ? -28 : -7) {
                     ForEach(headlineLines, id: \.self) { line in
                         Text(line)
                             .font(.anton(50))
@@ -1338,23 +1341,24 @@ struct FloatingNav: View {
                     isActive: tab == .profile) { tab = .profile }
         }
         .padding(8)   // spec: padding 8px around the row
-        // Floating glass capsule. Spec layers: blur material BELOW the
-        // tinted fill — but if we set both via .background and .fill the
-        // tint overrides the blur. Stack them in a ZStack so the blur
-        // shows through the 82%-opaque tint.
-        .background(
-            ZStack {
-                Capsule().fill(.ultraThinMaterial)
-                Capsule().fill(Color(hex: "#16181C").opacity(0.82))
-            }
-            .overlay(
-                Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
+        // iOS 26 Liquid Glass — true refractive material rather than
+        // the older blur-and-tint trick. `.regular` glass with a dark
+        // panel tint preserves the design's #16181C feel while letting
+        // content underneath bend through the capsule edges. `.interactive()`
+        // gives the Apple-standard hover/press response.
+        .glassEffect(
+            .regular
+                .tint(Color(hex: "#16181C").opacity(0.55))
+                .interactive(),
+            in: .capsule
         )
-        .clipShape(Capsule())
-        // Spec uses two shadow layers (`0 20px 40px rgba(0,0,0,0.45),
-        // 0 4px 10px rgba(0,0,0,0.3)`) — first is the soft drop, second
-        // gives a tighter contact shadow.
+        // Subtle 1pt rim — Liquid Glass already draws an edge, but a
+        // very faint white-on-white stroke keeps the pill legible
+        // against bright lime hero backdrops.
+        .overlay(
+            Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+        // Spec drop shadows kept — they sit under the glass, not on top.
         .shadow(color: .black.opacity(0.45), radius: 20, x: 0, y: 20)
         .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 4)
     }
@@ -1427,13 +1431,15 @@ struct LiveNavItem: View {
                         .frame(width: 8, height: 8)
                 }
                 .frame(width: 14, height: 14)
-                Text(labelText)
-                    .font(.archivoNarrow(11, weight: .bold))
-                    .tracking(1.8)
-                    .foregroundColor(textColor)
+                if isActive {
+                    Text(labelText)
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(1.8)
+                        .foregroundColor(textColor)
+                }
             }
             .padding(.vertical, 10)
-            .padding(.horizontal, isActive ? 16 : 14)
+            .padding(.horizontal, isActive ? 16 : 12)
             .background(Capsule().fill(bgColor))
             .overlay(Capsule().stroke(strokeColor, lineWidth: 1))
             .shadow(color: isActive
