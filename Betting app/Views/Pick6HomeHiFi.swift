@@ -93,12 +93,28 @@ struct Pick6HomeHiFi: View {
             Group {
                 switch tab {
                 case .home:
-                    HomeHiFiContent(vm: vm,
-                                    isPro: subs.isPro,
-                                    onTapPick: { detailPick = $0 },
-                                    onTapSport: { sportHub = $0 },
-                                    onUnlock: { showPaywall = true })
-                        .ignoresSafeArea(edges: .top)
+                    // SportHub is a full-page push within the Home tab —
+                    // not a sheet. When `sportHub` is set, it replaces
+                    // HomeHiFiContent entirely (FloatingNav stays at the
+                    // bottom). Tapping the back chevron in SportHubView's
+                    // TopNavBar clears `sportHub` and returns to Home.
+                    if let id = sportHub {
+                        SportHubView(
+                            sport: id,
+                            vm: vm,
+                            isPro: subs.isPro,
+                            onClose: { sportHub = nil },
+                            onTapPick: { detailPick = $0 },
+                            onUnlock: { showPaywall = true }
+                        )
+                    } else {
+                        HomeHiFiContent(vm: vm,
+                                        isPro: subs.isPro,
+                                        onTapPick: { detailPick = $0 },
+                                        onTapSport: { sportHub = $0 },
+                                        onUnlock: { showPaywall = true })
+                            .ignoresSafeArea(edges: .top)
+                    }
                 case .picks:
                     // Picks tab renders the Wins design exactly — the
                     // user's saved/favorited match results. Tab-mode, so
@@ -143,19 +159,8 @@ struct Pick6HomeHiFi: View {
                 .presentationDragIndicator(.visible)
                 .presentationContentInteraction(.scrolls)
         }
-        .sheet(item: Binding(
-            get: { sportHub.map { SportHubID(id: $0) } },
-            set: { sportHub = $0?.id }
-        )) { id in
-            SportHubView(sport: id.id, vm: vm,
-                         onClose: { sportHub = nil },
-                         onTapPick: { p in
-                            sportHub = nil
-                            detailPick = p
-                         })
-                .presentationDragIndicator(.visible)
-                .presentationContentInteraction(.scrolls)
-        }
+        // (SportHub is now a full-page push inside the Home tab — see the
+        // `.home` branch of the tab switch above. No sheet needed.)
         .sheet(isPresented: $showPaywall) {
             OBPaywallScreen(
                 onBack: { showPaywall = false },
@@ -191,9 +196,6 @@ struct Pick6HomeHiFi: View {
         return vm.liveScores.first { $0.gameId == gid }
     }
 }
-
-/// Identifiable wrapper so we can drive a sheet from an Optional<String>.
-private struct SportHubID: Identifiable { let id: String }
 
 // MARK: - Home content
 
