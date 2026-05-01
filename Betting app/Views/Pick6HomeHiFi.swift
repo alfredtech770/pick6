@@ -100,10 +100,13 @@ struct Pick6HomeHiFi: View {
                                     onUnlock: { showPaywall = true })
                         .ignoresSafeArea(edges: .top)
                 case .picks:
-                    AllPicksView(vm: vm,
-                                 isPro: subs.isPro,
-                                 onTapPick: { detailPick = $0 },
-                                 onUnlock: { showPaywall = true })
+                    // Picks tab renders the Wins design exactly — the
+                    // user's saved/favorited match results. Tab-mode, so
+                    // the back chevron is a no-op (it's a primary tab,
+                    // not a pushed sheet).
+                    WinsView(vm: vm,
+                             onClose: {},
+                             onTapPick: { detailPick = $0 })
                 case .live:
                     LiveView(vm: vm,
                              isPro: subs.isPro,
