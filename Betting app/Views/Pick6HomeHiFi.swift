@@ -141,7 +141,7 @@ struct Pick6HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                .padding(.bottom, 14)
+                .padding(.bottom, 4)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
