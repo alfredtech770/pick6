@@ -22,24 +22,33 @@ struct TopNavBar: View {
     let crumbAccent: String?
     let live: Bool
     let onBack: () -> Void
+    /// Hide the leading chevron when this view is a primary tab (Profile,
+    /// Wins, Live) — there's nowhere to go "back" to. Sheets that push on
+    /// top of the tab stack (MatchDetail, SportHub) keep the chevron.
+    var showBack: Bool = true
 
     var body: some View {
         HStack(alignment: .center) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .frame(width: 38, height: 38)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                            )
-                    )
+            if showBack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .frame(width: 38, height: 38)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color(hex: "#101114"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Invisible spacer so the centered crumb stays centered.
+                Color.clear.frame(width: 38, height: 38)
             }
-            .buttonStyle(.plain)
             Spacer()
             HStack(spacing: 6) {
                 if live {
@@ -1118,7 +1127,7 @@ struct ProfileView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                TopNavBar(crumb: "APP · ", crumbAccent: "PROFILE", live: false, onBack: {})
+                TopNavBar(crumb: "APP · ", crumbAccent: "PROFILE", live: false, onBack: {}, showBack: false)
                 profileHead
                 statStrip
                     .padding(.horizontal, 20)
@@ -1715,7 +1724,7 @@ struct WinsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                TopNavBar(crumb: "YOU · ", crumbAccent: "WINS", live: false, onBack: onClose)
+                TopNavBar(crumb: "YOU · ", crumbAccent: "WINS", live: false, onBack: onClose, showBack: false)
                 PageHero(title: "YOUR",
                          titleAccent: "WINS.",
                          sub: ["\(wonPicks.count) WON MATCH\(wonPicks.count == 1 ? "" : "ES")",
@@ -1967,7 +1976,7 @@ struct LiveView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                TopNavBar(crumb: "NOW · ", crumbAccent: "LIVE", live: !livePicks.isEmpty, onBack: {})
+                TopNavBar(crumb: "NOW · ", crumbAccent: "LIVE", live: !livePicks.isEmpty, onBack: {}, showBack: false)
                 PageHero(title: "LIVE",
                          titleAccent: "NOW.",
                          sub: ["\(livePicks.count) GAMES",
