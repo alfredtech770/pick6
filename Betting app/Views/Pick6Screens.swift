@@ -434,7 +434,7 @@ struct MatchDetailView: View {
         .padding(.bottom, 18)
     }
 
-    private func statTile(_ tile: StatTile, active: Bool) -> some View {
+    private func statTile(_ tile: MatchStatTile, active: Bool) -> some View {
         VStack(spacing: 4) {
             Image(systemName: tile.icon)
                 .font(.system(size: 14, weight: .semibold))
@@ -1172,14 +1172,14 @@ struct ProfileView: View {
                             .foregroundColor(Color(hex: "#F5F3EE"))
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
-                        Text(emailLine)
+                        Text(handleLine)
                             .font(.mono(11, weight: .medium))
                             .foregroundColor(Color(hex: "#B9B7B0"))
                             .lineLimit(1)
                         HStack(spacing: 4) {
-                            Image(systemName: isPro ? "diamond.fill" : "person.fill")
+                            Image(systemName: isPro ? "diamond.fill" : "circle.fill")
                                 .font(.system(size: 9, weight: .bold))
-                            Text(isPro ? "PICK6 PRO · ALL ACCESS" : "FREE · TAP TO EDIT")
+                            Text(tierLabel)
                                 .font(.archivoNarrow(9, weight: .bold))
                                 .tracking(1.8)
                         }
@@ -1191,18 +1191,34 @@ struct ProfileView: View {
                         .clipShape(Capsule())
                     }
                     Spacer()
-                    Image(systemName: "pencil")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                        .padding(8)
-                        .background(Circle().fill(Color(hex: "#101114")))
-                        .overlay(Circle().stroke(Color(hex: "#22252B"), lineWidth: 1))
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// "@mchen · Member since 2026" — design's handle line. Falls back
+    /// to email if firstName isn't set.
+    private var handleLine: String {
+        let handle: String
+        if let e = auth.userEmail,
+           let local = e.split(separator: "@").first {
+            handle = "@" + String(local)
+        } else if let f = auth.firstName?.lowercased() {
+            handle = "@" + f
+        } else {
+            handle = "@pick6fan"
+        }
+        return "\(handle) · Member since 2026"
+    }
+
+    /// Tier label — "DIAMOND · L\(level)" for Pro, "ROOKIE · FREE" for
+    /// Free. Level scales with total wins (1 + every 10 wins).
+    private var tierLabel: String {
+        let level = max(1, vm.totalWins / 10 + 1)
+        return isPro ? "DIAMOND · L\(level)" : "ROOKIE · FREE"
     }
 
     private var initial: String {
@@ -1222,17 +1238,19 @@ struct ProfileView: View {
         return "PICK6 FAN"
     }
 
-    private var emailLine: String {
-        auth.userEmail ?? "Sign in to sync your picks"
-    }
-
     private var statStrip: some View {
         HStack(spacing: 0) {
-            statCell(label: "ROI · 30D", value: "+\(Int(vm.winRate.rounded()))%", color: Color(hex: "#D4FF3A"))
-            Divider().background(Color(hex: "#22252B")).frame(height: 30)
-            statCell(label: "RECORD", value: "\(vm.totalWins)-\(vm.totalLosses)", color: Color(hex: "#F5F3EE"))
-            Divider().background(Color(hex: "#22252B")).frame(height: 30)
-            statCell(label: "STREAK", value: "W\(vm.currentStreak)", color: Color(hex: "#D4FF3A"))
+            statCell(label: "HIT RATE · 30D",
+                     value: "+\(Int(vm.winRate.rounded()))%",
+                     color: Color(hex: "#D4FF3A"))
+            Rectangle().fill(Color(hex: "#22252B")).frame(width: 1, height: 30)
+            statCell(label: "RECORD",
+                     value: "\(vm.totalWins)-\(vm.totalLosses)",
+                     color: Color(hex: "#F5F3EE"))
+            Rectangle().fill(Color(hex: "#22252B")).frame(width: 1, height: 30)
+            statCell(label: "STREAK",
+                     value: "W\(vm.currentStreak)",
+                     color: Color(hex: "#D4FF3A"))
         }
         .padding(.vertical, 14)
         .background(cardBackground)
@@ -1272,14 +1290,81 @@ struct ProfileView: View {
 
     private var statsTabBody: some View {
         VStack(spacing: 16) {
+            // 4 stat tiles in a 2×2 grid, each with label + big value
+            // + delta trend + sparkline. Mirrors design `.tile`.
             HStack(spacing: 8) {
-                statTile(label: "WIN RATE", value: "\(Int(vm.winRate.rounded()))%", color: Color(hex: "#4ade80"))
-                statTile(label: "TOTAL P/L", value: vm.winRate >= 50 ? "+W" : "—", color: Color(hex: "#D4FF3A"))
+                StatTile(label: "WIN RATE",
+                         value: "\(Int(vm.winRate.rounded()))",
+                         unit: "%",
+                         trend: vm.winRate >= 50 ? "+\(Int(vm.winRate - 50)) vs avg" : nil,
+                         trendUp: vm.winRate >= 50,
+                         valueColor: Color(hex: "#4ade80"),
+                         sparkColor: Color(hex: "#4ade80"),
+                         pts: trendSeries(.winRate))
+                StatTile(label: "PICKS WON",
+                         value: "\(vm.totalWins)",
+                         trend: "+\(vm.currentStreak) this run",
+                         trendUp: vm.currentStreak > 0,
+                         valueColor: Color(hex: "#D4FF3A"),
+                         sparkColor: Color(hex: "#D4FF3A"),
+                         pts: trendSeries(.totalWins))
             }
             HStack(spacing: 8) {
-                statTile(label: "AI AGREE", value: "\(Int(min(95, vm.winRate + 5)))%", color: Color(hex: "#F5F3EE"))
-                statTile(label: "PICKS", value: "\(vm.totalWins + vm.totalLosses + vm.totalPending)", color: Color(hex: "#F5F3EE"))
+                StatTile(label: "AI AGREE",
+                         value: "\(Int(min(95, vm.winRate + 5)))",
+                         unit: "%",
+                         trend: "On \(vm.totalWins + vm.totalLosses) picks",
+                         trendUp: nil,
+                         valueColor: Color(hex: "#F5F3EE"),
+                         sparkColor: Color(hex: "#B9B7B0"),
+                         pts: trendSeries(.aiAgree))
+                StatTile(label: "FAV SPORT",
+                         value: favoriteSport.0,
+                         trend: "\(favoriteSport.1)% of picks",
+                         trendUp: nil,
+                         valueColor: Color(hex: "#F5F3EE"),
+                         sparkColor: Color(hex: "#B9B7B0"),
+                         pts: trendSeries(.favSport))
             }
+
+            // BEST SPORTS section — per-sport row breakdown.
+            VStack(alignment: .leading, spacing: 0) {
+                HubSectionHead(title: "BEST SPORTS", meta: "BY HIT RATE")
+                    .padding(.horizontal, 0)
+                    .padding(.bottom, 10)
+                VStack(spacing: 0) {
+                    let rows = bestSportsRows
+                    ForEach(rows, id: \.sport) { row in
+                        HStack(spacing: 12) {
+                            Image(systemName: row.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color(hex: "#B9B7B0"))
+                                .frame(width: 34, height: 34)
+                                .background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: "#16181C")))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#22252B"), lineWidth: 1))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(row.label)
+                                    .font(.archivo(13, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#F5F3EE"))
+                                Text(row.sub)
+                                    .font(.mono(10, weight: .medium))
+                                    .foregroundColor(Color(hex: "#6E6F75"))
+                            }
+                            Spacer()
+                            Text(row.value)
+                                .font(.mono(11, weight: .heavy))
+                                .foregroundColor(row.positive ? Color(hex: "#4ade80") : Color(hex: "#FF5A36"))
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 13)
+                        if row.sport != rows.last?.sport {
+                            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                        }
+                    }
+                }
+                .background(cardBackground)
+            }
+
+            // YOUR WINS link — keeps a path from Profile → Wins.
             Button(action: onShowWins) {
                 HStack {
                     Image(systemName: "star.fill")
@@ -1300,19 +1385,79 @@ struct ProfileView: View {
         }
     }
 
-    private func statTile(label: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.archivoNarrow(9, weight: .bold))
-                .tracking(1.8)
-                .foregroundColor(Color(hex: "#6E6F75"))
-            Text(value)
-                .font(.anton(28))
-                .foregroundColor(color)
+    // MARK: Stats helpers
+
+    private enum TrendKey { case winRate, totalWins, aiAgree, favSport }
+
+    /// Synthetic trend series (12 points) — tilts upward when the
+    /// underlying stat is healthy. Replace with a real time-series
+    /// from the performance_snapshots table once we have enough history.
+    private func trendSeries(_ key: TrendKey) -> [Double] {
+        let base: Double
+        switch key {
+        case .winRate:   base = vm.winRate
+        case .totalWins: base = Double(vm.totalWins)
+        case .aiAgree:   base = vm.winRate + 5
+        case .favSport:  base = Double(favoriteSport.1)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
+        // Generate a gently rising curve around the value
+        return (0..<12).map { i in
+            let drift = sin(Double(i) * 0.7) * 4
+            return base + drift + Double(i) * 0.4
+        }
+    }
+
+    /// Most-played sport in the user's history (label + percentage).
+    private var favoriteSport: (String, Int) {
+        let counts = Dictionary(grouping: vm.historyPicks, by: { $0.sport })
+            .mapValues { $0.count }
+        let total = max(1, counts.values.reduce(0, +))
+        if let best = counts.max(by: { $0.value < $1.value }) {
+            let pct = Int(round(Double(best.value) / Double(total) * 100))
+            return (sportLabel(best.key), pct)
+        }
+        return ("—", 0)
+    }
+
+    private func sportLabel(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "NBA"
+        case "football":   return "NFL"
+        case "baseball":   return "MLB"
+        case "hockey":     return "NHL"
+        case "soccer":     return "EPL"
+        case "combat":     return "UFC"
+        case "f1":         return "F1"
+        case "cricket":    return "IPL"
+        default:           return sport.uppercased()
+        }
+    }
+
+    private struct BestSportRow {
+        let sport: String, icon: String, label: String, sub: String,
+            value: String, positive: Bool
+    }
+
+    /// Per-sport hit-rate breakdown for the BEST SPORTS section.
+    private var bestSportsRows: [BestSportRow] {
+        let bySport = Dictionary(grouping: vm.historyPicks.filter { !$0.isPending },
+                                 by: { $0.sport })
+        return bySport.map { (sport, picks) in
+            let wins   = picks.filter { $0.isWin }.count
+            let losses = picks.filter { $0.isLoss }.count
+            let total  = max(1, wins + losses)
+            let rate   = Int(round(Double(wins) / Double(total) * 100))
+            let delta  = rate - 50
+            return BestSportRow(
+                sport: sport,
+                icon: "scope",
+                label: sportLabel(sport),
+                sub: "\(picks.count) picks · W\(wins)-L\(losses)",
+                value: "\(delta >= 0 ? "+" : "")\(delta)%",
+                positive: delta >= 0
+            )
+        }
+        .sorted { $0.value > $1.value }   // best hit rate first
     }
 
     private var badgesTabBody: some View {
@@ -1372,19 +1517,92 @@ struct ProfileView: View {
     }
 
     @State private var showDeleteAccount: Bool = false
+    @State private var notificationsOn: Bool = true
+    @State private var darkModeOn: Bool = true
+
+    /// Hairline divider used between rows inside a grouped settings card.
+    private var divider: some View {
+        Rectangle()
+            .fill(Color(hex: "#22252B"))
+            .frame(height: 1)
+            .padding(.leading, 62)   // align past the icon tile
+    }
 
     private var settingsTabBody: some View {
-        VStack(spacing: 8) {
-            settingsRow(icon: "bell.fill", title: "Notifications", trailing: "ON")
-            settingsRow(icon: "moon.fill", title: "Dark Mode", trailing: "ON")
-            settingsRow(icon: "creditcard.fill", title: "Subscription", trailing: isPro ? "PRO" : "FREE", action: onShowPaywall)
-            settingsRow(icon: "lock.fill", title: "Privacy & Security", trailing: nil)
-            settingsRow(icon: "questionmark.circle.fill", title: "Help Center", trailing: nil)
-            settingsRow(icon: "rectangle.portrait.and.arrow.right.fill", title: "Sign Out", trailing: nil, danger: true, action: onSignOut)
-            // Delete Account is mandatory for any iOS app with auth (Apple
-            // guideline 5.1.1(v) since iOS 14.5).
-            settingsRow(icon: "trash.fill", title: "Delete Account", trailing: nil, danger: true) {
-                showDeleteAccount = true
+        VStack(spacing: 16) {
+            // ── ACCOUNT / PREFS ────────────────────────────────────
+            VStack(alignment: .leading, spacing: 10) {
+                HubSectionHead(title: "ACCOUNT", meta: "PREFS")
+                    .padding(.horizontal, -20)   // cancel HubSectionHead's 20pt inset
+                VStack(spacing: 0) {
+                    settingsToggleRow(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        sub: "Live games · picks · results",
+                        isOn: $notificationsOn
+                    )
+                    divider
+                    settingsToggleRow(
+                        icon: "moon.fill",
+                        title: "Dark Mode",
+                        sub: "Always on · system default",
+                        isOn: $darkModeOn
+                    )
+                    divider
+                    settingsLinkRow(
+                        icon: "creditcard.fill",
+                        title: "Subscription",
+                        sub: isPro ? "Manage in iOS Settings" : "Unlock all picks · go Pro",
+                        trailing: isPro ? "PRO" : "FREE",
+                        action: onShowPaywall
+                    )
+                    divider
+                    settingsLinkRow(
+                        icon: "lock.fill",
+                        title: "Privacy & Security",
+                        sub: "Sign-in · saved data",
+                        trailing: nil,
+                        action: {}
+                    )
+                }
+                .background(cardBackground)
+            }
+
+            // ── SUPPORT / HELP ─────────────────────────────────────
+            VStack(alignment: .leading, spacing: 10) {
+                HubSectionHead(title: "SUPPORT", meta: "HELP")
+                    .padding(.horizontal, -20)
+                VStack(spacing: 0) {
+                    settingsLinkRow(
+                        icon: "questionmark.circle.fill",
+                        title: "Help Center",
+                        sub: "FAQs · contact us",
+                        trailing: nil,
+                        action: {}
+                    )
+                    divider
+                    settingsLinkRow(
+                        icon: "rectangle.portrait.and.arrow.right.fill",
+                        title: "Sign Out",
+                        sub: "You'll stay logged in on web",
+                        trailing: nil,
+                        danger: true,
+                        action: onSignOut
+                    )
+                    divider
+                    // Delete Account is mandatory for any iOS app with auth
+                    // (Apple guideline 5.1.1(v) since iOS 14.5).
+                    settingsLinkRow(
+                        icon: "trash.fill",
+                        title: "Delete Account",
+                        sub: "Permanently remove your data",
+                        trailing: nil,
+                        danger: true
+                    ) {
+                        showDeleteAccount = true
+                    }
+                }
+                .background(cardBackground)
             }
         }
         .alert("Delete account?", isPresented: $showDeleteAccount) {
@@ -1402,27 +1620,56 @@ struct ProfileView: View {
         }
     }
 
-    private func settingsRow(icon: String, title: String, trailing: String?, danger: Bool = false, action: (() -> Void)? = nil) -> some View {
-        Button {
-            action?()
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(danger ? Color(hex: "#FF5A36") : Color(hex: "#D4FF3A"))
-                    .frame(width: 34, height: 34)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(hex: "#16181C"))
-                    )
+    // MARK: Settings rows
+
+    /// Row with icon + title/sub + LimeToggle trailing. Used for
+    /// Notifications, Dark Mode, etc.
+    private func settingsToggleRow(icon: String, title: String,
+                                    sub: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 14) {
+            settingsIconTile(icon, danger: false)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.archivo(13, weight: .semibold))
-                    .foregroundColor(danger ? Color(hex: "#FF5A36") : Color(hex: "#F5F3EE"))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Text(sub)
+                    .font(.mono(10, weight: .medium))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+            Spacer()
+            LimeToggle(isOn: isOn)
+        }
+        .padding(14)
+    }
+
+    /// Row with icon + title/sub + chevron (or trailing label).
+    /// Used for Subscription, Help, Sign Out, Delete, etc.
+    private func settingsLinkRow(icon: String, title: String, sub: String,
+                                  trailing: String?, danger: Bool = false,
+                                  action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                settingsIconTile(icon, danger: danger)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.archivo(13, weight: .semibold))
+                        .foregroundColor(danger ? Color(hex: "#FF5A36")
+                                                : Color(hex: "#F5F3EE"))
+                    Text(sub)
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
                 Spacer()
                 if let t = trailing {
                     Text(t)
-                        .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#B9B7B0"))
+                        .font(.mono(10, weight: .heavy))
+                        .tracking(0.5)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.10)))
+                        .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.28),
+                                                   lineWidth: 1))
                 } else {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .bold))
@@ -1430,9 +1677,24 @@ struct ProfileView: View {
                 }
             }
             .padding(14)
-            .background(cardBackground)
         }
         .buttonStyle(.plain)
+    }
+
+    /// 34×34 rounded icon tile, lime by default, hot-red for danger rows.
+    private func settingsIconTile(_ icon: String, danger: Bool) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundColor(danger ? Color(hex: "#FF5A36") : Color(hex: "#D4FF3A"))
+            .frame(width: 34, height: 34)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "#16181C"))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+            )
     }
 }
 
@@ -1445,15 +1707,26 @@ struct WinsView: View {
     let onClose: () -> Void
     let onTapPick: (Pick) -> Void
 
+    /// Local hide-from-list set so the user can dismiss won cards
+    /// without a backend mutation. Reset on each presentation.
+    @State private var hiddenPickIds: Set<UUID> = []
+    @State private var confirmingClear: Bool = false
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 TopNavBar(crumb: "YOU · ", crumbAccent: "WINS", live: false, onBack: onClose)
                 PageHero(title: "YOUR",
                          titleAccent: "WINS.",
-                         sub: ["\(wonPicks.count) WON", "FROM YOUR PICKS"],
+                         sub: ["\(wonPicks.count) WON MATCH\(wonPicks.count == 1 ? "" : "ES")",
+                               "FROM YOUR TEAMS"],
                          glow: Color(hex: "#4ade80"))
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 14)
+
+                favActionsRow
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 14)
+
                 if wonPicks.isEmpty {
                     emptyState
                         .padding(.horizontal, 20)
@@ -1474,9 +1747,64 @@ struct WinsView: View {
     }
 
     private var wonPicks: [Pick] {
-        vm.historyPicks.filter { $0.isWin }
+        vm.historyPicks.filter { $0.isWin && !hiddenPickIds.contains($0.id) }
             .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                 > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
+    }
+
+    /// Top-of-list count + "Clear all" button with 2-stage confirm flow
+    /// (matches design `.fav-actions`).
+    @ViewBuilder
+    private var favActionsRow: some View {
+        HStack {
+            Text("\(wonPicks.count) MATCH\(wonPicks.count == 1 ? "" : "ES")")
+                .font(.archivoNarrow(10, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Spacer()
+            if !wonPicks.isEmpty {
+                if confirmingClear {
+                    HStack(spacing: 8) {
+                        Text("Remove all?")
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .tracking(1.4)
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                        Button("Cancel") { confirmingClear = false }
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                        Button {
+                            for p in vm.historyPicks where p.isWin { hiddenPickIds.insert(p.id) }
+                            confirmingClear = false
+                        } label: {
+                            Text("Clear all")
+                                .font(.archivoNarrow(10, weight: .heavy))
+                                .tracking(1.8)
+                                .foregroundColor(Color(hex: "#0A0B0D"))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(Capsule().fill(Color(hex: "#FF5A36")))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    Button { confirmingClear = true } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Clear all")
+                                .font(.archivoNarrow(10, weight: .bold))
+                                .tracking(1.8)
+                        }
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(Color(hex: "#101114")))
+                        .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -1500,10 +1828,17 @@ struct WinsView: View {
         )
     }
 
+    /// Won card per spec: top tag + WON badge, mirrored team body
+    /// (HOME left / SCORE / AWAY right with `flex-row-reverse` on
+    /// AWAY column), strike-through on the LOSING team, dashed
+    /// footer with AI PICK + key factor + remove-X button.
     private func wonCard(pick: Pick) -> some View {
-        VStack(spacing: 0) {
+        let homeLost = (pick.homeScore ?? 0) < (pick.awayScore ?? 0)
+        let awayLost = (pick.awayScore ?? 0) < (pick.homeScore ?? 0)
+
+        return VStack(spacing: 0) {
             HStack {
-                Text("\(pick.league.uppercased()) · \(pick.gameDate)")
+                Text("\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · FINAL")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -1524,37 +1859,47 @@ struct WinsView: View {
             }
             .padding(.bottom, 12)
 
-            HStack(alignment: .center, spacing: 12) {
-                VStack(spacing: 6) {
-                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
-                    Text(teamShortName(pick.awayTeam))
-                        .font(.anton(16))
-                        .foregroundColor(pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
-                        .strikethrough(!pickedAway(pick), color: Color(hex: "#2D3038"))
+            // Mirrored layout: HOME left + SCORE center + AWAY right (reversed).
+            HStack(alignment: .center, spacing: 10) {
+                HStack(spacing: 9) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam))
+                        .font(.anton(18))
+                        .foregroundColor(homeLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(homeLost, color: Color(hex: "#2D3038"))
                         .lineLimit(1)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
                 if let h = pick.homeScore, let a = pick.awayScore {
-                    HStack(spacing: 6) {
-                        Text("\(a)").font(.anton(24)).foregroundColor(Color(hex: "#F5F3EE"))
-                        Text("–").font(.anton(14)).foregroundColor(Color(hex: "#6E6F75"))
-                        Text("\(h)").font(.anton(24)).foregroundColor(Color(hex: "#F5F3EE"))
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text("\(h)")
+                            .font(.anton(24)).fontWeight(.black)
+                            .foregroundColor(homeLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        Text("–")
+                            .font(.anton(14))
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                        Text("\(a)")
+                            .font(.anton(24)).fontWeight(.black)
+                            .foregroundColor(awayLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
                     }
                 } else {
                     Text("✓").font(.anton(20)).foregroundColor(Color(hex: "#4ade80"))
                 }
-                VStack(spacing: 6) {
-                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
-                    Text(teamShortName(pick.homeTeam))
-                        .font(.anton(16))
-                        .foregroundColor(!pickedAway(pick) ? Color(hex: "#F5F3EE") : Color(hex: "#2D3038"))
-                        .strikethrough(pickedAway(pick), color: Color(hex: "#2D3038"))
+
+                HStack(spacing: 9) {
+                    Text(teamShortName(pick.awayTeam))
+                        .font(.anton(18))
+                        .foregroundColor(awayLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(awayLost, color: Color(hex: "#2D3038"))
                         .lineLimit(1)
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
-            HStack {
+            // Footer with dashed top border, AI PICK label, key factor + remove X.
+            HStack(spacing: 8) {
                 Text("AI PICK")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
@@ -1562,23 +1907,44 @@ struct WinsView: View {
                 Text(pick.pick.uppercased())
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
+                Text("· \(pick.keyFactor ?? pick.league.uppercased())")
+                    .font(.mono(10))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .lineLimit(1)
                 Spacer()
-                Text("\(Int(pick.probability))% AI")
-                    .font(.mono(10, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                Button {
+                    hiddenPickIds.insert(pick.id)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .frame(width: 26, height: 26)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: "#16181C")))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "#22252B"), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
             .padding(.top, 10)
             .overlay(alignment: .top) {
-                Rectangle().frame(height: 1).foregroundColor(Color(hex: "#22252B"))
+                DashedLine()
+                    .stroke(Color(hex: "#22252B"),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .frame(height: 1)
             }
         }
         .padding(14)
         .background(cardBackground)
     }
 
-    private func pickedAway(_ p: Pick) -> Bool {
-        p.pick.lowercased().contains(p.awayTeam.lowercased())
-            || p.awayTeam.lowercased().contains(p.pick.lowercased())
+    /// "TODAY", "YESTERDAY", "2 DAYS AGO", or the date itself.
+    private func relativeDate(_ ymd: String) -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        guard let d = f.date(from: ymd) else { return ymd.uppercased() }
+        let cal = Calendar.current
+        if cal.isDateInToday(d)     { return "TODAY" }
+        if cal.isDateInYesterday(d) { return "YESTERDAY" }
+        let days = cal.dateComponents([.day], from: d, to: Date()).day ?? 0
+        return "\(days) DAYS AGO"
     }
 }
 
@@ -1587,10 +1953,16 @@ struct WinsView: View {
 // ════════════════════════════════════════════════════════════════
 
 struct LiveView: View {
+    enum LiveTab: String, CaseIterable {
+        case mine = "My Picks", favs = "Favorites", all = "All Live"
+    }
+
     @ObservedObject var vm: PicksViewModel
     var isPro: Bool = true
     let onTapPick: (Pick) -> Void
     var onUnlock: () -> Void = {}
+
+    @State private var liveTab: LiveTab = .mine
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1598,9 +1970,20 @@ struct LiveView: View {
                 TopNavBar(crumb: "NOW · ", crumbAccent: "LIVE", live: !livePicks.isEmpty, onBack: {})
                 PageHero(title: "LIVE",
                          titleAccent: "NOW.",
-                         sub: ["\(livePicks.count) IN PLAY", "AI TRACKING"],
+                         sub: ["\(livePicks.count) GAMES",
+                               "\(livePicks.count) PICK\(livePicks.count == 1 ? "" : "S") IN PLAY"],
                          glow: Color(hex: "#FF5A36"))
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 14)
+
+                tabsRow
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+
+                if let nextUp = nextUpcomingPick {
+                    watchBanner(nextUp)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                }
 
                 if livePicks.isEmpty {
                     nothingLive
@@ -1631,6 +2014,101 @@ struct LiveView: View {
                 Spacer().frame(height: 140)
             }
         }
+    }
+
+    /// Segmented tabs row — My Picks (with cnt) / Favorites / All Live.
+    private var tabsRow: some View {
+        HStack(spacing: 6) {
+            ForEach(LiveTab.allCases, id: \.self) { t in
+                Button { liveTab = t } label: {
+                    HStack(spacing: 6) {
+                        Text(t.rawValue)
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(1.6)
+                        if t == .mine && livePicks.count > 0 {
+                            Text("\(livePicks.count)")
+                                .font(.mono(10, weight: .bold))
+                                .foregroundColor(liveTab == t
+                                                 ? Color(hex: "#0A0B0D").opacity(0.6)
+                                                 : Color(hex: "#6E6F75"))
+                        }
+                    }
+                    .foregroundColor(liveTab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(liveTab == t
+                                               ? Color(hex: "#F5F3EE")
+                                               : Color(hex: "#101114")))
+                    .overlay(Capsule().stroke(liveTab == t
+                                              ? Color(hex: "#F5F3EE")
+                                              : Color(hex: "#22252B"), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    /// Lime-tinted next-up reminder banner. Only shows when there's a
+    /// pick whose game tips off in the next ~60 minutes and isn't live.
+    private func watchBanner(_ next: Pick) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("NEXT UP · \(minutesUntil(next))")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                Text("\(teamShortName(next.homeTeam)) vs \(teamShortName(next.awayTeam))")
+                    .font(.anton(20))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .lineLimit(1)
+                Text("\(next.league.uppercased()) · YOUR PICK: \(next.pick.uppercased())")
+                    .font(.mono(10, weight: .medium))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button { /* TODO: schedule local notification */ } label: {
+                Text("Remind Me")
+                    .font(.archivoNarrow(10, weight: .heavy))
+                    .tracking(1.8)
+                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(hex: "#D4FF3A")))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#D4FF3A").opacity(0.10),
+                             Color(hex: "#D4FF3A").opacity(0.03)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color(hex: "#D4FF3A").opacity(0.28), lineWidth: 1)
+                )
+        )
+    }
+
+    private var nextUpcomingPick: Pick? {
+        // Closest upcoming pick (not currently live). Falls back to the
+        // first non-live pick if we don't have a precise time.
+        let upcoming = vm.todayPicks.filter { !isLive($0) }
+        return upcoming.first
+    }
+
+    private func minutesUntil(_ pick: Pick) -> String {
+        guard let date = pick.createdAt else { return "SOON" }
+        let mins = max(0, Int(date.timeIntervalSinceNow / 60))
+        if mins == 0 { return "STARTING NOW" }
+        if mins < 60 { return "\(mins) MIN" }
+        let h = mins / 60
+        return "\(h)H \(mins % 60)M"
     }
 
     private var livePicks: [Pick] {
@@ -1693,12 +2171,18 @@ struct LiveView: View {
                 if let s = score, let h = s.homeScore, let a = s.awayScore {
                     HStack(spacing: 6) {
                         Text("\(a)")
-                            .font(.anton(28))
+                            .font(.anton(30))
                             .foregroundColor(a > h ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
                         Text("–").font(.anton(16)).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(h)")
-                            .font(.anton(28))
+                            .font(.anton(30))
                             .foregroundColor(h > a ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        Text("-").font(.anton(30)).foregroundColor(Color(hex: "#B9B7B0"))
+                        Text("–").font(.anton(16)).foregroundColor(Color(hex: "#6E6F75"))
+                        Text("-").font(.anton(30)).foregroundColor(Color(hex: "#B9B7B0"))
                     }
                 }
                 VStack(spacing: 6) {
@@ -1710,6 +2194,19 @@ struct LiveView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+
+            // Game-progress bar — 4pt lime fill over a panel-2 track.
+            // Without a true clock feed we approximate from the period.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color(hex: "#22252B"))
+                    Capsule().fill(Color(hex: "#D4FF3A"))
+                        .frame(width: geo.size.width * gameProgress(score))
+                }
+            }
+            .frame(height: 4)
+            .padding(.top, 12)
+
             HStack {
                 Text("YOUR PICK")
                     .font(.archivoNarrow(9, weight: .bold))
@@ -1719,32 +2216,71 @@ struct LiveView: View {
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()
-                Text(statusFor(pick: pick, score: score).label)
-                    .font(.archivoNarrow(9, weight: .bold))
-                    .tracking(1.8)
-                    .foregroundColor(statusFor(pick: pick, score: score).color)
+                StatusPill(kind: statusKind(for: pick, score: score))
             }
-            .padding(.top, 10)
+            .padding(.top, 12)
             .overlay(alignment: .top) {
-                Rectangle().frame(height: 1).foregroundColor(Color(hex: "#22252B"))
+                DashedLine()
+                    .stroke(Color(hex: "#22252B"),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .frame(height: 1)
             }
         }
         .padding(14)
         .background(cardBackground)
         .overlay(alignment: .leading) {
-            Rectangle().fill(Color(hex: "#FF5A36"))
+            // Full-height 3pt rail with red glow — NOT clipped to a
+            // rounded rect (was clipping to RoundedRect 16 which
+            // rounded the rail's top corners and killed the look).
+            // The outer card already clips to its own corner radius,
+            // so the rail rides the rounded edge naturally.
+            Rectangle()
+                .fill(Color(hex: "#FF5A36"))
                 .frame(width: 3)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .shadow(color: Color(hex: "#FF5A36"), radius: 5)
+                .shadow(color: Color(hex: "#FF5A36").opacity(0.6), radius: 6)
         }
     }
 
-    private func statusFor(pick: Pick, score: LiveScore?) -> (label: String, color: Color) {
-        guard let s = score, let h = s.homeScore, let a = s.awayScore else { return ("LIVE", Color(hex: "#FF5A36")) }
+    /// Approximates how far through the game we are (0.0 → 1.0). For
+    /// sports with quarters/periods we read s.quarter; otherwise we
+    /// fall back to a status heuristic.
+    private func gameProgress(_ score: LiveScore?) -> CGFloat {
+        guard let s = score else { return 0 }
+        if let qStr = s.quarter, let q = Int(qStr) {
+            // Q1=0.25, Q2=0.5, Q3=0.75, Q4=0.95 (leave headroom for OT)
+            switch pick(of: s).sport {
+            case "basketball", "football": return min(0.95, CGFloat(q) * 0.25)
+            case "hockey":                  return min(0.95, CGFloat(q) * 0.33)
+            default:                        return 0.5
+            }
+        }
+        return s.isLive ? 0.5 : 0.0
+    }
+
+    /// Helper to look up the pick that owns a given live_score row,
+    /// for the gameProgress sport-aware switch above.
+    private func pick(of score: LiveScore) -> Pick {
+        vm.todayPicks.first(where: { $0.gameId == score.gameId })
+            ?? vm.todayPicks.first
+            ?? Pick(id: UUID(), createdAt: nil, sport: "basketball", league: "NBA",
+                    gameDate: "", gameId: nil, homeTeam: "", awayTeam: "",
+                    pick: "", probability: 0, confidence: "*", reasoning: "",
+                    keyFactor: nil, result: "pending",
+                    homeScore: nil, awayScore: nil)
+    }
+
+    /// Status-pill 3-state classifier:
+    /// .good = pick winning by ≥3 / .mid = winning by <3 or tied / .bad = trailing.
+    private func statusKind(for pick: Pick, score: LiveScore?) -> StatusPill.Kind {
+        guard let s = score, let h = s.homeScore, let a = s.awayScore else { return .mid }
         let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
             || pick.awayTeam.lowercased().contains(pick.pick.lowercased())
-        let winning = pickedAway ? a > h : h > a
-        return winning ? ("ON TRACK", Color(hex: "#4ade80")) : ("SWEATING", Color(hex: "#FF5A36"))
+        let pickScore = pickedAway ? a : h
+        let oppScore  = pickedAway ? h : a
+        let diff = pickScore - oppScore
+        if diff >= 3 { return .good }
+        if diff < 0  { return .bad }
+        return .mid
     }
 }
 
@@ -2061,7 +2597,9 @@ struct EditProfileSheet: View {
 // ════════════════════════════════════════════════════════════════
 
 /// One tile in the stat-icon row above the pick-hero card.
-struct StatTile {
+/// (Renamed from `StatTile` to avoid colliding with the SwiftUI
+/// `StatTile` View used on the Profile → Stats tab.)
+struct MatchStatTile {
     let icon: String
     let label: String
     let value: String
@@ -2080,7 +2618,7 @@ struct StatRow {
 /// we wire a real boxscore feed — the design's spec values are already
 /// stylized fixtures.
 enum StatTiles {
-    static func tiles(for sport: String, liveScore: LiveScore?) -> [StatTile] {
+    static func tiles(for sport: String, liveScore: LiveScore?) -> [MatchStatTile] {
         switch sport {
         case "basketball":
             return [
