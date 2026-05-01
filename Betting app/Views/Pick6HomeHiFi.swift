@@ -387,7 +387,10 @@ struct HeroCard: View {
                 // SwiftUI clamps lineSpacing to ≥0, so split the lines into
                 // a VStack with negative spacing to actually achieve the
                 // tight stadium-scoreboard line-height the design specifies.
-                VStack(alignment: .leading, spacing: -7) {
+                // Empty state ("NO PICKS / YET") uses extra-tight spacing
+                // so the two short words read as one block, not as a
+                // sentence with a gap.
+                VStack(alignment: .leading, spacing: pick == nil ? -16 : -7) {
                     ForEach(headlineLines, id: \.self) { line in
                         Text(line)
                             .font(.anton(50))
