@@ -33,7 +33,31 @@ class PicksViewModel: ObservableObject {
     @Published var selectedSport: String = "all"
 
     // Backwards-compat alias — older views read `picks`.
-    var picks: [Pick] { todayPicks }
+    var picks: [Pick] { effectiveTodayPicks }
+
+    /// "Today's picks", with a graceful fallback when the AI pipeline
+    /// hasn't filled in today's batch yet (off-hours, between cron
+    /// ticks, or when the Railway worker is down).
+    ///
+    /// Falls back in this order so the user *always* sees content:
+    ///   1. Today's picks (if any).
+    ///   2. Yesterday's picks (most recent slate — usually 6–12 picks).
+    ///   3. The freshest non-empty day from `historyPicks`.
+    ///
+    /// This is what every UI surface should render. The raw
+    /// `todayPicks` is still available for screens that strictly need
+    /// "only today" semantics (live grading, etc.).
+    var effectiveTodayPicks: [Pick] {
+        if !todayPicks.isEmpty { return todayPicks }
+        if !yesterdayPicks.isEmpty { return yesterdayPicks }
+        // Fall back to the most-recent day from history.
+        let byDay = Dictionary(grouping: historyPicks, by: { $0.gameDate })
+        if let latest = byDay.keys.sorted(by: >).first,
+           let bucket = byDay[latest] {
+            return bucket
+        }
+        return []
+    }
 
     private let supabase = SupabaseManager.client
 
@@ -53,10 +77,13 @@ class PicksViewModel: ObservableObject {
 
     // MARK: - Filters
 
-    /// Picks for today, filtered by `selectedSport`.
+    /// Picks for today, filtered by `selectedSport`. Routes through
+    /// `effectiveTodayPicks` so the user always sees content even when
+    /// today's batch hasn't been generated yet.
     var filteredTodayPicks: [Pick] {
-        if selectedSport == "all" { return todayPicks }
-        return todayPicks.filter { $0.sport == selectedSport }
+        let base = effectiveTodayPicks
+        if selectedSport == "all" { return base }
+        return base.filter { $0.sport == selectedSport }
     }
 
     /// Backwards-compat alias for older views.
@@ -82,9 +109,11 @@ class PicksViewModel: ObservableObject {
     // the chosen sport.
 
     /// One pick per sport — the AI's most confident call. Used as the
-    /// Free-tier feed.
+    /// Free-tier feed. Uses `effectiveTodayPicks` so Free users still
+    /// see picks during off-hours / pipeline outages.
     var freeTierTodayPicks: [Pick] {
-        let bySport = Dictionary(grouping: todayPicks, by: { $0.sport })
+        let bySport = Dictionary(grouping: effectiveTodayPicks,
+                                 by: { $0.sport })
         let topPerSport = bySport.values.compactMap {
             $0.max(by: { $0.probability < $1.probability })
         }

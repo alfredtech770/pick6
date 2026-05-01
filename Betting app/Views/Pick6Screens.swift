@@ -1026,6 +1026,7 @@ struct SportHubView: View {
             ForEach(visible) { p in
                 Button { onTapPick(p) } label: {
                     CompactPickCard(pick: p, liveScore: liveScore(for: p))
+                        .screenshotProtectedForPro()
                 }
                 .buttonStyle(.plain)
             }
@@ -1121,6 +1122,7 @@ struct SportHubView: View {
                 Button { onTapPick(p) } label: {
                     CompactPickCard(pick: p, liveScore: nil)
                         .opacity(p.isPending ? 1.0 : 0.85)
+                        .screenshotProtectedForPro()
                 }
                 .buttonStyle(.plain)
             }
@@ -1223,7 +1225,9 @@ struct SportHubView: View {
     }
 
     private var picksForSport: [Pick] {
-        vm.todayPicks.filter { $0.sport == sport }
+        // Use effectiveTodayPicks so the hub renders the latest
+        // available slate even when today's pipeline batch is empty.
+        vm.effectiveTodayPicks.filter { $0.sport == sport }
     }
 
     private var topPick: Pick? {

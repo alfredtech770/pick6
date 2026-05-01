@@ -154,6 +154,11 @@ struct Pick6HomeHiFi: View {
             MatchDetailView(pick: pick,
                             liveScore: liveScore(for: pick),
                             onClose: { detailPick = nil })
+                // Pro picks are paid content — block screen captures
+                // (screenshots, recordings, mirroring) so subscribers
+                // can't redistribute the AI's calls. Free users see
+                // locked previews and don't reach this sheet.
+                .screenshotProtectedForPro()
                 // Constrain the sheet to vertical-only interaction.
                 // Without these, iOS' interactive-dismiss gesture can pick
                 // up small horizontal motion in the rubber-band and the
@@ -217,6 +222,7 @@ struct HomeHiFiContent: View {
                 Button(action: { if let t = topPick { onTapPick(t) } }) {
                     if let top = topPick {
                         HeroCard(pick: top, isLive: isLive(top))
+                            .screenshotProtectedForPro()
                     } else {
                         HeroCard.empty
                     }
@@ -226,7 +232,7 @@ struct HomeHiFiContent: View {
                 StatsRow(streak: vm.currentStreak,
                          best: vm.longestStreak,
                          accuracy: vm.winRate,
-                         pickCount: vm.todayPicks.count)
+                         pickCount: vm.effectiveTodayPicks.count)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -262,6 +268,7 @@ struct HomeHiFiContent: View {
                             let pick = visible[idx]
                             Button { onTapPick(pick) } label: {
                                 GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                                    .screenshotProtectedForPro()
                             }
                             .buttonStyle(.plain)
                         }
@@ -927,7 +934,7 @@ struct SportFilter: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                HiFiSportChip(label: "ALL · \(vm.todayPicks.count)",
+                HiFiSportChip(label: "ALL · \(vm.effectiveTodayPicks.count)",
                           icon: "circle.grid.cross",
                           isActive: vm.selectedSport == "all") {
                     vm.selectedSport = "all"
