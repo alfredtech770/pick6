@@ -39,7 +39,7 @@ struct LimeToggle: View {
 
 /// 3 variants matching the spec's `.status-pill`:
 ///   • .good (lime green)  — "ON TRACK"
-///   • .mid (lime yellow)  — "SWEATING"
+///   • .mid (lime yellow)  — "HITTING"
 ///   • .bad (hot red)      — "COOLING"
 struct StatusPill: View {
     enum Kind {
@@ -47,7 +47,7 @@ struct StatusPill: View {
         var label: String {
             switch self {
             case .good: return "ON TRACK"
-            case .mid:  return "SWEATING"
+            case .mid:  return "HITTING"
             case .bad:  return "COOLING"
             }
         }

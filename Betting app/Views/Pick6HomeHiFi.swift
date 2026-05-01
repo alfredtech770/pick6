@@ -226,10 +226,21 @@ struct HomeHiFiContent: View {
                 SportFilter(vm: vm, onLongPress: { onTapSport($0) })
                     .padding(.top, 4)
 
-                SectionHeader(title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
-                              cta: isPro ? "SEE ALL →" : nil)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 18)
+                // Section header — title matches the design
+                // ("TODAY'S GAMES") with a SEE ALL → CTA. The CTA is
+                // only enabled when a specific sport is selected, since
+                // the SportHub is per-sport. When ALL is selected, the
+                // CTA renders as a passive caption nudging the user to
+                // pick a sport first.
+                SectionHeader(
+                    title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
+                    cta: isPro ? "SEE ALL →" : nil,
+                    onTapCTA: (isPro && vm.selectedSport != "all")
+                        ? { onTapSport(vm.selectedSport) }
+                        : nil
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
 
                 LazyVStack(spacing: 10) {
                     let visible = vm.visiblePicks(isPro: isPro)
@@ -1000,10 +1011,12 @@ struct HiFiSportChip: View {
 struct SectionHeader: View {
     let title: String
     let cta: String?
+    let onTapCTA: (() -> Void)?
 
-    init(title: String, cta: String? = nil) {
+    init(title: String, cta: String? = nil, onTapCTA: (() -> Void)? = nil) {
         self.title = title
         self.cta = cta
+        self.onTapCTA = onTapCTA
     }
 
     var body: some View {
@@ -1014,10 +1027,24 @@ struct SectionHeader: View {
                 .foregroundColor(Color(hex: "#F5F3EE"))
             Spacer()
             if let cta = cta {
-                Text(cta)
-                    .font(.archivoNarrow(11, weight: .bold))
-                    .tracking(2)
-                    .foregroundColor(Color(hex: "#B9B7B0"))
+                if let onTapCTA = onTapCTA {
+                    // Tappable See-All affordance — opens the SportHub
+                    // for the currently active sport.
+                    Button(action: onTapCTA) {
+                        Text(cta)
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(Color(hex: "#D4FF3A"))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    // Non-interactive caption — kept for layout parity
+                    // when no destination is available.
+                    Text(cta)
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
             }
         }
     }
@@ -1274,17 +1301,19 @@ struct FloatingNav: View {
     let liveCount: Int
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 4) {
             NavItem(icon: "house.fill", label: "Home",
                     isActive: tab == .home) { tab = .home }
-            NavItem(icon: "sparkles", label: "Picks",
+            NavItem(icon: "star.fill", label: "Picks",
                     isActive: tab == .picks) { tab = .picks }
-            NavItem(icon: "dot.radiowaves.left.and.right", label: "Live",
-                    isActive: tab == .live, badge: liveCount > 0 ? "\(liveCount)" : nil) { tab = .live }
+            NavItem(icon: "star.fill", label: "Live",
+                    isActive: tab == .live,
+                    badge: liveCount > 0 ? "\(liveCount)" : nil) { tab = .live }
             NavItem(icon: "person.fill", label: "Profile",
                     isActive: tab == .profile) { tab = .profile }
         }
-        .padding(8)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         // Floating glass capsule. Spec layers: blur material BELOW the
         // tinted fill — but if we set both via .background and .fill the
         // tint overrides the blur. Stack them in a ZStack so the blur
@@ -1316,14 +1345,14 @@ struct NavItem: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 16, weight: .semibold))
                     if let b = badge {
                         Text(b)
                             .font(.mono(8, weight: .heavy))
-                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .foregroundColor(Color(hex: "#F5F3EE"))
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
                             .background(Capsule().fill(Color(hex: "#FF5A36")))
@@ -1332,15 +1361,21 @@ struct NavItem: View {
                 }
                 if isActive {
                     Text(label)
-                        .font(.archivo(13, weight: .bold))
+                        .font(.archivo(14, weight: .bold))
                 }
             }
-            .foregroundColor(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#6E6F75"))
-            .padding(.horizontal, isActive ? 16 : 12)
+            // Active pill: solid lime fill with dark ink (matches the
+            // green capsule in the design). Inactive: muted icon on a
+            // transparent background.
+            .foregroundColor(isActive ? Color(hex: "#0A0B0D") : Color(hex: "#8E9098"))
+            .padding(.horizontal, isActive ? 18 : 14)
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(isActive ? Color.white.opacity(0.08) : .clear)
+                    .fill(isActive ? Color(hex: "#D4FF3A") : .clear)
+                    .shadow(color: isActive ? Color(hex: "#D4FF3A").opacity(0.35)
+                                            : .clear,
+                            radius: 12, x: 0, y: 4)
             )
         }
         .buttonStyle(.plain)

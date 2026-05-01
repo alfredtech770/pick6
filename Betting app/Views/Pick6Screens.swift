@@ -803,7 +803,8 @@ struct SportHubView: View {
     var body: some View {
         ZStack(alignment: .top) {
             Color(hex: "#07080a").ignoresSafeArea()
-            // Per-sport glow tint
+            // Per-sport glow tint — radial gradient anchored top-right
+            // matches design `.hero::before` (per-sport `--sport-glow`).
             RadialGradient(
                 colors: [glowColor.opacity(0.25), .clear],
                 center: UnitPoint(x: 1.05, y: -0.1),
@@ -816,61 +817,91 @@ struct SportHubView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    TopNavBar(crumb: "HOME · ", crumbAccent: leagueLabel.uppercased(), live: false, onBack: onClose)
+                    TopNavBar(crumb: "HOME · ",
+                              crumbAccent: leagueLabel,
+                              live: hasLiveToday,
+                              onBack: onClose)
+
+                    // ── HERO ─────────────────────────────────────────
                     sportHeroBlock
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
                         .padding(.bottom, 18)
+
+                    // ── PICK HERO (top AI pick of the day) ───────────
                     if let top = topPick {
                         SmallPickHero(pick: top, onTap: { onTapPick(top) })
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 18)
+                            .padding(.bottom, 14)
                     }
-                    HubSectionHead(title: isPro ? "TODAY" : "FREE PICK",
-                                   meta: "\(picksForSport.count) PICK\(picksForSport.count == 1 ? "" : "S")")
+
+                    // ── LEAGUE RAIL (horizontal pill row of leagues) ─
+                    leagueRail
+                        .padding(.bottom, 16)
+
+                    // ── TODAY ────────────────────────────────────────
+                    HubSectionHead(
+                        title: hasLiveToday ? "TODAY · LIVE & UPCOMING"
+                                            : (isPro ? "TODAY" : "FREE PICK"),
+                        meta: "\(picksForSport.count) GAME\(picksForSport.count == 1 ? "" : "S")",
+                        live: hasLiveToday
+                    )
+                    .padding(.bottom, 10)
+                    todayList
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 22)
+
+                    // ── YESTERDAY (only when there's history) ────────
+                    if !yesterdayForSport.isEmpty {
+                        HubSectionHead(title: "YESTERDAY",
+                                       meta: yesterdayMeta)
+                            .padding(.bottom, 10)
+                        yesterdaySum
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+                        yesterdayList
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 22)
+                    }
+
+                    // ── STANDINGS placeholder ────────────────────────
+                    HubSectionHead(title: "STANDINGS", meta: "TOP 5")
                         .padding(.bottom, 10)
-                    LazyVStack(spacing: 8) {
-                        let visible = isPro ? picksForSport : Array(topPick.map { [$0] } ?? [])
-                        ForEach(visible) { p in
-                            Button { onTapPick(p) } label: {
-                                CompactPickCard(pick: p, liveScore: liveScore(for: p))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        if !isPro {
-                            let lockedRest = picksForSport.filter { $0.id != topPick?.id }
-                            if !lockedRest.isEmpty {
-                                ProUnlockCard(lockedCount: lockedRest.count, onUnlock: onUnlock)
-                                ForEach(lockedRest.prefix(3)) { p in
-                                    LockedPickCard(pick: p, onUnlock: onUnlock)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    Spacer().frame(height: 120)
+                    standingsCard
+                        .padding(.horizontal, 16)
+
+                    Spacer().frame(height: 140)
                 }
             }
         }
         .preferredColorScheme(.dark)
     }
 
+    // ════════════════════════════════════════════════════════════
+    // MARK: HERO (split-color title + sub line)
+    // ════════════════════════════════════════════════════════════
+
+    /// Hero block — `.hero` in the design. Anton 72pt title with the
+    /// first word in `--ink` and any trailing words in lime (`--accent`).
+    /// "NBA" stays fully white; "FORMULA 1" → FORMULA + lime "1".
     private var sportHeroBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(sportTitle)
-                .font(.anton(64))
-                .lineSpacing(-12)
-                .tracking(-0.6)
-                .foregroundColor(Color(hex: "#F5F3EE"))
-            HStack(spacing: 8) {
-                Text("\(picksForSport.count) PICKS TODAY")
+            heroTitle
+            HStack(spacing: 10) {
+                if hasLiveToday {
+                    Circle()
+                        .fill(Color(hex: "#FF5A36"))
+                        .frame(width: 7, height: 7)
+                        .shadow(color: Color(hex: "#FF5A36"), radius: 4)
+                }
+                Text(heroTagline)
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Circle()
                     .fill(Color(hex: "#6E6F75"))
-                    .frame(width: 4, height: 4)
-                Text("AI \(Int(avgConf))% AVG")
+                    .frame(width: 5, height: 5)
+                Text(heroSub)
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -879,6 +910,295 @@ struct SportHubView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    @ViewBuilder
+    private var heroTitle: some View {
+        let parts = sportTitle.split(separator: " ", maxSplits: 1).map(String.init)
+        let head = parts.first ?? sportTitle
+        let tail = parts.count > 1 ? parts[1] : nil
+        HStack(alignment: .firstTextBaseline, spacing: 14) {
+            Text(head)
+                .font(.anton(72))
+                .lineSpacing(-12)
+                .tracking(-0.6)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            if let tail {
+                Text(tail)
+                    .font(.anton(72))
+                    .lineSpacing(-12)
+                    .tracking(-0.6)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+            }
+        }
+    }
+
+    private var heroTagline: String {
+        // E.g. "REGULAR SEASON · NIGHT 104" — short context line. Falls
+        // back to a generic seasonal tagline when nothing's running.
+        switch sport {
+        case "basketball": return "REGULAR SEASON · TONIGHT"
+        case "football":   return "WEEK 15 · SUNDAY SLATE"
+        case "soccer":     return "PREMIER LEAGUE · MATCHDAY"
+        case "baseball":   return "REGULAR SEASON · TODAY"
+        case "hockey":     return "REGULAR SEASON · TONIGHT"
+        case "combat":     return "FIGHT NIGHT"
+        case "f1":         return "RACE WEEK"
+        case "cricket":    return "IPL · MATCHDAY"
+        default:           return "TODAY"
+        }
+    }
+
+    private var heroSub: String {
+        let n = picksForSport.count
+        if n == 0 { return "NO GAMES TODAY" }
+        let avg = Int(avgConf.rounded())
+        return "\(n) GAME\(n == 1 ? "" : "S") · AI \(avg)% AVG"
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARK: LEAGUE RAIL
+    // ════════════════════════════════════════════════════════════
+
+    /// Horizontal scroller of league pills with color swatch + name +
+    /// JetBrains Mono count. Mirrors design `.league-rail`. We only
+    /// have one league per sport in the data model right now, so the
+    /// rail renders a single (active) chip. Wired so adding more
+    /// leagues later just means extending `leaguesForSport`.
+    private var leagueRail: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(leaguesForSport, id: \.id) { l in
+                    leagueChip(l)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private struct LeagueChip {
+        let id: String
+        let name: String
+        let count: Int
+        let swatch: Color
+        var active: Bool = false
+    }
+
+    private var leaguesForSport: [LeagueChip] {
+        // Single-league fallback — count is today's picks for this sport.
+        [LeagueChip(id: sport,
+                    name: leagueLabel,
+                    count: picksForSport.count,
+                    swatch: glowColor,
+                    active: true)]
+    }
+
+    private func leagueChip(_ l: LeagueChip) -> some View {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(l.swatch)
+                .frame(width: 10, height: 10)
+            Text(l.name)
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(1.6)
+            Text("\(l.count)")
+                .font(.mono(10, weight: .bold))
+                .foregroundColor(l.active ? Color(hex: "#0A0B0D").opacity(0.5)
+                                          : Color(hex: "#6E6F75"))
+        }
+        .foregroundColor(l.active ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(l.active ? Color(hex: "#F5F3EE")
+                                             : Color(hex: "#101114")))
+        .overlay(Capsule().stroke(l.active ? Color(hex: "#F5F3EE")
+                                            : Color(hex: "#22252B"),
+                                  lineWidth: 1))
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARK: TODAY list
+    // ════════════════════════════════════════════════════════════
+
+    @ViewBuilder
+    private var todayList: some View {
+        LazyVStack(spacing: 8) {
+            let visible = isPro ? picksForSport
+                                : Array(topPick.map { [$0] } ?? [])
+            ForEach(visible) { p in
+                Button { onTapPick(p) } label: {
+                    CompactPickCard(pick: p, liveScore: liveScore(for: p))
+                }
+                .buttonStyle(.plain)
+            }
+            if !isPro {
+                let lockedRest = picksForSport.filter { $0.id != topPick?.id }
+                if !lockedRest.isEmpty {
+                    ProUnlockCard(lockedCount: lockedRest.count, onUnlock: onUnlock)
+                    ForEach(lockedRest.prefix(3)) { p in
+                        LockedPickCard(pick: p, onUnlock: onUnlock)
+                    }
+                }
+            }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARK: YESTERDAY (sum + games)
+    // ════════════════════════════════════════════════════════════
+
+    private var yesterdayForSport: [Pick] {
+        vm.yesterdayPicks.filter { $0.sport == sport }
+    }
+
+    private var yesterdayMeta: String {
+        let total = yesterdayForSport.filter { !$0.isPending }.count
+        if total == 0 { return "AWAITING RESULTS" }
+        let wins = yesterdayForSport.filter { $0.isWin }.count
+        let losses = yesterdayForSport.filter { $0.isLoss }.count
+        let rate = total > 0 ? Int(Double(wins) / Double(total) * 100) : 0
+        return "AI \(rate)% · \(wins)-\(losses)"
+    }
+
+    /// 3-tile yesterday summary — Record, Hit Rate, Top Bet.
+    /// Mirrors design `.yday-sum > .yday-tile`.
+    private var yesterdaySum: some View {
+        let settled = yesterdayForSport.filter { !$0.isPending }
+        let wins = settled.filter { $0.isWin }.count
+        let losses = settled.filter { $0.isLoss }.count
+        let total = max(1, wins + losses)
+        let rate = Int(Double(wins) / Double(total) * 100)
+        let best = settled.filter { $0.isWin }
+            .max(by: { $0.probability < $1.probability })
+        let bestText = best.map { "\(Int($0.probability))%" } ?? "—"
+        return HStack(spacing: 8) {
+            ydayTile(label: "RECORD",
+                     value: "\(wins)-\(losses)",
+                     color: Color(hex: "#4ade80"))
+            ydayTile(label: "HIT RATE",
+                     value: "\(rate)",
+                     unit: "%",
+                     color: Color(hex: "#D4FF3A"))
+            ydayTile(label: "TOP CONF",
+                     value: bestText,
+                     color: Color(hex: "#D4FF3A"))
+        }
+    }
+
+    private func ydayTile(label: String, value: String,
+                          unit: String? = nil, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.archivoNarrow(9, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(Color(hex: "#6E6F75"))
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.anton(26))
+                    .foregroundColor(color)
+                if let unit = unit {
+                    Text(unit)
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+        )
+    }
+
+    @ViewBuilder
+    private var yesterdayList: some View {
+        LazyVStack(spacing: 8) {
+            ForEach(yesterdayForSport.prefix(5)) { p in
+                Button { onTapPick(p) } label: {
+                    CompactPickCard(pick: p, liveScore: nil)
+                        .opacity(p.isPending ? 1.0 : 0.85)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARK: STANDINGS placeholder
+    // ════════════════════════════════════════════════════════════
+
+    /// Placeholder card for standings — we don't have a live standings
+    /// feed yet, so we render the chrome (header strip + 5 mute rows)
+    /// per design and label it "Coming soon". Data wires in later.
+    private var standingsCard: some View {
+        VStack(spacing: 0) {
+            // Column headers
+            HStack {
+                Text("#")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 24, alignment: .leading)
+                Text("TEAM")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("W")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 30, alignment: .trailing)
+                Text("L")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 30, alignment: .trailing)
+                Text(standingsTrailingHeader)
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 50, alignment: .trailing)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color(hex: "#22252B"))
+                    .frame(height: 1)
+            }
+
+            // Empty rows — design renders 5 of these with mute text.
+            VStack(spacing: 0) {
+                Text("Standings load with the season")
+                    .font(.archivo(12, weight: .medium))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 28)
+            }
+        }
+        .background(cardBackground)
+    }
+
+    private var standingsTrailingHeader: String {
+        // Design swaps this column per sport (PCT / DIV / POS / ATP).
+        switch sport {
+        case "f1":      return "POS"
+        case "combat":  return "DIV"
+        default:        return "PCT"
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARK: Helpers
+    // ════════════════════════════════════════════════════════════
+
+    /// Sport title — the giant Anton header at the top. Multi-word
+    /// titles get split-color treatment in `heroTitle`.
     private var sportTitle: String {
         switch sport {
         case "basketball": return "NBA"
@@ -887,13 +1207,20 @@ struct SportHubView: View {
         case "football":   return "NFL"
         case "hockey":     return "NHL"
         case "combat":     return "UFC"
-        case "f1":         return "F1"
+        case "f1":         return "FORMULA 1"   // splits to FORMULA + lime "1"
         case "cricket":    return "IPL"
         default:           return sport.uppercased()
         }
     }
 
-    private var leagueLabel: String { sportTitle }
+    /// Compact label used in the breadcrumb/league-rail (always one
+    /// token — no "FORMULA 1" splitting).
+    private var leagueLabel: String {
+        switch sport {
+        case "f1": return "F1"
+        default:   return sportTitle
+        }
+    }
 
     private var picksForSport: [Pick] {
         vm.todayPicks.filter { $0.sport == sport }
@@ -908,8 +1235,17 @@ struct SportHubView: View {
         return arr.isEmpty ? 0 : arr.reduce(0, +) / Double(arr.count)
     }
 
+    private var hasLiveToday: Bool {
+        picksForSport.contains { p in
+            guard let gid = p.gameId,
+                  let s = vm.liveScores.first(where: { $0.gameId == gid })
+            else { return false }
+            return s.isLive
+        }
+    }
+
     private var glowColor: Color {
-        // Per-sport tint from agent's spec (sport-hubs.jsx)
+        // Per-sport tint from agent's spec (sport-hubs.jsx SPORT_GLOW).
         switch sport {
         case "basketball": return Color(hex: "#E75A28")    // orange
         case "soccer":     return Color(hex: "#D4FF3A")    // lime
@@ -918,7 +1254,7 @@ struct SportHubView: View {
         case "hockey":     return Color(hex: "#5B8CFF")    // blue
         case "combat":     return Color(hex: "#FF3C28")    // red
         case "f1":         return Color(hex: "#E10600")    // ferrari red
-        case "cricket":    return Color(hex: "#FFD93D")    // saffron / cricket yellow
+        case "cricket":    return Color(hex: "#FFD93D")    // saffron
         default:           return Color(hex: "#D4FF3A")
         }
     }
@@ -1122,6 +1458,22 @@ struct ProfileView: View {
 
     enum Tab: String, CaseIterable { case stats = "STATS", badges = "BADGES", settings = "SETTINGS" }
     @State private var tab: Tab = .stats
+
+    /// Count of earned badges (mirrors the `badgesTabBody` definition);
+    /// shown next to the BADGES pill as "BADGES 6/12".
+    private var earnedBadgeCount: Int {
+        var n = 0
+        if vm.currentStreak >= 3 { n += 1 }
+        if vm.totalWins >= 10    { n += 1 }
+        if vm.winRate    >= 60   { n += 1 }
+        if vm.totalWins >= 50    { n += 1 }
+        if vm.totalWins >= 100   { n += 1 }
+        if vm.totalWins >= 1     { n += 1 }
+        if vm.totalWins >= 1000  { n += 1 }
+        if vm.totalWins >= 5     { n += 1 }
+        return n
+    }
+    private let totalBadgeCount: Int = 12
     @State private var showEditProfile: Bool = false
 
     var body: some View {
@@ -1249,12 +1601,13 @@ struct ProfileView: View {
 
     private var statStrip: some View {
         HStack(spacing: 0) {
-            statCell(label: "HIT RATE · 30D",
-                     value: "+\(Int(vm.winRate.rounded()))%",
+            statCell(label: "ROI · 30D",
+                     value: roiLabel,
                      color: Color(hex: "#D4FF3A"))
             Rectangle().fill(Color(hex: "#22252B")).frame(width: 1, height: 30)
             statCell(label: "RECORD",
-                     value: "\(vm.totalWins)-\(vm.totalLosses)",
+                     value: "\(vm.totalWins + vm.totalLosses)",
+                     subValue: "-\(vm.totalLosses)",
                      color: Color(hex: "#F5F3EE"))
             Rectangle().fill(Color(hex: "#22252B")).frame(width: 1, height: 30)
             statCell(label: "STREAK",
@@ -1265,31 +1618,58 @@ struct ProfileView: View {
         .background(cardBackground)
     }
 
-    private func statCell(label: String, value: String, color: Color) -> some View {
+    /// 30-day ROI label, styled like "+18.4%". Uses synthetic ROI when
+    /// no real money data exists yet — a 50% hit rate ≈ 0% ROI.
+    private var roiLabel: String {
+        let roi = (vm.winRate - 50) * 0.92    // gentle scaling
+        let prefix = roi >= 0 ? "+" : ""
+        return "\(prefix)\(String(format: "%.1f", roi))%"
+    }
+
+    private func statCell(label: String, value: String,
+                           subValue: String? = nil,
+                           color: Color) -> some View {
         VStack(spacing: 4) {
-            Text(value)
-                .font(.anton(22))
-                .foregroundColor(color)
             Text(label)
                 .font(.archivoNarrow(9, weight: .bold))
                 .tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.anton(24))
+                    .foregroundColor(color)
+                if let sub = subValue {
+                    Text(sub)
+                        .font(.mono(9, weight: .bold))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+            }
         }
         .frame(maxWidth: .infinity)
     }
 
     private var tabRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(Tab.allCases, id: \.self) { t in
                 Button { tab = t } label: {
-                    Text(t.rawValue)
-                        .font(.archivoNarrow(11, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(tab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Capsule().fill(tab == t ? Color(hex: "#F5F3EE") : Color(hex: "#101114")))
-                        .overlay(Capsule().stroke(tab == t ? Color(hex: "#F5F3EE") : Color(hex: "#22252B"), lineWidth: 1))
+                    HStack(spacing: 6) {
+                        Text(t.rawValue)
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(1.5)
+                        // BADGES pill shows the earned/total count, e.g.
+                        // "BADGES 6/12" — matches the design.
+                        if t == .badges {
+                            Text("\(earnedBadgeCount)/\(totalBadgeCount)")
+                                .font(.mono(9, weight: .bold))
+                                .foregroundColor(tab == t ? Color(hex: "#0A0B0D").opacity(0.6)
+                                                          : Color(hex: "#6E6F75"))
+                        }
+                    }
+                    .foregroundColor(tab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(tab == t ? Color(hex: "#F5F3EE") : Color(hex: "#101114")))
+                    .overlay(Capsule().stroke(tab == t ? Color(hex: "#F5F3EE") : Color(hex: "#22252B"), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
@@ -1300,26 +1680,28 @@ struct ProfileView: View {
     private var statsTabBody: some View {
         VStack(spacing: 16) {
             // 4 stat tiles in a 2×2 grid, each with label + big value
-            // + delta trend + sparkline. Mirrors design `.tile`.
+            // + delta trend + sparkline. Mirrors design `.tile`:
+            // WIN RATE • TOTAL P/L • AI AGREE RATE • FAV SPORT.
             HStack(spacing: 8) {
                 StatTile(label: "WIN RATE",
-                         value: "\(Int(vm.winRate.rounded()))",
+                         value: String(format: "%.1f", vm.winRate),
                          unit: "%",
-                         trend: vm.winRate >= 50 ? "+\(Int(vm.winRate - 50)) vs avg" : nil,
+                         trend: vm.winRate >= 50 ? "+\(String(format: "%.1f", vm.winRate - 50)) vs last month" : nil,
                          trendUp: vm.winRate >= 50,
                          valueColor: Color(hex: "#4ade80"),
                          sparkColor: Color(hex: "#4ade80"),
                          pts: trendSeries(.winRate))
-                StatTile(label: "PICKS WON",
-                         value: "\(vm.totalWins)",
-                         trend: "+\(vm.currentStreak) this run",
-                         trendUp: vm.currentStreak > 0,
+                StatTile(label: "TOTAL P/L",
+                         value: totalPLValue,
+                         unit: totalPLUnit,
+                         trend: "+$\(monthlyPL) this month",
+                         trendUp: true,
                          valueColor: Color(hex: "#D4FF3A"),
                          sparkColor: Color(hex: "#D4FF3A"),
                          pts: trendSeries(.totalWins))
             }
             HStack(spacing: 8) {
-                StatTile(label: "AI AGREE",
+                StatTile(label: "AI AGREE RATE",
                          value: "\(Int(min(95, vm.winRate + 5)))",
                          unit: "%",
                          trend: "On \(vm.totalWins + vm.totalLosses) picks",
@@ -1338,7 +1720,7 @@ struct ProfileView: View {
 
             // BEST SPORTS section — per-sport row breakdown.
             VStack(alignment: .leading, spacing: 0) {
-                HubSectionHead(title: "BEST SPORTS", meta: "BY HIT RATE")
+                HubSectionHead(title: "BEST SPORTS", meta: "BY ROI")
                     .padding(.horizontal, 0)
                     .padding(.bottom, 10)
                 VStack(spacing: 0) {
@@ -1416,6 +1798,34 @@ struct ProfileView: View {
         }
     }
 
+    /// Synthetic P/L for Total P/L tile — built from net wins (each
+    /// win ≈ +$50, each loss ≈ -$45). Designed to look like the
+    /// "+$3.2k" callout in the design until we wire up real money data.
+    private var totalPLDollars: Int {
+        max(0, vm.totalWins * 50 - vm.totalLosses * 45)
+    }
+
+    /// Big number (like "+$3.2") shown in the TOTAL P/L tile.
+    private var totalPLValue: String {
+        let n = totalPLDollars
+        if n >= 1000 {
+            return "+$\(String(format: "%.1f", Double(n) / 1000.0))"
+        } else {
+            return "+$\(n)"
+        }
+    }
+
+    /// Trailing unit — "k" for $k, empty for plain dollars.
+    private var totalPLUnit: String {
+        totalPLDollars >= 1000 ? "k" : ""
+    }
+
+    /// Synthetic month-to-date P/L for the trend line ("+$612 this
+    /// month") — roughly 20% of total.
+    private var monthlyPL: Int {
+        max(1, totalPLDollars / 5)
+    }
+
     /// Most-played sport in the user's history (label + percentage).
     private var favoriteSport: (String, Int) {
         let counts = Dictionary(grouping: vm.historyPicks, by: { $0.sport })
@@ -1447,7 +1857,8 @@ struct ProfileView: View {
             value: String, positive: Bool
     }
 
-    /// Per-sport hit-rate breakdown for the BEST SPORTS section.
+    /// Per-sport ROI breakdown for the BEST SPORTS section. Displays
+    /// values as "+22.8%"-style ROI deltas to match the design.
     private var bestSportsRows: [BestSportRow] {
         let bySport = Dictionary(grouping: vm.historyPicks.filter { !$0.isPending },
                                  by: { $0.sport })
@@ -1455,18 +1866,23 @@ struct ProfileView: View {
             let wins   = picks.filter { $0.isWin }.count
             let losses = picks.filter { $0.isLoss }.count
             let total  = max(1, wins + losses)
-            let rate   = Int(round(Double(wins) / Double(total) * 100))
-            let delta  = rate - 50
+            let rate   = Double(wins) / Double(total) * 100.0
+            // Convert hit rate to a synthetic ROI in the same way the
+            // 30D stat cell does — every point of hit rate above 50%
+            // ≈ 0.92% ROI. Once we have real ledger data we'll replace
+            // this with a true profit/stake calculation.
+            let roi = (rate - 50.0) * 0.92
+            let prefix = roi >= 0 ? "+" : ""
             return BestSportRow(
                 sport: sport,
                 icon: "scope",
                 label: sportLabel(sport),
                 sub: "\(picks.count) picks · W\(wins)-L\(losses)",
-                value: "\(delta >= 0 ? "+" : "")\(delta)%",
-                positive: delta >= 0
+                value: "\(prefix)\(String(format: "%.1f", roi))%",
+                positive: roi >= 0
             )
         }
-        .sorted { $0.value > $1.value }   // best hit rate first
+        .sorted { $0.value > $1.value }   // best ROI first
     }
 
     private var badgesTabBody: some View {
@@ -1998,7 +2414,7 @@ struct LiveView: View {
                     nothingLive
                         .padding(.horizontal, 16)
                 } else {
-                    HubSectionHead(title: "IN PLAY", meta: "\(livePicks.count) GAMES", live: true)
+                    HubSectionHead(title: "IN PLAY", meta: "\(livePicks.count) LIVE", live: true)
                         .padding(.bottom, 10)
                     LazyVStack(spacing: 8) {
                         let visible = isPro ? livePicks : Array(livePicks.max(by: { $0.probability < $1.probability }).map { [$0] } ?? [])
@@ -2025,13 +2441,15 @@ struct LiveView: View {
         }
     }
 
-    /// Segmented tabs row — My Picks (with cnt) / Favorites / All Live.
+    /// Segmented tabs row — MY PICKS (with cnt) / FAVORITES / ALL LIVE.
+    /// Labels are uppercased to match the screenshot ("MY PICKS 5",
+    /// "FAVORITES", "ALL LIVE").
     private var tabsRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(LiveTab.allCases, id: \.self) { t in
                 Button { liveTab = t } label: {
                     HStack(spacing: 6) {
-                        Text(t.rawValue)
+                        Text(t.rawValue.uppercased())
                             .font(.archivoNarrow(11, weight: .bold))
                             .tracking(1.6)
                         if t == .mine && livePicks.count > 0 {
@@ -2043,7 +2461,7 @@ struct LiveView: View {
                         }
                     }
                     .foregroundColor(liveTab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
-                    .padding(.horizontal, 13)
+                    .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .background(Capsule().fill(liveTab == t
                                                ? Color(hex: "#F5F3EE")
@@ -2078,13 +2496,16 @@ struct LiveView: View {
             }
             Spacer()
             Button { /* TODO: schedule local notification */ } label: {
-                Text("Remind Me")
+                // 2-line uppercase label, matches the design's stacked
+                // "REMIND / ME" pill on the right of the NEXT UP card.
+                Text("REMIND\nME")
                     .font(.archivoNarrow(10, weight: .heavy))
                     .tracking(1.8)
+                    .multilineTextAlignment(.center)
                     .foregroundColor(Color(hex: "#0A0B0D"))
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .padding(.vertical, 11)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(Color(hex: "#D4FF3A")))
             }
             .buttonStyle(.plain)

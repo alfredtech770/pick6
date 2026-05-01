@@ -72,6 +72,18 @@ final class SubscriptionManager: ObservableObject {
         // Always start listening before checking entitlements so we don't
         // miss a purchase that completes mid-app-launch.
         transactionListenerTask = listenForTransactions()
+
+        // In DEBUG, prime isPro=true on the very first paint so the
+        // splash → home transition doesn't briefly flash the Free UI
+        // before refreshEntitlements() reasserts the override. See
+        // refreshEntitlements() for the canonical override.
+        #if DEBUG
+        self.isPro = true
+        self.activeProductId = "com.pick6.app.pro.monthly"
+        self.activeExpiration = Calendar.current.date(
+            byAdding: .year, value: 10, to: Date()
+        )
+        #endif
     }
 
     deinit {
@@ -185,6 +197,26 @@ final class SubscriptionManager: ObservableObject {
             self.activeProductId = nil
             self.activeExpiration = nil
         }
+
+        // ── DEBUG / SIMULATOR OVERRIDE ─────────────────────────────
+        // Always grant Pro in debug builds so devs see the full app
+        // without configuring a StoreKit configuration file or buying
+        // a real subscription. Re-asserted on every refresh so the
+        // listener can't silently downgrade us back to Free.
+        // Compiled out of Release/TestFlight/App Store builds.
+        #if DEBUG
+        self.isPro = true
+        if self.activeProductId == nil {
+            self.activeProductId = "com.pick6.app.pro.monthly"
+        }
+        if self.activeExpiration == nil {
+            // Far-future expiration so any "expires in N days" copy
+            // doesn't render as "expired".
+            self.activeExpiration = Calendar.current.date(
+                byAdding: .year, value: 10, to: Date()
+            )
+        }
+        #endif
     }
 
     // MARK: - Listener
