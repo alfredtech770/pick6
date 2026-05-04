@@ -1354,12 +1354,16 @@ struct FloatingNav: View {
         // iOS 26 Liquid Glass — true refractive material rather than
         // the older blur-and-tint trick. `.regular` glass with a dark
         // panel tint preserves the design's #16181C feel while letting
-        // content underneath bend through the capsule edges. `.interactive()`
-        // gives the Apple-standard hover/press response.
+        // content underneath bend through the capsule edges.
+        // NOTE: `.interactive()` was previously applied here but it
+        // adds a press response on the *whole glass*, which can race
+        // with the inner Buttons' tap recognition (specifically the
+        // Profile tab on the trailing edge). Plain glass below; the
+        // individual NavItem buttons handle press feedback via their
+        // own .buttonStyle(.plain).
         .glassEffect(
             .regular
-                .tint(Color(hex: "#16181C").opacity(0.55))
-                .interactive(),
+                .tint(Color(hex: "#16181C").opacity(0.55)),
             in: .capsule
         )
         // Subtle 1pt rim — Liquid Glass already draws an edge, but a
@@ -1411,6 +1415,14 @@ struct NavItem: View {
                                      : Color.clear,
                             lineWidth: 1)
             )
+            // CRITICAL: with a clear inactive background, SwiftUI by
+            // default only counts the visible icon's bounding box as
+            // tappable. Without an explicit .contentShape, taps that
+            // land in the padded ring around the icon (most of the
+            // pill area) miss the Button entirely. The Profile tab
+            // was unreachable because the user's thumb was hitting
+            // padding rather than the 17pt person glyph.
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -1456,6 +1468,7 @@ struct LiveNavItem: View {
                         ? Color(hex: "#FF3B3B").opacity(0.45)
                         : .clear,
                     radius: isActive ? 10 : 0, x: 0, y: 4)
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onAppear {
