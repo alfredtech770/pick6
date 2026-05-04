@@ -1608,6 +1608,15 @@ struct ProfileView: View {
 
     private var settingsTabBody: some View {
         VStack(spacing: 16) {
+            // ── UPGRADE CTA (Free users only) ──────────────────────
+            // Sits above ACCOUNT so it's the first thing a Free user
+            // sees in Settings. Tap → paywall sheet. Pro users skip
+            // this entirely; the Subscription row in ACCOUNT shows
+            // their current tier instead.
+            if !isPro {
+                profileUpgradeCard
+            }
+
             // ── ACCOUNT / PREFS ────────────────────────────────────
             VStack(alignment: .leading, spacing: 10) {
                 HubSectionHead(title: "ACCOUNT", meta: "PREFS")
@@ -1696,6 +1705,72 @@ struct ProfileView: View {
         } message: {
             Text("This permanently deletes your Pick6 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
         }
+    }
+
+    // MARK: Upgrade CTA
+
+    /// Profile-context upgrade card shown to Free users above the
+    /// Settings groups. Mirrors ProUnlockCard's lime visual language
+    /// (radial gradient + ink shadow) so the upsell feels consistent
+    /// with the home-screen unlock affordance.
+    private var profileUpgradeCard: some View {
+        Button(action: onShowPaywall) {
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "diamond.fill")
+                            .font(.system(size: 11, weight: .heavy))
+                        Text("PICK6 PRO")
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .tracking(2.4)
+                    }
+                    .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
+
+                    Text("UPGRADE")
+                        .font(.anton(34))
+                        .lineSpacing(-6)
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+
+                    HStack(spacing: 5) {
+                        Text("All picks · all sports")
+                            .font(.archivo(12, weight: .bold))
+                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
+                        Text("·")
+                            .font(.archivo(12, weight: .bold))
+                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.4))
+                        Text("7-day trial")
+                            .font(.archivo(12, weight: .bold))
+                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
+                    }
+                }
+                Spacer(minLength: 8)
+                // Trailing chevron pill — visually identical to the
+                // home unlock card's "→" affordance.
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color(hex: "#0A0B0D")))
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                ZStack {
+                    Color(hex: "#D4FF3A")
+                    RadialGradient(
+                        colors: [Color(hex: "#eaff7a"),
+                                 Color(hex: "#D4FF3A").opacity(0)],
+                        center: UnitPoint(x: 1.1, y: -0.2),
+                        startRadius: 30,
+                        endRadius: 350
+                    )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: Color(hex: "#a8e000").opacity(0.35),
+                    radius: 14, x: 0, y: 12)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Settings rows
