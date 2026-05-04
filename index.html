@@ -1908,14 +1908,17 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   });
 
   // ─── Klaviyo waitlist signup ──────────────────────────────
-  // Replace with your real values from https://www.klaviyo.com/account#api-keys-tab
-  // - PUBLIC_KEY: 6-character public API key (safe to expose; starts with letters/digits, not "pk_")
-  // - LIST_ID:    6-character ID of the waitlist List (Lists & Segments → click list → "list ID" in URL)
-  const KLAVIYO_PUBLIC_KEY = window.KLAVIYO_PUBLIC_KEY || 'REPLACE_WITH_PUBLIC_KEY';
-  const KLAVIYO_LIST_ID    = window.KLAVIYO_LIST_ID    || 'REPLACE_WITH_LIST_ID';
+  // Public key (safe to expose) + dedicated "Pick1 Waitlist" list.
+  // Both verified end-to-end via the client/subscriptions endpoint
+  // returning HTTP 202 and the profile landing in the list with
+  // $consent=["email"] and a timestamp.
+  const KLAVIYO_PUBLIC_KEY = window.KLAVIYO_PUBLIC_KEY || 'UtRgrA';
+  const KLAVIYO_LIST_ID    = window.KLAVIYO_LIST_ID    || 'TtWsds';
 
   const subscribeEmail = async (email, source) => {
     const url = `https://a.klaviyo.com/client/subscriptions/?company_id=${encodeURIComponent(KLAVIYO_PUBLIC_KEY)}`;
+    // Subscribe Profiles client endpoint — list relationship implies
+    // marketing consent for that channel. No `subscriptions` field needed.
     const body = {
       data: {
         type: 'subscription',
@@ -1924,12 +1927,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
           profile: {
             data: {
               type: 'profile',
-              attributes: {
-                email,
-                subscriptions: {
-                  email: { marketing: { consent: 'SUBSCRIBED' } }
-                }
-              }
+              attributes: { email }
             }
           }
         },
