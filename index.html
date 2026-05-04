@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<!-- Country-aware phone input (intl-tel-input v24) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/css/intlTelInput.css">
 <style>
 :root {
   --bg: #0a0b0d;
@@ -1139,6 +1141,102 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   .waitlist-form button { padding: 16px; }
 }
 
+/* ─── intl-tel-input: dark-theme overrides ─────────────────── */
+.field-tel { padding: 0; gap: 0; }
+.field-tel .iti { width: 100%; }
+.field-tel .iti__tel-input { padding: 13px 16px 13px 16px; }
+/* Country selector trigger button (left of input) */
+.field-tel .iti__country-container {
+  background: transparent !important;
+  border: none !important;
+  padding-left: 14px;
+  padding-right: 8px;
+  min-width: 80px;
+}
+.field-tel .iti--separate-dial-code .iti__country-container {
+  background: rgba(255,255,255,0.03) !important;
+  border-right: 1px solid var(--line) !important;
+}
+.field-tel .iti__selected-country-primary {
+  background: transparent !important;
+  color: var(--ink);
+  padding: 0 8px 0 0;
+}
+.field-tel .iti__selected-country-primary:focus,
+.field-tel .iti__selected-country-primary:hover {
+  background: rgba(255,255,255,0.04) !important;
+}
+.field-tel .iti__selected-dial-code {
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+  margin-left: 6px;
+}
+.field-tel .iti__arrow {
+  border-top-color: var(--mute);
+  margin-left: 6px;
+}
+/* Dropdown popup */
+.iti__dropdown-content {
+  background: var(--panel) !important;
+  border: 1px solid var(--line-2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6) !important;
+  overflow: hidden;
+}
+.iti__search-input {
+  background: var(--panel-2) !important;
+  color: var(--ink) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--line) !important;
+  padding: 12px 14px !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  outline: none !important;
+}
+.iti__search-input::placeholder { color: var(--mute); }
+.iti__country-list {
+  background: var(--panel) !important;
+  border: none !important;
+  max-height: 260px !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) var(--panel);
+}
+.iti__country-list::-webkit-scrollbar { width: 8px; }
+.iti__country-list::-webkit-scrollbar-track { background: var(--panel); }
+.iti__country-list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+.iti__country {
+  padding: 8px 14px !important;
+  color: var(--ink-2) !important;
+  font-size: 14px;
+}
+.iti__country:hover {
+  background: rgba(212,255,58,0.08) !important;
+  color: var(--ink) !important;
+}
+.iti__country.iti__highlight {
+  background: rgba(212,255,58,0.12) !important;
+  color: var(--accent) !important;
+}
+.iti__country-name { color: inherit !important; }
+.iti__dial-code {
+  color: var(--mute) !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.iti__country.iti__highlight .iti__dial-code { color: var(--accent) !important; }
+/* Mobile fullscreen popup */
+.iti--fullscreen-popup .iti__dropdown-content {
+  background: var(--bg) !important;
+  border-radius: 0 !important;
+}
+/* Hide the default "Search" placeholder image */
+.iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags.webp") !important; }
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags@2x.webp") !important; }
+}
+
 /* Sticky download bar (mobile only) */
 .sticky-cta {
   display: none;
@@ -1366,16 +1464,15 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
           <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
         </label>
-        <label class="field">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.7 11.7 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.5 4.1 1.6 5.9L0 24l6.5-1.7c1.7.9 3.6 1.4 5.6 1.4h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.2-1.2-6.1-3.5-8.4zM12.1 21.7c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.3 0-5.4 4.4-9.8 9.8-9.8 2.6 0 5.1 1 6.9 2.9 1.8 1.8 2.9 4.3 2.9 6.9 0 5.4-4.4 9.9-9.8 9.9zm5.4-7.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3 4.8 4.2 1.7.7 2.3.8 3.1.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.6-.3z"/></svg>
-          <input type="tel" name="whatsapp" placeholder="WhatsApp · +33 6 12 34 56 78" required autocomplete="tel" inputmode="tel" />
+        <label class="field field-tel">
+          <input type="tel" name="whatsapp" required autocomplete="tel" />
         </label>
         <button type="submit">Claim My Free Week →</button>
       </form>
       <div class="waitlist-error" role="alert"></div>
       <div class="waitlist-note">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
-        <span><span class="accent">1 week free</span> code sent via WhatsApp at launch · No spam · Include country code</span>
+        <span><span class="accent">1 week free</span> code sent via WhatsApp at launch · No spam · Unsubscribe anytime</span>
       </div>
     </div>
 
@@ -1759,16 +1856,15 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
         <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
       </label>
-      <label class="field">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.7 11.7 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.5 4.1 1.6 5.9L0 24l6.5-1.7c1.7.9 3.6 1.4 5.6 1.4h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.2-1.2-6.1-3.5-8.4zM12.1 21.7c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.3 0-5.4 4.4-9.8 9.8-9.8 2.6 0 5.1 1 6.9 2.9 1.8 1.8 2.9 4.3 2.9 6.9 0 5.4-4.4 9.9-9.8 9.9zm5.4-7.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3 4.8 4.2 1.7.7 2.3.8 3.1.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.6-.3z"/></svg>
-        <input type="tel" name="whatsapp" placeholder="WhatsApp · +33 6 12 34 56 78" required autocomplete="tel" inputmode="tel" />
+      <label class="field field-tel">
+        <input type="tel" name="whatsapp" required autocomplete="tel" />
       </label>
       <button type="submit">Claim My Free Week →</button>
     </form>
     <div class="waitlist-error" role="alert"></div>
     <div class="waitlist-note">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
-      <span><span class="accent">1 week free</span> code sent via WhatsApp at launch · Include country code</span>
+      <span><span class="accent">1 week free</span> code sent via WhatsApp at launch · Unsubscribe anytime</span>
     </div>
   </div>
 </section>
@@ -1786,6 +1882,10 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 
 <!-- Mobile sticky CTA -->
 <a href="#download" class="sticky-cta">JOIN WAITLIST · 1 WEEK FREE →</a>
+
+<!-- intl-tel-input: country-aware phone field (loaded synchronously
+     so window.intlTelInput exists when our IIFE runs) -->
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/js/intlTelInput.min.js"></script>
 
 <script>
 (() => {
@@ -1940,34 +2040,46 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 
   // ─── Klaviyo waitlist signup ──────────────────────────────
   // Public key (safe to expose) + dedicated "Pick1 Waitlist" list.
-  // Both verified end-to-end via the client/subscriptions endpoint
-  // returning HTTP 202 and the profile landing in the list with
-  // $consent=["email"] and a timestamp.
   const KLAVIYO_PUBLIC_KEY = window.KLAVIYO_PUBLIC_KEY || 'UtRgrA';
   const KLAVIYO_LIST_ID    = window.KLAVIYO_LIST_ID    || 'TtWsds';
 
-  // Normalize a phone number to E.164 (best-effort). Strips spaces,
-  // dashes, parens, dots; keeps leading +. Returns the normalized
-  // string only if it looks like a real E.164 number (8–15 digits
-  // after the +); otherwise returns null and we fall back to storing
-  // the raw input as a custom property only.
-  const normalizeE164 = (raw) => {
-    if (!raw) return null;
-    const cleaned = raw.replace(/[\s\-().]/g, '').trim();
-    if (/^\+\d{8,15}$/.test(cleaned)) return cleaned;
-    return null;
-  };
+  // ─── Initialize intl-tel-input on every WhatsApp field ────
+  // Country dropdown (separate dial code), auto-detected default
+  // country from IP (falls back to FR), with a few preferred at top.
+  const itiInstances = new WeakMap();
+  if (window.intlTelInput) {
+    document.querySelectorAll('input[name="whatsapp"]').forEach(input => {
+      const iti = window.intlTelInput(input, {
+        initialCountry: 'auto',
+        geoIpLookup: (callback) => {
+          fetch('https://ipapi.co/json/', { mode: 'cors' })
+            .then(r => r.json())
+            .then(d => callback((d && d.country_code) || 'fr'))
+            .catch(() => callback('fr'));
+        },
+        separateDialCode: true,
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/js/utils.js',
+        preferredCountries: ['fr', 'us', 'gb', 'de', 'es', 'it'],
+        autoPlaceholder: 'aggressive',
+      });
+      itiInstances.set(input, iti);
+    });
+  }
 
-  const subscribeProfile = async ({ email, name, whatsapp }, source) => {
+  const subscribeProfile = async ({ email, name, whatsappE164 }, source) => {
     const url = `https://a.klaviyo.com/client/subscriptions/?company_id=${encodeURIComponent(KLAVIYO_PUBLIC_KEY)}`;
-    const e164 = normalizeE164(whatsapp);
-    // Build the profile attributes. Always pass the raw WhatsApp input
-    // as a `whatsapp` custom property (so it survives even if Klaviyo
-    // rejects an oddly-formatted phone_number). Only set phone_number
-    // when we have a confidently-parseable E.164 string.
-    const profileAttrs = { email, properties: { whatsapp: whatsapp || '' } };
-    if (name)   profileAttrs.first_name = name;
-    if (e164)   profileAttrs.phone_number = e164;
+    const profileAttrs = {
+      email,
+      // Email + WhatsApp marketing consent — phone_number lands as a
+      // first-class profile field (visible in Klaviyo list view) when
+      // either channel subscription is included on revision 2025-04-15+.
+      subscriptions: {
+        email:    { marketing: { consent: 'SUBSCRIBED' } },
+        whatsapp: { marketing: { consent: 'SUBSCRIBED' } }
+      }
+    };
+    if (name) profileAttrs.first_name = name;
+    if (whatsappE164) profileAttrs.phone_number = whatsappE164;
 
     const body = {
       data: {
@@ -1981,37 +2093,26 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         }
       }
     };
+    const headers = {
+      'accept': 'application/json',
+      'revision': '2025-04-15',
+      'content-type': 'application/json',
+    };
     try {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'revision': '2024-10-15',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
+      const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
       if (resp.status === 202 || resp.ok) return { ok: true };
       let detail = '';
       try {
         const j = await resp.json();
         detail = j?.errors?.[0]?.detail || '';
       } catch {}
-      // If Klaviyo rejected because of phone_number (e.g. invalid
-      // country code), retry once without it — we still keep the
-      // raw value in the `whatsapp` custom property.
-      if (resp.status === 400 && e164 && /phone/i.test(detail)) {
+      // Defensive: if Klaviyo flags the phone, retry without it but
+      // keep the email subscription so we don't lose the signup.
+      if (resp.status === 400 && whatsappE164 && /phone/i.test(detail)) {
         delete profileAttrs.phone_number;
-        const retry = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'revision': '2024-10-15',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify(body),
-        });
-        if (retry.status === 202 || retry.ok) return { ok: true };
+        delete profileAttrs.subscriptions.whatsapp;
+        const retry = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+        if (retry.status === 202 || retry.ok) return { ok: true, partial: 'phone-dropped' };
       }
       return { ok: false, detail };
     } catch (err) {
@@ -2020,7 +2121,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   };
 
   const showSuccess = (wrap, name) => {
-    const greeting = name ? `You're in${name ? `, ${name}` : ''}.` : `You're on the list.`;
+    const greeting = name ? `You're in, ${name}.` : `You're on the list.`;
     wrap.innerHTML = `
       <div class="waitlist-success">
         <span class="check">✓</span>
@@ -2043,10 +2144,9 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       const errorEl  = wrap.querySelector('.waitlist-error');
       const name     = (nameEl?.value || '').trim();
       const email    = (emailEl?.value || '').trim();
-      const whatsapp = (phoneEl?.value || '').trim();
       const source   = form.dataset.source || 'site';
 
-      // Validation — name, email format, phone has digits + leading +
+      // Name + email validation
       if (!name || name.length < 2) {
         errorEl.textContent = 'Please enter your first name.';
         nameEl.focus(); return;
@@ -2055,13 +2155,35 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         errorEl.textContent = 'Please enter a valid email.';
         emailEl.focus(); return;
       }
-      const phoneClean = whatsapp.replace(/[\s\-().]/g, '');
-      if (!/^\+?\d{8,15}$/.test(phoneClean)) {
-        errorEl.textContent = 'Please enter a valid WhatsApp number with country code (e.g. +33 6 12 34 56 78).';
-        phoneEl.focus(); return;
+
+      // Phone validation via intl-tel-input — uses libphonenumber under
+      // the hood for proper country-aware validation. getNumber() returns
+      // E.164 format ("+33612345678") regardless of how the user typed it.
+      const iti = itiInstances.get(phoneEl);
+      let whatsappE164 = '';
+      if (iti) {
+        if (!iti.isValidNumber()) {
+          const code = iti.getValidationError();
+          const msgs = {
+            1: 'Please pick a country and enter the rest of the number.',
+            2: 'That number is too short — check the country.',
+            3: 'That number is too long for the selected country.',
+            4: 'That number doesn\'t look right — please check.',
+          };
+          errorEl.textContent = msgs[code] || 'Please enter a valid WhatsApp number.';
+          phoneEl.focus(); return;
+        }
+        whatsappE164 = iti.getNumber(); // E.164 format
+      } else {
+        // Fallback if intl-tel-input failed to load — basic E.164 check
+        const raw = (phoneEl?.value || '').trim();
+        const cleaned = raw.replace(/[\s\-().]/g, '');
+        if (!/^\+?\d{8,15}$/.test(cleaned)) {
+          errorEl.textContent = 'Please enter a valid WhatsApp number with country code.';
+          phoneEl.focus(); return;
+        }
+        whatsappE164 = cleaned.startsWith('+') ? cleaned : '+' + cleaned;
       }
-      // If they forgot the +, add it (guess they put country code first)
-      const whatsappFinal = phoneClean.startsWith('+') ? whatsapp : `+${phoneClean}`;
 
       errorEl.textContent = '';
       const originalLabel = button.textContent;
@@ -2075,7 +2197,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         return;
       }
 
-      const result = await subscribeProfile({ email, name, whatsapp: whatsappFinal }, source);
+      const result = await subscribeProfile({ email, name, whatsappE164 }, source);
       if (result.ok) {
         showSuccess(wrap, name);
       } else {
