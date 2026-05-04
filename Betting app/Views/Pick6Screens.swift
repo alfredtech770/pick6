@@ -209,8 +209,14 @@ struct MatchDetailView: View {
     enum Tab: String, CaseIterable { case summary, roster, analysis, h2h }
     @State private var tab: Tab = .summary
     @State private var showBookmakers: Bool = false
-    @State private var starred: Bool = false
     @State private var showToast: Bool = false
+
+    /// Persistent favorites (drives the Wins/Picks tab list). Replaces
+    /// the prior local `@State starred` flag — that flag was per-sheet
+    /// and didn't survive the sheet closing, which is why favorited
+    /// matches never appeared in the Wins page.
+    @EnvironmentObject private var favorites: FavoritesStore
+    private var starred: Bool { favorites.contains(pick.id) }
 
     /// Sport-aware label for each tab.
     private func tabLabel(_ t: Tab) -> String {
@@ -297,7 +303,7 @@ struct MatchDetailView: View {
         )
         .overlay(alignment: .trailing) {
             Button {
-                starred.toggle()
+                favorites.toggle(pick.id)
             } label: {
                 Image(systemName: starred ? "star.fill" : "star")
                     .font(.system(size: 16, weight: .semibold))
@@ -1506,13 +1512,26 @@ struct ProfileView: View {
     }
 
     private var profileHead: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
+            // The previous gradient was sized by its ZStack's content
+            // (the avatar button) — so the lime glow rendered as a
+            // tiny ~100pt strip behind the avatar instead of the
+            // expansive top-right halo the design calls for. Now it
+            // gets an explicit 360pt-tall frame and a soft blur so the
+            // tint actually washes across the upper hero area, matching
+            // the PageHero gradient on Wins / Live.
             RadialGradient(
-                colors: [Color(hex: "#D4FF3A").opacity(0.12), .clear],
-                center: UnitPoint(x: 1.0, y: 0.0),
+                colors: [Color(hex: "#D4FF3A").opacity(0.22),
+                         Color(hex: "#D4FF3A").opacity(0.06),
+                         .clear],
+                center: UnitPoint(x: 1.05, y: -0.05),
                 startRadius: 0,
-                endRadius: 220
+                endRadius: 380
             )
+            .frame(height: 360)
+            .blur(radius: 28)
+            .allowsHitTesting(false)
+
             Button { showEditProfile = true } label: {
                 HStack(spacing: 14) {
                     ZStack {
@@ -2134,20 +2153,22 @@ struct WinsView: View {
     let onClose: () -> Void
     let onTapPick: (Pick) -> Void
 
-    /// Local hide-from-list set so the user can dismiss won cards
-    /// without a backend mutation. Reset on each presentation.
-    @State private var hiddenPickIds: Set<UUID> = []
+    /// Persistent favorites — populated by tapping the star on
+    /// MatchDetailView. Driving the list off this store (instead of
+    /// `result == "win"`) is what makes "favorites land in Wins."
+    @EnvironmentObject private var favorites: FavoritesStore
+
     @State private var confirmingClear: Bool = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                TopNavBar(crumb: "YOU · ", crumbAccent: "WINS", live: false, onBack: onClose, showBack: false)
+                TopNavBar(crumb: "YOU · ", crumbAccent: "PICKS", live: false, onBack: onClose, showBack: false)
                 PageHero(title: "YOUR",
-                         titleAccent: "WINS.",
-                         sub: ["\(wonPicks.count) WON MATCH\(wonPicks.count == 1 ? "" : "ES")",
-                               "FROM YOUR TEAMS"],
-                         glow: Color(hex: "#4ade80"))
+                         titleAccent: "PICKS.",
+                         sub: ["\(wonPicks.count) SAVED MATCH\(wonPicks.count == 1 ? "" : "ES")",
+                               "TAP A STAR TO FAVORITE"],
+                         glow: Color(hex: "#D4FF3A"))
                     .padding(.bottom, 14)
 
                 favActionsRow
@@ -2173,8 +2194,19 @@ struct WinsView: View {
         }
     }
 
+    /// Favorited picks (any state — pending / win / loss) the user
+    /// has starred. Picks that have since been deleted from the
+    /// `picks` table just don't appear (favorites store retains the
+    /// ID either way). Sorted newest first by game date.
     private var wonPicks: [Pick] {
-        vm.historyPicks.filter { $0.isWin && !hiddenPickIds.contains($0.id) }
+        let favIds = favorites.ids
+        // Search across history + today + yesterday so we don't miss
+        // picks that haven't migrated to historyPicks yet.
+        var byId: [UUID: Pick] = [:]
+        for p in vm.historyPicks { byId[p.id] = p }
+        for p in vm.todayPicks { byId[p.id] = p }
+        for p in vm.yesterdayPicks { byId[p.id] = p }
+        return favIds.compactMap { byId[$0] }
             .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                 > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
     }
@@ -2200,7 +2232,7 @@ struct WinsView: View {
                             .font(.archivoNarrow(10, weight: .bold))
                             .foregroundColor(Color(hex: "#B9B7B0"))
                         Button {
-                            for p in vm.historyPicks where p.isWin { hiddenPickIds.insert(p.id) }
+                            favorites.clear()
                             confirmingClear = false
                         } label: {
                             Text("Clear all")
@@ -2239,10 +2271,10 @@ struct WinsView: View {
             Image(systemName: "star")
                 .font(.system(size: 36))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("No wins yet")
+            Text("No saved picks yet")
                 .font(.anton(22))
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("Your won picks will appear here as games settle.")
+            Text("Tap the star on a match to save it here.")
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
@@ -2340,7 +2372,7 @@ struct WinsView: View {
                     .lineLimit(1)
                 Spacer()
                 Button {
-                    hiddenPickIds.insert(pick.id)
+                    favorites.toggle(pick.id)   // un-favorite
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .heavy))
