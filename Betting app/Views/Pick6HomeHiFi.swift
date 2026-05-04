@@ -131,7 +131,6 @@ struct Pick6HomeHiFi: View {
                 case .profile:
                     ProfileView(vm: vm,
                                 isPro: subs.isPro,
-                                onShowWins: { showWins = true },
                                 onShowPaywall: { showPaywall = true },
                                 onSignOut: {
                                     Task { await auth.signOut() }
