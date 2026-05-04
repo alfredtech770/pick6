@@ -179,24 +179,29 @@ struct OBPaywallScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 22)
         .background(alignment: .topTrailing) {
-            // Lime glow blob — design has a 280×280 circle offset to
-            // (top: -60, right: -120) so the brightest point sits off-canvas
-            // and only the soft falloff bleeds into the hero.
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.p6Lime.opacity(0.28), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 140
-                    )
-                )
-                .frame(width: 280, height: 280)
-                .offset(x: 120, y: -60)
-                .blur(radius: 24)
-                .allowsHitTesting(false)
+            // Lime radial glow that washes the top-right of the
+            // hero. The previous version clipped a small offset
+            // circle behind .clipped(), which left the glow nearly
+            // invisible — the bright center was off-canvas and only
+            // a sliver of falloff was actually drawn. Now: a
+            // 3-stop radial inside an explicit 380×320 frame, soft
+            // 32pt blur, offset so the brightest point sits just
+            // outside the trailing edge and the falloff bleeds
+            // across the hero. No .clipped() — the glow naturally
+            // fades to clear, so there's nothing to clip.
+            RadialGradient(
+                colors: [Color.p6Lime.opacity(0.35),
+                         Color.p6Lime.opacity(0.08),
+                         .clear],
+                center: UnitPoint(x: 0.5, y: 0.5),
+                startRadius: 0,
+                endRadius: 220
+            )
+            .frame(width: 380, height: 320)
+            .blur(radius: 32)
+            .offset(x: 70, y: -90)
+            .allowsHitTesting(false)
         }
-        .clipped()
     }
 
     // MARK: - Plan toggle

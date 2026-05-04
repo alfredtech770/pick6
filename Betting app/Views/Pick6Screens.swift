@@ -1486,27 +1486,14 @@ struct ProfileView: View {
     }
 
     private var profileHead: some View {
-        ZStack(alignment: .topTrailing) {
-            // The previous gradient was sized by its ZStack's content
-            // (the avatar button) — so the lime glow rendered as a
-            // tiny ~100pt strip behind the avatar instead of the
-            // expansive top-right halo the design calls for. Now it
-            // gets an explicit 360pt-tall frame and a soft blur so the
-            // tint actually washes across the upper hero area, matching
-            // the PageHero gradient on Wins / Live.
-            RadialGradient(
-                colors: [Color(hex: "#D4FF3A").opacity(0.22),
-                         Color(hex: "#D4FF3A").opacity(0.06),
-                         .clear],
-                center: UnitPoint(x: 1.05, y: -0.05),
-                startRadius: 0,
-                endRadius: 380
-            )
-            .frame(height: 360)
-            .blur(radius: 28)
-            .allowsHitTesting(false)
-
-            Button { showEditProfile = true } label: {
+        // Lime radial glow drawn as a *background* of the avatar row
+        // instead of inside a sibling ZStack — the previous version
+        // had the gradient as a sibling with .frame(height: 360),
+        // which forced the whole header to be 360pt tall and left a
+        // huge empty gap between the avatar and the Settings groups.
+        // Using .background lets the glow bleed past the row's bounds
+        // visually (via offset) without claiming any layout space.
+        Button { showEditProfile = true } label: {
                 HStack(spacing: 14) {
                     ZStack {
                         Circle()
@@ -1550,8 +1537,22 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .topTrailing) {
+            RadialGradient(
+                colors: [Color(hex: "#D4FF3A").opacity(0.22),
+                         Color(hex: "#D4FF3A").opacity(0.06),
+                         .clear],
+                center: UnitPoint(x: 0.5, y: 0.5),
+                startRadius: 0,
+                endRadius: 220
+            )
+            .frame(width: 380, height: 320)
+            .blur(radius: 32)
+            .offset(x: 80, y: -100)   // bleed past the row, top-right
+            .allowsHitTesting(false)
         }
     }
 
