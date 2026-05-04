@@ -141,12 +141,12 @@ struct Pick6HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                // Low enough to feel anchored to the bottom (per the
-                // user's "lower the sticky menu" request) but high
-                // enough to leave a thin gap above the home indicator
-                // gesture bar. 6pt sits just above the home-indicator
-                // hit zone without leaving an awkward floating gap.
-                .padding(.bottom, 6)
+                // Flush with the safe-area bottom edge — sits as low
+                // as possible without entering the home-indicator
+                // gesture zone. (User has asked for "lower" multiple
+                // times; this is the floor without breaking iOS
+                // gesture handling.)
+                .padding(.bottom, 0)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
