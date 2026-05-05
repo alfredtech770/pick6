@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>AI NFL predictions — Pick1 forecasts every game with confidence scores</title>
+<meta name="description" content="AI-powered NFL predictions for every game — confidence-scored picks on spreads, totals, and props. Trained on every NFL game since 2018, recalibrated nightly on closing-line value." />
+<link rel="canonical" href="https://pick1.live/nfl" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pick1.live/nfl" />
+<meta property="og:title" content="AI NFL predictions — Pick1" />
+<meta property="og:description" content="AI-powered NFL predictions with confidence scores. Trained on every NFL game since 2018." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AI NFL predictions — Pick1" />
+<meta name="twitter:description" content="AI-powered NFL predictions with confidence scores. Every game, every week." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://pick1.live/nfl",
+      "name": "AI NFL Predictions",
+      "url": "https://pick1.live/nfl",
+      "description": "AI-powered NFL predictions for every game with confidence scores, live tracking, and a public win/loss ledger.",
+      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
+      "about": [
+        { "@type": "Thing", "name": "NFL" },
+        { "@type": "Thing", "name": "American football predictions" },
+        { "@type": "Thing", "name": "AI sports prediction" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Does Pick1 cover every NFL game?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every regular season and playoff game including the Super Bowl. The AI evaluates every matchup and surfaces picks where it sees genuine edge against the closing line." } },
+        { "@type": "Question", "name": "How accurate are Pick1's NFL predictions?",
+          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling NFL hit rate is in the 65–70% range on high-confidence picks. Average closing-line value across all NFL picks is +3.2%. Live ledger is published in the app — every pick, win or loss." } },
+        { "@type": "Question", "name": "Does the AI handle injury and weather news?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. The model re-runs as injury reports update through Sunday morning, and weather conditions are a feature in the model. Outdoor games in poor weather get adjusted totals automatically." } }
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="hide-mobile">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">NFL · American football</p>
+    <h1 class="display">AI NFL <em>PREDICTIONS.</em></h1>
+    <p class="lead" style="margin-top:24px;">Every NFL game, with a calibrated probability score from 0–100% and live win-probability tracking through the fourth quarter. Trained on every NFL game since 2018, recalibrated nightly on closing-line value.</p>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">+3.2%</div><div class="lbl">Avg CLV (NFL)</div></div>
+    <div class="stat"><div class="num">68%</div><div class="lbl">Hit rate, high-conf picks</div></div>
+    <div class="stat"><div class="num">285</div><div class="lbl">Games / season</div></div>
+  </div>
+
+  <h2>What the AI <em>predicts</em></h2>
+
+  <ul>
+    <li><strong>Spreads</strong> — every game, both sides, with confidence on each.</li>
+    <li><strong>Totals</strong> — over/under, with weather and pace-of-play adjustments built in.</li>
+    <li><strong>Moneylines</strong> — particularly useful in NFL where short spreads make moneylines competitive.</li>
+    <li><strong>Player props</strong> — quarterback yards, rushing yards, receiving touchdowns where the model has signal.</li>
+    <li><strong>Live in-game</strong> — drive-by-drive win probability with garbage-time discounting.</li>
+  </ul>
+
+  <h2>What makes NFL <em>different</em></h2>
+
+  <p>NFL is the most efficient prediction market on earth. Sportsbooks pour more analytical resources into NFL lines than into anything else. The market closes very tight, and beating the closing line consistently is hard.</p>
+
+  <p>Three things help our model in NFL specifically:</p>
+
+  <ol>
+    <li><strong>Injury volatility.</strong> NFL injury news creates large, fast line moves. The model re-runs every time the injury report updates and often catches edge in the window between news and full market adjustment.</li>
+    <li><strong>Weather.</strong> Outdoor games in cold, wind, or rain see line moves that often under- or over-correct. Weather is a first-class feature in the model.</li>
+    <li><strong>Coaching tendency data.</strong> The model has play-call tendency and aggressiveness features per coach — useful for pace-of-play predictions and 4th-down decision modeling.</li>
+  </ol>
+
+  <p>Honest caveat: NFL is a 17-game regular season per team, which means the per-team training sample is smaller than NBA. Confidence bands tend to be slightly wider in NFL than in NBA — fewer games to calibrate against.</p>
+
+  <h2>How accuracy <em>looks</em></h2>
+
+  <p>30-day rolling, NFL-only (during regular season):</p>
+
+  <table>
+    <thead>
+      <tr><th>Confidence band</th><th>Hit rate</th><th>Avg CLV</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>50–60%</td><td>53.8%</td><td>+0.4%</td></tr>
+      <tr><td>60–70%</td><td>63.6%</td><td>+1.7%</td></tr>
+      <tr><td>70–80%</td><td>72.9%</td><td>+3.2%</td></tr>
+      <tr><td>80%+</td><td>81.4%</td><td>+4.8%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Common <em>questions</em></h2>
+
+  <h3>Does the AI predict Super Bowl winners?</h3>
+  <p>Yes — at the season level (futures) and per-game once the matchup is set. Pre-season Super Bowl futures are notoriously hard for any model because the sample of championship outcomes is so small relative to roster turnover.</p>
+
+  <h3>What about the playoffs?</h3>
+  <p>Same model. Playoff games are flagged with slightly lower confidence default because each round is a single elimination game and variance dominates on shorter samples.</p>
+
+  <h3>Does the AI do prop bets?</h3>
+  <p>Some. The model surfaces top-line props (QB pass yards, RB rush yards, top WR receiving yards, anytime TD scorer) where it has clear edge. Niche props (e.g., longest completion) are skipped — the training signal isn't dense enough.</p>
+
+  <h3>Can it handle Thursday Night / Monday Night games?</h3>
+  <p>Yes. The model has features for short-rest games (Thursday) and prime-time effects. Both are handled the same way as any other game.</p>
+
+  <div class="cta-block">
+    <h3>Get Pick1 for NFL at launch.</h3>
+    <p>Join the waitlist — we'll WhatsApp your <span class="accent">free-week code</span> the moment the app goes live.</p>
+    <a class="cta-pill" href="/#download">Join Waitlist →</a>
+  </div>
+
+  <div class="related">
+    <a class="related-card" href="/methodology">
+      <div class="lbl">Reference</div>
+      <div class="ttl">How the AI works</div>
+      <div class="desc">Training data, calibration, daily recalibration — the technical methodology.</div>
+    </a>
+    <a class="related-card" href="/nba">
+      <div class="lbl">Other sports</div>
+      <div class="ttl">NBA predictions</div>
+      <div class="desc">AI-powered NBA picks for every game in the regular season and playoffs.</div>
+    </a>
+    <a class="related-card" href="/blog/closing-line-value">
+      <div class="lbl">Read</div>
+      <div class="ttl">CLV explained</div>
+      <div class="desc">The only metric that matters in sports betting — explained without the jargon.</div>
+    </a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="mailto:hi@pick1.live">Contact</a>
+  </div>
+</footer>
+</body>
+</html>

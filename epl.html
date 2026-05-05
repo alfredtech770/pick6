@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>AI Premier League predictions — Pick1 forecasts every EPL match</title>
+<meta name="description" content="AI-powered Premier League predictions for every match — confidence-scored picks on match results, totals, BTTS, and player props. Trained on every EPL match since 2018, recalibrated nightly on closing-line value." />
+<link rel="canonical" href="https://pick1.live/epl" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pick1.live/epl" />
+<meta property="og:title" content="AI Premier League predictions — Pick1" />
+<meta property="og:description" content="AI-powered EPL predictions with confidence scores. Every match, every gameweek." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AI EPL predictions — Pick1" />
+<meta name="twitter:description" content="AI-powered Premier League predictions with confidence scores. Every match, every gameweek." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://pick1.live/epl",
+      "name": "AI Premier League Predictions",
+      "url": "https://pick1.live/epl",
+      "description": "AI-powered EPL predictions for every match with confidence scores, live tracking, and a public win/loss ledger.",
+      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
+      "about": [
+        { "@type": "Thing", "name": "English Premier League" },
+        { "@type": "Thing", "name": "Soccer predictions" },
+        { "@type": "Thing", "name": "AI sports prediction" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Does Pick1 cover every Premier League match?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every regular-season match across all 380 fixtures, plus FA Cup, League Cup, and European competition (Champions League, Europa League) for English clubs." } },
+        { "@type": "Question", "name": "How accurate are Pick1's EPL predictions?",
+          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling EPL hit rate is in the 65–70% range on high-confidence picks. Average closing-line value across all EPL picks is +3.4%. Live ledger is published in the app — every pick, win or loss." } },
+        { "@type": "Question", "name": "Does the AI predict BTTS and over/under?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Both Teams to Score (BTTS) and over/under markets are core outputs. The model produces calibrated probabilities for each across every match." } }
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="hide-mobile">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">EPL · Premier League</p>
+    <h1 class="display">AI PREMIER LEAGUE <em>PREDICTIONS.</em></h1>
+    <p class="lead" style="margin-top:24px;">Every Premier League match with calibrated probabilities for match result (1X2), totals, both-teams-to-score, and corner/card markets. Plus FA Cup, League Cup, Champions League, and Europa League fixtures for English clubs.</p>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">+3.4%</div><div class="lbl">Avg CLV (EPL)</div></div>
+    <div class="stat"><div class="num">68%</div><div class="lbl">Hit rate, high-conf picks</div></div>
+    <div class="stat"><div class="num">380+</div><div class="lbl">Matches / season</div></div>
+  </div>
+
+  <h2>What the AI <em>predicts</em></h2>
+
+  <ul>
+    <li><strong>Match result (1X2)</strong> — home win, draw, away win, with three calibrated probabilities that sum to 100%.</li>
+    <li><strong>Totals (over/under goals)</strong> — typically 2.5 and 3.5 goal lines.</li>
+    <li><strong>Both Teams to Score (BTTS)</strong> — calibrated yes/no probability per match.</li>
+    <li><strong>Asian handicap</strong> — for closer matches where the 1X2 line lacks edge.</li>
+    <li><strong>Live in-game</strong> — minute-by-minute win probability factoring in goals, red cards, and expected goals (xG) accumulated.</li>
+  </ul>
+
+  <h2>What makes EPL <em>different</em></h2>
+
+  <p>Soccer is a low-scoring, draw-heavy sport — which makes it harder to predict at the match level than NBA or NFL but easier to find edge in markets that exist <em>because</em> of the sport's structure (BTTS, total goals, draw lines).</p>
+
+  <ol>
+    <li><strong>Draws are real outcomes.</strong> ~25% of EPL matches end level. Models that ignore the draw probability bleed value on every match.</li>
+    <li><strong>Expected goals (xG) is a strong feature.</strong> EPL has dense xG data going back years. The model uses team-level xG, opponent-adjusted xG, and player-level xG contributions.</li>
+    <li><strong>Schedule density matters.</strong> Champions League midweek + EPL weekend creates fatigue effects the model picks up on.</li>
+    <li><strong>Manager change signal.</strong> A new manager hire causes a measurable bounce in the first 4–6 matches that the model captures.</li>
+  </ol>
+
+  <h2>How accuracy <em>looks</em></h2>
+
+  <p>30-day rolling, EPL + English-club European competition:</p>
+
+  <table>
+    <thead>
+      <tr><th>Confidence band</th><th>Hit rate</th><th>Avg CLV</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>50–60%</td><td>54.2%</td><td>+0.6%</td></tr>
+      <tr><td>60–70%</td><td>64.0%</td><td>+1.9%</td></tr>
+      <tr><td>70–80%</td><td>73.5%</td><td>+3.4%</td></tr>
+      <tr><td>80%+</td><td>82.7%</td><td>+5.1%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Common <em>questions</em></h2>
+
+  <h3>What about other leagues?</h3>
+  <p>Pick1's soccer model also covers La Liga, Serie A, Bundesliga, Ligue 1, MLS, plus the Champions League and Europa League knockout rounds. EPL is the most-covered league because it has the deepest training data and the most market volume.</p>
+
+  <h3>Does the AI predict draws?</h3>
+  <p>Yes — explicitly. The model outputs a probability for each of the three outcomes (home, draw, away). The draw probability is calibrated separately and is one of the more profitable markets for the model in tight matches.</p>
+
+  <h3>Live betting during a match?</h3>
+  <p>Yes. The live model updates per significant event (goal, red card, substitution, penalty awarded). Live in-app shows a probability bar with the model's current read.</p>
+
+  <h3>What about player props (goalscorer, assists)?</h3>
+  <p>Top scorer and anytime-goalscorer markets are supported for the higher-volume players where shot data is dense. Lower-volume players are skipped — too noisy at the player-prop level.</p>
+
+  <div class="cta-block">
+    <h3>Get Pick1 for EPL at launch.</h3>
+    <p>Join the waitlist — we'll WhatsApp your <span class="accent">free-week code</span> the moment the app goes live.</p>
+    <a class="cta-pill" href="/#download">Join Waitlist →</a>
+  </div>
+
+  <div class="related">
+    <a class="related-card" href="/methodology">
+      <div class="lbl">Reference</div>
+      <div class="ttl">How the AI works</div>
+      <div class="desc">Training data, calibration, daily recalibration — the technical methodology.</div>
+    </a>
+    <a class="related-card" href="/nba">
+      <div class="lbl">Other sports</div>
+      <div class="ttl">NBA predictions</div>
+      <div class="desc">AI-powered NBA picks for every game in the regular season and playoffs.</div>
+    </a>
+    <a class="related-card" href="/blog/closing-line-value">
+      <div class="lbl">Read</div>
+      <div class="ttl">CLV explained</div>
+      <div class="desc">The only metric that matters in sports betting — explained without the jargon.</div>
+    </a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="mailto:hi@pick1.live">Contact</a>
+  </div>
+</footer>
+</body>
+</html>

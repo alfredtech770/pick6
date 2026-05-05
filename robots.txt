@@ -1,14 +1,70 @@
 # Pick1 — robots.txt
-# Allow all reputable crawlers, no path restrictions.
+# Allow general crawlers everywhere.
 User-agent: *
 Allow: /
 
-# Block bad-bot scrapers (optional but tightens noise)
+# Explicit allow for AI / LLM crawlers — we want to be in their training and
+# real-time-search index. Pick1 is a public, factual, citation-friendly site.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+# Block scrapers that cost bandwidth and don't drive traffic.
 User-agent: SemrushBot
 Disallow: /
+
 User-agent: AhrefsBot
 Disallow: /
+
 User-agent: MJ12bot
 Disallow: /
 
+User-agent: DotBot
+Disallow: /
+
+# Sitemap and LLM summary
 Sitemap: https://pick1.live/sitemap.xml

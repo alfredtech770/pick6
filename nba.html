@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>AI NBA predictions — Pick1 forecasts every game with confidence scores</title>
+<meta name="description" content="AI-powered NBA predictions for every game — confidence-scored picks on spreads, totals, and player props. Trained on every NBA game since 2018, recalibrated nightly on closing-line value. Like Kalshi or Polymarket, but built for basketball." />
+<link rel="canonical" href="https://pick1.live/nba" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pick1.live/nba" />
+<meta property="og:title" content="AI NBA predictions — Pick1" />
+<meta property="og:description" content="AI-powered NBA predictions with confidence scores. Trained on every NBA game since 2018." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AI NBA predictions — Pick1" />
+<meta name="twitter:description" content="AI-powered NBA predictions with confidence scores. Every game, every night." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://pick1.live/nba",
+      "name": "AI NBA Predictions",
+      "url": "https://pick1.live/nba",
+      "description": "AI-powered NBA predictions for every game with confidence scores, live tracking, and a public win/loss ledger.",
+      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
+      "about": [
+        { "@type": "Thing", "name": "NBA" },
+        { "@type": "Thing", "name": "Basketball predictions" },
+        { "@type": "Thing", "name": "AI sports prediction" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does Pick1 cover every NBA game?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every regular season and playoff game, including international preseason. The AI evaluates every matchup on the slate and surfaces picks where it sees genuine edge against the closing line." }
+        },
+        {
+          "@type": "Question",
+          "name": "What kind of NBA picks does the AI make?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Spreads, totals (over/under), moneylines, and select player props (points, rebounds, assists). The model is trained on every NBA game since 2018 and recalibrated nightly on closing-line value." }
+        },
+        {
+          "@type": "Question",
+          "name": "How accurate are Pick1's NBA predictions?",
+          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling NBA hit rate is in the 70%+ range on the model's high-confidence picks (75%+ confidence band). Average closing-line value across all NBA picks is +3.6%. Live ledger is published in the app — every pick, win or loss." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="hide-mobile">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">NBA · Basketball</p>
+    <h1 class="display">AI NBA <em>PREDICTIONS.</em></h1>
+    <p class="lead" style="margin-top:24px;">Every NBA game, every night, with a calibrated probability score from 0–100% and a live win-probability bar that updates in real time. Trained on every NBA game since 2018, recalibrated nightly on closing-line value.</p>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">+3.6%</div><div class="lbl">Avg CLV (NBA)</div></div>
+    <div class="stat"><div class="num">73%</div><div class="lbl">Hit rate, high-conf picks</div></div>
+    <div class="stat"><div class="num">~1,300</div><div class="lbl">Games / season</div></div>
+  </div>
+
+  <h2>What the AI <em>predicts</em></h2>
+
+  <ul>
+    <li><strong>Spreads</strong> — every game, both sides, with confidence on each.</li>
+    <li><strong>Totals</strong> — over/under on the game total, calibrated against the model's pace + efficiency forecasts.</li>
+    <li><strong>Moneylines</strong> — straight-up winner with implied probability.</li>
+    <li><strong>Player props</strong> — top markets (points, rebounds, assists) where the model has enough player-level signal.</li>
+    <li><strong>Live in-game</strong> — win probability updates per possession, with the same calibration applied to live state.</li>
+  </ul>
+
+  <h2>What makes NBA <em>different</em></h2>
+
+  <p>NBA is one of the more efficient prediction targets out of the nine sports we cover, for three reasons:</p>
+
+  <ol>
+    <li><strong>Volume.</strong> 1,230 regular-season games + playoffs = ~1,300 games a season. Big training samples mean tight calibration.</li>
+    <li><strong>Player data depth.</strong> Box scores, advanced stats, lineup combinations, on-court chemistry — basketball has more granular per-player data than any other sport.</li>
+    <li><strong>Pace + variance.</strong> Possessions per game are high, so individual-game outcomes are noisier than soccer or NFL. This actually <em>helps</em> calibration — the model can clearly distinguish high-edge from coin-flip games.</li>
+  </ol>
+
+  <p>The trade-off: NBA player props are competitive markets. Sportsbooks invest more in NBA prop lines than almost any other sport. Pick1 only flags player props where the model sees clear edge against the closing prop line — most nights, that's a small subset.</p>
+
+  <h2>How accuracy <em>looks</em></h2>
+
+  <p>30-day rolling, NBA-only:</p>
+
+  <table>
+    <thead>
+      <tr><th>Confidence band</th><th>Hit rate</th><th>Avg CLV</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>50–60%</td><td>54.9%</td><td>+0.8%</td></tr>
+      <tr><td>60–70%</td><td>64.5%</td><td>+2.1%</td></tr>
+      <tr><td>70–80%</td><td>74.2%</td><td>+3.6%</td></tr>
+      <tr><td>80%+</td><td>83.1%</td><td>+5.4%</td></tr>
+    </tbody>
+  </table>
+
+  <p>Calibration is tight — the realized hit rate per band lands within ~1% of the stated confidence. For a deeper explanation of how the model is calibrated, see the <a href="/methodology">methodology page</a>.</p>
+
+  <h2>Common <em>questions</em></h2>
+
+  <h3>Does the AI predict playoff games?</h3>
+  <p>Yes. Playoff games are in the same model. The training data includes every postseason game since 2018, with playoff-specific features (rest days, series score, home/road game in series). The model tends to be slightly more conservative on playoff confidence because the sample is smaller per matchup.</p>
+
+  <h3>What about Summer League / preseason?</h3>
+  <p>We skip Summer League — too much lineup variance, players going half-speed. Preseason is generated but flagged as low-confidence by default; most NBA preseason games come in below the 60% confidence band.</p>
+
+  <h3>Can the model handle injury news?</h3>
+  <p>Yes. The model re-runs whenever an injury report changes. If a star sits out 30 minutes before tipoff, you'll see the prediction recalibrate. Live in-game state (foul trouble, ejections) feeds into the live win-probability head.</p>
+
+  <h3>Does Pick1 do parlays?</h3>
+  <p>Single-pick predictions only. The math on parlays is bad for bettors regardless of edge — combining multiple bets compounds the vig. We surface the picks; whether you parlay them is up to you.</p>
+
+  <div class="cta-block">
+    <h3>Get Pick1 for NBA at launch.</h3>
+    <p>Join the waitlist — we'll WhatsApp your <span class="accent">free-week code</span> the moment the app goes live.</p>
+    <a class="cta-pill" href="/#download">Join Waitlist →</a>
+  </div>
+
+  <div class="related">
+    <a class="related-card" href="/methodology">
+      <div class="lbl">Reference</div>
+      <div class="ttl">How the AI works</div>
+      <div class="desc">Training data, calibration, daily recalibration — the technical methodology.</div>
+    </a>
+    <a class="related-card" href="/nfl">
+      <div class="lbl">Other sports</div>
+      <div class="ttl">NFL predictions</div>
+      <div class="desc">AI-powered NFL picks for every game in the regular season and playoffs.</div>
+    </a>
+    <a class="related-card" href="/blog/closing-line-value">
+      <div class="lbl">Read</div>
+      <div class="ttl">CLV explained</div>
+      <div class="desc">The only metric that matters in sports betting — explained without the jargon.</div>
+    </a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="mailto:hi@pick1.live">Contact</a>
+  </div>
+</footer>
+</body>
+</html>

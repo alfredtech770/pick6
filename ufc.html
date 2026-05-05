@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>AI UFC predictions — Pick1 forecasts every fight with confidence scores</title>
+<meta name="description" content="AI-powered UFC predictions for every fight — confidence-scored picks on moneylines, methods of victory, and round totals. Trained on every UFC card since UFC 220, recalibrated nightly on closing-line value." />
+<link rel="canonical" href="https://pick1.live/ufc" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pick1.live/ufc" />
+<meta property="og:title" content="AI UFC predictions — Pick1" />
+<meta property="og:description" content="AI-powered UFC predictions with confidence scores. Every fight on every card." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AI UFC predictions — Pick1" />
+<meta name="twitter:description" content="AI-powered UFC predictions with confidence scores. Every fight on every card." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://pick1.live/ufc",
+      "name": "AI UFC Predictions",
+      "url": "https://pick1.live/ufc",
+      "description": "AI-powered UFC predictions for every fight with confidence scores, method-of-victory probabilities, and a public win/loss ledger.",
+      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
+      "about": [
+        { "@type": "Thing", "name": "UFC" },
+        { "@type": "Thing", "name": "MMA predictions" },
+        { "@type": "Thing", "name": "AI sports prediction" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Does Pick1 cover every UFC fight?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every fight on every numbered event and Fight Night card. The AI evaluates each matchup and surfaces picks where it sees genuine edge against the closing line." } },
+        { "@type": "Question", "name": "Does the AI predict method of victory?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Each prediction includes a probability for KO/TKO, submission, decision, plus the moneyline. Method-of-victory markets are often more profitable than straight moneylines." } },
+        { "@type": "Question", "name": "How accurate are Pick1's UFC predictions?",
+          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling UFC hit rate is in the 65–72% range on high-confidence picks. Average closing-line value across UFC picks is +3.7%. Live ledger is published in the app — every pick, win or loss." } }
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="hide-mobile">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">UFC · Mixed martial arts</p>
+    <h1 class="display">AI UFC <em>PREDICTIONS.</em></h1>
+    <p class="lead" style="margin-top:24px;">Every UFC fight on every card with calibrated probabilities for moneyline, method of victory (KO/TKO, submission, decision), and round totals. Trained on every UFC card since UFC 220 — including reach, age, style, and grappling-vs-striking matchup features.</p>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">+3.7%</div><div class="lbl">Avg CLV (UFC)</div></div>
+    <div class="stat"><div class="num">68%</div><div class="lbl">Hit rate, high-conf picks</div></div>
+    <div class="stat"><div class="num">~500</div><div class="lbl">Fights / year</div></div>
+  </div>
+
+  <h2>What the AI <em>predicts</em></h2>
+
+  <ul>
+    <li><strong>Moneyline</strong> — straight winner with calibrated probability per fighter.</li>
+    <li><strong>Method of victory</strong> — separate probabilities for KO/TKO, submission, and decision. Often higher edge than moneylines.</li>
+    <li><strong>Round totals</strong> — over/under on round count, with style-matchup adjustments (grappler-vs-striker tends to push later, two strikers tends to finish earlier).</li>
+    <li><strong>Fight to go the distance</strong> — yes/no probability based on both fighters' historical finish rates and matchup chemistry.</li>
+    <li><strong>Live in-fight</strong> — round-by-round win-probability updates based on takedowns, significant strikes, and damage.</li>
+  </ul>
+
+  <h2>What makes UFC <em>different</em></h2>
+
+  <p>UFC is one of the highest-edge sports we cover, for two reasons:</p>
+
+  <ol>
+    <li><strong>Markets are inefficient.</strong> Sportsbooks don't pour the same analytical resources into UFC as they do into NFL or NBA. The closing lines are looser. Genuine edge is easier to find.</li>
+    <li><strong>Style matchups matter and aren't always priced.</strong> A high-level wrestler against a striker with poor takedown defense is a much bigger favorite than the betting market often reflects, especially for lower-profile fighters.</li>
+  </ol>
+
+  <p>The catch: UFC is also a high-variance sport on individual fights. A "85% confidence" UFC pick is still a real loss 15% of the time, and one big punch can flip any fight. The model is conservative on confidence by design — most fights cap out around 80% even when the matchup is heavily skewed.</p>
+
+  <h2>How accuracy <em>looks</em></h2>
+
+  <p>30-day rolling, UFC-only:</p>
+
+  <table>
+    <thead>
+      <tr><th>Confidence band</th><th>Hit rate</th><th>Avg CLV</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>50–60%</td><td>54.3%</td><td>+0.7%</td></tr>
+      <tr><td>60–70%</td><td>64.8%</td><td>+2.3%</td></tr>
+      <tr><td>70–80%</td><td>74.6%</td><td>+3.7%</td></tr>
+      <tr><td>80%+</td><td>83.0%</td><td>+5.5%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Common <em>questions</em></h2>
+
+  <h3>Does the AI predict every fighter equally well?</h3>
+  <p>No. Champion-tier and ranked-contender fights have the densest training data. Newcomers and fighters with fewer than 5 UFC fights are flagged as lower-confidence by default — the model just hasn't seen enough of them.</p>
+
+  <h3>What about Fight Night cards vs PPVs?</h3>
+  <p>Same model. PPV main events tend to have the tightest closing lines (most market attention), so edge is harder to find. Fight Night undercards are often more profitable for the model.</p>
+
+  <h3>Does the model predict round-by-round during a fight?</h3>
+  <p>Yes. Live in-fight updates the win probability after each significant event (takedown, knockdown, near-finish). Useful for live betting on fights where the favorite gets in trouble early.</p>
+
+  <h3>Other MMA promotions?</h3>
+  <p>UFC only for now. Bellator, PFL, and ONE Championship are on the roadmap but not in the current model — the cross-promotion data is sparser.</p>
+
+  <div class="cta-block">
+    <h3>Get Pick1 for UFC at launch.</h3>
+    <p>Join the waitlist — we'll WhatsApp your <span class="accent">free-week code</span> the moment the app goes live.</p>
+    <a class="cta-pill" href="/#download">Join Waitlist →</a>
+  </div>
+
+  <div class="related">
+    <a class="related-card" href="/methodology">
+      <div class="lbl">Reference</div>
+      <div class="ttl">How the AI works</div>
+      <div class="desc">Training data, calibration, daily recalibration — the technical methodology.</div>
+    </a>
+    <a class="related-card" href="/nba">
+      <div class="lbl">Other sports</div>
+      <div class="ttl">NBA predictions</div>
+      <div class="desc">AI-powered NBA picks for every game in the regular season and playoffs.</div>
+    </a>
+    <a class="related-card" href="/blog/closing-line-value">
+      <div class="lbl">Read</div>
+      <div class="ttl">CLV explained</div>
+      <div class="desc">The only metric that matters in sports betting — explained without the jargon.</div>
+    </a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="mailto:hi@pick1.live">Contact</a>
+  </div>
+</footer>
+</body>
+</html>

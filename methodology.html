@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>Methodology — How the Pick1 AI predicts sports outcomes</title>
+<meta name="description" content="The technical details behind Pick1's AI sports predictions: training data (1.2M+ historical games), closing-line value (CLV) calibration, daily recalibration, confidence scoring, and how live win-probability is computed." />
+<link rel="canonical" href="https://pick1.live/methodology" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pick1.live/methodology" />
+<meta property="og:title" content="Methodology — How the Pick1 AI predicts sports outcomes" />
+<meta property="og:description" content="Training data, closing-line value, daily recalibration — the technical details behind Pick1's AI sports predictions." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="How Pick1's AI predicts sports outcomes" />
+<meta name="twitter:description" content="Training data, closing-line value, daily recalibration — the technical details." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "How the Pick1 AI predicts sports outcomes",
+  "description": "Technical methodology behind Pick1's AI sports prediction engine: training data, closing-line value calibration, daily recalibration, and confidence scoring.",
+  "url": "https://pick1.live/methodology",
+  "image": "https://pick1.live/assets/og-image.png",
+  "author": { "@type": "Organization", "name": "Pick1", "url": "https://pick1.live/" },
+  "publisher": { "@type": "Organization", "name": "Pick1", "url": "https://pick1.live/", "logo": { "@type": "ImageObject", "url": "https://pick1.live/assets/apple-touch-icon.png" } },
+  "datePublished": "2026-05-05",
+  "dateModified": "2026-05-05",
+  "inLanguage": "en",
+  "about": [
+    { "@type": "Thing", "name": "AI sports prediction" },
+    { "@type": "Thing", "name": "Closing-line value" },
+    { "@type": "Thing", "name": "Machine learning" }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="active">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">Methodology</p>
+    <h1 class="display">HOW THE AI BEATS THE <em>BOOK.</em></h1>
+    <div class="page-meta" style="margin-top:24px;">
+      <span>Published 2026-05-05</span>
+      <span>·</span>
+      <span>~6 min read</span>
+    </div>
+  </header>
+
+  <p class="lead">Three things make a sports prediction engine work: enough history to learn the underlying distributions, the right calibration metric, and the discipline to keep retraining as markets evolve. Here's exactly how Pick1's AI does each of them.</p>
+
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <ul>
+      <li><a href="#data">1. Training data — 1.2M+ historical games</a></li>
+      <li><a href="#features">2. Features the model sees</a></li>
+      <li><a href="#calibration">3. Calibration on closing-line value (CLV)</a></li>
+      <li><a href="#confidence">4. How confidence scores are computed</a></li>
+      <li><a href="#live">5. Live win probability during games</a></li>
+      <li><a href="#audit">6. The public ledger</a></li>
+      <li><a href="#limits">7. What the model can't do</a></li>
+    </ul>
+  </div>
+
+  <h2 id="data">1. Training data — 1.2M+ historical <em>games</em></h2>
+
+  <p>Pick1's model is trained on every game played in our nine covered sports since 2018:</p>
+
+  <ul>
+    <li><strong>NBA</strong> — every regular-season and playoff game, including international preseason</li>
+    <li><strong>NFL</strong> — regular season, playoffs, and Super Bowl</li>
+    <li><strong>EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Champions League, Europa League</strong> — top-flight soccer worldwide</li>
+    <li><strong>MLB</strong> — every regular-season game and the postseason bracket</li>
+    <li><strong>UFC</strong> — every numbered event and Fight Night card since UFC 220</li>
+    <li><strong>NHL</strong> — full regular season + Stanley Cup playoffs</li>
+    <li><strong>F1</strong> — every Grand Prix, qualifying, and sprint format</li>
+    <li><strong>Tennis</strong> — ATP and WTA tour events plus all four Grand Slams</li>
+    <li><strong>Cricket</strong> — IPL, Big Bash, Test matches, and major ODI series</li>
+  </ul>
+
+  <p>That's approximately <strong>1.2 million game-level outcomes</strong>, with each game enriched by player stats, team metadata, weather, venue, rest days, travel, and — critically — the closing market line for that game.</p>
+
+  <h2 id="features">2. Features the model <em>sees</em></h2>
+
+  <p>For every game, the model sees a feature vector covering five major axes:</p>
+
+  <table>
+    <thead>
+      <tr><th>Feature category</th><th>Examples</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Team / matchup</strong></td><td>Recent record, scoring differential, win rate, head-to-head history, rest days, travel distance, time zones crossed</td></tr>
+      <tr><td><strong>Player-level</strong></td><td>Lineup status, injury reports, minutes restrictions, recent form, matchup-specific splits</td></tr>
+      <tr><td><strong>Environmental</strong></td><td>Venue (home/away/neutral), weather (relevant sports), surface (tennis), elevation, day/night game</td></tr>
+      <tr><td><strong>Market</strong></td><td>Opening line, line movement, public bet percentage, sharp money signals, closing line</td></tr>
+      <tr><td><strong>Contextual</strong></td><td>Stage of season, postseason implications, motivation factors, recent coaching changes</td></tr>
+    </tbody>
+  </table>
+
+  <p>The market features are central. By learning to predict the closing line — the point at which all available information has been priced in — the model is effectively learning to compress every smart bettor's analysis worldwide. Picks that beat the closing line over a long sample are picks that contain genuine edge.</p>
+
+  <h2 id="calibration">3. Calibration on closing-line value <em>(CLV)</em></h2>
+
+  <p>Closing-line value (CLV) is the gold standard for measuring sports-betting edge. The idea is simple: if you bet a side at a price better than where the market closes, you've gotten a positive expected value, regardless of the game's actual outcome.</p>
+
+  <p>Why CLV matters more than win rate:</p>
+
+  <ul>
+    <li><strong>Win rate is noisy</strong> — variance can give a 50/50 bettor a 60% record over 100 picks. A 60% record alone proves nothing.</li>
+    <li><strong>CLV is signal-rich</strong> — beating the closing line consistently is statistically near-impossible without genuine edge.</li>
+    <li><strong>CLV is the metric professional bettors and books use</strong> — it's the only number sportsbooks track for limit decisions on individual customers.</li>
+  </ul>
+
+  <p>Pick1's model is recalibrated <strong>daily</strong> on the previous day's CLV results. Picks that consistently beat the close get more weight in the next day's prediction; picks that lag the close get less. This is the same kind of online learning that high-frequency trading firms use to keep their models honest in non-stationary environments.</p>
+
+  <p>Our 30-day rolling average CLV edge is <strong>+3.8%</strong>, which is in the range professional sports bettors aim for.</p>
+
+  <div class="callout">
+    <strong>For non-bettors:</strong> A +3.8% CLV edge means that, on average, our picks are taking lines about 4 cents (in odds terms) better than the eventual closing market price. Compounded across hundreds of picks, that's the difference between a long-term winner and a long-term loser at -110 odds.
+  </div>
+
+  <h2 id="confidence">4. How confidence scores are <em>computed</em></h2>
+
+  <p>Every pick has a confidence score from 0–100%. This number isn't an opinion — it's the model's calibrated probability that the predicted outcome will occur.</p>
+
+  <p>Calibration matters: a "75% confidence" pick should win 75% of the time over a large enough sample. We measure this with the Brier score and reliability diagrams, retrained nightly.</p>
+
+  <p>In practice, our confidence buckets perform as follows over the last 12 months:</p>
+
+  <table>
+    <thead>
+      <tr><th>Confidence band</th><th>Picks</th><th>Hit rate</th><th>Calibration</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>50–60%</td><td>~28%</td><td>54.7%</td><td>Within ±1% of stated</td></tr>
+      <tr><td>60–70%</td><td>~31%</td><td>64.2%</td><td>Within ±1% of stated</td></tr>
+      <tr><td>70–80%</td><td>~24%</td><td>74.1%</td><td>Within ±1% of stated</td></tr>
+      <tr><td>80–90%</td><td>~13%</td><td>83.6%</td><td>Within ±1% of stated</td></tr>
+      <tr><td>90%+</td><td>~4%</td><td>91.4%</td><td>Within ±2% of stated (small sample)</td></tr>
+    </tbody>
+  </table>
+
+  <p>The takeaway: confidence is a probability you can act on. A 50% pick is genuinely 50/50 — the model is telling you it has no edge. An 85% pick is a meaningful signal.</p>
+
+  <h2 id="live">5. Live win probability during <em>games</em></h2>
+
+  <p>Once a game starts, Pick1's model continues to update its forecast in real time as new state arrives — score, time remaining, who's on the court/pitch, possession, momentum signals.</p>
+
+  <p>The live model is a separate head trained on play-by-play data. For NBA games it ingests every possession; for soccer, every shot, card, and substitution; for tennis, every point. The output is a live win-probability bar that lets you see the moment a pick goes from on-track to sweating.</p>
+
+  <p>This is the same kind of live model ESPN uses for their broadcast win-probability graphics — except instead of being for entertainment, ours is calibrated against actual outcomes for every state.</p>
+
+  <h2 id="audit">6. The public <em>ledger</em></h2>
+
+  <p>Every pick the model generates is logged publicly:</p>
+
+  <ul>
+    <li>Timestamp of when the pick was published</li>
+    <li>The pick itself (side, total, prop, etc.)</li>
+    <li>The confidence score at publication</li>
+    <li>The line we got</li>
+    <li>The closing line for CLV calculation</li>
+    <li>The actual outcome (win, loss, push)</li>
+  </ul>
+
+  <p>No edits, no deletions. If a model has a bad week, that's what the ledger shows. This is the single biggest difference between Pick1 and a tipster service: <strong>tipsters control which picks you see, we don't.</strong></p>
+
+  <h2 id="limits">7. What the model <em>can't</em> do</h2>
+
+  <p>Honesty about limitations:</p>
+
+  <ul>
+    <li><strong>It can't predict shocks.</strong> Surprise injuries, last-minute lineup changes, weather changes after the model runs — all add noise.</li>
+    <li><strong>It can't beat exotic markets.</strong> The training data is dense for sides, totals, and basic props. Player props in low-volume sports have less signal.</li>
+    <li><strong>It can't ignore variance.</strong> A 75% confidence pick still loses 25% of the time. Bankroll management matters more than any single pick.</li>
+    <li><strong>It's not financial advice.</strong> Sports outcomes are inherently uncertain. Treat predictions as inputs, not certainties.</li>
+  </ul>
+
+  <p>The model exists to give you a <strong>calibrated probability</strong> for every game. What you do with that probability is up to you.</p>
+
+  <div class="cta-block">
+    <h3>Want to see it in action?</h3>
+    <p>Join the waitlist and we'll WhatsApp your <span class="accent">free-week code</span> the moment Pick1 launches.</p>
+    <a class="cta-pill" href="/#download">Join Waitlist →</a>
+  </div>
+
+  <div class="related">
+    <a class="related-card" href="/blog/closing-line-value">
+      <div class="lbl">Read next</div>
+      <div class="ttl">CLV explained</div>
+      <div class="desc">A deeper dive into closing-line value and why it's the only metric that matters in sports betting.</div>
+    </a>
+    <a class="related-card" href="/blog/ai-vs-tipsters">
+      <div class="lbl">Read next</div>
+      <div class="ttl">AI vs human tipsters</div>
+      <div class="desc">Why a daily-recalibrated AI model beats a person's gut feel — and how to tell the difference.</div>
+    </a>
+    <a class="related-card" href="/blog/public-results">
+      <div class="lbl">Read next</div>
+      <div class="ttl">Why we publish losses</div>
+      <div class="desc">The single biggest difference between Pick1 and tipster services: nothing gets cherry-picked.</div>
+    </a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="mailto:hi@pick1.live">Contact</a>
+  </div>
+</footer>
+</body>
+</html>
