@@ -153,6 +153,124 @@ class PicksViewModel: ObservableObject {
     var totalLosses: Int { filteredHistoryPicks.filter { $0.isLoss }.count }
     var totalPending: Int { filteredHistoryPicks.filter { $0.isPending }.count }
 
+    // MARK: - Accuracy (home-screen "ACCURACY" tile)
+    //
+    // The home tile is global — it should show the AI's overall hit
+    // rate regardless of which sport chip is selected. Wired through
+    // these helpers instead of `winRate` so the number doesn't jump
+    // around when the user filters chips.
+
+    /// AI hit rate over all settled picks (across every sport). Drives
+    /// the big number on the AccuracyTile.
+    var accuracyAll: Double {
+        let settled = historyPicks.filter { !$0.isPending }
+        guard !settled.isEmpty else { return 0 }
+        let wins = settled.filter { $0.isWin }.count
+        return Double(wins) / Double(settled.count) * 100
+    }
+
+    /// Last-N settled picks (newest first). Used for "recent record"
+    /// + delta vs the prior N. Default N = 10 → "9-1 LAST 10".
+    func recentSettled(_ n: Int = 10) -> [Pick] {
+        Array(
+            historyPicks
+                .filter { !$0.isPending }
+                .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
+                        > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
+                .prefix(n)
+        )
+    }
+
+    /// W-L record over the last N settled picks (newest first).
+    func recentRecord(_ n: Int = 10) -> (wins: Int, losses: Int) {
+        let recent = recentSettled(n)
+        return (recent.filter { $0.isWin }.count,
+                recent.filter { $0.isLoss }.count)
+    }
+
+    /// Hit rate of the last N settled picks. Nil when there's nothing
+    /// settled yet.
+    func recentHitRate(_ n: Int = 10) -> Double? {
+        let recent = recentSettled(n)
+        guard !recent.isEmpty else { return nil }
+        let wins = recent.filter { $0.isWin }.count
+        return Double(wins) / Double(recent.count) * 100
+    }
+
+    /// Delta = recent N hit-rate minus prior N hit-rate, in percentage
+    /// points. Positive when the AI is heating up, negative when cooling.
+    /// Nil if either window is empty.
+    func accuracyDelta(window: Int = 10) -> Double? {
+        let settled = historyPicks
+            .filter { !$0.isPending }
+            .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
+                    > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
+        guard settled.count >= window * 2 else {
+            // Fall back to recent vs all-time when the prior window is
+            // too thin — still gives a meaningful trend signal early.
+            guard let recent = recentHitRate(window) else { return nil }
+            return recent - accuracyAll
+        }
+        let recent = Array(settled.prefix(window))
+        let prior = Array(settled.dropFirst(window).prefix(window))
+        let recentRate = Double(recent.filter { $0.isWin }.count) / Double(recent.count) * 100
+        let priorRate  = Double(prior.filter  { $0.isWin }.count) / Double(prior.count)  * 100
+        return recentRate - priorRate
+    }
+
+    /// Mood for the AccuracyTile — drives color + badge text.
+    /// Bullish triggers at 9/10 territory and above (≥80%).
+    enum AccuracyMood {
+        case bullish    // ≥ 80%  — "ON FIRE", lime, ↑ pill
+        case strong     // 60-79% — lime number, no badge
+        case neutral    // 50-59% — white, mute delta
+        case cold       // < 50%  — mute, red delta
+        case empty      // no settled picks yet
+    }
+
+    var accuracyMood: AccuracyMood {
+        let settled = historyPicks.filter { !$0.isPending }
+        guard !settled.isEmpty else { return .empty }
+        switch accuracyAll {
+        case 80...:  return .bullish
+        case 60..<80: return .strong
+        case 50..<60: return .neutral
+        default:      return .cold
+        }
+    }
+
+    /// Last 14 days of daily hit-rate (0...100). Drives the sparkline
+    /// on the AccuracyTile. Days with no settled picks fall through
+    /// using the prior day's value so the line stays continuous.
+    var accuracySparkline: [Double] {
+        let days = 14
+        let cal = Calendar(identifier: .iso8601)
+        let isoFmt: DateFormatter = {
+            let f = DateFormatter()
+            f.calendar = cal
+            f.dateFormat = "yyyy-MM-dd"
+            return f
+        }()
+        let today = Date()
+        var values: [Double] = []
+        var lastKnown: Double = accuracyAll
+        for offset in stride(from: days - 1, through: 0, by: -1) {
+            guard let day = cal.date(byAdding: .day, value: -offset, to: today)
+            else { continue }
+            let key = isoFmt.string(from: day)
+            let dayPicks = historyPicks.filter { $0.gameDate == key && !$0.isPending }
+            if dayPicks.isEmpty {
+                values.append(lastKnown)
+            } else {
+                let wins = dayPicks.filter { $0.isWin }.count
+                let rate = Double(wins) / Double(dayPicks.count) * 100
+                values.append(rate)
+                lastKnown = rate
+            }
+        }
+        return values
+    }
+
     // MARK: - Yesterday recap
 
     /// Wins from yesterday's settled picks.

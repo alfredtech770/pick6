@@ -224,8 +224,11 @@ struct HomeHiFiContent: View {
 
                 StatsRow(streak: vm.currentStreak,
                          best: vm.longestStreak,
-                         accuracy: vm.winRate,
-                         pickCount: vm.effectiveTodayPicks.count)
+                         accuracy: vm.accuracyAll,
+                         delta: vm.accuracyDelta(),
+                         record: vm.recentRecord(),
+                         mood: vm.accuracyMood,
+                         spark: vm.accuracySparkline)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -757,12 +760,19 @@ struct StatsRow: View {
     let streak: Int
     let best: Int
     let accuracy: Double
-    let pickCount: Int
+    let delta: Double?
+    let record: (wins: Int, losses: Int)
+    let mood: PicksViewModel.AccuracyMood
+    let spark: [Double]
 
     var body: some View {
         HStack(spacing: 10) {
             StreakTile(streak: streak, best: best)
-            AccuracyTile(accuracy: accuracy, delta: nil)
+            AccuracyTile(accuracy: accuracy,
+                         delta: delta,
+                         record: record,
+                         mood: mood,
+                         spark: spark)
         }
     }
 }
@@ -820,50 +830,108 @@ struct StreakTile: View {
 struct AccuracyTile: View {
     let accuracy: Double
     let delta: Double?
+    let record: (wins: Int, losses: Int)
+    let mood: PicksViewModel.AccuracyMood
+    let spark: [Double]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 HStack(spacing: 6) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Image(systemName: moodIcon)
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(numberColor)
                     Text("ACCURACY")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.2)
                         .foregroundColor(Color(hex: "#B9B7B0"))
                 }
                 Spacer()
-                if let d = delta {
-                    Text(d >= 0 ? "↑ \(Int(d.rounded()))%" : "↓ \(Int((-d).rounded()))%")
-                        .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color(hex: "#D4FF3A").opacity(0.12))
-                        .overlay(
-                            Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.25), lineWidth: 1)
-                        )
-                        .clipShape(Capsule())
-                }
+                deltaPill
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(Int(accuracy.rounded()))")
+                Text(mood == .empty ? "—" : "\(Int(accuracy.rounded()))")
                     .font(.anton(72))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .foregroundColor(numberColor)
                     .tracking(-1.4)
-                Text("%")
-                    .font(.archivo(18, weight: .bold))
-                    .foregroundColor(Color(hex: "#B9B7B0"))
+                if mood != .empty {
+                    Text("%")
+                        .font(.archivo(18, weight: .bold))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
             }
-            // Sparkline placeholder — flat until we have day-over-day data
-            SparklineView()
+            // Last-N record line — turns the % into something tangible.
+            // "9-1 LAST 10" or "AWAITING RESULTS" when empty.
+            HStack(spacing: 6) {
+                if mood == .empty || (record.wins + record.losses) == 0 {
+                    Text("AWAITING RESULTS")
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                } else {
+                    Text("\(record.wins)-\(record.losses)")
+                        .font(.mono(10, weight: .heavy))
+                        .foregroundColor(numberColor)
+                    Text("LAST \(record.wins + record.losses)")
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    if mood == .bullish {
+                        Spacer()
+                        Text("ON FIRE")
+                            .font(.archivoNarrow(9, weight: .bold))
+                            .tracking(1.8)
+                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color(hex: "#D4FF3A")))
+                    }
+                }
+            }
+            SparklineView(points: sparklinePoints, color: numberColor)
                 .frame(height: 26)
-                .padding(.top, 4)
+                .padding(.top, 2)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tileBackground)
+    }
+
+    /// Big-number + sparkline color shifts with mood.
+    private var numberColor: Color {
+        switch mood {
+        case .bullish, .strong: return Color(hex: "#D4FF3A")
+        case .neutral:          return Color(hex: "#F5F3EE")
+        case .cold:             return Color(hex: "#FF5A36")
+        case .empty:            return Color(hex: "#6E6F75")
+        }
+    }
+
+    /// Header icon — flame when bullish, normal trend chart otherwise.
+    private var moodIcon: String {
+        mood == .bullish ? "flame.fill" : "chart.line.uptrend.xyaxis"
+    }
+
+    @ViewBuilder
+    private var deltaPill: some View {
+        if let d = delta, abs(d) >= 1, mood != .empty {
+            let up = d >= 0
+            let color = up ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A36")
+            Text(up ? "↑ \(Int(d.rounded()))%"
+                   : "↓ \(Int((-d).rounded()))%")
+                .font(.mono(10, weight: .bold))
+                .foregroundColor(color)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(color.opacity(0.12))
+                .overlay(
+                    Capsule().stroke(color.opacity(0.25), lineWidth: 1)
+                )
+                .clipShape(Capsule())
+        }
+    }
+
+    /// Real sparkline — fall back to a flat baseline when no data.
+    private var sparklinePoints: [CGFloat] {
+        spark.isEmpty ? [50, 50, 50, 50, 50] : spark.map { CGFloat($0) }
     }
 }
 
@@ -895,33 +963,41 @@ private var tileBackground: some View {
 }
 
 struct SparklineView: View {
-    let points: [CGFloat] = [20, 16, 18, 14, 15, 10, 12, 8, 10, 6, 4]
+    var points: [CGFloat] = [50, 50, 50, 50, 50]
+    var color: Color = Color(hex: "#D4FF3A")
 
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
-            let maxY = points.max() ?? 1
-            let minY = points.min() ?? 0
+            let safe = points.isEmpty ? [0] : points
+            let maxY = safe.max() ?? 1
+            let minY = safe.min() ?? 0
             let span = max(maxY - minY, 1)
-            let step = w / CGFloat(max(points.count - 1, 1))
-            let coords: [CGPoint] = points.enumerated().map { i, p in
-                CGPoint(x: CGFloat(i) * step, y: h - ((p - minY) / span) * h)
+            let step = safe.count > 1 ? w / CGFloat(safe.count - 1) : w
+            let coords: [CGPoint] = safe.enumerated().map { i, p in
+                CGPoint(x: CGFloat(i) * step,
+                        y: h - ((p - minY) / span) * h)
             }
-            // Fill
-            Path { p in
-                p.move(to: CGPoint(x: 0, y: h))
-                for c in coords { p.addLine(to: c) }
-                p.addLine(to: CGPoint(x: w, y: h))
-                p.closeSubpath()
+            if let first = coords.first {
+                // Fill
+                Path { p in
+                    p.move(to: CGPoint(x: 0, y: h))
+                    p.addLine(to: first)
+                    for c in coords.dropFirst() { p.addLine(to: c) }
+                    p.addLine(to: CGPoint(x: w, y: h))
+                    p.closeSubpath()
+                }
+                .fill(color.opacity(0.1))
+                // Line
+                Path { p in
+                    p.move(to: first)
+                    for c in coords.dropFirst() { p.addLine(to: c) }
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: 1.5,
+                                                   lineCap: .round,
+                                                   lineJoin: .round))
             }
-            .fill(Color(hex: "#D4FF3A").opacity(0.1))
-            // Line
-            Path { p in
-                p.move(to: coords[0])
-                for c in coords.dropFirst() { p.addLine(to: c) }
-            }
-            .stroke(Color(hex: "#D4FF3A"), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
         }
     }
 }
