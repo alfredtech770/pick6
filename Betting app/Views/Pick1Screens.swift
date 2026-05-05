@@ -1,4 +1,4 @@
-// Pick6Screens.swift
+// Pick1Screens.swift
 // All non-Home screens from the design handoff:
 //   • MatchDetailView   — Pick6 Detail Pages.html (tap a card → push)
 //   • SportHubView      — Pick6 Sport Hubs.html  (tap sport header chip)
@@ -8,7 +8,7 @@
 //   • AllPicksView      — Picks tab (full list of today's picks, no hero)
 //
 // Shared chrome (TopNavBar, PageHero, etc.) and design tokens (Color hex,
-// Font.anton/archivo/archivoNarrow/mono) live in Pick6HomeHiFi.swift.
+// Font.anton/archivo/archivoNarrow/mono) live in Pick1HomeHiFi.swift.
 
 import SwiftUI
 

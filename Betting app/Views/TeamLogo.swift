@@ -1,6 +1,6 @@
 // TeamLogo.swift
 // Renders a real team logo (NBA, NFL, MLB, NHL, EPL) with an automatic
-// fallback to the colored shield crest from Pick6HomeHiFi.swift if the
+// fallback to the colored shield crest from Pick1HomeHiFi.swift if the
 // logo can't be resolved.
 //
 // Logo source

@@ -46,7 +46,7 @@ struct AuthView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.p6Ink.ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
 
             // Top bar (back when on OTP step)
             VStack(spacing: 0) {
@@ -118,7 +118,7 @@ struct AuthView: View {
 
                 Text("Get your first AI pick in 30 seconds.")
                     .font(.system(size: 13.5))
-                    .foregroundColor(.p6Ink2)
+                    .foregroundColor(.p1Ink2)
                     .padding(.top, 12)
                     .padding(.bottom, 28)
 
@@ -155,19 +155,19 @@ struct AuthView: View {
 
                 // Divider
                 HStack(spacing: 10) {
-                    Rectangle().fill(Color.p6Line).frame(height: 1)
+                    Rectangle().fill(Color.p1Line).frame(height: 1)
                     Text("OR WITH EMAIL")
                         .font(.custom("BarlowCondensed-Bold", size: 10))
                         .kerning(2.2)
-                        .foregroundColor(.p6Mute)
-                    Rectangle().fill(Color.p6Line).frame(height: 1)
+                        .foregroundColor(.p1Mute)
+                    Rectangle().fill(Color.p1Line).frame(height: 1)
                 }
                 .padding(.vertical, 16)
 
                 Text("EMAIL")
                     .font(.custom("BarlowCondensed-Bold", size: 10))
                     .kerning(2.4)
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
                     .padding(.bottom, 8)
 
                 ZStack(alignment: .leading) {
@@ -184,15 +184,15 @@ struct AuthView: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.p6Foreground)
-                        .tint(.p6Lime)
+                        .foregroundStyle(Color.p1Foreground)
+                        .tint(.p1Lime)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 13)
                 }
-                .background(Color.p6Panel)
+                .background(Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(isValidEmail ? Color.p6Lime : Color.p6Line, lineWidth: 1)
+                        .stroke(isValidEmail ? Color.p1Lime : Color.p1Line, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
@@ -203,9 +203,9 @@ struct AuthView: View {
                         .padding(.top, 10)
                 }
 
-                Text("By continuing you agree to our Terms & Privacy Policy. Must be 21+ to use Pick6.")
+                Text("By continuing you agree to our Terms & Privacy Policy. Must be 21+ to use Pick1.")
                     .font(.system(size: 11))
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
                     .lineSpacing(3)
                     .padding(.top, 16)
             }
@@ -227,9 +227,9 @@ struct AuthView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("We sent a 6-digit code to")
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                     Text(email)
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                         .bold()
                 }
                 .font(.system(size: 13.5))
@@ -273,9 +273,9 @@ struct AuthView: View {
                 Group {
                     if timer > 0 {
                         HStack(spacing: 4) {
-                            Text("Resend code in").foregroundColor(.p6Mute)
+                            Text("Resend code in").foregroundColor(.p1Mute)
                             Text(String(format: "0:%02d", timer))
-                                .foregroundColor(.p6Ink2)
+                                .foregroundColor(.p1Ink2)
                                 .bold()
                         }
                         .font(.system(size: 12, design: .monospaced))
@@ -288,7 +288,7 @@ struct AuthView: View {
                             Task { await authManager.sendOTP(email: email) }
                         }
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.p6Lime)
+                        .foregroundColor(.p1Lime)
                     }
                 }
                 .frame(maxWidth: .infinity)

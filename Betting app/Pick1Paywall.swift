@@ -1,4 +1,4 @@
-// Pick6Paywall.swift
+// Pick1Paywall.swift
 // Pro · All-Access paywall — implements the design from
 // `Pick6 Account Pages.html` (Paywall · Weekly $14.99 / Monthly $39.99).
 //
@@ -71,7 +71,7 @@ struct OBPaywallScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.p6Ink.ignoresSafeArea())
+        .background(Color.p1Ink.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             stickyBar
         }
@@ -84,10 +84,10 @@ struct OBPaywallScreen: View {
             Button(action: onBack) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
                     .frame(width: 38, height: 38)
-                    .background(Color.p6Panel)
-                    .overlay(Circle().stroke(Color.p6Line, lineWidth: 1))
+                    .background(Color.p1Panel)
+                    .overlay(Circle().stroke(Color.p1Line, lineWidth: 1))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -98,11 +98,11 @@ struct OBPaywallScreen: View {
                 Text("APP · ")
                     .font(.custom("BarlowCondensed-Bold", size: 11))
                     .kerning(2.4)
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
                 Text("GO PRO")
                     .font(.custom("BarlowCondensed-Black", size: 11))
                     .kerning(2.4)
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
             }
 
             Spacer()
@@ -120,12 +120,12 @@ struct OBPaywallScreen: View {
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 10, weight: .heavy))
                         }
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
-                            Capsule().fill(Color.p6Panel)
-                                .overlay(Capsule().stroke(Color.p6Line, lineWidth: 1))
+                            Capsule().fill(Color.p1Panel)
+                                .overlay(Capsule().stroke(Color.p1Line, lineWidth: 1))
                         )
                     }
                     .buttonStyle(.plain)
@@ -152,17 +152,17 @@ struct OBPaywallScreen: View {
             HStack(spacing: 7) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 11, weight: .heavy))
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
                 Text("PICK1 PRO")
                     .font(.custom("BarlowCondensed-Bold", size: 11))
                     .kerning(2.4)
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 6)
-            .background(Color.p6Lime.opacity(0.12))
+            .background(Color.p1Lime.opacity(0.12))
             .overlay(
-                Capsule().stroke(Color.p6Lime.opacity(0.3), lineWidth: 1)
+                Capsule().stroke(Color.p1Lime.opacity(0.3), lineWidth: 1)
             )
             .clipShape(Capsule())
             .padding(.bottom, 14)
@@ -171,7 +171,7 @@ struct OBPaywallScreen: View {
 
             Text("Full access to AI predictions across all sports, unlimited daily picks, deep analytics, and live game tracking.")
                 .font(.system(size: 13))
-                .foregroundColor(.p6Ink2)
+                .foregroundColor(.p1Ink2)
                 .lineSpacing(4)
                 .padding(.top, 12)
                 .frame(maxWidth: 320, alignment: .leading)
@@ -190,8 +190,8 @@ struct OBPaywallScreen: View {
             // across the hero. No .clipped() — the glow naturally
             // fades to clear, so there's nothing to clip.
             RadialGradient(
-                colors: [Color.p6Lime.opacity(0.35),
-                         Color.p6Lime.opacity(0.08),
+                colors: [Color.p1Lime.opacity(0.35),
+                         Color.p1Lime.opacity(0.08),
                          .clear],
                 center: UnitPoint(x: 0.5, y: 0.5),
                 startRadius: 0,
@@ -216,10 +216,10 @@ struct OBPaywallScreen: View {
                           showSave: true)
         }
         .padding(6)
-        .background(Color.p6Panel)
+        .background(Color.p1Panel)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.p6Line, lineWidth: 1)
+                .stroke(Color.p1Line, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .padding(.horizontal, 22)
@@ -236,15 +236,15 @@ struct OBPaywallScreen: View {
                 Text(label.uppercased())
                     .font(.custom("BarlowCondensed-Bold", size: 10))
                     .kerning(2)
-                    .foregroundColor(on ? Color.p6Ink.opacity(0.55) : .p6Mute)
+                    .foregroundColor(on ? Color.p1Ink.opacity(0.55) : .p1Mute)
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(price)
                         .font(.custom("BarlowCondensed-Black", size: 22))
-                        .foregroundColor(on ? .p6Ink : .p6Foreground)
+                        .foregroundColor(on ? .p1Ink : .p1Foreground)
                     Text(per)
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(on ? Color.p6Ink.opacity(0.5) : .p6Mute)
+                        .foregroundColor(on ? Color.p1Ink.opacity(0.5) : .p1Mute)
                 }
 
                 if showSave {
@@ -265,7 +265,7 @@ struct OBPaywallScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(on ? Color.p6Foreground : Color.clear)
+            .background(on ? Color.p1Foreground : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -280,18 +280,18 @@ struct OBPaywallScreen: View {
                 Text("PRO · ALL-ACCESS")
                     .font(.custom("BarlowCondensed-Bold", size: 11))
                     .kerning(2.2)
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text("$")
                         .font(.custom("BarlowCondensed-Black", size: 28))
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                     Text(copy.price)
                         .font(.custom("BarlowCondensed-Black", size: 54))
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                     Text(copy.per)
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                         .padding(.leading, 4)
                 }
                 .padding(.top, 6)
@@ -299,11 +299,11 @@ struct OBPaywallScreen: View {
                 HStack(spacing: 4) {
                     Text(copy.equiv)
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.p6Foreground)
-                    Text("·").foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Foreground)
+                    Text("·").foregroundColor(.p1Mute)
                     Text(copy.billed)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                 }
                 .padding(.top, 6)
                 .padding(.bottom, 18)
@@ -321,13 +321,13 @@ struct OBPaywallScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
-                    colors: [Color.p6Lime.opacity(0.08), Color.p6Panel],
+                    colors: [Color.p1Lime.opacity(0.08), Color.p1Panel],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.p6Lime.opacity(plan == .monthly ? 0.45 : 0.25), lineWidth: 1)
+                    .stroke(Color.p1Lime.opacity(plan == .monthly ? 0.45 : 0.25), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
@@ -342,10 +342,10 @@ struct OBPaywallScreen: View {
         Text("BEST VALUE")
             .font(.system(size: 9, weight: .heavy, design: .monospaced))
             .kerning(1.2)
-            .foregroundColor(.p6LimeInk)
+            .foregroundColor(.p1LimeInk)
             .padding(.horizontal, 28)
             .padding(.vertical, 4)
-            .background(Color.p6Lime)
+            .background(Color.p1Lime)
             .rotationEffect(.degrees(35))
             .offset(x: 28, y: 14)
             .clipped()
@@ -355,19 +355,19 @@ struct OBPaywallScreen: View {
         HStack(alignment: .top, spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(Color.p6Lime.opacity(0.14))
+                    .fill(Color.p1Lime.opacity(0.14))
                     .frame(width: 18, height: 18)
                 Circle()
-                    .stroke(Color.p6Lime, lineWidth: 1.2)
+                    .stroke(Color.p1Lime, lineWidth: 1.2)
                     .frame(width: 18, height: 18)
                 Image(systemName: "checkmark")
                     .font(.system(size: 9, weight: .heavy))
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
             }
             (Text(boldPrefix).fontWeight(.bold)
              + Text(suffix))
                 .font(.system(size: 13))
-                .foregroundColor(.p6Foreground)
+                .foregroundColor(.p1Foreground)
                 .lineSpacing(2)
         }
     }
@@ -399,32 +399,32 @@ struct OBPaywallScreen: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text("FREE")
                     .frame(width: 70)
-                    .foregroundColor(.p6Ink2)
+                    .foregroundColor(.p1Ink2)
                 Text("PRO")
                     .frame(width: 70)
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
             }
             .font(.custom("BarlowCondensed-Bold", size: 10))
             .kerning(2)
-            .foregroundColor(.p6Mute)
+            .foregroundColor(.p1Mute)
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
-            .background(Color.p6Panel.opacity(0.5))
+            .background(Color.p1Panel.opacity(0.5))
 
             // Rows
             ForEach(Array(compareRows.enumerated()), id: \.offset) { i, row in
                 HStack(spacing: 10) {
                     Text(row.feature)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Group {
                         if let free = row.free {
                             Text(free)
-                                .foregroundColor(.p6Ink2)
+                                .foregroundColor(.p1Ink2)
                         } else {
-                            Text("—").foregroundColor(.p6Mute)
+                            Text("—").foregroundColor(.p1Mute)
                         }
                     }
                     .frame(width: 70)
@@ -438,7 +438,7 @@ struct OBPaywallScreen: View {
                             Text(row.pro)
                         }
                     }
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
                     .frame(width: 70)
                 }
                 .font(.system(size: 12, design: .monospaced))
@@ -446,14 +446,14 @@ struct OBPaywallScreen: View {
                 .padding(.vertical, 11)
 
                 if i < compareRows.count - 1 {
-                    Rectangle().fill(Color.p6Line).frame(height: 1)
+                    Rectangle().fill(Color.p1Line).frame(height: 1)
                 }
             }
         }
-        .background(Color.p6Panel)
+        .background(Color.p1Panel)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.p6Line, lineWidth: 1)
+                .stroke(Color.p1Line, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .padding(.horizontal, 22)
@@ -487,12 +487,12 @@ struct OBPaywallScreen: View {
             Text(title)
                 .font(.custom("BarlowCondensed-Black", size: 16))
                 .kerning(0.6)
-                .foregroundColor(.p6Foreground)
+                .foregroundColor(.p1Foreground)
             Spacer()
             Text(meta)
                 .font(.custom("BarlowCondensed-Bold", size: 10))
                 .kerning(2)
-                .foregroundColor(.p6Mute)
+                .foregroundColor(.p1Mute)
         }
         .padding(.horizontal, 22)
         .padding(.top, 22)
@@ -504,7 +504,7 @@ struct OBPaywallScreen: View {
     private var finePrint: some View {
         Text("Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your App Store account.")
             .font(.system(size: 10))
-            .foregroundColor(.p6Mute)
+            .foregroundColor(.p1Mute)
             .lineSpacing(3)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 22)
@@ -516,7 +516,7 @@ struct OBPaywallScreen: View {
         } label: {
             Text("Restore Purchases")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.p6Ink2)
+                .foregroundColor(.p1Ink2)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
         }
@@ -532,18 +532,18 @@ struct OBPaywallScreen: View {
                 Group {
                     if subs.purchasing {
                         ProgressView()
-                            .tint(.p6LimeInk)
+                            .tint(.p1LimeInk)
                     } else {
                         Text("Start 7-Day Free Trial")
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)
-                            .foregroundColor(.p6LimeInk)
+                            .foregroundColor(.p1LimeInk)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Color.p6Lime)
+                .background(Color.p1Lime)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -552,13 +552,13 @@ struct OBPaywallScreen: View {
             if let err = subs.lastError {
                 Text(err)
                     .font(.system(size: 11))
-                    .foregroundColor(.p6Hot)
+                    .foregroundColor(.p1Hot)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             } else {
                 Text("Then \(plan == .weekly ? "$14.99/week" : "$39.99/month") · Cancel anytime")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
             }
         }
         .padding(.horizontal, 22)
@@ -566,7 +566,7 @@ struct OBPaywallScreen: View {
         .padding(.bottom, 14)
         .background(
             LinearGradient(
-                colors: [Color.p6Ink.opacity(0), Color.p6Ink.opacity(0.92), Color.p6Ink],
+                colors: [Color.p1Ink.opacity(0), Color.p1Ink.opacity(0.92), Color.p1Ink],
                 startPoint: .top, endPoint: .bottom
             )
             .ignoresSafeArea(edges: .bottom)
@@ -616,12 +616,12 @@ private struct FAQRow: View {
                 HStack {
                     Text(item.q)
                         .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                         .multilineTextAlignment(.leading)
                     Spacer()
                     Text(open ? "−" : "+")
                         .font(.system(size: 16, weight: .bold, design: .monospaced))
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                         .frame(width: 18)
                 }
                 .padding(.horizontal, 14)
@@ -632,7 +632,7 @@ private struct FAQRow: View {
             if open {
                 Text(item.a)
                     .font(.system(size: 12))
-                    .foregroundColor(.p6Ink2)
+                    .foregroundColor(.p1Ink2)
                     .lineSpacing(3)
                     .padding(.horizontal, 14)
                     .padding(.bottom, 14)
@@ -640,10 +640,10 @@ private struct FAQRow: View {
                     .transition(.opacity)
             }
         }
-        .background(open ? Color.p6Panel2 : Color.p6Panel)
+        .background(open ? Color.p1Panel2 : Color.p1Panel)
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.p6Line, lineWidth: 1)
+                .stroke(Color.p1Line, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }

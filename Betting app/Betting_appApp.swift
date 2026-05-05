@@ -27,17 +27,17 @@ struct Betting_appApp: App {
         WindowGroup {
             Group {
                 if authManager.isCheckingSession {
-                    Pick6SplashLoader()
+                    Pick1SplashLoader()
                         .preferredColorScheme(.dark)
                 } else if !authManager.isAuthenticated || !hasFinishedOnboarding {
                     // The single source of truth for everything pre-main:
                     // welcome → value carousel → auth/OTP → sports → notifications → success.
-                    Pick6AuthFlow(authManager: authManager) { sports in
+                    Pick1AuthFlow(authManager: authManager) { sports in
                         selectedSports = sports.sorted().joined(separator: ",")
                         hasFinishedOnboarding = true
                     }
                 } else {
-                    Pick6HomeHiFi()
+                    Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
                 }
             }
@@ -53,7 +53,7 @@ struct Betting_appApp: App {
 
     private func registerCustomFonts() {
         // The Anton / Archivo / ArchivoNarrow / JetBrainsMono families drive
-        // the new Pick6 Home Hi-Fi design (Anton = display, Archivo = UI,
+        // the new Pick1 Home Hi-Fi design (Anton = display, Archivo = UI,
         // ArchivoNarrow = small-caps labels, JetBrainsMono = stats/numbers).
         // BarlowCondensed remains for legacy onboarding screens.
         let fontNames = [

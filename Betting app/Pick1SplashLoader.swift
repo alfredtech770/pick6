@@ -1,4 +1,4 @@
-// Pick6SplashLoader.swift
+// Pick1SplashLoader.swift
 // Splash screen — implements the design from `Pick6 Onboarding.html` Splash:
 //   • Black canvas with a slow-pulsing lime radial glow
 //   • 1px horizontal scanline grain overlay
@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-struct Pick6SplashLoader: View {
+struct Pick1SplashLoader: View {
     @State private var glowPulse: Bool = false
     @State private var loaderProgress: Double = 0
     @State private var tickerOffset: CGFloat = 0
@@ -41,7 +41,7 @@ struct Pick6SplashLoader: View {
                     .tracking(3.3)
                     .foregroundColor(Color(hex: "#6E6F75"))
 
-                Pick6Wordmark(size: 84)
+                Pick1Wordmark(size: 84)
 
                 Text("PICKS · STATS · GLORY")
                     .font(.archivoNarrow(12, weight: .semibold))
@@ -145,7 +145,7 @@ struct Pick6SplashLoader: View {
 
 // MARK: - Pick1 wordmark (PICK + lime star with "1" inside)
 
-struct Pick6Wordmark: View {
+struct Pick1Wordmark: View {
     let size: CGFloat
 
     var body: some View {
@@ -210,5 +210,5 @@ struct ScanlineOverlay: View {
 }
 
 #Preview {
-    Pick6SplashLoader()
+    Pick1SplashLoader()
 }

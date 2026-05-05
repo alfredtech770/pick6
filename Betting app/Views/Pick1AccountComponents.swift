@@ -1,4 +1,4 @@
-// Pick6AccountComponents.swift
+// Pick1AccountComponents.swift
 // Reusable building blocks for Wins / Live / Profile (account pages).
 // Designed to mirror the spec components from
 // `Pick6 Account Pages.html` exactly: LimeToggle (capsule + sliding

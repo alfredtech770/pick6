@@ -1,4 +1,4 @@
-// Pick6AuthFlow.swift
+// Pick1AuthFlow.swift
 // Coordinator + screens for the Pick6 onboarding flow.
 // Implements the design from `Pick6 Onboarding.html`:
 //   Welcome → Value Carousel (4) → Auth → OTP → Pick Sports → Notifications → Success → Paywall
@@ -30,7 +30,7 @@ private enum AuthFlowStep: Equatable {
 
 // MARK: - Coordinator
 
-struct Pick6AuthFlow: View {
+struct Pick1AuthFlow: View {
     @Bindable var authManager: AuthManager
     let onComplete: (Set<String>) -> Void
 
@@ -76,7 +76,7 @@ struct Pick6AuthFlow: View {
 
     var body: some View {
         ZStack {
-            Color.p6Ink.ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
 
             ZStack {
                 screenView
@@ -203,10 +203,10 @@ struct OBTopBar: View {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                         .frame(width: 36, height: 36)
-                        .background(Color.p6Panel.opacity(0.7))
-                        .overlay(Circle().stroke(Color.p6Line, lineWidth: 1))
+                        .background(Color.p1Panel.opacity(0.7))
+                        .overlay(Circle().stroke(Color.p1Line, lineWidth: 1))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -220,8 +220,8 @@ struct OBTopBar: View {
                 HStack(spacing: 6) {
                     ForEach(0..<total, id: \.self) { i in
                         Capsule()
-                            .fill(i == step ? Color.p6Lime
-                                  : (i < step ? Color.p6Ink2 : Color.p6Line2))
+                            .fill(i == step ? Color.p1Lime
+                                  : (i < step ? Color.p1Ink2 : Color.p1Line2))
                             .frame(width: i == step ? 22 : 6, height: 6)
                             .animation(.spring(response: 0.28, dampingFraction: 0.82), value: step)
                     }
@@ -235,7 +235,7 @@ struct OBTopBar: View {
                     Text("SKIP")
                         .font(.custom("BarlowCondensed-Bold", size: 12))
                         .kerning(2.4)
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                         .padding(.horizontal, 12)
                         .frame(height: 36)
                 }
@@ -262,10 +262,10 @@ struct OBPrimaryButton: View {
                 .font(.custom("BarlowCondensed-Black", size: 15))
                 .kerning(2.8)
                 .textCase(.uppercase)
-                .foregroundColor(disabled ? .p6Mute : .p6LimeInk)
+                .foregroundColor(disabled ? .p1Mute : .p1LimeInk)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
-                .background(disabled ? Color.p6Panel2 : Color.p6Lime)
+                .background(disabled ? Color.p1Panel2 : Color.p1Lime)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .scaleEffect(pressed && !disabled ? 0.98 : 1.0)
         }
@@ -289,7 +289,7 @@ struct OBStickyBar<Content: View>: View {
         .padding(.bottom, 22)
         .background(
             LinearGradient(
-                colors: [Color.p6Ink.opacity(0), Color.p6Ink.opacity(0.92), Color.p6Ink],
+                colors: [Color.p1Ink.opacity(0), Color.p1Ink.opacity(0.92), Color.p1Ink],
                 startPoint: .top, endPoint: .bottom
             )
             .ignoresSafeArea(edges: .bottom)
@@ -307,12 +307,12 @@ struct OBKicker: View {
         Text(text)
             .font(.custom("BarlowCondensed-Bold", size: 11))
             .kerning(2.4)
-            .foregroundColor(.p6Lime)
+            .foregroundColor(.p1Lime)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.p6Lime.opacity(0.12))
+            .background(Color.p1Lime.opacity(0.12))
             .overlay(
-                Capsule().stroke(Color.p6Lime.opacity(0.3), lineWidth: 1)
+                Capsule().stroke(Color.p1Lime.opacity(0.3), lineWidth: 1)
             )
             .clipShape(Capsule())
     }
@@ -341,18 +341,18 @@ struct OBTitle: View {
             Text(line1)
                 .font(.custom("BarlowCondensed-Black", size: size))
                 .kerning(-0.5)
-                .foregroundColor(.p6Foreground)
+                .foregroundColor(.p1Foreground)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
 
             HStack(alignment: .firstTextBaseline, spacing: 0) {
                 if !line2Lead.isEmpty {
                     Text(line2Lead)
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                 }
                 if !line2Emphasis.isEmpty {
                     Text(line2Emphasis)
-                        .foregroundColor(.p6Lime)
+                        .foregroundColor(.p1Lime)
                 }
             }
             .font(.custom("BarlowCondensed-Black", size: size))
@@ -379,7 +379,7 @@ struct OBWelcomeScreen: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color.p6Lime.opacity(0.34), .clear],
+                        colors: [Color.p1Lime.opacity(0.34), .clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 200
@@ -400,10 +400,10 @@ struct OBWelcomeScreen: View {
                         HStack(spacing: 0) {
                             Text("PICK")
                                 .font(.custom("BarlowCondensed-Black", size: 26))
-                                .foregroundColor(.p6Foreground)
+                                .foregroundColor(.p1Foreground)
                             Text("6")
                                 .font(.custom("BarlowCondensed-Black", size: 26))
-                                .foregroundColor(.p6Lime)
+                                .foregroundColor(.p1Lime)
                         }
                         .kerning(0.5)
                         .padding(.bottom, 22)
@@ -418,7 +418,7 @@ struct OBWelcomeScreen: View {
 
                         Text("AI sports analysis across 8 leagues.\nClear reasoning on every recommendation.")
                             .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.p6Ink2)
+                            .foregroundColor(.p1Ink2)
                             .lineSpacing(4)
                             .padding(.top, 14)
                             .frame(maxWidth: 310, alignment: .leading)
@@ -433,10 +433,10 @@ struct OBWelcomeScreen: View {
                         }
                         .padding(.vertical, 18)
                         .padding(.horizontal, 16)
-                        .background(Color.p6Panel)
+                        .background(Color.p1Panel)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.p6Line, lineWidth: 1)
+                                .stroke(Color.p1Line, lineWidth: 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .padding(.top, 36)
@@ -453,11 +453,11 @@ struct OBWelcomeScreen: View {
                 HStack(spacing: 4) {
                     Text("Already have an account?")
                         .font(.system(size: 12))
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                     Button(action: onSignIn) {
                         Text("Sign in")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.p6Lime)
+                            .foregroundColor(.p1Lime)
                     }
                     .buttonStyle(.plain)
                 }
@@ -468,7 +468,7 @@ struct OBWelcomeScreen: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.p6Line).frame(width: 1, height: 36)
+        Rectangle().fill(Color.p1Line).frame(width: 1, height: 36)
     }
 
     private func wstat(num: String, suffix: String, label: String) -> some View {
@@ -476,17 +476,17 @@ struct OBWelcomeScreen: View {
             HStack(alignment: .lastTextBaseline, spacing: 1) {
                 Text(num)
                     .font(.custom("BarlowCondensed-Black", size: 32))
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
                 if !suffix.isEmpty {
                     Text(suffix)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                 }
             }
             Text(label)
                 .font(.custom("BarlowCondensed-Bold", size: 9))
                 .kerning(1.8)
-                .foregroundColor(.p6Mute)
+                .foregroundColor(.p1Mute)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -551,14 +551,14 @@ struct OBValueCarouselScreen: View {
                         Text(slide.kicker)
                             .font(.custom("BarlowCondensed-Bold", size: 11))
                             .kerning(2.5)
-                            .foregroundColor(.p6Lime)
+                            .foregroundColor(.p1Lime)
                             .padding(.bottom, 14)
 
                         OBTitle(slide.line1, slide.line2, size: 50)
 
                         Text(slide.body)
                             .font(.system(size: 14))
-                            .foregroundColor(.p6Ink2)
+                            .foregroundColor(.p1Ink2)
                             .lineSpacing(4)
                             .padding(.top, 14)
                             .frame(maxWidth: 330, alignment: .leading)
@@ -604,14 +604,14 @@ private struct ValueSportsTile: View {
                     .font(.system(size: 40))
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
-                    .background(highlight ? Color.p6Lime.opacity(0.1) : Color.p6Panel)
+                    .background(highlight ? Color.p1Lime.opacity(0.1) : Color.p1Panel)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(highlight ? Color.p6Lime : Color.p6Line, lineWidth: 1)
+                            .stroke(highlight ? Color.p1Lime : Color.p1Line, lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .scaleEffect(highlight ? 1.06 : 1)
-                    .shadow(color: highlight ? Color.p6Lime.opacity(0.25) : .clear, radius: 18)
+                    .shadow(color: highlight ? Color.p1Lime.opacity(0.25) : .clear, radius: 18)
             }
         }
         .padding(.horizontal, 10)
@@ -623,26 +623,26 @@ private struct ValueLiveCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Circle().fill(Color.p6Hot)
+                Circle().fill(Color.p1Hot)
                     .frame(width: 7, height: 7)
                     .opacity(pulse ? 0.4 : 1)
                 Text("LIVE · Q3 4:22")
                     .font(.custom("BarlowCondensed-Bold", size: 11))
                     .kerning(2.2)
-                    .foregroundColor(.p6Hot)
+                    .foregroundColor(.p1Hot)
             }
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("HEAT").font(.custom("BarlowCondensed-Bold", size: 11)).kerning(1.6).foregroundColor(.p6Ink2)
-                    Text("88").font(.custom("BarlowCondensed-Black", size: 50)).foregroundColor(.p6Ink2)
+                    Text("HEAT").font(.custom("BarlowCondensed-Bold", size: 11)).kerning(1.6).foregroundColor(.p1Ink2)
+                    Text("88").font(.custom("BarlowCondensed-Black", size: 50)).foregroundColor(.p1Ink2)
                 }
                 Spacer()
-                Text("–").font(.custom("BarlowCondensed-Black", size: 32)).foregroundColor(.p6Mute)
+                Text("–").font(.custom("BarlowCondensed-Black", size: 32)).foregroundColor(.p1Mute)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("NUGGETS").font(.custom("BarlowCondensed-Bold", size: 11)).kerning(1.6).foregroundColor(.p6Ink2)
-                    Text("91").font(.custom("BarlowCondensed-Black", size: 50)).foregroundColor(.p6Lime)
+                    Text("NUGGETS").font(.custom("BarlowCondensed-Bold", size: 11)).kerning(1.6).foregroundColor(.p1Ink2)
+                    Text("91").font(.custom("BarlowCondensed-Black", size: 50)).foregroundColor(.p1Lime)
                 }
             }
 
@@ -650,42 +650,42 @@ private struct ValueLiveCard: View {
                 Text("WIN PROB")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .kerning(1.8)
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.p6Line).frame(height: 4)
-                        Capsule().fill(Color.p6Lime).frame(width: geo.size.width * 0.68, height: 4)
+                        Capsule().fill(Color.p1Line).frame(height: 4)
+                        Capsule().fill(Color.p1Lime).frame(width: geo.size.width * 0.68, height: 4)
                     }
                 }
                 .frame(height: 4)
                 Text("68%")
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
             }
 
             HStack {
                 Text("YOUR PICK")
                     .font(.custom("BarlowCondensed-Bold", size: 10))
                     .kerning(2)
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
                 Spacer()
                 Text("NUGGETS +2.5 · HITTING")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(Color.p6Lime.opacity(0.08))
+            .background(Color.p1Lime.opacity(0.08))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.p6Lime.opacity(0.25), lineWidth: 1)
+                    .stroke(Color.p1Lime.opacity(0.25), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .padding(18)
-        .background(Color.p6Panel)
+        .background(Color.p1Panel)
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.p6Line, lineWidth: 1)
+                .stroke(Color.p1Line, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onAppear {
@@ -702,19 +702,19 @@ private struct ValueConfidenceCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("YANKEES ML")
                     .font(.custom("BarlowCondensed-Black", size: 22))
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
                 Spacer()
                 Text("+135")
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
             }
 
             // Ring
             ZStack {
-                Circle().stroke(Color.p6Line, lineWidth: 6).frame(width: 130, height: 130)
+                Circle().stroke(Color.p1Line, lineWidth: 6).frame(width: 130, height: 130)
                 Circle()
                     .trim(from: 0, to: 0.76)
-                    .stroke(Color.p6Lime, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .stroke(Color.p1Lime, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .frame(width: 130, height: 130)
                     .rotationEffect(.degrees(-90))
 
@@ -723,11 +723,11 @@ private struct ValueConfidenceCard: View {
                         Text("76").font(.custom("BarlowCondensed-Black", size: 44))
                         Text("%").font(.custom("BarlowCondensed-Black", size: 18))
                     }
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
                     Text("CONFIDENCE")
                         .font(.custom("BarlowCondensed-Bold", size: 9))
                         .kerning(2)
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -736,28 +736,28 @@ private struct ValueConfidenceCard: View {
                 Text("WHY")
                     .font(.custom("BarlowCondensed-Bold", size: 9))
                     .kerning(2)
-                    .foregroundColor(.p6Mute)
+                    .foregroundColor(.p1Mute)
                 ForEach(["Cole 2.34 ERA vs LAD",
                          "Judge 4-for-10 vs Buehler",
                          "Home stand 8-2 last 10"], id: \.self) { line in
                     HStack(spacing: 8) {
-                        Text("✓").font(.system(size: 11, weight: .heavy)).foregroundColor(.p6Lime)
-                        Text(line).font(.system(size: 12)).foregroundColor(.p6Ink2)
+                        Text("✓").font(.system(size: 11, weight: .heavy)).foregroundColor(.p1Lime)
+                        Text(line).font(.system(size: 12)).foregroundColor(.p1Ink2)
                     }
                 }
             }
             .padding(.top, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .top) {
-                Rectangle().fill(Color.p6Line).frame(height: 1)
+                Rectangle().fill(Color.p1Line).frame(height: 1)
             }
             .padding(.top, 6)
         }
         .padding(20)
-        .background(Color.p6Panel)
+        .background(Color.p1Panel)
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.p6Line, lineWidth: 1)
+                .stroke(Color.p1Line, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
@@ -786,20 +786,20 @@ private struct ValueTeamsList: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t.name)
                             .font(.custom("BarlowCondensed-Black", size: 16))
-                            .foregroundColor(.p6Foreground)
+                            .foregroundColor(.p1Foreground)
                         Text("NEXT · TONIGHT · 7:30P")
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
                             .kerning(1.4)
-                            .foregroundColor(.p6Mute)
+                            .foregroundColor(.p1Mute)
                     }
                     Spacer()
-                    Text("★").font(.system(size: 18)).foregroundColor(.p6Lime)
+                    Text("★").font(.system(size: 18)).foregroundColor(.p1Lime)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)
-                .background(Color.p6Panel)
+                .background(Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.p6Line, lineWidth: 1)
+                        .stroke(Color.p1Line, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -849,7 +849,7 @@ struct OBPickSportsScreen: View {
                     OBTitle("WHAT DO", "YOU ", emphasis: "WATCH?", size: 56)
                     Text("Pick 3 or more. We'll send you picks & alerts for these.")
                         .font(.system(size: 14))
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                         .lineSpacing(4)
                         .padding(.top, 12)
                         .frame(maxWidth: 330, alignment: .leading)
@@ -869,20 +869,20 @@ struct OBPickSportsScreen: View {
                 HStack(spacing: 12) {
                     Text("\(selected.count)")
                         .font(.custom("BarlowCondensed-Black", size: 30))
-                        .foregroundColor(.p6Lime)
+                        .foregroundColor(.p1Lime)
                     Text(selected.count < 3
                          ? "SELECTED · PICK \(3 - selected.count) MORE"
                          : "SELECTED · LOOKS GOOD")
                         .font(.custom("BarlowCondensed-Bold", size: 11))
                         .kerning(2.2)
-                        .foregroundColor(.p6Ink2)
+                        .foregroundColor(.p1Ink2)
                     Spacer()
                 }
                 .padding(14)
-                .background(Color.p6Panel)
+                .background(Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.p6Line, lineWidth: 1)
+                        .stroke(Color.p1Line, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .padding(.horizontal, 22)
@@ -914,31 +914,31 @@ struct OBPickSportsScreen: View {
                     Text(s.icon).font(.system(size: 30)).padding(.bottom, 2)
                     Text(s.name)
                         .font(.custom("BarlowCondensed-Black", size: 16))
-                        .foregroundColor(.p6Foreground)
+                        .foregroundColor(.p1Foreground)
                     Text(s.sub.uppercased())
                         .font(.custom("BarlowCondensed-Bold", size: 9))
                         .kerning(1.4)
-                        .foregroundColor(.p6Mute)
+                        .foregroundColor(.p1Mute)
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(0.82, contentMode: .fit)
                 .padding(8)
-                .background(on ? Color.p6Lime.opacity(0.08) : Color.p6Panel)
+                .background(on ? Color.p1Lime.opacity(0.08) : Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(on ? Color.p6Lime : Color.p6Line, lineWidth: on ? 1.5 : 1)
+                        .stroke(on ? Color.p1Lime : Color.p1Line, lineWidth: on ? 1.5 : 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: on ? Color.p6Lime.opacity(0.18) : .clear, radius: 14, y: 4)
+                .shadow(color: on ? Color.p1Lime.opacity(0.18) : .clear, radius: 14, y: 4)
 
                 ZStack {
                     Circle()
-                        .fill(on ? Color.p6Lime : Color.p6Line2)
+                        .fill(on ? Color.p1Lime : Color.p1Line2)
                         .frame(width: 22, height: 22)
                     if on {
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.p6LimeInk)
+                            .foregroundColor(.p1LimeInk)
                     }
                 }
                 .padding(7)
@@ -982,7 +982,7 @@ struct OBNotificationsScreen: View {
                         OBTitle("STAY", "IN THE ", emphasis: "GAME.", size: 56)
                         Text("We'll only ping you for stuff that matters.")
                             .font(.system(size: 14))
-                            .foregroundColor(.p6Ink2)
+                            .foregroundColor(.p1Ink2)
                             .padding(.top, 12)
                     }
                     .padding(.horizontal, 22)
@@ -994,33 +994,33 @@ struct OBNotificationsScreen: View {
                             HStack(spacing: 8) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                        .fill(Color.p6Lime)
+                                        .fill(Color.p1Lime)
                                         .frame(width: 18, height: 18)
-                                    Text("★").font(.system(size: 11, weight: .heavy)).foregroundColor(.p6LimeInk)
+                                    Text("★").font(.system(size: 11, weight: .heavy)).foregroundColor(.p1LimeInk)
                                 }
                                 Text("PICK1")
                                     .font(.custom("BarlowCondensed-Bold", size: 10))
                                     .kerning(2)
-                                    .foregroundColor(.p6Ink2)
+                                    .foregroundColor(.p1Ink2)
                             }
                             Spacer()
                             Text("now")
                                 .font(.system(size: 11))
-                                .foregroundColor(.p6Mute)
+                                .foregroundColor(.p1Mute)
                         }
                         Text("🔥 Your pick is hitting")
                             .font(.system(size: 13.5, weight: .bold))
-                            .foregroundColor(.p6Foreground)
+                            .foregroundColor(.p1Foreground)
                         Text("NUGGETS +2.5 · Q3 4:22 · up 91–88. Win prob 68%.")
                             .font(.system(size: 12.5))
-                            .foregroundColor(.p6Ink2)
+                            .foregroundColor(.p1Ink2)
                             .lineSpacing(2)
                     }
                     .padding(14)
                     .background(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.9))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Color.p6Line, lineWidth: 1)
+                            .stroke(Color.p1Line, lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .padding(.horizontal, 22)
@@ -1033,10 +1033,10 @@ struct OBNotificationsScreen: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(p.label)
                                         .font(.system(size: 13.5, weight: .semibold))
-                                        .foregroundColor(.p6Foreground)
+                                        .foregroundColor(.p1Foreground)
                                     Text(p.sub)
                                         .font(.system(size: 11.5))
-                                        .foregroundColor(.p6Mute)
+                                        .foregroundColor(.p1Mute)
                                 }
                                 Spacer()
                                 Toggle("", isOn: Binding(
@@ -1044,13 +1044,13 @@ struct OBNotificationsScreen: View {
                                     set: { prefs[p.key] = $0 }
                                 ))
                                 .labelsHidden()
-                                .tint(.p6Lime)
+                                .tint(.p1Lime)
                             }
                             .padding(.horizontal, 16).padding(.vertical, 12)
-                            .background(Color.p6Panel)
+                            .background(Color.p1Panel)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.p6Line, lineWidth: 1)
+                                    .stroke(Color.p1Line, lineWidth: 1)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
@@ -1066,7 +1066,7 @@ struct OBNotificationsScreen: View {
                     Button(action: onContinue) {
                         Text("Maybe later")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.p6Mute)
+                            .foregroundColor(.p1Mute)
                             .padding(.top, 10)
                     }
                     .buttonStyle(.plain)
@@ -1081,9 +1081,9 @@ struct OBNotificationsScreen: View {
                     VStack(spacing: 8) {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 22, weight: .medium))
-                            .foregroundColor(.p6Lime)
+                            .foregroundColor(.p1Lime)
                             .padding(.top, 18)
-                        Text("\u{201C}Pick6\u{201D} Would Like to Send You Notifications")
+                        Text("\u{201C}Pick1\u{201D} Would Like to Send You Notifications")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -1148,20 +1148,20 @@ struct OTPBox: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.p6Panel)
+                .fill(Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(
-                            isFocused ? Color.p6Lime
-                                      : (digit.isEmpty ? Color.p6Line : Color.p6Ink2),
+                            isFocused ? Color.p1Lime
+                                      : (digit.isEmpty ? Color.p1Line : Color.p1Ink2),
                             lineWidth: isFocused ? 2 : 1
                         )
                 )
-                .shadow(color: isFocused ? Color.p6Lime.opacity(0.18) : .clear, radius: 8)
+                .shadow(color: isFocused ? Color.p1Lime.opacity(0.18) : .clear, radius: 8)
 
             if digit.isEmpty && isFocused {
                 Rectangle()
-                    .fill(Color.p6Lime)
+                    .fill(Color.p1Lime)
                     .frame(width: 2, height: 28)
                     .cornerRadius(1)
                     .opacity(isFocused ? 1 : 0)
@@ -1169,7 +1169,7 @@ struct OTPBox: View {
             } else {
                 Text(digit)
                     .font(.custom("BarlowCondensed-Black", size: 28))
-                    .foregroundColor(.p6Foreground)
+                    .foregroundColor(.p1Foreground)
                     .transition(.scale.combined(with: .opacity))
             }
 
@@ -1211,7 +1211,7 @@ struct OBSuccessScreen: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color.p6Lime.opacity(0.30), .clear],
+                        colors: [Color.p1Lime.opacity(0.30), .clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 200
@@ -1228,10 +1228,10 @@ struct OBSuccessScreen: View {
 
                 // Animated check
                 ZStack {
-                    Circle().stroke(Color.p6Lime, lineWidth: 3).frame(width: 80, height: 80)
+                    Circle().stroke(Color.p1Lime, lineWidth: 3).frame(width: 80, height: 80)
                     Image(systemName: "checkmark")
                         .font(.system(size: 36, weight: .heavy))
-                        .foregroundColor(.p6Lime)
+                        .foregroundColor(.p1Lime)
                 }
                 .scaleEffect(checkScale)
                 .padding(.bottom, 18)
@@ -1239,7 +1239,7 @@ struct OBSuccessScreen: View {
                 Text("YOU'RE IN")
                     .font(.custom("BarlowCondensed-Bold", size: 12))
                     .kerning(3.6)
-                    .foregroundColor(.p6Lime)
+                    .foregroundColor(.p1Lime)
                     .padding(.bottom, 10)
 
                 OBTitle("LET'S", "GO.", size: 80)
@@ -1247,7 +1247,7 @@ struct OBSuccessScreen: View {
 
                 Text("We're warming up your picks for tonight's games.")
                     .font(.system(size: 13))
-                    .foregroundColor(.p6Ink2)
+                    .foregroundColor(.p1Ink2)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 280)
                     .padding(.top, 12)
@@ -1260,10 +1260,10 @@ struct OBSuccessScreen: View {
                     statusRow(text: "Loading tonight's picks", state: .loading)
                 }
                 .padding(14)
-                .background(Color.p6Panel)
+                .background(Color.p1Panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.p6Line, lineWidth: 1)
+                        .stroke(Color.p1Line, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .padding(.horizontal, 22)
@@ -1297,19 +1297,19 @@ struct OBSuccessScreen: View {
     @ViewBuilder
     private func statusRow(text: String, state: RowState) -> some View {
         HStack(spacing: 10) {
-            Circle().fill(Color.p6Lime).frame(width: 8, height: 8)
+            Circle().fill(Color.p1Lime).frame(width: 8, height: 8)
                 .opacity(state == .loading ? (pulse ? 0.4 : 1) : 1)
             Text(text)
                 .font(.system(size: 13))
-                .foregroundColor(.p6Ink2)
+                .foregroundColor(.p1Ink2)
             Spacer()
             switch state {
             case .done:
-                Text("✓").font(.system(size: 14, weight: .heavy)).foregroundColor(.p6Lime)
+                Text("✓").font(.system(size: 14, weight: .heavy)).foregroundColor(.p1Lime)
             case .loading:
                 HStack(spacing: 3) {
                     ForEach(0..<3, id: \.self) { i in
-                        Circle().fill(Color.p6Lime)
+                        Circle().fill(Color.p1Lime)
                             .frame(width: 4, height: 4)
                             .opacity(loadDot == i ? 1 : 0.3)
                     }

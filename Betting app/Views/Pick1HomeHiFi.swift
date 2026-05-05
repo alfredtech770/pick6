@@ -1,4 +1,4 @@
-// Pick6HomeHiFi.swift
+// Pick1HomeHiFi.swift
 // "Home Hi-Fi" main screen — implements the design from
 // `pick6/project/Pick6 Home HiFi.html` (Anton-driven, lime accent,
 // scoreboard-bold). Replaces the old Pick6MainView as the post-onboarding
@@ -54,7 +54,7 @@ extension Font {
 
 // MARK: - Root
 
-struct Pick6HomeHiFi: View {
+struct Pick1HomeHiFi: View {
     enum Tab: Hashable { case home, picks, live, profile }
     @State private var tab: Tab = .home
     @State private var detailPick: Pick?           // game-card tap → detail sheet
@@ -372,7 +372,7 @@ struct HeroCard: View {
 
     private var heroTopBar: some View {
         HStack(alignment: .center) {
-            Pick6Logo()
+            Pick1Logo()
             Spacer()
             HeroPill()
         }
@@ -509,7 +509,7 @@ struct DiagonalStripe: View {
 
 // MARK: - Hero subviews
 
-struct Pick6Logo: View {
+struct Pick1Logo: View {
     var body: some View {
         HStack(alignment: .lastTextBaseline, spacing: 0) {
             Text("PICK")
@@ -1332,7 +1332,7 @@ struct MiniRing: View {
 ///                    pulsing red dot, "LIVE" label always visible
 ///   • Live active:   solid red bg, white text, white dot
 struct FloatingNav: View {
-    @Binding var tab: Pick6HomeHiFi.Tab
+    @Binding var tab: Pick1HomeHiFi.Tab
     let liveCount: Int
 
     var body: some View {
@@ -1728,6 +1728,6 @@ struct EmptyTodayState: View {
 // MARK: - Preview
 
 #Preview {
-    Pick6HomeHiFi()
+    Pick1HomeHiFi()
         .preferredColorScheme(.dark)
 }

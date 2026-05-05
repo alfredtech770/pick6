@@ -1,12 +1,12 @@
 // SubscriptionManager.swift
-// StoreKit 2 wrapper for Pick6 Pro.
+// StoreKit 2 wrapper for Pick1 Pro.
 //
 // Drives the gate between Free and Pro:
 //   • Free  → sees one pick per sport (the highest-confidence pick of the day)
 //   • Pro   → sees every pick across every sport
 //
 // You'll need to create these products in App Store Connect under a single
-// subscription group (e.g. "Pick6 Pro"):
+// subscription group (e.g. "Pick1 Pro"):
 //
 //   Product ID                          Type                   Price
 //   com.alfredtech770.pick6.pro.weekly  Auto-Renewable Weekly  $14.99
@@ -21,9 +21,9 @@
 // servers automatically — no extra config beyond App Store Connect.
 //
 // For local Xcode testing, add a StoreKit Configuration File:
-//   File > New > File > StoreKit Configuration File → "Pick6.storekit"
+//   File > New > File > StoreKit Configuration File → "Pick1.storekit"
 //   Then in your scheme: Edit Scheme > Run > Options > StoreKit Configuration
-//   = Pick6.storekit. That lets you test purchases without TestFlight.
+//   = Pick1.storekit. That lets you test purchases without TestFlight.
 
 import Foundation
 import Combine
@@ -56,12 +56,12 @@ final class SubscriptionManager: ObservableObject {
 
     // MARK: - Product IDs
 
-    /// All Pick6 Pro product identifiers, in display order.
-    /// These match the bundle identifier `com.pick6.app`. Configure both
-    /// in App Store Connect → My App → Subscriptions → "Pick6 Pro" group.
+    /// All Pick1 Pro product identifiers, in display order.
+    /// These match the bundle identifier `com.pick1.app`. Configure both
+    /// in App Store Connect → My App → Subscriptions → "Pick1 Pro" group.
     static let productIds: [String] = [
-        "com.pick6.app.pro.weekly",
-        "com.pick6.app.pro.monthly",
+        "com.pick1.app.pro.weekly",
+        "com.pick1.app.pro.monthly",
     ]
 
     // MARK: - Lifecycle
@@ -79,7 +79,7 @@ final class SubscriptionManager: ObservableObject {
         // refreshEntitlements() for the canonical override.
         #if DEBUG
         self.isPro = true
-        self.activeProductId = "com.pick6.app.pro.monthly"
+        self.activeProductId = "com.pick1.app.pro.monthly"
         self.activeExpiration = Calendar.current.date(
             byAdding: .year, value: 10, to: Date()
         )
@@ -110,7 +110,7 @@ final class SubscriptionManager: ObservableObject {
             }
         } catch {
             // No products is the same as no entitlement — Free tier is fine.
-            print("Pick6 SubscriptionManager: loadProducts failed: \(error)")
+            print("Pick1 SubscriptionManager: loadProducts failed: \(error)")
         }
     }
 
@@ -207,7 +207,7 @@ final class SubscriptionManager: ObservableObject {
         #if DEBUG
         self.isPro = true
         if self.activeProductId == nil {
-            self.activeProductId = "com.pick6.app.pro.monthly"
+            self.activeProductId = "com.pick1.app.pro.monthly"
         }
         if self.activeExpiration == nil {
             // Far-future expiration so any "expires in N days" copy
