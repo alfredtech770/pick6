@@ -1281,55 +1281,84 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 }
 
 /* ─── intl-tel-input: dark-theme overrides ─────────────────── */
-.field-tel { padding: 0; gap: 0; }
-.field-tel .iti { width: 100%; }
-.field-tel .iti__tel-input { padding: 13px 16px 13px 16px; }
-/* Country selector trigger button (left of input) */
-.field-tel .iti__country-container {
+/* The field-tel label is the visible "pill"; intl-tel-input injects a
+   .iti wrapper around the input with a country trigger button on the left.
+   We keep the field's own padding off (the trigger + input handle their
+   own padding) so the trigger sits flush with the rounded left edge. */
+.field-tel { padding: 0 !important; gap: 0 !important; overflow: hidden; }
+.field-tel .iti { width: 100%; display: flex; align-items: stretch; }
+.field-tel .iti__tel-input {
+  flex: 1; min-width: 0;
+  padding: 14px 16px 14px 14px !important;
   background: transparent !important;
   border: none !important;
-  padding-left: 14px;
-  padding-right: 8px;
-  min-width: 80px;
+  outline: none !important;
+  color: var(--ink) !important;
+  font-family: inherit !important;
+  font-size: 15px !important;
 }
+.field-tel .iti__tel-input::placeholder { color: var(--mute); }
+
+/* Country trigger button — clearly demarcated panel on the left */
+.field-tel .iti__country-container,
 .field-tel .iti--separate-dial-code .iti__country-container {
-  background: rgba(255,255,255,0.03) !important;
+  position: static !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: none !important;
   border-right: 1px solid var(--line) !important;
+  padding: 0 !important;
+  display: flex; align-items: stretch;
 }
+.field-tel .iti__selected-country,
 .field-tel .iti__selected-country-primary {
   background: transparent !important;
-  color: var(--ink);
-  padding: 0 8px 0 0;
+  color: var(--ink) !important;
+  padding: 0 12px !important;
+  display: flex !important; align-items: center; gap: 8px;
+  height: 100%;
+  border: none !important;
+  cursor: pointer;
 }
-.field-tel .iti__selected-country-primary:focus,
+.field-tel .iti__selected-country-primary:focus-visible,
 .field-tel .iti__selected-country-primary:hover {
-  background: rgba(255,255,255,0.04) !important;
+  background: rgba(255,255,255,0.07) !important;
+}
+.field-tel .iti__flag {
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+  border-radius: 2px;
 }
 .field-tel .iti__selected-dial-code {
-  color: var(--ink);
+  color: var(--ink) !important;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
   font-size: 14px;
-  margin-left: 6px;
+  letter-spacing: 0.02em;
 }
 .field-tel .iti__arrow {
-  border-top-color: var(--mute);
-  margin-left: 6px;
+  border-top-color: var(--ink-2) !important;
+  margin-left: 2px !important;
+  opacity: 0.7;
 }
-/* Dropdown popup */
+
+/* Dropdown popup — left-aligned to the field, sized like a real menu */
 .iti__dropdown-content {
   background: var(--panel) !important;
   border: 1px solid var(--line-2) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.6) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02) !important;
   overflow: hidden;
+  margin-top: 6px;
+  min-width: 320px;
+  max-width: 420px;
 }
 .iti__search-input {
+  width: 100% !important;
   background: var(--panel-2) !important;
   color: var(--ink) !important;
   border: none !important;
   border-bottom: 1px solid var(--line) !important;
-  padding: 12px 14px !important;
+  padding: 14px 18px !important;
   font-family: inherit !important;
   font-size: 14px !important;
   outline: none !important;
@@ -1338,7 +1367,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .iti__country-list {
   background: var(--panel) !important;
   border: none !important;
-  max-height: 260px !important;
+  max-height: 280px !important;
+  padding: 6px 0 !important;
   scrollbar-width: thin;
   scrollbar-color: var(--line-2) var(--panel);
 }
@@ -1346,31 +1376,47 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .iti__country-list::-webkit-scrollbar-track { background: var(--panel); }
 .iti__country-list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
 .iti__country {
-  padding: 8px 14px !important;
-  color: var(--ink-2) !important;
+  display: flex !important; align-items: center; gap: 12px;
+  padding: 10px 18px !important;
+  color: var(--ink) !important;
   font-size: 14px;
+  line-height: 1.3;
+  cursor: pointer;
 }
+.iti__country .iti__flag { flex-shrink: 0; }
 .iti__country:hover {
   background: rgba(212,255,58,0.08) !important;
   color: var(--ink) !important;
 }
 .iti__country.iti__highlight {
-  background: rgba(212,255,58,0.12) !important;
+  background: rgba(212,255,58,0.14) !important;
   color: var(--accent) !important;
 }
-.iti__country-name { color: inherit !important; }
+.iti__country-name {
+  color: inherit !important;
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .iti__dial-code {
-  color: var(--mute) !important;
+  color: var(--ink-2) !important;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
+  font-weight: 600;
 }
 .iti__country.iti__highlight .iti__dial-code { color: var(--accent) !important; }
+
 /* Mobile fullscreen popup */
 .iti--fullscreen-popup .iti__dropdown-content {
   background: var(--bg) !important;
   border-radius: 0 !important;
+  border: none !important;
+  margin-top: 0;
+  min-width: 0;
+  max-width: none;
 }
-/* Hide the default "Search" placeholder image */
+.iti--fullscreen-popup .iti__country-list { max-height: none !important; }
+
+/* Flag sprite (24-flag CDN; 2x for retina) */
 .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags.webp") !important; }
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags@2x.webp") !important; }
