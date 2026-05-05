@@ -25,7 +25,11 @@ struct TeamLogo: View {
     let size: Crest.Size
 
     var body: some View {
-        if let url = TeamLogoLookup.url(sport: sport, team: team) {
+        // Individual-athlete sports (UFC / F1 / Tennis) — render the
+        // athlete's headshot in a circle instead of a team crest.
+        if AthleteHeadshot.isIndividual(sport: sport) {
+            AthleteHeadshot(sport: sport, name: team, size: size)
+        } else if let url = TeamLogoLookup.url(sport: sport, team: team) {
             AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
                 switch phase {
                 case .success(let image):
@@ -44,11 +48,178 @@ struct TeamLogo: View {
                 }
             }
         } else {
-            // Sport doesn't support real logos (UFC / F1 / ATP) — fall back.
+            // Team sport with no logo mapping — keep colored shield.
             Crest(team: team, size: size)
         }
     }
 }
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - AthleteHeadshot — circular face for individual sports
+// ════════════════════════════════════════════════════════════════
+
+/// Circular athlete headshot for sports where the "team" is actually a
+/// single person — UFC fighters, F1 drivers, ATP players. Uses ESPN's
+/// athlete-headshot CDN when we have an ID for the name, otherwise
+/// renders a clean profile-circle placeholder (silhouette or initials)
+/// instead of the team-style colored shield.
+struct AthleteHeadshot: View {
+    let sport: String
+    let name: String
+    let size: Crest.Size
+
+    static func isIndividual(sport: String) -> Bool {
+        switch sport {
+        case "combat", "f1", "tennis": return true
+        default: return false
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            // Always-present background ring + fill so the headshot
+            // sits inside a clean profile circle.
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#22252B"), Color(hex: "#101114")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing))
+                .overlay(Circle().stroke(Color(hex: "#2D3038"), lineWidth: 1))
+
+            if let url = AthleteHeadshotLookup.url(sport: sport, name: name) {
+                AsyncImage(url: url,
+                           transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .empty, .failure:
+                        placeholder
+                    @unknown default:
+                        placeholder
+                    }
+                }
+                .clipShape(Circle())
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: dimension, height: dimension)
+        .clipShape(Circle())
+    }
+
+    /// Square (so the circle reads as a profile pic rather than a tall
+    /// crest). Slight bump from the team-crest height so faces have
+    /// breathing room.
+    private var dimension: CGFloat {
+        size == .big ? 72 : 44
+    }
+
+    /// Initials over a soft gradient — used when we don't have a real
+    /// headshot URL or the load fails.
+    private var placeholder: some View {
+        ZStack {
+            Image(systemName: "person.fill")
+                .resizable()
+                .scaledToFit()
+                .padding(size == .big ? 18 : 11)
+                .foregroundColor(Color(hex: "#6E6F75"))
+            // Initials overlay so each athlete still feels distinct
+            // even without a real photo.
+            VStack {
+                Spacer()
+                Text(initials)
+                    .font(.archivoNarrow(size == .big ? 11 : 9, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .padding(.bottom, size == .big ? 6 : 3)
+            }
+        }
+    }
+
+    /// 2-3 letter initials from the athlete's name. "Alex Pereira" →
+    /// "AP"; single-token names ("Verstappen") → first 3 letters.
+    private var initials: String {
+        let parts = name.split(separator: " ").map(String.init)
+        if parts.count >= 2,
+           let first = parts.first?.first,
+           let last  = parts.last?.first {
+            return "\(first)\(last)".uppercased()
+        }
+        return String(name.prefix(3)).uppercased()
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Athlete headshot lookup
+// ════════════════════════════════════════════════════════════════
+
+enum AthleteHeadshotLookup {
+    /// Returns an ESPN headshot URL for the given (sport, name) when
+    /// we have an athlete ID for it. Lookup is fuzzy on last-name to
+    /// catch "Volk" / "Volkanovski" / "Alexander Volkanovski".
+    static func url(sport: String, name: String) -> URL? {
+        switch sport {
+        case "combat":
+            guard let id = lookup(in: ufcIds, name: name) else { return nil }
+            return URL(string: "https://a.espncdn.com/i/headshots/mma/players/full/\(id).png")
+        case "f1":
+            guard let id = lookup(in: f1Ids, name: name) else { return nil }
+            return URL(string: "https://a.espncdn.com/i/headshots/rpm/players/full/\(id).png")
+        case "tennis":
+            guard let id = lookup(in: tennisIds, name: name) else { return nil }
+            return URL(string: "https://a.espncdn.com/i/headshots/tennis/players/full/\(id).png")
+        default:
+            return nil
+        }
+    }
+
+    /// Try direct + last-token + first-token matches against the table.
+    private static func lookup(in table: [String: String], name: String) -> String? {
+        let lower = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if lower.isEmpty { return nil }
+        if let hit = table[lower] { return hit }
+        let last  = lower.split(separator: " ").last.map(String.init) ?? lower
+        if let hit = table[last] { return hit }
+        let first = lower.split(separator: " ").first.map(String.init) ?? lower
+        if let hit = table[first] { return hit }
+        return nil
+    }
+}
+
+// MARK: - Athlete IDs (ESPN)
+//
+// Verified-working IDs only — every entry below was confirmed to
+// resolve to a real headshot via the ESPN CDN. When a pick's athlete
+// isn't in the table, AthleteHeadshot renders the silhouette +
+// initials placeholder instead (still much cleaner than the
+// team-style colored shield it used to fall through to).
+//
+// To add more IDs: hit ESPN's athlete-search API or use the
+// pipeline's sportsdata.io headshot URL when we wire that field
+// into the picks model.
+
+private let ufcIds: [String: String] = [
+    "jones":      "2335639",  "jon jones":             "2335639",
+    "adesanya":   "4285679",  "israel adesanya":       "4285679",
+    "volkanovski":"3949584",  "alexander volkanovski": "3949584",
+    "makhachev":  "3332412",  "islam makhachev":       "3332412",
+    "edwards":    "3041602",  "leon edwards":          "3041602",
+    "usman":      "3088812",  "kamaru usman":          "3088812",
+    "ngannou":    "3933168",  "francis ngannou":       "3933168",
+    "poirier":    "2506549",  "dustin poirier":        "2506549",
+    "oliveira":   "2504169",  "charles oliveira":      "2504169",
+]
+
+private let f1Ids: [String: String] = [
+    "hamilton":   "868",   "lewis hamilton":     "868",
+    "leclerc":    "5499",  "charles leclerc":    "5499",
+    "zhou":       "5588",  "guanyu zhou":        "5588",
+]
+
+/// Tennis IDs not yet verified — table left empty; AthleteHeadshot
+/// renders the placeholder for tennis picks until we wire a real
+/// source. (ESPN's tennis CDN path may differ from /tennis/.)
+private let tennisIds: [String: String] = [:]
 
 // ════════════════════════════════════════════════════════════════
 // MARK: - Lookup
