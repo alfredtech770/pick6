@@ -1469,6 +1469,29 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 TopNavBar(crumb: "APP · ", crumbAccent: "PROFILE", live: false, onBack: {}, showBack: false)
+                    .overlay(alignment: .trailing) {
+                        // Top-right Edit button — opens the
+                        // EditProfileSheet (same destination as tapping
+                        // the avatar row, but discoverable from the
+                        // chrome). Mirrors the .star button on
+                        // MatchDetailView's TopNavBar for consistency.
+                        Button { showEditProfile = true } label: {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
+                                .frame(width: 38, height: 38)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(Color(hex: "#101114"))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                        )
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 18)
+                    }
                 profileHead
                     .padding(.bottom, 18)
                 // Profile is now settings-only — Account + Support
@@ -1481,7 +1504,17 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showEditProfile) {
-            EditProfileSheet(auth: auth, isOpen: $showEditProfile)
+            EditProfileSheet(
+                auth: auth,
+                isOpen: $showEditProfile,
+                onDeleteAccount: {
+                    // Best-effort: sign out + flag account for
+                    // deletion. Backend should run a 30-day soft-delete
+                    // via webhook; wire that up next time we touch
+                    // AuthManager.
+                    onSignOut()
+                }
+            )
         }
         .sheet(isPresented: $showLanguagePicker) {
             LanguagePickerSheet(selection: $appLanguage,
@@ -1601,7 +1634,6 @@ struct ProfileView: View {
         return "PICK6 FAN"
     }
 
-    @State private var showDeleteAccount: Bool = false
     @State private var notificationsOn: Bool = true
     @State private var showLanguagePicker: Bool = false
     /// Persisted language preference. Stored as the BCP-47 region-less
@@ -1609,8 +1641,15 @@ struct ProfileView: View {
     /// trailing pill and `languageSub` for the row's sub-label.
     @AppStorage("appLanguage") private var appLanguage: String = "en"
 
-    /// Trailing pill text on the Language row — the uppercased code.
-    private var languageCode: String { appLanguage.uppercased() }
+    /// Trailing pill text on the Language row — flag emoji + code
+    /// (e.g. "🇫🇷 FR"). Reading both at a glance is faster than the
+    /// code alone.
+    private var languageCode: String {
+        let lang = ProfileView.languages.first { $0.code == appLanguage }
+        let flag = lang?.flag ?? ""
+        return flag.isEmpty ? appLanguage.uppercased()
+                            : "\(flag) \(appLanguage.uppercased())"
+    }
 
     /// Sub-label under "Language" — the localized human name of the
     /// currently-selected language ("English", "Français", "Español"…).
@@ -1623,14 +1662,17 @@ struct ProfileView: View {
     /// localizations — order is alphabetical by English name.
     /// Arabic uses Modern Standard / Literary Arabic (al-fuṣḥā), the
     /// pan-regional written form. We don't ship colloquial dialects.
-    static let languages: [(code: String, name: String, native: String)] = [
-        ("ar", "Arabic",      "العربية الفصحى"),
-        ("en", "English",     "English"),
-        ("fr", "French",      "Français"),
-        ("de", "German",      "Deutsch"),
-        ("it", "Italian",     "Italiano"),
-        ("pt", "Portuguese",  "Português"),
-        ("es", "Spanish",     "Español"),
+    /// Flag choices: pan-language flags don't exist as Unicode emoji,
+    /// so we pick the canonical "home" country (UK for English, Spain
+    /// for Spanish, Portugal for Portuguese, Saudi Arabia for Arabic).
+    static let languages: [(code: String, name: String, native: String, flag: String)] = [
+        ("ar", "Arabic",      "العربية الفصحى", "🇸🇦"),
+        ("en", "English",     "English",         "🇬🇧"),
+        ("fr", "French",      "Français",        "🇫🇷"),
+        ("de", "German",      "Deutsch",         "🇩🇪"),
+        ("it", "Italian",     "Italiano",        "🇮🇹"),
+        ("pt", "Portuguese",  "Português",       "🇵🇹"),
+        ("es", "Spanish",     "Español",         "🇪🇸"),
     ]
 
     /// Hairline divider used between rows inside a grouped settings card.
@@ -1712,34 +1754,11 @@ struct ProfileView: View {
                         danger: true,
                         action: onSignOut
                     )
-                    divider
-                    // Delete Account is mandatory for any iOS app with auth
-                    // (Apple guideline 5.1.1(v) since iOS 14.5).
-                    settingsLinkRow(
-                        icon: "trash.fill",
-                        title: "Delete Account",
-                        sub: "Permanently remove your data",
-                        trailing: nil,
-                        danger: true
-                    ) {
-                        showDeleteAccount = true
-                    }
+                    // Delete Account moved into EditProfileSheet — it's
+                    // a profile-info action, not a support action.
                 }
                 .background(cardBackground)
             }
-        }
-        .alert("Delete account?", isPresented: $showDeleteAccount) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                Task {
-                    // Best-effort: sign out + flag account for deletion.
-                    // Backend should run a 30-day soft-delete via webhook;
-                    // wire up next time we touch the AuthManager.
-                    onSignOut()
-                }
-            }
-        } message: {
-            Text("This permanently deletes your Pick6 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
         }
     }
 
@@ -2612,18 +2631,18 @@ struct LanguagePickerSheet: View {
         .preferredColorScheme(.dark)
     }
 
-    private func languageRow(_ lang: (code: String, name: String, native: String)) -> some View {
+    private func languageRow(_ lang: (code: String, name: String, native: String, flag: String)) -> some View {
         Button {
             selection = lang.code
             isOpen = false
         } label: {
             HStack(spacing: 14) {
-                Text(lang.code.uppercased())
-                    .font(.mono(11, weight: .heavy))
-                    .foregroundColor(selection == lang.code
-                                     ? Color(hex: "#D4FF3A")
-                                     : Color(hex: "#B9B7B0"))
-                    .frame(width: 34, height: 34)
+                // Flag tile — large emoji on a panel background. The
+                // selected row gets a lime-tinted ring so the active
+                // language reads at a glance.
+                Text(lang.flag)
+                    .font(.system(size: 22))
+                    .frame(width: 38, height: 38)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Color(hex: "#16181C"))
@@ -2631,7 +2650,7 @@ struct LanguagePickerSheet: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(selection == lang.code
-                                    ? Color(hex: "#D4FF3A").opacity(0.3)
+                                    ? Color(hex: "#D4FF3A").opacity(0.4)
                                     : Color(hex: "#22252B"),
                                     lineWidth: 1)
                     )
@@ -2644,6 +2663,13 @@ struct LanguagePickerSheet: View {
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
                 Spacer()
+                // Trailing: code pill always visible (so the user can
+                // map flag → BCP-47 code), checkmark on the active row.
+                Text(lang.code.uppercased())
+                    .font(.mono(10, weight: .heavy))
+                    .foregroundColor(selection == lang.code
+                                     ? Color(hex: "#D4FF3A")
+                                     : Color(hex: "#6E6F75"))
                 if selection == lang.code {
                     Image(systemName: "checkmark")
                         .font(.system(size: 13, weight: .heavy))
@@ -2667,6 +2693,11 @@ struct LanguagePickerSheet: View {
 struct EditProfileSheet: View {
     let auth: AuthManager
     @Binding var isOpen: Bool
+    /// Fired when the user confirms account deletion. The host
+    /// (ProfileView) signs the user out and returns them to the
+    /// auth flow. Nil-able so the sheet can be presented without
+    /// the delete affordance in contexts where it doesn't apply.
+    var onDeleteAccount: (() -> Void)? = nil
 
     @State private var firstName: String = ""
     @State private var lastName: String = ""
@@ -2674,6 +2705,7 @@ struct EditProfileSheet: View {
     @State private var dob: Date = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
     @State private var saving: Bool = false
     @State private var localError: String?
+    @State private var showDeleteAccount: Bool = false
 
     var body: some View {
         ZStack {
@@ -2796,7 +2828,26 @@ struct EditProfileSheet: View {
                     .buttonStyle(.plain)
                     .disabled(!canSave || saving)
                     .padding(.horizontal, 18)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 24)
+
+                    // ── DANGER ZONE — Delete Account ──────────────
+                    // Mandatory for any iOS app with auth (Apple
+                    // guideline 5.1.1(v) since iOS 14.5). Lives in
+                    // the profile-info sheet alongside other
+                    // identity actions so the support/help section
+                    // stays focused on help rather than mixing
+                    // destructive operations in.
+                    if onDeleteAccount != nil {
+                        Rectangle()
+                            .fill(Color(hex: "#22252B"))
+                            .frame(height: 1)
+                            .padding(.horizontal, 18)
+                            .padding(.bottom, 18)
+
+                        deleteAccountRow
+                            .padding(.horizontal, 18)
+                            .padding(.bottom, 30)
+                    }
                 }
             }
         }
@@ -2806,6 +2857,58 @@ struct EditProfileSheet: View {
             lastName  = auth.lastName  ?? ""
             phone     = auth.whatsapp  ?? ""
         }
+        .alert("Delete account?", isPresented: $showDeleteAccount) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                isOpen = false
+                onDeleteAccount?()
+            }
+        } message: {
+            Text("This permanently deletes your Pick6 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
+        }
+    }
+
+    private var deleteAccountRow: some View {
+        Button {
+            showDeleteAccount = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#FF5A36"))
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(hex: "#16181C"))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Delete Account")
+                        .font(.archivo(13, weight: .semibold))
+                        .foregroundColor(Color(hex: "#FF5A36"))
+                    Text("Permanently remove your data")
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(hex: "#101114"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color(hex: "#FF5A36").opacity(0.15), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var sheetHeader: some View {
