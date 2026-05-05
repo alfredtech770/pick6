@@ -1,0 +1,14 @@
+# Pick1 — robots.txt
+# Allow all reputable crawlers, no path restrictions.
+User-agent: *
+Allow: /
+
+# Block bad-bot scrapers (optional but tightens noise)
+User-agent: SemrushBot
+Disallow: /
+User-agent: AhrefsBot
+Disallow: /
+User-agent: MJ12bot
+Disallow: /
+
+Sitemap: https://pick1.live/sitemap.xml

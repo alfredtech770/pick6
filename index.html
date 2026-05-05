@@ -4,8 +4,84 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0b0d" />
+
+<!-- ─── Primary SEO ─────────────────────────────────────── -->
 <title>Pick1 — Beat the Book. AI sports picks across 9 sports.</title>
-<meta name="description" content="AI-powered sports predictions across NBA, EPL, NFL, MLB, UFC and more. Unlimited daily picks, live game tracking, confidence scores. Start your 7-day free trial." />
+<meta name="description" content="AI-powered sports picks across NBA, NFL, EPL, MLB, UFC and 4 more. Confidence scores, live tracking, daily picks. Join the waitlist — 1 week free at launch." />
+<link rel="canonical" href="https://pick1.live/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Pick1" />
+<meta name="keywords" content="AI sports picks, sports betting predictions, NBA picks, NFL picks, EPL picks, MLB picks, UFC picks, AI confidence scores, live game tracking, sports analytics" />
+
+<!-- ─── Open Graph (Facebook, LinkedIn, iMessage, Slack, …) ─── -->
+<meta property="og:site_name" content="Pick1" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pick1.live/" />
+<meta property="og:title" content="Pick1 — Beat the Book. AI sports picks across 9 sports." />
+<meta property="og:description" content="AI-powered sports picks. Confidence scores, live tracking, daily picks. Join the waitlist — 1 week free at launch." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:image:secure_url" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Pick1 — Beat the Book. AI-powered sports picks across 9 sports." />
+<meta property="og:locale" content="en_US" />
+
+<!-- ─── Twitter Card ───────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content="https://pick1.live/" />
+<meta name="twitter:title" content="Pick1 — Beat the Book." />
+<meta name="twitter:description" content="AI-powered sports picks across 9 sports. Join the waitlist — 1 week free at launch." />
+<meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
+<meta name="twitter:image:alt" content="Pick1 — Beat the Book. AI-powered sports picks across 9 sports." />
+
+<!-- ─── Favicons + iOS home screen ─────────────────────── -->
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Pick1" />
+<meta name="application-name" content="Pick1" />
+
+<!-- ─── Structured data (JSON-LD) ──────────────────────── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://pick1.live/#org",
+      "name": "Pick1",
+      "url": "https://pick1.live/",
+      "logo": "https://pick1.live/assets/apple-touch-icon.png",
+      "sameAs": []
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://pick1.live/#website",
+      "url": "https://pick1.live/",
+      "name": "Pick1",
+      "description": "AI-powered sports picks across 9 sports. Confidence scores, live tracking, daily picks.",
+      "publisher": { "@id": "https://pick1.live/#org" },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "MobileApplication",
+      "name": "Pick1",
+      "operatingSystem": "iOS, Android",
+      "applicationCategory": "SportsApplication",
+      "description": "AI-powered sports picks across NBA, NFL, EPL, MLB, UFC and 4 more sports. Confidence scores, live tracking, daily picks.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "1 week free at launch"
+      }
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -1882,6 +1958,11 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 
 <!-- Mobile sticky CTA -->
 <a href="#download" class="sticky-cta">JOIN WAITLIST · 1 WEEK FREE →</a>
+
+<!-- Vercel Analytics + Speed Insights (auto-served when deployed on Vercel,
+     silently 404 on other hosts so they're a no-op until migration). -->
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 
 <!-- intl-tel-input: country-aware phone field (loaded synchronously
      so window.intlTelInput exists when our IIFE runs) -->
