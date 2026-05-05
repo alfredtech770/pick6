@@ -1312,10 +1312,11 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .field-tel .iti__tel-input:focus { border-color: var(--accent) !important; }
 .field-tel .iti__tel-input::placeholder { color: var(--mute); }
 
-/* Left pill: country trigger */
+/* Left pill: country trigger (must keep position:relative so the
+   absolutely-positioned dropdown anchors correctly to it) */
 .field-tel .iti__country-container,
 .field-tel .iti--separate-dial-code .iti__country-container {
-  position: static !important;
+  position: relative !important;
   background: rgba(255,255,255,0.04) !important;
   border: 1px solid var(--line) !important;
   border-radius: 12px !important;
@@ -1360,14 +1361,17 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   opacity: 0.7;
 }
 
-/* Dropdown popup — left-aligned to the field, sized like a real menu */
+/* Dropdown popup — anchored below the country trigger pill */
 .iti__dropdown-content {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  z-index: 1000 !important;
   background: var(--panel) !important;
   border: 1px solid var(--line-2) !important;
   border-radius: 14px !important;
   box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02) !important;
   overflow: hidden;
-  margin-top: 6px;
   min-width: 320px;
   max-width: 420px;
 }
