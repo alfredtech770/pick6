@@ -20,7 +20,7 @@ final class AuthManager {
 
     var displayName: String {
         if let f = firstName, let l = lastName { return "\(f) \(l)".uppercased() }
-        return "PICK6 FAN"
+        return "PICK1 FAN"
     }
 
     private var authListener: Task<Void, Never>?

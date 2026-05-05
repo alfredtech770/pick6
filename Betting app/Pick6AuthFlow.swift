@@ -998,7 +998,7 @@ struct OBNotificationsScreen: View {
                                         .frame(width: 18, height: 18)
                                     Text("★").font(.system(size: 11, weight: .heavy)).foregroundColor(.p6LimeInk)
                                 }
-                                Text("PICK6")
+                                Text("PICK1")
                                     .font(.custom("BarlowCondensed-Bold", size: 10))
                                     .kerning(2)
                                     .foregroundColor(.p6Ink2)

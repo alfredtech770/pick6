@@ -1646,7 +1646,7 @@ struct ProfileView: View {
         if let e = auth.userEmail {
             return e.split(separator: "@").first.map { String($0).uppercased() } ?? e.uppercased()
         }
-        return "PICK6 FAN"
+        return "PICK1 FAN"
     }
 
     @State private var notificationsOn: Bool = true
@@ -1800,7 +1800,7 @@ struct ProfileView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "diamond.fill")
                             .font(.system(size: 11, weight: .heavy))
-                        Text("PICK6 PRO")
+                        Text("PICK1 PRO")
                             .font(.archivoNarrow(10, weight: .bold))
                             .tracking(2.4)
                     }
@@ -3695,7 +3695,7 @@ struct BookmakerSheet: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("Pick6 surfaces AI predictions for entertainment. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick6 — wagers are settled by the sportsbook, not by us.")
+                Text("Pick1 surfaces AI predictions for entertainment. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick1 — wagers are settled by the sportsbook, not by us.")
                     .font(.archivo(11, weight: .regular))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .fixedSize(horizontal: false, vertical: true)

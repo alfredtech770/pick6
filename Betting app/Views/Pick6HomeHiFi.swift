@@ -521,7 +521,7 @@ struct Pick6Logo: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(hex: "#0A0B0D"))
                     .frame(width: 30, height: 30)
-                Text("6")
+                Text("1")
                     .font(.anton(22))
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .padding(.bottom, 2)
@@ -1519,7 +1519,7 @@ struct ProUnlockCard: View {
                 HStack(spacing: 6) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("PICK6 PRO")
+                    Text("PICK1 PRO")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                 }

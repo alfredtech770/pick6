@@ -153,7 +153,7 @@ struct OBPaywallScreen: View {
                 Image(systemName: "star.fill")
                     .font(.system(size: 11, weight: .heavy))
                     .foregroundColor(.p6Lime)
-                Text("PICK6 PRO")
+                Text("PICK1 PRO")
                     .font(.custom("BarlowCondensed-Bold", size: 11))
                     .kerning(2.4)
                     .foregroundColor(.p6Lime)

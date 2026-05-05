@@ -143,7 +143,7 @@ struct Pick6SplashLoader: View {
     }
 }
 
-// MARK: - Pick6 wordmark (PICK + lime star with "6" inside)
+// MARK: - Pick1 wordmark (PICK + lime star with "1" inside)
 
 struct Pick6Wordmark: View {
     let size: CGFloat
@@ -160,7 +160,7 @@ struct Pick6Wordmark: View {
                     .fill(Color(hex: "#D4FF3A"))
                     .frame(width: size * 0.95, height: size * 0.95)
                     .shadow(color: Color(hex: "#D4FF3A").opacity(0.35), radius: 14)
-                Text("6")
+                Text("1")
                     .font(.anton(size * 0.5))
                     .foregroundColor(Color(hex: "#0A0B0D"))
             }
@@ -169,7 +169,7 @@ struct Pick6Wordmark: View {
     }
 }
 
-/// Five-pointed star used inside the Pick6 wordmark.
+/// Five-pointed star used inside the Pick1 wordmark.
 struct StarShape: Shape {
     func path(in rect: CGRect) -> Path {
         let center = CGPoint(x: rect.midX, y: rect.midY)

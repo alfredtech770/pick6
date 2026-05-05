@@ -1,40 +1,40 @@
-# Pick6 — Terms of Service
+# Pick1 — Terms of Service
 
 **Effective date: April 30, 2026**
 
-These Terms of Service ("Terms") govern your access to and use of the Pick6 mobile application and related services (the "Service") provided by Pick6 ("we", "us", "our").
+These Terms of Service ("Terms") govern your access to and use of the Pick1 mobile application and related services (the "Service") provided by Pick1 ("we", "us", "our").
 
-By creating a Pick6 account or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
+By creating a Pick1 account or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
 
 ---
 
-## 1. What Pick6 is
+## 1. What Pick1 is
 
-Pick6 is an entertainment and informational service that uses artificial intelligence to generate sports predictions for major leagues including NBA, NFL, NHL, MLB, EPL, UFC, F1, and IPL Cricket.
+Pick1 is an entertainment and informational service that uses artificial intelligence to generate sports predictions for major leagues including NBA, NFL, NHL, MLB, EPL, UFC, F1, and IPL Cricket.
 
-**Pick6 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" and similar in-app actions add a recommendation to your tracked-picks list inside Pick6 only — they do not interact with any third-party platform. Pick6 does not facilitate, accept, or process wagers of any kind, and we do not integrate with any sportsbook, betting service, or financial-transaction platform beyond the Pick6 Pro subscription, which Apple processes directly through StoreKit.
+**Pick1 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" and similar in-app actions add a recommendation to your tracked-picks list inside Pick1 only — they do not interact with any third-party platform. Pick1 does not facilitate, accept, or process wagers of any kind, and we do not integrate with any sportsbook, betting service, or financial-transaction platform beyond the Pick1 Pro subscription, which Apple processes directly through StoreKit.
 
-**Pick6 is not financial or investment advice.** AI predictions are statistical estimates with documented uncertainty. Past performance does not predict future results. Use Pick6 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
+**Pick1 is not financial or investment advice.** AI predictions are statistical estimates with documented uncertainty. Past performance does not predict future results. Use Pick1 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
 
 ---
 
 ## 2. Eligibility
 
-You must be **at least 13 years old** (or the minimum age required by your jurisdiction's data-protection law — for example, 16 under GDPR for users in some EU member states) to use Pick6. By using the Service you represent and warrant that:
+You must be **at least 13 years old** (or the minimum age required by your jurisdiction's data-protection law — for example, 16 under GDPR for users in some EU member states) to use Pick1. By using the Service you represent and warrant that:
 
 - You meet the minimum age requirement above
 - You have full legal capacity (or your parent/legal guardian has provided consent on your behalf) to enter into these Terms
-- You will use Pick6 in compliance with all applicable laws in your jurisdiction
+- You will use Pick1 in compliance with all applicable laws in your jurisdiction
 
 ---
 
 ## 3. Account creation and security
 
-To use most features of Pick6 you create an account. You agree:
+To use most features of Pick1 you create an account. You agree:
 
 - To provide accurate, current information (currently just an email)
 - To keep your account credentials confidential
-- To notify us immediately at `support@pick6.app` if you suspect unauthorized access
+- To notify us immediately at `support@pick1.app` if you suspect unauthorized access
 - That you are responsible for all activity that occurs under your account
 
 We may suspend or terminate accounts that violate these Terms (see Section 11).
@@ -45,7 +45,7 @@ We may suspend or terminate accounts that violate these Terms (see Section 11).
 
 ### 4.1 Free vs Pro
 
-Pick6 offers two tiers:
+Pick1 offers two tiers:
 
 | Tier | Price | What you get |
 |---|---|---|
@@ -57,7 +57,7 @@ Pick6 offers two tiers:
 
 The 7-day free trial applies to **new subscribers** of the Weekly product only. The trial begins when you tap "Start 7-Day Free Trial". At the end of the 7th day, your subscription auto-renews at $14.99/week unless you cancel at least 24 hours before the trial ends.
 
-If you have previously subscribed to or trialed any Pick6 Pro product, you are not eligible for another free trial.
+If you have previously subscribed to or trialed any Pick1 Pro product, you are not eligible for another free trial.
 
 ### 4.3 Auto-renewal
 
@@ -70,13 +70,13 @@ Your iTunes account is charged within 24 hours of the end of the current period.
 
 ### 4.4 How to cancel
 
-Manage and cancel subscriptions in **iOS Settings → [your Apple ID] → Subscriptions → Pick6 Pro**. Cancellation takes effect at the end of the current billing period — you keep Pro access until then.
+Manage and cancel subscriptions in **iOS Settings → [your Apple ID] → Subscriptions → Pick1 Pro**. Cancellation takes effect at the end of the current billing period — you keep Pro access until then.
 
 We do not process cancellations directly. Apple handles all subscription management.
 
 ### 4.5 Refunds
 
-Refunds are issued by Apple, not Pick6. Request a refund at https://reportaproblem.apple.com or via iOS Settings → [your Apple ID] → Subscriptions → Pick6 Pro → Report a Problem.
+Refunds are issued by Apple, not Pick1. Request a refund at https://reportaproblem.apple.com or via iOS Settings → [your Apple ID] → Subscriptions → Pick1 Pro → Report a Problem.
 
 ### 4.6 Price changes
 
@@ -88,12 +88,12 @@ We may change subscription prices for new subscribers at any time. Existing subs
 
 You agree NOT to:
 
-- Use Pick6 for any illegal purpose, including in jurisdictions where AI sports predictions are prohibited
-- Reverse-engineer, decompile, or attempt to extract Pick6's source code
-- Scrape, bulk-download, or systematically harvest predictions from Pick6 (the predictions are our intellectual property — see Section 7)
-- Resell, redistribute, or republish Pick6 predictions to third parties
+- Use Pick1 for any illegal purpose, including in jurisdictions where AI sports predictions are prohibited
+- Reverse-engineer, decompile, or attempt to extract Pick1's source code
+- Scrape, bulk-download, or systematically harvest predictions from Pick1 (the predictions are our intellectual property — see Section 7)
+- Resell, redistribute, or republish Pick1 predictions to third parties
 - Impersonate another person or create accounts under false pretenses
-- Use Pick6 to harass, threaten, or harm other users
+- Use Pick1 to harass, threaten, or harm other users
 - Interfere with the Service's normal operation (e.g. denial of service, exploiting bugs, automated scripts)
 - Provide false information during account creation
 
@@ -103,17 +103,17 @@ We reserve the right to investigate and take legal action against anyone who, in
 
 ## 6. AI predictions disclaimer
 
-**Pick6 predictions are AI-generated estimates, not guarantees.** Specifically:
+**Pick1 predictions are AI-generated estimates, not guarantees.** Specifically:
 
 - Predictions are generated by Anthropic Claude Opus 4.7, an AI model with documented uncertainty
 - The model's stated probability (e.g. "76%") is a best estimate of the matchup's outcome based on available information at the time of generation
 - Real-world outcomes are influenced by factors the AI cannot perfectly observe (last-minute injuries, lineup changes, weather, ref decisions, etc.)
 - Long-run accuracy may vary from the AI's stated probabilities, particularly during model updates or unusual seasons
 
-By using Pick6 you acknowledge that:
+By using Pick1 you acknowledge that:
 
-- You are not relying on Pick6 recommendations as the sole basis for any sports-related decision
-- Pick6 is not liable for losses arising from decisions you make based on AI predictions
+- You are not relying on Pick1 recommendations as the sole basis for any sports-related decision
+- Pick1 is not liable for losses arising from decisions you make based on AI predictions
 
 ---
 
@@ -121,28 +121,28 @@ By using Pick6 you acknowledge that:
 
 ### 7.1 Our content
 
-Pick6, the Pick6 logo, the AI predictions generated by the Service, and all other content, design elements, and software comprising the Service are owned by Pick6 and protected by U.S. and international copyright, trademark, and other intellectual property laws.
+Pick1, the Pick1 logo, the AI predictions generated by the Service, and all other content, design elements, and software comprising the Service are owned by Pick1 and protected by U.S. and international copyright, trademark, and other intellectual property laws.
 
 ### 7.2 Your license
 
-We grant you a limited, non-exclusive, non-transferable, revocable license to use Pick6 for personal, non-commercial use, subject to these Terms.
+We grant you a limited, non-exclusive, non-transferable, revocable license to use Pick1 for personal, non-commercial use, subject to these Terms.
 
 This license does not include the right to:
 
 - Copy or modify the app
 - Use the predictions for commercial resale
-- Make the app available to others (e.g. via Family Sharing — Pick6 disables this in Section 4.2 of `SUBSCRIPTION_METADATA.md`)
+- Make the app available to others (e.g. via Family Sharing — Pick1 disables this in Section 4.2 of `SUBSCRIPTION_METADATA.md`)
 - Create derivative works
 
 ### 7.3 Feedback
 
-If you send us feedback, suggestions, or ideas about Pick6, we may use them without compensation, attribution, or any obligation to you.
+If you send us feedback, suggestions, or ideas about Pick1, we may use them without compensation, attribution, or any obligation to you.
 
 ---
 
 ## 8. Third-party services
 
-Pick6 integrates with the following third parties. By using Pick6 you also accept their terms:
+Pick1 integrates with the following third parties. By using Pick1 you also accept their terms:
 
 | Provider | Used for | Their terms |
 |---|---|---|
@@ -171,9 +171,9 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL PICK6, ITS A
 
 - Your use of or inability to use the Service
 - Any AI prediction's accuracy or your reliance on it
-- Decisions you make based on Pick6 content
+- Decisions you make based on Pick1 content
 - Unauthorized access to your account
-- Any third-party content or services accessed through Pick6
+- Any third-party content or services accessed through Pick1
 
 OUR TOTAL LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THE SERVICE IS LIMITED TO THE GREATER OF:
 
@@ -186,7 +186,7 @@ Some jurisdictions do not allow the exclusion of certain warranties or the limit
 
 ## 11. Termination
 
-You may terminate your account at any time by tapping **Profile → Settings → Delete Account** in the app, or by emailing `support@pick6.app`. Your account will be deleted within 30 days of the request.
+You may terminate your account at any time by tapping **Profile → Settings → Delete Account** in the app, or by emailing `support@pick1.app`. Your account will be deleted within 30 days of the request.
 
 We may suspend or terminate your access if we determine, in our sole discretion, that:
 
@@ -206,7 +206,7 @@ These Terms are governed by the laws of the State of Delaware, USA, without rega
 
 ### 12.2 Informal resolution
 
-Before filing a claim, you agree to try to resolve the dispute informally by emailing `support@pick6.app`. We'll acknowledge within 5 business days and respond substantively within 30 days.
+Before filing a claim, you agree to try to resolve the dispute informally by emailing `support@pick1.app`. We'll acknowledge within 5 business days and respond substantively within 30 days.
 
 ### 12.3 Arbitration
 
@@ -221,15 +221,15 @@ This arbitration provision does not apply to:
 
 ## 13. Changes to these Terms
 
-We may update these Terms from time to time. Material changes will be communicated via email or in-app banner at least 30 days before they take effect. Continued use of Pick6 after the effective date of revised Terms constitutes acceptance.
+We may update these Terms from time to time. Material changes will be communicated via email or in-app banner at least 30 days before they take effect. Continued use of Pick1 after the effective date of revised Terms constitutes acceptance.
 
 ---
 
 ## 14. Contact
 
 ```
-Pick6
-support@pick6.app
+Pick1
+support@pick1.app
 ```
 
 For legal notices specifically, prefix the subject with `[Legal Notice]`.
