@@ -85,47 +85,54 @@ struct PageHero: View {
     let glow: Color             // per-screen radial glow tint
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            RadialGradient(
-                colors: [glow, .clear],
-                center: UnitPoint(x: 1.05, y: -0.1),
-                startRadius: 0,
-                endRadius: 320
-            )
-            .frame(height: 220)
-            .opacity(0.9)
-            .blur(radius: 30)
+        // Layout is driven by the title + sub-chips; the radial glow
+        // is a `.background` so it bleeds behind the text without
+        // claiming an extra ~125pt of empty space below the sub line
+        // (which the previous `.frame(height: 220)` on the gradient
+        // forced into the layout).
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(title)
+                    .font(.anton(72))
+                    .lineSpacing(-12)
+                    .tracking(-0.7)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Text(titleAccent)
+                    .font(.anton(72))
+                    .lineSpacing(-12)
+                    .tracking(-0.7)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+            }
+            .padding(.top, 6)
 
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(title)
-                        .font(.anton(72))
-                        .lineSpacing(-12)
-                        .tracking(-0.7)
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                    Text(titleAccent)
-                        .font(.anton(72))
-                        .lineSpacing(-12)
-                        .tracking(-0.7)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                }
-                .padding(.top, 6)
-
-                HStack(spacing: 8) {
-                    ForEach(Array(sub.enumerated()), id: \.offset) { i, item in
-                        if i > 0 {
-                            Circle()
-                                .fill(Color(hex: "#6E6F75"))
-                                .frame(width: 4, height: 4)
-                        }
-                        Text(item)
-                            .font(.archivoNarrow(11, weight: .bold))
-                            .tracking(2.4)
-                            .foregroundColor(Color(hex: "#6E6F75"))
+            HStack(spacing: 8) {
+                ForEach(Array(sub.enumerated()), id: \.offset) { i, item in
+                    if i > 0 {
+                        Circle()
+                            .fill(Color(hex: "#6E6F75"))
+                            .frame(width: 4, height: 4)
                     }
+                    Text(item)
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
                 }
             }
-            .padding(.horizontal, 20)
+        }
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .topTrailing) {
+            RadialGradient(
+                colors: [glow, .clear],
+                center: UnitPoint(x: 0.5, y: 0.5),
+                startRadius: 0,
+                endRadius: 220
+            )
+            .frame(width: 380, height: 280)
+            .opacity(0.9)
+            .blur(radius: 30)
+            .offset(x: 60, y: -40)
+            .allowsHitTesting(false)
         }
     }
 }
@@ -1949,11 +1956,11 @@ struct WinsView: View {
                          sub: ["\(wonPicks.count) SAVED MATCH\(wonPicks.count == 1 ? "" : "ES")",
                                "TAP A STAR TO FAVORITE"],
                          glow: Color(hex: "#D4FF3A"))
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 6)
 
                 favActionsRow
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 8)
 
                 if wonPicks.isEmpty {
                     emptyState
@@ -2212,11 +2219,11 @@ struct LiveView: View {
                          sub: ["\(livePicks.count) GAMES",
                                "\(livePicks.count) PICK\(livePicks.count == 1 ? "" : "S") IN PLAY"],
                          glow: Color(hex: "#FF5A36"))
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 6)
 
                 tabsRow
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 10)
 
                 if let nextUp = nextUpcomingPick {
                     watchBanner(nextUp)
