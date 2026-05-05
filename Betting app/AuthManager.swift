@@ -36,6 +36,13 @@ final class AuthManager {
     // MARK: - Session
 
     func checkSession() async {
+        // Minimum splash hold — keeps the loader visible for at least
+        // 3.5s so the brand mark + ticker get a beat to land before
+        // the home screen swaps in. Real session work runs in
+        // parallel; we only block on whichever finishes last.
+        let started = Date()
+        let minimumSplash: TimeInterval = 3.5
+
         do {
             let session = try await SupabaseManager.client.auth.session
             isAuthenticated = true
@@ -45,6 +52,13 @@ final class AuthManager {
             // No valid session in Keychain — show login screen
             isAuthenticated = false
             isProfileComplete = false
+        }
+
+        let elapsed = Date().timeIntervalSince(started)
+        if elapsed < minimumSplash {
+            try? await Task.sleep(
+                nanoseconds: UInt64((minimumSplash - elapsed) * 1_000_000_000)
+            )
         }
         isCheckingSession = false
     }

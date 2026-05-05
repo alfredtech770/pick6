@@ -143,50 +143,57 @@ struct Pick1SplashLoader: View {
     }
 }
 
-// MARK: - Pick1 wordmark (PICK + lime star with "1" inside)
+// MARK: - Pick1 wordmark (PICK + rounded lime tile with "1" inside)
+//
+// Matches the canonical Pick1 Logo Kit (Pick1 Logo.html). The tile
+// is a rounded square — NOT a star — sized ~1.05× the cap-height of
+// "PICK" with a 0.235em corner radius and the digit weighted heavier
+// (Anton Bold/700) so the "1" reads as a typographic monogram inside
+// its own surface.
+//
+// Color variants in the spec (currently we render the canonical
+// lime-on-dark variant). To support light/lime backdrops later, expose
+// the three colors as parameters.
 
 struct Pick1Wordmark: View {
     let size: CGFloat
 
+    /// Color of the "PICK" wordmark.
+    var textColor: Color = Color(hex: "#F4F4F5")
+    /// Color of the rounded tile that holds "1".
+    var tileColor: Color = Color(hex: "#D4FF3A")
+    /// Color of the "1" digit inside the tile.
+    var digitColor: Color = Color(hex: "#0A0B0D")
+
+    /// Tile geometry per the spec:
+    ///   width / height = 1.05em (slightly larger than cap height)
+    ///   corner-radius  = 0.235em
+    ///   "1" font-size  = 0.62em, padding-bottom 0.04em
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: size * 0.04) {
+        HStack(alignment: .firstTextBaseline, spacing: size * 0.05) {
             Text("PICK")
                 .font(.anton(size))
-                .tracking(-size * 0.012)
-                .foregroundColor(Color(hex: "#F5F3EE"))
+                .tracking(-size * 0.01)
+                .foregroundColor(textColor)
 
+            // Rounded tile + digit — anchored to the cap-line so it
+            // visually sits with the rest of the wordmark.
             ZStack {
-                StarShape()
-                    .fill(Color(hex: "#D4FF3A"))
-                    .frame(width: size * 0.95, height: size * 0.95)
-                    .shadow(color: Color(hex: "#D4FF3A").opacity(0.35), radius: 14)
+                RoundedRectangle(cornerRadius: size * 0.235,
+                                 style: .continuous)
+                    .fill(tileColor)
+                    .shadow(color: tileColor.opacity(0.35), radius: size * 0.18)
                 Text("1")
-                    .font(.anton(size * 0.5))
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .font(.anton(size * 0.62))
+                    .foregroundColor(digitColor)
+                    .padding(.bottom, size * 0.04)
             }
-            .offset(y: -size * 0.05)
+            .frame(width: size * 1.05, height: size * 1.05)
+            // Drop the tile slightly so its baseline aligns with PICK.
+            .alignmentGuide(.firstTextBaseline) { d in
+                d[VerticalAlignment.bottom] - size * 0.10
+            }
         }
-    }
-}
-
-/// Five-pointed star used inside the Pick1 wordmark.
-struct StarShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let outer = min(rect.width, rect.height) / 2
-        let inner = outer * 0.42
-        var path = Path()
-        for i in 0..<10 {
-            let radius = i.isMultiple(of: 2) ? outer : inner
-            let angle = CGFloat(i) * .pi / 5 - .pi / 2
-            let pt = CGPoint(
-                x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle)
-            )
-            if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
-        }
-        path.closeSubpath()
-        return path
     }
 }
 
