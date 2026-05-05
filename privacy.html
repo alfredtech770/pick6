@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+
+<title>Privacy Policy — Pick1</title>
+<meta name="description" content="How Pick1 collects, uses, and shares information. We collect the minimum needed to run the AI sports prediction service." />
+<link rel="canonical" href="https://pick1.live/privacy" />
+<meta name="robots" content="index, follow" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pick1.live/privacy" />
+<meta property="og:title" content="Privacy Policy — Pick1" />
+<meta property="og:description" content="How Pick1 collects, uses, and shares information. We collect the minimum needed to run the AI sports prediction service." />
+<meta property="og:image" content="https://pick1.live/assets/og-image.png" />
+<meta property="og:site_name" content="Pick1" />
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css" />
+
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="/">PICK<span class="six">1</span></a>
+  <nav class="nav-links">
+    <a href="/about">About</a>
+    <a href="/methodology" class="hide-mobile">Method</a>
+    <a href="/blog">Blog</a>
+  </nav>
+  <a class="cta-pill" href="/#download">Join Waitlist</a>
+</header>
+
+<main class="page">
+  <header class="page-header">
+    <p class="eyebrow">Legal</p>
+    <h1 class="display">PRIVACY <em>POLICY.</em></h1>
+  </header>
+<p><strong>Effective date: April 30, 2026</strong></p>
+<p>This Privacy Policy describes how Pick1 ("we", "us", "our") collects, uses, and shares information when you use the Pick1 mobile application (the "Service").</p>
+<p>By using Pick1, you agree to the collection and use of information in accordance with this policy.</p>
+<hr />
+<h2>1. Information we collect</h2>
+<h3>1.1 Information you give us</h3>
+<p>When you create a Pick1 account we collect:</p>
+<ul>
+<li><strong>Email address</strong> — used to log you in via a one-time passcode (OTP)</li>
+<li><strong>Sport preferences</strong> — which of the 8 supported sports you want to follow (NBA, NHL, NFL, MLB, EPL, UFC, F1, IPL Cricket)</li>
+<li><strong>Notification preferences</strong> — whether you want push alerts for daily picks, live game updates, etc.</li>
+</ul>
+<p>We never ask you for, and we never store, your full name unless you choose to add it. We never ask for your home address, your date of birth, or your phone number.</p>
+<h3>1.2 Information collected automatically</h3>
+<p>When you use Pick1 we collect:</p>
+<ul>
+<li><strong>Account identifier</strong> — a randomly generated UUID assigned by our authentication provider (Supabase) so we can associate your saved picks with your account</li>
+<li><strong>Pick history</strong> — which AI predictions you've viewed, saved, or tapped through to detail</li>
+<li><strong>Subscription status</strong> — whether you're on Free or Pro, your subscription tier, and expiration date (this comes from Apple, not from your card — we never see payment information)</li>
+</ul>
+<h3>1.3 Information we do <em>not</em> collect</h3>
+<p>We deliberately do not collect:</p>
+<ul>
+<li>Real name (unless you optionally add one)</li>
+<li>Phone number</li>
+<li>Physical address</li>
+<li>Date of birth (we age-gate via Apple's 17+ rating)</li>
+<li>Photos, videos, audio, or any device content</li>
+<li>Location data</li>
+<li>Health, fitness, biometric, or financial information beyond what Apple confirms about your subscription</li>
+<li>Browsing or search history outside of Pick1</li>
+</ul>
+<p>We never sell your data and we do not share it for advertising purposes.</p>
+<hr />
+<h2>2. How we use your information</h2>
+<p>We use the information we collect to:</p>
+<ul>
+<li><strong>Run the service</strong> — show you AI predictions for the sports you follow</li>
+<li><strong>Authenticate you</strong> — send OTP codes to your email so only you can log in to your account</li>
+<li><strong>Personalize your feed</strong> — filter the home feed by your selected sports</li>
+<li><strong>Track subscription state</strong> — make sure you only get Pro features if you have an active subscription</li>
+<li><strong>Improve Pick1</strong> — anonymized usage patterns help us decide which features to build next (we don't tie this to your identity in any analysis)</li>
+</ul>
+<p>We never use your information to:</p>
+<ul>
+<li>Build advertising profiles</li>
+<li>Track you across other apps or websites</li>
+<li>Send marketing email outside of transactional service emails (e.g. an OTP code, a subscription receipt, a critical bug fix announcement)</li>
+</ul>
+<hr />
+<h2>3. How we store your information</h2>
+<ul>
+<li><strong>Authentication and pick data</strong>: stored in <strong>Supabase</strong> (https://supabase.com), a SOC 2 Type 2-compliant managed Postgres provider, encrypted at rest and in transit</li>
+<li><strong>Subscription verification</strong>: handled directly by Apple via StoreKit 2; we never store payment cards or transaction details outside of the user-product-expiry tuple Apple gives us</li>
+<li><strong>Local device storage</strong>: a small amount of preference data (your selected sports, whether you've finished onboarding) is kept in iOS UserDefaults on your phone</li>
+</ul>
+<p>We retain your data for as long as your account is active. If you delete your account (see "Your rights" below), we delete all personally identifiable data within 30 days, except where retention is required by law.</p>
+<hr />
+<h2>4. How we share your information</h2>
+<p>We share information with <strong>only</strong> the third parties needed to deliver Pick1:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Purpose</th>
+<th>Data shared</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Supabase</strong></td>
+<td>Account auth, pick database, realtime sync</td>
+<td>Email, account ID, pick history</td>
+</tr>
+<tr>
+<td><strong>Apple (App Store / StoreKit)</strong></td>
+<td>Subscription processing</td>
+<td>The transaction Apple itself initiated; we do not send Apple any of your personal data — they already have it</td>
+</tr>
+<tr>
+<td><strong>Anthropic</strong></td>
+<td>AI prediction generation</td>
+<td>None — predictions are generated server-side using only public sports data, not user information</td>
+</tr>
+<tr>
+<td><strong>Sportsdata.io</strong></td>
+<td>Live sports schedules and scores</td>
+<td>None — read-only public data</td>
+</tr>
+</tbody>
+</table>
+<p>We do <strong>not</strong> sell, rent, or share your information with advertisers, data brokers, or any third party not listed above.</p>
+<p>We may share information if compelled by valid legal process (subpoena, court order). We will challenge overly broad requests and will notify you when legally permitted.</p>
+<hr />
+<h2>5. Your rights</h2>
+<p>You have the right to:</p>
+<ul>
+<li><strong>Access</strong> the data we hold about you. Email <code>privacy@pick6.app</code> and we'll send you a JSON export within 30 days.</li>
+<li><strong>Correct</strong> inaccurate data. You can update most fields directly in the app's Profile screen, or email us if a field isn't editable.</li>
+<li><strong>Delete</strong> your account and associated data. In the app: Profile → Settings → Delete Account. Or email <code>privacy@pick6.app</code>. We complete deletion within 30 days.</li>
+<li><strong>Port</strong> your data. Use the "Access" right above to receive a JSON export.</li>
+<li><strong>Opt out</strong> of marketing communications (Pick1 sends none, so this right is moot — but here on principle).</li>
+</ul>
+<p>If you're an EEA, UK, or California resident you also have the right to lodge a complaint with your data protection authority (ICO, CNIL, CPPA, etc.).</p>
+<hr />
+<h2>6. Children's privacy</h2>
+<p>Pick1 is not intended for users under <strong>13 years of age</strong> (or such higher age as required in your jurisdiction by COPPA, GDPR-K, or local law). We do not knowingly collect data from children. Pick1 is rated 12+ on the App Store as a sports analysis and content app — comparable to ESPN, The Athletic, or FiveThirtyEight.</p>
+<p>If you believe a child has created a Pick1 account, contact <code>privacy@pick6.app</code> and we will delete the account within 7 days.</p>
+<hr />
+<h2>7. International data transfers</h2>
+<p>Pick1 data is hosted in EU (Supabase EU region) and US (Apple's payment processing). If you access Pick1 from outside these regions, your data may be transferred to and processed in regions other than your own. We rely on Standard Contractual Clauses to govern these transfers in compliance with GDPR.</p>
+<hr />
+<h2>8. Security</h2>
+<p>We implement reasonable security practices to protect your information:</p>
+<ul>
+<li>All network traffic uses TLS 1.2 or higher</li>
+<li>Supabase enforces row-level security so you can only access your own picks history</li>
+<li>Apple handles all payment data — we never see, store, or transmit credit card numbers</li>
+<li>We rotate authentication secrets regularly and limit administrative access to a small set of authorized engineers</li>
+</ul>
+<p>No system is perfectly secure. If a data breach occurs and your information is affected we will notify you within 72 hours of becoming aware of the breach in accordance with applicable law.</p>
+<hr />
+<h2>9. Changes to this policy</h2>
+<p>We may update this policy periodically. When we do we'll bump the "Effective date" at the top and, for material changes, send you a notice via email or an in-app banner before the change takes effect. Continued use of Pick1 after a policy update constitutes acceptance of the revised policy.</p>
+<hr />
+<h2>10. Contact</h2>
+<p>Questions, requests, complaints:</p>
+<pre><code>Pick1 Privacy
+support@pick6.app
+</code></pre>
+<p>For GDPR / California requests specifically, prefix the subject with <code>[Privacy Request]</code>.</p>
+<hr />
+<p>This policy is intentionally short and human-readable. We reviewed every word — there's no boilerplate buried in here that contradicts the plain English above. If anything seems off, email us.</p>
+</main>
+
+<footer class="foot">
+  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div class="foot-links">
+    <a href="/about">About</a>
+    <a href="/methodology">Method</a>
+    <a href="/blog">Blog</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+  </div>
+</footer>
+</body>
+</html>
