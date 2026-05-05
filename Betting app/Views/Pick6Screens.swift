@@ -1483,6 +1483,12 @@ struct ProfileView: View {
         .sheet(isPresented: $showEditProfile) {
             EditProfileSheet(auth: auth, isOpen: $showEditProfile)
         }
+        .sheet(isPresented: $showLanguagePicker) {
+            LanguagePickerSheet(selection: $appLanguage,
+                                isOpen: $showLanguagePicker)
+                .presentationDragIndicator(.visible)
+                .presentationDetents([.medium, .large])
+        }
     }
 
     private var profileHead: some View {
@@ -1597,7 +1603,34 @@ struct ProfileView: View {
 
     @State private var showDeleteAccount: Bool = false
     @State private var notificationsOn: Bool = true
-    @State private var darkModeOn: Bool = true
+    @State private var showLanguagePicker: Bool = false
+    /// Persisted language preference. Stored as the BCP-47 region-less
+    /// code ("en", "fr", "es" …); UI lookups use `languageCode` for the
+    /// trailing pill and `languageSub` for the row's sub-label.
+    @AppStorage("appLanguage") private var appLanguage: String = "en"
+
+    /// Trailing pill text on the Language row — the uppercased code.
+    private var languageCode: String { appLanguage.uppercased() }
+
+    /// Sub-label under "Language" — the localized human name of the
+    /// currently-selected language ("English", "Français", "Español"…).
+    private var languageSub: String {
+        ProfileView.languages.first { $0.code == appLanguage }?.name
+            ?? "System default"
+    }
+
+    /// Languages we offer in the picker. Add more as we ship
+    /// localizations — order is alphabetical by English name.
+    static let languages: [(code: String, name: String, native: String)] = [
+        ("en", "English",     "English"),
+        ("fr", "French",      "Français"),
+        ("de", "German",      "Deutsch"),
+        ("it", "Italian",     "Italiano"),
+        ("ja", "Japanese",    "日本語"),
+        ("ko", "Korean",      "한국어"),
+        ("pt", "Portuguese",  "Português"),
+        ("es", "Spanish",     "Español"),
+    ]
 
     /// Hairline divider used between rows inside a grouped settings card.
     private var divider: some View {
@@ -1630,11 +1663,12 @@ struct ProfileView: View {
                         isOn: $notificationsOn
                     )
                     divider
-                    settingsToggleRow(
-                        icon: "moon.fill",
-                        title: "Dark Mode",
-                        sub: "Always on · system default",
-                        isOn: $darkModeOn
+                    settingsLinkRow(
+                        icon: "globe",
+                        title: "Language",
+                        sub: languageSub,
+                        trailing: languageCode,
+                        action: { showLanguagePicker = true }
                     )
                     divider
                     settingsLinkRow(
@@ -2514,6 +2548,110 @@ struct AllPicksView: View {
     private func liveScore(for pick: Pick) -> LiveScore? {
         guard let gid = pick.gameId else { return nil }
         return vm.liveScores.first { $0.gameId == gid }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Language picker sheet
+// ════════════════════════════════════════════════════════════════
+
+/// Modal sheet listing the languages we offer. Tap one to set the
+/// app's language preference and dismiss. Persists via the
+/// `appLanguage` @AppStorage key on ProfileView. Localization wiring
+/// happens at the app root once we ship localized string tables —
+/// this sheet just records the user's choice.
+struct LanguagePickerSheet: View {
+    @Binding var selection: String
+    @Binding var isOpen: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("LANGUAGE")
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Spacer()
+                    Button("Done") { isOpen = false }
+                        .font(.archivo(13, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 18)
+
+                // Language rows
+                VStack(spacing: 0) {
+                    ForEach(ProfileView.languages, id: \.code) { lang in
+                        languageRow(lang)
+                        if lang.code != ProfileView.languages.last?.code {
+                            Rectangle()
+                                .fill(Color(hex: "#22252B"))
+                                .frame(height: 1)
+                                .padding(.leading, 56)
+                        }
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color(hex: "#101114"))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22,
+                                             style: .continuous)
+                                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 16)
+                Spacer().frame(height: 40)
+            }
+        }
+        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .preferredColorScheme(.dark)
+    }
+
+    private func languageRow(_ lang: (code: String, name: String, native: String)) -> some View {
+        Button {
+            selection = lang.code
+            isOpen = false
+        } label: {
+            HStack(spacing: 14) {
+                Text(lang.code.uppercased())
+                    .font(.mono(11, weight: .heavy))
+                    .foregroundColor(selection == lang.code
+                                     ? Color(hex: "#D4FF3A")
+                                     : Color(hex: "#B9B7B0"))
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(hex: "#16181C"))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(selection == lang.code
+                                    ? Color(hex: "#D4FF3A").opacity(0.3)
+                                    : Color(hex: "#22252B"),
+                                    lineWidth: 1)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(lang.name)
+                        .font(.archivo(13, weight: .semibold))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                    Text(lang.native)
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                Spacer()
+                if selection == lang.code {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                }
+            }
+            .padding(14)
+        }
+        .buttonStyle(.plain)
     }
 }
 
