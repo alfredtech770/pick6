@@ -71,7 +71,41 @@ struct OBPaywallScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.p1Ink.ignoresSafeArea())
+        .background(
+            // Screen-level dark canvas + a top-right lime glow that
+            // bleeds across the hero. Putting the glow on the *screen*
+            // (not on the hero VStack like before) gives it room to
+            // wash a much larger area — the hero VStack was only ~200pt
+            // tall, so the glow had nothing to bleed across before.
+            ZStack {
+                Color.p1Ink
+                RadialGradient(
+                    colors: [Color.p1Lime.opacity(0.42),
+                             Color.p1Lime.opacity(0.18),
+                             Color.p1Lime.opacity(0.04),
+                             .clear],
+                    center: UnitPoint(x: 0.5, y: 0.5),
+                    startRadius: 0,
+                    endRadius: 260
+                )
+                .frame(width: 540, height: 540)
+                .blur(radius: 60)
+                .offset(x: 140, y: -180)
+                .allowsHitTesting(false)
+                // Subtle secondary glow at top-left for depth.
+                RadialGradient(
+                    colors: [Color.p1Lime.opacity(0.10), .clear],
+                    center: UnitPoint(x: 0.5, y: 0.5),
+                    startRadius: 0,
+                    endRadius: 200
+                )
+                .frame(width: 380, height: 380)
+                .blur(radius: 50)
+                .offset(x: -120, y: -240)
+                .allowsHitTesting(false)
+            }
+            .ignoresSafeArea()
+        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             stickyBar
         }
@@ -178,30 +212,8 @@ struct OBPaywallScreen: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 22)
-        .background(alignment: .topTrailing) {
-            // Lime radial glow that washes the top-right of the
-            // hero. The previous version clipped a small offset
-            // circle behind .clipped(), which left the glow nearly
-            // invisible — the bright center was off-canvas and only
-            // a sliver of falloff was actually drawn. Now: a
-            // 3-stop radial inside an explicit 380×320 frame, soft
-            // 32pt blur, offset so the brightest point sits just
-            // outside the trailing edge and the falloff bleeds
-            // across the hero. No .clipped() — the glow naturally
-            // fades to clear, so there's nothing to clip.
-            RadialGradient(
-                colors: [Color.p1Lime.opacity(0.35),
-                         Color.p1Lime.opacity(0.08),
-                         .clear],
-                center: UnitPoint(x: 0.5, y: 0.5),
-                startRadius: 0,
-                endRadius: 220
-            )
-            .frame(width: 380, height: 320)
-            .blur(radius: 32)
-            .offset(x: 70, y: -90)
-            .allowsHitTesting(false)
-        }
+        // No per-hero glow — the screen-level lime wash already
+        // covers the full hero area with room to bleed.
     }
 
     // MARK: - Plan toggle
