@@ -239,6 +239,43 @@ class PicksViewModel: ObservableObject {
         }
     }
 
+    // MARK: - This week
+
+    /// Picks settled (W or L) since Monday of the current week.
+    /// Used by the home "WINS THIS WEEK" tile.
+    private var settledThisWeekPicks: [Pick] {
+        var cal = Calendar(identifier: .iso8601)
+        cal.firstWeekday = 2   // Monday
+        let now = Date()
+        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: now)?.start
+        else { return [] }
+        let fmt: DateFormatter = {
+            let f = DateFormatter()
+            f.calendar = cal
+            f.dateFormat = "yyyy-MM-dd"
+            return f
+        }()
+        // game_date is stored as ISO yyyy-MM-dd; compare strings safely
+        // by parsing.
+        return historyPicks.filter { p in
+            guard !p.isPending,
+                  let date = fmt.date(from: p.gameDate)
+            else { return false }
+            return date >= weekStart
+        }
+    }
+
+    var winsThisWeek: Int { settledThisWeekPicks.filter { $0.isWin }.count }
+    var lossesThisWeek: Int { settledThisWeekPicks.filter { $0.isLoss }.count }
+    var gamesThisWeek: Int { settledThisWeekPicks.count }
+
+    /// Last 10 settled picks as W/L booleans (true = W). Most-recent
+    /// first. Used to render the segmented "last 10" bar on the
+    /// AccuracyTile.
+    var last10Results: [Bool] {
+        recentSettled(10).map { $0.isWin }
+    }
+
     /// Last 14 days of daily hit-rate (0...100). Drives the sparkline
     /// on the AccuracyTile. Days with no settled picks fall through
     /// using the prior day's value so the line stays continuous.

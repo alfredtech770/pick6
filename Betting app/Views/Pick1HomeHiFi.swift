@@ -222,13 +222,14 @@ struct HomeHiFiContent: View {
                 }
                 .buttonStyle(.plain)
 
-                StatsRow(streak: vm.currentStreak,
-                         best: vm.longestStreak,
+                StatsRow(winsThisWeek: vm.winsThisWeek,
+                         gamesThisWeek: vm.gamesThisWeek,
+                         lossesThisWeek: vm.lossesThisWeek,
                          accuracy: vm.accuracyAll,
                          delta: vm.accuracyDelta(),
                          record: vm.recentRecord(),
                          mood: vm.accuracyMood,
-                         spark: vm.accuracySparkline)
+                         last10: vm.last10Results)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -757,65 +758,79 @@ private func crestColor(for team: String) -> Color {
 // MARK: - Stats row
 
 struct StatsRow: View {
-    let streak: Int
-    let best: Int
+    let winsThisWeek: Int
+    let gamesThisWeek: Int
+    let lossesThisWeek: Int
     let accuracy: Double
     let delta: Double?
     let record: (wins: Int, losses: Int)
     let mood: PicksViewModel.AccuracyMood
-    let spark: [Double]
+    let last10: [Bool]
 
     var body: some View {
         HStack(spacing: 10) {
-            StreakTile(streak: streak, best: best)
+            WinsThisWeekTile(wins: winsThisWeek,
+                             games: gamesThisWeek,
+                             losses: lossesThisWeek)
             AccuracyTile(accuracy: accuracy,
                          delta: delta,
                          record: record,
                          mood: mood,
-                         spark: spark)
+                         last10: last10)
         }
     }
 }
 
-struct StreakTile: View {
-    let streak: Int
-    let best: Int
+/// "Wins this week" — replaces the prior STREAK tile. Shows wins
+/// out of total settled games since Monday, with a segmented bar
+/// where each played game is a slot (filled = won, unfilled = lost
+/// or not played yet). Same visual rhythm as AccuracyTile so the
+/// pair reads as one unit.
+struct WinsThisWeekTile: View {
+    let wins: Int
+    let games: Int   // total settled this week (W + L)
+    let losses: Int
+
+    /// Total slots in the weekly bar — design's "10 of N" feel.
+    /// Cap at the larger of (games, 7) so the bar always feels like
+    /// "the week" (~7 days) without truncating a busy week.
+    private var slots: Int { max(games, 7) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "flame.fill")
+                Image(systemName: "trophy.fill")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color(hex: "#D4FF3A"))
-                Text("STREAK")
+                Text("WINS")
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(streak)")
+                Text("\(wins)")
                     .font(.anton(72))
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .tracking(-1.4)
-                Text(streak == 1 ? "day" : "days")
+                Text(wins == 1 ? "win" : "wins")
                     .font(.archivo(18, weight: .bold))
                     .foregroundColor(Color(hex: "#B9B7B0"))
             }
-            // 10-segment progress bar
+            // Segmented bar — each played game lights a segment.
             HStack(spacing: 3) {
-                ForEach(0..<10) { i in
+                ForEach(0..<slots, id: \.self) { i in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(i < min(streak, 10) ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
+                        .fill(i < wins ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
                         .frame(height: 5)
                 }
             }
             HStack {
-                Text("BEST: \(best)")
+                Text("OF \(games) THIS WEEK")
                     .font(.mono(10, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Spacer()
-                if best > streak {
-                    Text("↑ \(best - streak) TO RECORD")
+                if losses > 0 {
+                    Text("\(wins)-\(losses)")
                         .font(.mono(10, weight: .bold))
                         .foregroundColor(Color(hex: "#D4FF3A"))
                 }
@@ -827,27 +842,31 @@ struct StreakTile: View {
     }
 }
 
+/// AccuracyTile — visually mirrors WinsThisWeekTile so the home stats
+/// row reads as a coherent pair. Same header / big-number / 10-segment
+/// bar / sub-line rhythm; the bar's segments are the last 10 settled
+/// picks (filled lime = win, mute = loss) instead of a sparkline.
 struct AccuracyTile: View {
     let accuracy: Double
     let delta: Double?
     let record: (wins: Int, losses: Int)
     let mood: PicksViewModel.AccuracyMood
-    let spark: [Double]
+    let last10: [Bool]   // newest first; true = win
+
+    /// 10 slots; if there are fewer than 10 settled picks, the unused
+    /// slots render as mute.
+    private let slots = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: moodIcon)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(numberColor)
-                    Text("ACCURACY")
-                        .font(.archivoNarrow(10, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                }
-                Spacer()
-                deltaPill
+            HStack(spacing: 6) {
+                Image(systemName: moodIcon)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(numberColor)
+                Text("ACCURACY")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(mood == .empty ? "—" : "\(Int(accuracy.rounded()))")
@@ -860,42 +879,49 @@ struct AccuracyTile: View {
                         .foregroundColor(Color(hex: "#B9B7B0"))
                 }
             }
-            // Last-N record line — turns the % into something tangible.
-            // "9-1 LAST 10" or "AWAITING RESULTS" when empty.
-            HStack(spacing: 6) {
+            // Last-10 segmented bar — same visual rhythm as the
+            // weekly bar on the sibling tile. Reverses the array so
+            // the OLDEST pick is on the left and the most recent on
+            // the right (reads as a timeline).
+            HStack(spacing: 3) {
+                ForEach(0..<slots, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(segmentColor(at: i))
+                        .frame(height: 5)
+                }
+            }
+            HStack {
                 if mood == .empty || (record.wins + record.losses) == 0 {
                     Text("AWAITING RESULTS")
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                 } else {
-                    Text("\(record.wins)-\(record.losses)")
-                        .font(.mono(10, weight: .heavy))
-                        .foregroundColor(numberColor)
-                    Text("LAST \(record.wins + record.losses)")
+                    Text("\(record.wins)-\(record.losses) LAST \(record.wins + record.losses)")
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
-                    if mood == .bullish {
-                        Spacer()
-                        Text("ON FIRE")
-                            .font(.archivoNarrow(9, weight: .bold))
-                            .tracking(1.8)
-                            .foregroundColor(Color(hex: "#0A0B0D"))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color(hex: "#D4FF3A")))
-                    }
                 }
+                Spacer()
+                trailingBadge
             }
-            SparklineView(points: sparklinePoints, color: numberColor)
-                .frame(height: 26)
-                .padding(.top, 2)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tileBackground)
     }
 
-    /// Big-number + sparkline color shifts with mood.
+    /// Segment color: lime when that slot was a win, mute otherwise.
+    /// Reverse the index so the bar reads left = oldest, right = newest.
+    private func segmentColor(at i: Int) -> Color {
+        let revIndex = slots - 1 - i        // newest is rightmost
+        guard revIndex < last10.count else {
+            return Color(hex: "#2D3038")    // unused slot
+        }
+        return last10[revIndex]
+            ? Color(hex: "#D4FF3A")
+            : Color(hex: "#2D3038")
+    }
+
+    /// Big-number color shifts with mood.
     private var numberColor: Color {
         switch mood {
         case .bullish, .strong: return Color(hex: "#D4FF3A")
@@ -905,33 +931,32 @@ struct AccuracyTile: View {
         }
     }
 
-    /// Header icon — flame when bullish, normal trend chart otherwise.
+    /// Header icon — flame when bullish, trend-up otherwise.
     private var moodIcon: String {
         mood == .bullish ? "flame.fill" : "chart.line.uptrend.xyaxis"
     }
 
+    /// Trailing badge in the footer row: ON FIRE when bullish, ↑/↓
+    /// delta otherwise. Mirrors the "↑ N TO RECORD" trailing slot on
+    /// the prior STREAK tile so the visual rhythm is preserved.
     @ViewBuilder
-    private var deltaPill: some View {
-        if let d = delta, abs(d) >= 1, mood != .empty {
+    private var trailingBadge: some View {
+        if mood == .bullish {
+            Text("ON FIRE")
+                .font(.archivoNarrow(9, weight: .bold))
+                .tracking(1.8)
+                .foregroundColor(Color(hex: "#0A0B0D"))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Color(hex: "#D4FF3A")))
+        } else if let d = delta, abs(d) >= 1, mood != .empty {
             let up = d >= 0
             let color = up ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A36")
             Text(up ? "↑ \(Int(d.rounded()))%"
                    : "↓ \(Int((-d).rounded()))%")
                 .font(.mono(10, weight: .bold))
                 .foregroundColor(color)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(color.opacity(0.12))
-                .overlay(
-                    Capsule().stroke(color.opacity(0.25), lineWidth: 1)
-                )
-                .clipShape(Capsule())
         }
-    }
-
-    /// Real sparkline — fall back to a flat baseline when no data.
-    private var sparklinePoints: [CGFloat] {
-        spark.isEmpty ? [50, 50, 50, 50, 50] : spark.map { CGFloat($0) }
     }
 }
 
