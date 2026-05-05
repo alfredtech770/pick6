@@ -234,7 +234,10 @@ struct HomeHiFiContent: View {
                     .padding(.top, 16)
 
                 SportFilter(vm: vm, onLongPress: { onTapSport($0) })
-                    .padding(.top, 4)
+                    // Breathing room between the WINS / ACCURACY tile
+                    // pair and the sport carousel — was 4pt which made
+                    // the chips feel glued to the tiles' bottom shadow.
+                    .padding(.top, 22)
 
                 // Section header — title matches the design
                 // ("TODAY'S GAMES") with a SEE ALL → CTA. The CTA is
