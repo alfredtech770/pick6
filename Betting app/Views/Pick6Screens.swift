@@ -1522,6 +1522,14 @@ struct ProfileView: View {
                 .presentationDragIndicator(.visible)
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showPrivacySecurity) {
+            PrivacySecuritySheet(isOpen: $showPrivacySecurity)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showTerms) {
+            LegalSheet(doc: .terms, isOpen: $showTerms)
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var profileHead: some View {
@@ -1636,6 +1644,8 @@ struct ProfileView: View {
 
     @State private var notificationsOn: Bool = true
     @State private var showLanguagePicker: Bool = false
+    @State private var showPrivacySecurity: Bool = false
+    @State private var showTerms: Bool = false
     /// Persisted language preference. Stored as the BCP-47 region-less
     /// code ("en", "fr", "es" …); UI lookups use `languageCode` for the
     /// trailing pill and `languageSub` for the row's sub-label.
@@ -1725,9 +1735,9 @@ struct ProfileView: View {
                     settingsLinkRow(
                         icon: "lock.fill",
                         title: "Privacy & Security",
-                        sub: "Sign-in · saved data",
+                        sub: "Sign-in · password",
                         trailing: nil,
-                        action: {}
+                        action: { showPrivacySecurity = true }
                     )
                 }
                 .background(cardBackground)
@@ -1744,6 +1754,14 @@ struct ProfileView: View {
                         sub: "FAQs · contact us",
                         trailing: nil,
                         action: {}
+                    )
+                    divider
+                    settingsLinkRow(
+                        icon: "doc.text.fill",
+                        title: "Terms & Conditions",
+                        sub: "Service terms · effective Apr 30, 2026",
+                        trailing: nil,
+                        action: { showTerms = true }
                     )
                     divider
                     settingsLinkRow(
@@ -2679,6 +2697,336 @@ struct LanguagePickerSheet: View {
             .padding(14)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Privacy & Security sheet
+// ════════════════════════════════════════════════════════════════
+
+/// Modal sheet for account security: shows the email used to sign
+/// in (read-only — it's the credential), the current sign-in method,
+/// and a Change Password form. Pick6 sign-in is passwordless by
+/// default (email OTP / Sign in with Apple), but Supabase lets the
+/// user attach a password as an additional auth path.
+struct PrivacySecuritySheet: View {
+    @Environment(AuthManager.self) private var auth
+    @Binding var isOpen: Bool
+
+    @State private var newPassword: String = ""
+    @State private var confirmPassword: String = ""
+    @State private var saving: Bool = false
+    @State private var localError: String?
+    @State private var didSave: Bool = false
+
+    private var canSave: Bool {
+        newPassword.count >= 8
+            && newPassword == confirmPassword
+            && !saving
+    }
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#07080a").ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    sheetHeader
+                        .padding(.horizontal, 18)
+                        .padding(.top, 12)
+                        .padding(.bottom, 22)
+
+                    // ── Account section ──────────────────────────
+                    fieldLabel("ACCOUNT")
+                    VStack(spacing: 0) {
+                        infoRow(icon: "envelope.fill",
+                                title: "Email",
+                                value: auth.userEmail ?? "—")
+                        Rectangle()
+                            .fill(Color(hex: "#22252B"))
+                            .frame(height: 1)
+                            .padding(.leading, 56)
+                        infoRow(icon: "key.fill",
+                                title: "Sign-in method",
+                                value: "Magic link (one-time code)")
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 24)
+
+                    // ── Change password section ──────────────────
+                    fieldLabel("CHANGE PASSWORD")
+                    Text("Add or update an account password as a second way to sign in. Pick6 still works without one — magic-link sign-in stays available.")
+                        .font(.archivo(11, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 12)
+
+                    passwordField($newPassword,
+                                  placeholder: "New password",
+                                  icon: "lock.fill")
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 8)
+                    passwordField($confirmPassword,
+                                  placeholder: "Confirm new password",
+                                  icon: "lock.rotation")
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 6)
+
+                    if !newPassword.isEmpty && newPassword.count < 8 {
+                        helper("Password must be at least 8 characters.",
+                               color: Color(hex: "#FF5A36"))
+                    } else if !confirmPassword.isEmpty
+                                && newPassword != confirmPassword {
+                        helper("Passwords don't match.",
+                               color: Color(hex: "#FF5A36"))
+                    } else if didSave {
+                        helper("Password updated.",
+                               color: Color(hex: "#4ade80"))
+                    }
+                    if let err = localError ?? auth.error {
+                        helper(err, color: Color(hex: "#FF5A36"))
+                    }
+
+                    Button(action: save) {
+                        Group {
+                            if saving {
+                                ProgressView().tint(Color(hex: "#0A0B0D"))
+                            } else {
+                                Text(didSave ? "Update Password" : "Set Password")
+                                    .font(.archivo(14, weight: .heavy))
+                            }
+                        }
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(canSave ? Color(hex: "#D4FF3A")
+                                              : Color(hex: "#2D3038"))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSave)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 8)
+                    .padding(.bottom, 30)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func save() {
+        saving = true
+        localError = nil
+        didSave = false
+        Task {
+            await auth.updatePassword(newPassword)
+            saving = false
+            if auth.error == nil {
+                didSave = true
+                newPassword = ""
+                confirmPassword = ""
+            } else {
+                localError = auth.error
+            }
+        }
+    }
+
+    private var sheetHeader: some View {
+        HStack {
+            Button { isOpen = false } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .frame(width: 38, height: 38)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            Text("PRIVACY & SECURITY")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2.4)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+            Spacer()
+            Color.clear.frame(width: 38, height: 38)
+        }
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.archivoNarrow(10, weight: .bold))
+            .tracking(2.2)
+            .foregroundColor(Color(hex: "#6E6F75"))
+            .padding(.horizontal, 22)
+            .padding(.bottom, 6)
+    }
+
+    private func infoRow(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color(hex: "#D4FF3A"))
+                .frame(width: 34, height: 34)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(hex: "#16181C"))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.archivo(13, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Text(value)
+                    .font(.mono(10, weight: .medium))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
+            }
+            Spacer()
+        }
+        .padding(14)
+    }
+
+    private func passwordField(_ text: Binding<String>, placeholder: String,
+                                icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .foregroundColor(Color(hex: "#D4FF3A"))
+            SecureField("", text: text, prompt:
+                Text(placeholder).foregroundColor(Color(hex: "#6E6F75")))
+                .font(.archivo(14, weight: .medium))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .textContentType(.newPassword)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+        )
+    }
+
+    private func helper(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.archivo(11, weight: .medium))
+            .foregroundColor(color)
+            .padding(.horizontal, 22)
+            .padding(.top, 4)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - Legal sheet (Terms / Privacy)
+// ════════════════════════════════════════════════════════════════
+
+/// Renders a bundled legal markdown file (TERMS_OF_SERVICE.md or
+/// PRIVACY_POLICY.md from the app's Resources directory) inside a
+/// scrollable sheet. Falls back to a graceful "couldn't load"
+/// message if the file isn't shipped (shouldn't happen in release).
+struct LegalSheet: View {
+    enum Document {
+        case terms, privacy
+        var title: String {
+            switch self {
+            case .terms:   return "TERMS OF SERVICE"
+            case .privacy: return "PRIVACY POLICY"
+            }
+        }
+        var fileName: String {
+            switch self {
+            case .terms:   return "TERMS_OF_SERVICE"
+            case .privacy: return "PRIVACY_POLICY"
+            }
+        }
+    }
+
+    let doc: Document
+    @Binding var isOpen: Bool
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#07080a").ignoresSafeArea()
+            VStack(spacing: 0) {
+                sheetHeader
+                    .padding(.horizontal, 18)
+                    .padding(.top, 12)
+                    .padding(.bottom, 14)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let body = bodyText {
+                            Text(.init(body))
+                                .font(.archivo(13, weight: .regular))
+                                .foregroundColor(Color(hex: "#B9B7B0"))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("Couldn't load \(doc.title.lowercased()). Visit pick6.app/legal for the latest version.")
+                                .font(.archivo(13, weight: .medium))
+                                .foregroundColor(Color(hex: "#6E6F75"))
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var bodyText: String? {
+        guard let url = Bundle.main.url(forResource: doc.fileName,
+                                         withExtension: "md")
+        else { return nil }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+
+    private var sheetHeader: some View {
+        HStack {
+            Button { isOpen = false } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .frame(width: 38, height: 38)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            Text(doc.title)
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2.4)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+            Spacer()
+            Color.clear.frame(width: 38, height: 38)
+        }
     }
 }
 

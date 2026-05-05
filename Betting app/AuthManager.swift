@@ -145,6 +145,27 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Password update
+
+    /// Set or change the user's account password. Pick6 sign-in is
+    /// passwordless by default (email OTP / Sign in with Apple), but
+    /// Supabase still lets us attach a password to the account so the
+    /// user can opt into a second auth path. Throws on validation
+    /// errors (too short, too weak, etc.).
+    func updatePassword(_ newPassword: String) async {
+        isLoading = true
+        error = nil
+        do {
+            try await SupabaseManager.client.auth.update(
+                user: UserAttributes(password: newPassword)
+            )
+            isLoading = false
+        } catch {
+            self.error = error.localizedDescription
+            isLoading = false
+        }
+    }
+
     // MARK: - Apple Sign In
 
     func signInWithApple(idToken: String, nonce: String) async {
