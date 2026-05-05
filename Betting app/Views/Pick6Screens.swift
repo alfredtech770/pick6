@@ -1621,13 +1621,14 @@ struct ProfileView: View {
 
     /// Languages we offer in the picker. Add more as we ship
     /// localizations — order is alphabetical by English name.
+    /// Arabic uses Modern Standard / Literary Arabic (al-fuṣḥā), the
+    /// pan-regional written form. We don't ship colloquial dialects.
     static let languages: [(code: String, name: String, native: String)] = [
+        ("ar", "Arabic",      "العربية الفصحى"),
         ("en", "English",     "English"),
         ("fr", "French",      "Français"),
         ("de", "German",      "Deutsch"),
         ("it", "Italian",     "Italiano"),
-        ("ja", "Japanese",    "日本語"),
-        ("ko", "Korean",      "한국어"),
         ("pt", "Portuguese",  "Português"),
         ("es", "Spanish",     "Español"),
     ]
