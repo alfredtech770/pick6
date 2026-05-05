@@ -615,6 +615,90 @@
     .pad { padding: 14% 7%; }
   }
 
+  /* ── MOBILE PORTRAIT: ditch 16:9, fill the viewport, stack columns ── */
+  @media (orientation: portrait) and (max-width: 720px) {
+    /* Stage no longer needs to center — slide IS the viewport */
+    .stage { display: block; }
+    .slide {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      filter: blur(0) !important; /* override the blur-on-inactive used desktop */
+    }
+    .slide:not(.active) { display: none; } /* show only the active slide, no stack */
+
+    /* Tighten chrome */
+    .meta {
+      padding: 14px 18px;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+    }
+    .footer-meta {
+      padding: 12px 18px;
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+    }
+    .frame-mark { display: none; }
+
+    /* Padded content area sits between the meta + footer-meta + nav */
+    .pad { padding: 56px 20px 110px !important; }
+
+    /* Stack ALL multi-column layouts vertically — covers .two-col,
+       .three-col, .four-col plus any inline grid-template-columns */
+    .two-col, .two-col.asym, .two-col.asym-r,
+    .three-col, .four-col {
+      grid-template-columns: 1fr !important;
+      gap: 20px !important;
+      height: auto !important;
+    }
+    .slide [style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+      gap: 18px !important;
+    }
+
+    /* Typography — clamp() already shrinks but values are still too big
+       for narrow portrait. Force lower bounds. */
+    .title-hero { font-size: 2.2rem !important; line-height: 1.02 !important; }
+    .title-xxl  { font-size: 1.85rem !important; }
+    .title-xl   { font-size: 1.55rem !important; }
+    .title-l    { font-size: 1.25rem !important; }
+    .title-m    { font-size: 1rem !important; }
+    .body       { font-size: 0.92rem !important; }
+    .body-sm    { font-size: 0.84rem !important; }
+    .body-xs    { font-size: 0.78rem !important; }
+    .kicker     { font-size: 0.66rem !important; }
+
+    /* Decorative elements: shrink so they stop dominating */
+    .numeral {
+      font-size: 8rem !important;
+      opacity: 0.35 !important;
+    }
+    .orb { opacity: 0.14 !important; filter: blur(70px) !important; }
+
+    /* Cards use less internal padding */
+    .card { padding: 16px !important; }
+
+    /* Cover slide: phone fan is too wide — drop it on portrait */
+    .phone-fan { display: none !important; }
+    .cover-canvas { padding: 14% 6% 18% 6% !important; }
+    .cover-mark { font-size: clamp(2.6rem, 14vw, 5rem) !important; }
+    .cover-tagline { font-size: 0.7rem !important; }
+
+    /* Big stats */
+    .bigstat { font-size: clamp(1.6rem, 8vw, 2.6rem) !important; }
+
+    /* Hide pure-decorative cursor glow + dots on touch */
+    #cursor-glow, #floating-dots { display: none !important; }
+
+    /* Nav: keep the bottom controls compact and reachable */
+    .nav { padding: 10px 14px !important; gap: 8px !important; }
+    .nav .count { min-width: 44px !important; font-size: 0.7rem !important; }
+    .nav button { padding: 8px 12px !important; font-size: 0.7rem !important; }
+  }
+
   /* ── CURSOR GLOW ── */
   #cursor-glow {
     position: fixed; pointer-events: none; z-index: 9998;
