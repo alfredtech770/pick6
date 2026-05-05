@@ -1189,8 +1189,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .waitlist-form .field:focus-within {
-  border-color: rgba(212,255,58,0.45);
-  box-shadow: 0 0 0 3px rgba(212,255,58,0.06);
+  border-color: var(--accent);
 }
 .waitlist-form .field svg {
   color: var(--mute);
@@ -1281,47 +1280,67 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 }
 
 /* ─── intl-tel-input: dark-theme overrides ─────────────────── */
-/* The field-tel label is the visible "pill"; intl-tel-input injects a
-   .iti wrapper around the input with a country trigger button on the left.
-   We keep the field's own padding off (the trigger + input handle their
-   own padding) so the trigger sits flush with the rounded left edge. */
-.field-tel { padding: 0 !important; gap: 0 !important; overflow: hidden; }
-.field-tel .iti { width: 100%; display: flex; align-items: stretch; }
-.field-tel .iti__tel-input {
-  flex: 1; min-width: 0;
-  padding: 14px 16px 14px 14px !important;
+/* The country selector is its own pill on the left, the input is its own
+   pill on the right. The .field-tel wrapper itself is invisible — only
+   the two inner pills are styled. */
+.field-tel {
+  padding: 0 !important;
+  gap: 8px !important;
   background: transparent !important;
   border: none !important;
+}
+.field-tel:focus-within { border: none !important; }
+.field-tel .iti {
+  width: 100%;
+  display: flex; align-items: stretch;
+  gap: 8px;
+}
+
+/* Right pill: phone-number input */
+.field-tel .iti__tel-input {
+  flex: 1; min-width: 0;
+  padding: 13px 16px !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
   outline: none !important;
   color: var(--ink) !important;
   font-family: inherit !important;
   font-size: 15px !important;
+  transition: border-color 0.2s;
 }
+.field-tel .iti__tel-input:focus { border-color: var(--accent) !important; }
 .field-tel .iti__tel-input::placeholder { color: var(--mute); }
 
-/* Country trigger button — clearly demarcated panel on the left */
+/* Left pill: country trigger */
 .field-tel .iti__country-container,
 .field-tel .iti--separate-dial-code .iti__country-container {
   position: static !important;
-  background: rgba(255,255,255,0.05) !important;
-  border: none !important;
-  border-right: 1px solid var(--line) !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
   padding: 0 !important;
   display: flex; align-items: stretch;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+.field-tel .iti__country-container:focus-within {
+  border-color: var(--accent) !important;
 }
 .field-tel .iti__selected-country,
 .field-tel .iti__selected-country-primary {
   background: transparent !important;
   color: var(--ink) !important;
-  padding: 0 12px !important;
+  padding: 0 14px !important;
   display: flex !important; align-items: center; gap: 8px;
   height: 100%;
   border: none !important;
+  border-radius: 12px !important;
   cursor: pointer;
 }
 .field-tel .iti__selected-country-primary:focus-visible,
 .field-tel .iti__selected-country-primary:hover {
-  background: rgba(255,255,255,0.07) !important;
+  background: rgba(255,255,255,0.06) !important;
 }
 .field-tel .iti__flag {
   flex-shrink: 0;
