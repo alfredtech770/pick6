@@ -140,12 +140,13 @@ struct Pick1HomeHiFi: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
-                // Flush with the safe-area bottom edge — sits as low
-                // as possible without entering the home-indicator
-                // gesture zone. (User has asked for "lower" multiple
-                // times; this is the floor without breaking iOS
-                // gesture handling.)
-                .padding(.bottom, 0)
+                // Pushed below the safe-area bottom so the nav sits
+                // alongside the home-indicator gesture bar instead of
+                // floating above it. -12pt on .padding(.bottom) lets
+                // the pill bleed into the indicator zone — still well
+                // above the actual screen edge, but visually anchored
+                // to the bottom rather than hovering.
+                .padding(.bottom, -12)
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
