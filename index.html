@@ -1361,12 +1361,11 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   opacity: 0.7;
 }
 
-/* Dropdown popup — anchored below the country trigger pill */
+/* Dropdown popup — let intl-tel-input handle positioning (it uses
+   position:absolute for desktop inline mode and position:fixed for
+   mobile fullscreen popup). We only override appearance. */
 .iti__dropdown-content {
-  position: absolute !important;
-  top: calc(100% + 6px) !important;
-  left: 0 !important;
-  z-index: 1000 !important;
+  z-index: 1000;
   background: var(--panel) !important;
   border: 1px solid var(--line-2) !important;
   border-radius: 14px !important;
@@ -1374,6 +1373,11 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   overflow: hidden;
   min-width: 320px;
   max-width: 420px;
+}
+/* Desktop inline-mode: nudge the menu down 6px below the trigger */
+@media (hover: hover) and (pointer: fine) {
+  .iti--inline-dropdown .iti__dropdown-content,
+  .iti__dropdown-content { margin-top: 6px; }
 }
 .iti__search-input {
   width: 100% !important;
@@ -1428,16 +1432,49 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 }
 .iti__country.iti__highlight .iti__dial-code { color: var(--accent) !important; }
 
-/* Mobile fullscreen popup */
-.iti--fullscreen-popup .iti__dropdown-content {
+/* Mobile fullscreen popup — the library wraps the dropdown in
+   .iti--container with position:fixed; we make sure that wrapper +
+   the dropdown inside it occupy the full viewport and don't trigger
+   page scroll (the bug being fixed: tap on country flag was offsetting
+   the page). */
+.iti--container.iti--fullscreen-popup {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 10000 !important;
   background: var(--bg) !important;
-  border-radius: 0 !important;
-  border: none !important;
-  margin-top: 0;
-  min-width: 0;
-  max-width: none;
+  display: flex; flex-direction: column;
 }
-.iti--fullscreen-popup .iti__country-list { max-height: none !important; }
+.iti--fullscreen-popup .iti__dropdown-content {
+  position: relative !important;
+  top: auto !important; left: auto !important; right: auto !important; bottom: auto !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--bg) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  display: flex; flex-direction: column;
+}
+.iti--fullscreen-popup .iti__search-input {
+  flex-shrink: 0;
+  padding: 18px 20px !important;
+  font-size: 16px !important; /* prevents iOS auto-zoom */
+}
+.iti--fullscreen-popup .iti__country-list {
+  flex: 1; min-height: 0;
+  max-height: none !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* Lock the underlying page from scrolling while the popup is open
+   (prevents the "scrolls down and bugs" behaviour). */
+html:has(.iti--container.iti--fullscreen-popup) { overflow: hidden !important; }
 
 /* Flag sprite (24-flag CDN; 2x for retina) */
 .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags.webp") !important; }
@@ -2278,6 +2315,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   const itiInstances = new WeakMap();
   if (window.intlTelInput) {
     document.querySelectorAll('input[name="whatsapp"]').forEach(input => {
+      const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
       const iti = window.intlTelInput(input, {
         initialCountry: 'auto',
         geoIpLookup: (callback) => {
@@ -2290,6 +2328,10 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/js/utils.js',
         preferredCountries: ['fr', 'us', 'gb', 'de', 'es', 'it'],
         autoPlaceholder: 'aggressive',
+        // Force fullscreen popup on touch devices so the dropdown
+        // doesn't try to anchor inline (which caused page-scroll bugs)
+        useFullscreenPopup: isTouch,
+        dropdownContainer: isTouch ? document.body : null,
       });
       itiInstances.set(input, iti);
     });
