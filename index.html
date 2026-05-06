@@ -1432,49 +1432,39 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 }
 .iti__country.iti__highlight .iti__dial-code { color: var(--accent) !important; }
 
-/* Mobile fullscreen popup — the library wraps the dropdown in
-   .iti--container with position:fixed; we make sure that wrapper +
-   the dropdown inside it occupy the full viewport and don't trigger
-   page scroll (the bug being fixed: tap on country flag was offsetting
-   the page). */
-.iti--container.iti--fullscreen-popup {
+/* Mobile fullscreen popup — the library appends the dropdown to body
+   and adds `iti--fullscreen-popup` to it (no separate container).
+   Make it occupy the viewport with safe-area-aware sizing. */
+.iti__dropdown-content.iti--fullscreen-popup {
   position: fixed !important;
   inset: 0 !important;
+  top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
   height: 100dvh !important;
-  z-index: 10000 !important;
-  background: var(--bg) !important;
-  display: flex; flex-direction: column;
-}
-.iti--fullscreen-popup .iti__dropdown-content {
-  position: relative !important;
-  top: auto !important; left: auto !important; right: auto !important; bottom: auto !important;
   margin: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
+  z-index: 10000 !important;
   background: var(--bg) !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   min-width: 0 !important;
   max-width: none !important;
-  display: flex; flex-direction: column;
+  display: flex !important;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
 }
-.iti--fullscreen-popup .iti__search-input {
+.iti__dropdown-content.iti--fullscreen-popup .iti__search-input {
   flex-shrink: 0;
   padding: 18px 20px !important;
   font-size: 16px !important; /* prevents iOS auto-zoom */
 }
-.iti--fullscreen-popup .iti__country-list {
+.iti__dropdown-content.iti--fullscreen-popup .iti__country-list {
   flex: 1; min-height: 0;
   max-height: none !important;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-/* Lock the underlying page from scrolling while the popup is open
-   (prevents the "scrolls down and bugs" behaviour). */
-html:has(.iti--container.iti--fullscreen-popup) { overflow: hidden !important; }
 
 /* Flag sprite (24-flag CDN; 2x for retina) */
 .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/img/flags.webp") !important; }
@@ -2305,9 +2295,9 @@ html:has(.iti--container.iti--fullscreen-popup) { overflow: hidden !important; }
   });
 
   // ─── Klaviyo waitlist signup ──────────────────────────────
-  // Public key (safe to expose) + dedicated "Pick1 Waitlist" list.
-  const KLAVIYO_PUBLIC_KEY = window.KLAVIYO_PUBLIC_KEY || 'UtRgrA';
-  const KLAVIYO_LIST_ID    = window.KLAVIYO_LIST_ID    || 'TtWsds';
+  // Waitlist signups are proxied through a Vercel serverless function
+  // (/api/subscribe) which holds the Brevo API key server-side. No
+  // credentials live in this page.
 
   // ─── Initialize intl-tel-input on every WhatsApp field ────
   // Country dropdown (separate dial code), auto-detected default
@@ -2338,55 +2328,20 @@ html:has(.iti--container.iti--fullscreen-popup) { overflow: hidden !important; }
   }
 
   const subscribeProfile = async ({ email, name, whatsappE164 }, source) => {
-    const url = `https://a.klaviyo.com/client/subscriptions/?company_id=${encodeURIComponent(KLAVIYO_PUBLIC_KEY)}`;
-    const profileAttrs = {
-      email,
-      // Email + WhatsApp marketing consent — phone_number lands as a
-      // first-class profile field (visible in Klaviyo list view) when
-      // either channel subscription is included on revision 2025-04-15+.
-      subscriptions: {
-        email:    { marketing: { consent: 'SUBSCRIBED' } },
-        whatsapp: { marketing: { consent: 'SUBSCRIBED' } }
-      }
-    };
-    if (name) profileAttrs.first_name = name;
-    if (whatsappE164) profileAttrs.phone_number = whatsappE164;
-
-    const body = {
-      data: {
-        type: 'subscription',
-        attributes: {
-          custom_source: `Pick1 Waitlist · ${source || 'site'}`,
-          profile: { data: { type: 'profile', attributes: profileAttrs } }
-        },
-        relationships: {
-          list: { data: { type: 'list', id: KLAVIYO_LIST_ID } }
-        }
-      }
-    };
-    const headers = {
-      'accept': 'application/json',
-      'revision': '2025-04-15',
-      'content-type': 'application/json',
-    };
     try {
-      const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-      if (resp.status === 202 || resp.ok) return { ok: true };
+      const resp = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, name, phone: whatsappE164, source: source || 'site' }),
+      });
+      if (resp.ok) return { ok: true };
       let detail = '';
       try {
         const j = await resp.json();
-        detail = j?.errors?.[0]?.detail || '';
+        detail = j?.error || '';
       } catch {}
-      // Defensive: if Klaviyo flags the phone, retry without it but
-      // keep the email subscription so we don't lose the signup.
-      if (resp.status === 400 && whatsappE164 && /phone/i.test(detail)) {
-        delete profileAttrs.phone_number;
-        delete profileAttrs.subscriptions.whatsapp;
-        const retry = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-        if (retry.status === 202 || retry.ok) return { ok: true, partial: 'phone-dropped' };
-      }
-      return { ok: false, detail };
-    } catch (err) {
+      return { ok: false, detail: 'Something went wrong. Please try again.' };
+    } catch {
       return { ok: false, detail: 'Network error. Please try again.' };
     }
   };
@@ -2460,13 +2415,6 @@ html:has(.iti--container.iti--fullscreen-popup) { overflow: hidden !important; }
       const originalLabel = button.textContent;
       button.disabled = true;
       button.textContent = 'Joining…';
-
-      // Guard: if creds aren't set yet, fall back to a local-only success state.
-      if (KLAVIYO_PUBLIC_KEY === 'REPLACE_WITH_PUBLIC_KEY' || KLAVIYO_LIST_ID === 'REPLACE_WITH_LIST_ID') {
-        console.warn('[Pick1] Klaviyo credentials not configured — using preview success state.');
-        setTimeout(() => showSuccess(wrap, name), 600);
-        return;
-      }
 
       const result = await subscribeProfile({ email, name, whatsappE164 }, source);
       if (result.ok) {
