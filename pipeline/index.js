@@ -25,6 +25,10 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
 const axios = require('axios');
+// `ws` is required as the realtime transport on Node < 22.
+// Without it, @supabase/realtime-js throws on createClient() and
+// crashes the worker on boot.
+const ws = require('ws');
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-7';
@@ -38,6 +42,12 @@ const anthropic = new Anthropic({
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY,
+  {
+    // Realtime requires a WebSocket constructor on Node — the `ws`
+    // package supplies it. Required since @supabase/realtime-js bumped
+    // its WebSocketFactory to throw on Node < 22 with no transport.
+    realtime: { transport: ws },
+  },
 );
 
 // ─── Date / log helpers ────────────────────────────────────────
