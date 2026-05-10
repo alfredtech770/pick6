@@ -201,6 +201,23 @@ private var cardBackground: some View {
         .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
 }
 
+/// "TODAY · 7:30 PM" / "TOMORROW · 12:30 AM" / "FRI · 8:20 PM" —
+/// kickoff label used in score-areas of cards when the game hasn't
+/// started yet. Module-level so both CompactPickCard and
+/// MatchDetailView can call it without duplication.
+func kickoffTimeText(_ kickoff: Date) -> String {
+    let cal = Calendar.current
+    let dayPart: String
+    if cal.isDateInToday(kickoff)         { dayPart = "TODAY" }
+    else if cal.isDateInTomorrow(kickoff) { dayPart = "TOMORROW" }
+    else {
+        let f = DateFormatter(); f.dateFormat = "EEE"
+        dayPart = f.string(from: kickoff).uppercased()
+    }
+    let f = DateFormatter(); f.dateFormat = "h:mm a"
+    return "\(dayPart) · \(f.string(from: kickoff))"
+}
+
 // ════════════════════════════════════════════════════════════════
 // MARK: - Match Detail (Pick6 Detail Pages)
 // ════════════════════════════════════════════════════════════════
@@ -428,24 +445,36 @@ struct MatchDetailView: View {
         }
     }
 
-    /// Score in the center column. Numeric for team sports, "VS" for
-    /// scheduled. Scores use design's 56pt Anton with home in white,
-    /// away in `--ink-2` mute.
+    /// Score in the center column. Numeric ONLY when the game is
+    /// actually in progress or final — for scheduled games we show
+    /// "VS" + kickoff time so an upcoming game doesn't read as 0-0.
     @ViewBuilder
     private var scoreCenter: some View {
-        if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
+        if let s = liveScore,
+           (s.isLive || s.isFinal),
+           let h = s.homeScore, let a = s.awayScore {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text("\(h)").font(.anton(56)).foregroundColor(Color(hex: "#F5F3EE"))
                 Text("–").font(.anton(28)).foregroundColor(Color(hex: "#6E6F75"))
                 Text("\(a)").font(.anton(56)).foregroundColor(Color(hex: "#B9B7B0"))
             }
         } else {
-            Text("VS")
-                .font(.anton(28))
-                .tracking(2.8)
-                .foregroundColor(Color(hex: "#D4FF3A"))
+            VStack(spacing: 4) {
+                Text("VS")
+                    .font(.anton(28))
+                    .tracking(2.8)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                if let kickoff = liveScore?.startTime {
+                    Text(kickoffTimeText(kickoff))
+                        .font(.mono(11, weight: .bold))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
+            }
         }
     }
+
+    // (kickoffTimeText moved to module scope below so CompactPickCard
+    //  can use it too.)
 
     /// Localized weekday + time string for scheduled games (e.g. "SUN · 8:20 PM").
     private var scheduledClockText: String? {
@@ -2089,17 +2118,31 @@ struct CompactPickCard: View {
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity)
-                if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
+                // Show a numeric score ONLY when the game is actually
+                // in progress or final. Otherwise (Scheduled, no
+                // status, or stale live_scores row) show "VS" + the
+                // kickoff time so an upcoming game doesn't look like
+                // it's already 0-0.
+                if let s = liveScore,
+                   (s.isLive || s.isFinal),
+                   let h = s.homeScore, let a = s.awayScore {
                     HStack(spacing: 6) {
                         Text("\(a)").font(.anton(22)).foregroundColor(Color(hex: "#F5F3EE"))
-                        Text("–").font(.archivoNarrow(13)).foregroundColor(Color(hex: "#6E6F75"))
+                        Text("–").font(.anton(16)).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(h)").font(.anton(22)).foregroundColor(Color(hex: "#B9B7B0"))
                     }
                 } else {
-                    Text("VS")
-                        .font(.archivoNarrow(11, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
+                    VStack(spacing: 2) {
+                        Text("VS")
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                        if let kickoff = liveScore?.startTime {
+                            Text(kickoffTimeText(kickoff))
+                                .font(.mono(10, weight: .medium))
+                                .foregroundColor(Color(hex: "#B9B7B0"))
+                        }
+                    }
                 }
                 VStack(spacing: 6) {
                     TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)

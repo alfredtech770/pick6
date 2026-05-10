@@ -102,13 +102,34 @@ struct LiveScore: Identifiable, Codable {
         case updatedAt = "updated_at"
     }
 
+    /// True iff the game is currently in progress. Defensive against
+    /// the wide variety of status strings sportsdata.io / Ergast return
+    /// ("InProgress", "In Progress", "Halftime", "Q3", "1st", "Bot 7",
+    /// "1H", "2H", "HT", "OT", etc.). Anything that's NOT clearly
+    /// final/scheduled and has scores or a live-shaped status counts
+    /// as live.
     var isLive: Bool {
-        guard let s = status else { return false }
-        return ["InProgress", "live", "1H", "2H", "HT"].contains(s)
+        let s = (status ?? "")
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { return false }
+        if isFinal { return false }
+        if s.contains("schedul") || s == "ns" || s == "tbd"
+            || s == "pre" || s == "preview" || s == "postponed"
+            || s == "canceled" || s == "cancelled" || s == "delayed" {
+            return false
+        }
+        return true
     }
 
+    /// True iff the game has finished. Same defensive parsing.
     var isFinal: Bool {
-        guard let s = status else { return false }
-        return ["Final", "F", "FT", "AET", "closed"].contains(s)
+        let s = (status ?? "")
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { return false }
+        return s.contains("final")
+            || s == "f" || s == "ft" || s == "aet" || s == "closed"
+            || s == "f/ot" || s == "f/so" || s == "ended"
     }
 }

@@ -1561,14 +1561,20 @@ struct ScoreView: View {
     let score: LiveScore?
 
     var body: some View {
-        if isLive, let s = score, let h = s.homeScore, let a = s.awayScore {
-            HStack(spacing: 8) {
+        // Show numeric score ONLY when the game is in progress or
+        // final. For not-yet-started games, show "VS" + the kickoff
+        // time so an upcoming game doesn't masquerade as 0-0.
+        if let s = score, (s.isLive || s.isFinal),
+           let h = s.homeScore, let a = s.awayScore {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(a)").font(.anton(28)).tracking(-0.28)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("–").font(.archivoNarrow(16, weight: .bold))
+                Text("–").font(.anton(20))
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Text("\(h)").font(.anton(28)).tracking(-0.28)
-                    .foregroundColor(pickWon(home: h, away: a, pick: pick) ? Color(hex: "#D4FF3A") : Color(hex: "#F5F3EE"))
+                    .foregroundColor(pickWon(home: h, away: a, pick: pick)
+                                     ? Color(hex: "#D4FF3A")
+                                     : Color(hex: "#F5F3EE"))
             }
         } else {
             VStack(spacing: 2) {
@@ -1576,19 +1582,23 @@ struct ScoreView: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(timeText)
-                    .font(.mono(11, weight: .bold))
-                    .foregroundColor(Color(hex: "#B9B7B0"))
+                if let kickoffText = kickoffText {
+                    Text(kickoffText)
+                        .font(.mono(11, weight: .bold))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
             }
         }
     }
 
-    private var timeText: String {
-        // Use createdAt as a placeholder for tip/start time in absence of an explicit field
-        guard let date = pick.createdAt else { return "—" }
-        let f = DateFormatter()
-        f.dateFormat = "h:mm a"
-        return f.string(from: date)
+    /// Real kickoff time from the live_scores feed (sportsdata.io's
+    /// `start_time`). Falls back to nil when we don't have one — we
+    /// show "VS" alone rather than misleading garbage. Pick.createdAt
+    /// is the AI-generation timestamp, NOT the game start; using it
+    /// for a kickoff label was a long-standing bug.
+    private var kickoffText: String? {
+        guard let kickoff = score?.startTime else { return nil }
+        return kickoffTimeText(kickoff)
     }
 
     private func pickWon(home: Int, away: Int, pick: Pick) -> Bool {
