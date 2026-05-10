@@ -2779,66 +2779,85 @@ struct WinsView: View {
     /// (HOME left / SCORE / AWAY right with `flex-row-reverse` on
     /// AWAY column), strike-through on the LOSING team, dashed
     /// footer with AI PICK + key factor + remove-X button.
+    /// Renders 4 distinct states based on `pick.result` + live data:
+    ///   • win  → green "WON" badge, FINAL tag
+    ///   • loss → red "LOST" badge, FINAL tag, predicted-team strikethrough
+    ///   • live → orange "LIVE" badge with live score
+    ///   • pending → mute "UPCOMING" badge, scheduled label
     private func wonCard(pick: Pick) -> some View {
-        let homeLost = (pick.homeScore ?? 0) < (pick.awayScore ?? 0)
-        let awayLost = (pick.awayScore ?? 0) < (pick.homeScore ?? 0)
+        let live = vm.liveScores.first { $0.gameId == pick.gameId }
+        let isLive = live?.isLive == true && pick.result == "pending"
+        let isFinal = pick.result == "win" || pick.result == "loss"
+        let won = pick.result == "win"
+        let lost = pick.result == "loss"
+
+        // For settled picks, strike the team OPPOSITE to the user's pick
+        // (i.e. the team that lost). Falls back to scoreboard math if
+        // the pick text doesn't cleanly match either team.
+        let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
+        let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
+        let homeStrike = isFinal && (lost ? pickedHome
+                                          : (!pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0)))
+        let awayStrike = isFinal && (lost ? pickedAway
+                                          : (!pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0)))
+
+        // Top-tag text: "FINAL" / "LIVE · Q3" / "TODAY 7:30 PM"
+        let topTag: String = {
+            if isLive {
+                let q = live?.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE"
+                return "\(pick.league.uppercased()) · LIVE · \(q)"
+            }
+            if isFinal {
+                return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · FINAL"
+            }
+            return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · UPCOMING"
+        }()
 
         return VStack(spacing: 0) {
             HStack {
-                Text("\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · FINAL")
+                Text(topTag)
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
                 Spacer()
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 9, weight: .heavy))
-                    Text("WON")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(1.8)
-                }
-                .foregroundColor(Color(hex: "#4ade80"))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color(hex: "#4ade80").opacity(0.1))
-                .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
-                .clipShape(Capsule())
+                outcomeBadge(pick: pick, isLive: isLive)
             }
             .padding(.bottom, 12)
 
-            // Mirrored layout: HOME left + SCORE center + AWAY right (reversed).
+            // Mirrored layout: HOME left + SCORE center + AWAY right.
             HStack(alignment: .center, spacing: 10) {
                 HStack(spacing: 9) {
                     TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
                     Text(teamShortName(pick.homeTeam, sport: pick.sport))
                         .font(.anton(18))
-                        .foregroundColor(homeLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(homeLost, color: Color(hex: "#2D3038"))
+                        .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let h = pick.homeScore, let a = pick.awayScore {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text("\(h)")
-                            .font(.anton(24)).fontWeight(.black)
-                            .foregroundColor(homeLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        Text("–")
-                            .font(.anton(14))
-                            .foregroundColor(Color(hex: "#6E6F75"))
-                        Text("\(a)")
-                            .font(.anton(24)).fontWeight(.black)
-                            .foregroundColor(awayLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                // Score area: live score (if live), final score (if settled),
+                // or schedule/check fallback.
+                Group {
+                    if isLive,
+                       let s = live, let h = s.homeScore, let a = s.awayScore {
+                        scoreText(home: h, away: a, homeMute: false, awayMute: false,
+                                  liveAccent: true)
+                    } else if let h = pick.homeScore, let a = pick.awayScore {
+                        scoreText(home: h, away: a,
+                                  homeMute: homeStrike, awayMute: awayStrike,
+                                  liveAccent: false)
+                    } else {
+                        Text("VS").font(.archivoNarrow(11, weight: .bold))
+                            .tracking(2).foregroundColor(Color(hex: "#6E6F75"))
                     }
-                } else {
-                    Text("✓").font(.anton(20)).foregroundColor(Color(hex: "#4ade80"))
                 }
 
                 HStack(spacing: 9) {
                     Text(teamShortName(pick.awayTeam, sport: pick.sport))
                         .font(.anton(18))
-                        .foregroundColor(awayLost ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(awayLost, color: Color(hex: "#2D3038"))
+                        .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
                         .lineLimit(1)
                     TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
                 }
@@ -2883,6 +2902,77 @@ struct WinsView: View {
         .background(cardBackground)
     }
 
+    /// Outcome badge — colored capsule pinned right of the top tag
+    /// row. WON (green), LOST (red), LIVE (orange + dot), UPCOMING
+    /// (mute), or AWAITING (mute) for not-yet-graded picks.
+    @ViewBuilder
+    private func outcomeBadge(pick: Pick, isLive: Bool) -> some View {
+        if isLive {
+            HStack(spacing: 5) {
+                Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
+                Text("LIVE")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#FF5A36"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#FF5A36").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else if pick.result == "win" {
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .heavy))
+                Text("WON")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#4ade80"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#4ade80").opacity(0.1))
+            .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else if pick.result == "loss" {
+            HStack(spacing: 5) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .heavy))
+                Text("LOST")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#FF5A36"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#FF5A36").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else {
+            // Pending + not live = upcoming (or awaiting grading).
+            Text("UPCOMING")
+                .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Color(hex: "#16181C"))
+                .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                .clipShape(Capsule())
+        }
+    }
+
+    /// Score row — 24pt Anton home / em-dash / 24pt Anton away. Mute
+    /// the side that lost (settled) or render in lime when live.
+    private func scoreText(home: Int, away: Int,
+                           homeMute: Bool, awayMute: Bool,
+                           liveAccent: Bool) -> some View {
+        let lit = liveAccent ? Color(hex: "#FF5A36") : Color(hex: "#F5F3EE")
+        return HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text("\(home)")
+                .font(.anton(24)).fontWeight(.black)
+                .foregroundColor(homeMute ? Color(hex: "#6E6F75") : lit)
+            Text("–")
+                .font(.anton(14))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text("\(away)")
+                .font(.anton(24)).fontWeight(.black)
+                .foregroundColor(awayMute ? Color(hex: "#6E6F75") : lit)
+        }
+    }
+
     /// "TODAY", "YESTERDAY", "2 DAYS AGO", or the date itself.
     private func relativeDate(_ ymd: String) -> String {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
@@ -2909,7 +2999,8 @@ struct LiveView: View {
     let onTapPick: (Pick) -> Void
     var onUnlock: () -> Void = {}
 
-    @State private var liveTab: LiveTab = .mine
+    @EnvironmentObject private var favorites: FavoritesStore
+    @State private var liveTab: LiveTab = .all
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -2926,41 +3017,199 @@ struct LiveView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 10)
 
-                if let nextUp = nextUpcomingPick {
+                if let nextUp = nextUpcomingPick, liveTab != .all {
                     watchBanner(nextUp)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
                 }
 
-                if livePicks.isEmpty {
-                    nothingLive
-                        .padding(.horizontal, 16)
-                } else {
-                    HubSectionHead(title: "IN PLAY", meta: "\(livePicks.count) LIVE", live: true)
-                        .padding(.bottom, 10)
-                    LazyVStack(spacing: 8) {
-                        let visible = isPro ? livePicks : Array(livePicks.max(by: { $0.probability < $1.probability }).map { [$0] } ?? [])
-                        ForEach(visible) { p in
-                            Button { onTapPick(p) } label: {
-                                liveCard(pick: p, score: liveScore(for: p))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        if !isPro {
-                            let locked = livePicks.filter { p in !visible.contains(where: { $0.id == p.id }) }
-                            if !locked.isEmpty {
-                                ProUnlockCard(lockedCount: locked.count, onUnlock: onUnlock)
-                                ForEach(locked.prefix(3)) { p in
-                                    LockedPickCard(pick: p, onUnlock: onUnlock)
-                                }
-                            }
-                        }
-                    }
+                tabBody
                     .padding(.horizontal, 16)
-                }
+
                 Spacer().frame(height: 140)
             }
         }
+    }
+
+    /// Active-tab content. All Live → today's in-progress games (across
+    /// every league). My Picks → my favorites that are live OR settled
+    /// today (with W/L/LIVE badges). Favorites → all my favorites,
+    /// any state, sorted newest first (mirrors the Picks tab but
+    /// scoped to recent activity).
+    @ViewBuilder
+    private var tabBody: some View {
+        switch liveTab {
+        case .all:
+            allLiveSection
+        case .mine:
+            myLiveAndRecentSection
+        case .favs:
+            favoritesRecentSection
+        }
+    }
+
+    /// "ALL LIVE" — every game across every league that's currently
+    /// in progress, regardless of whether the user has it picked.
+    @ViewBuilder
+    private var allLiveSection: some View {
+        if livePicks.isEmpty {
+            nothingLive
+        } else {
+            HubSectionHead(title: "IN PLAY",
+                           meta: "\(livePicks.count) LIVE",
+                           live: true)
+                .padding(.bottom, 10)
+            LazyVStack(spacing: 8) {
+                let visible = isPro ? livePicks
+                                    : Array(livePicks.max(by: { $0.probability < $1.probability }).map { [$0] } ?? [])
+                ForEach(visible) { p in
+                    Button { onTapPick(p) } label: {
+                        liveCard(pick: p, score: liveScore(for: p))
+                    }.buttonStyle(.plain)
+                }
+                if !isPro {
+                    let locked = livePicks.filter { p in
+                        !visible.contains(where: { $0.id == p.id })
+                    }
+                    if !locked.isEmpty {
+                        ProUnlockCard(lockedCount: locked.count, onUnlock: onUnlock)
+                        ForEach(locked.prefix(3)) { p in
+                            LockedPickCard(pick: p, onUnlock: onUnlock)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// "MY PICKS" — today's picks the user owns: live, settled, or
+    /// upcoming. Live games at the top, then today's results, then
+    /// upcoming.
+    @ViewBuilder
+    private var myLiveAndRecentSection: some View {
+        let myToday = vm.effectiveTodayPicks
+        let myLive = myToday.filter { isLive($0) }
+        let mySettled = myToday.filter { $0.result == "win" || $0.result == "loss" }
+        let myUpcoming = myToday.filter { $0.result == "pending" && !isLive($0) }
+
+        if myLive.isEmpty && mySettled.isEmpty && myUpcoming.isEmpty {
+            nothingLive
+        } else {
+            VStack(spacing: 16) {
+                if !myLive.isEmpty {
+                    section(title: "LIVE",
+                            meta: "\(myLive.count) IN PLAY",
+                            live: true,
+                            picks: myLive,
+                            renderer: { liveCard(pick: $0, score: liveScore(for: $0)) })
+                }
+                if !mySettled.isEmpty {
+                    section(title: "FINAL",
+                            meta: settledMetaToday(mySettled),
+                            live: false,
+                            picks: mySettled,
+                            renderer: { settledCard(pick: $0) })
+                }
+                if !myUpcoming.isEmpty {
+                    section(title: "UPCOMING",
+                            meta: "\(myUpcoming.count) TODAY",
+                            live: false,
+                            picks: myUpcoming,
+                            renderer: { liveCard(pick: $0, score: liveScore(for: $0)) })
+                }
+            }
+        }
+    }
+
+    /// "FAVORITES" — every starred pick across the recent window
+    /// (today + this week's settled + any pending that's live), with
+    /// W/L badges so the user can scan past results too.
+    @ViewBuilder
+    private var favoritesRecentSection: some View {
+        let favPicks = favoritePicks
+        if favPicks.isEmpty {
+            nothingFavs
+        } else {
+            HubSectionHead(title: "FAVORITES",
+                           meta: "\(favPicks.count) SAVED",
+                           live: false)
+                .padding(.bottom, 10)
+            LazyVStack(spacing: 8) {
+                ForEach(favPicks) { p in
+                    Button { onTapPick(p) } label: {
+                        if isLive(p) {
+                            liveCard(pick: p, score: liveScore(for: p))
+                        } else {
+                            settledCard(pick: p)
+                        }
+                    }.buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    /// Generic section wrapper — header + LazyVStack of picks.
+    @ViewBuilder
+    private func section<R: View>(
+        title: String, meta: String, live: Bool,
+        picks: [Pick],
+        @ViewBuilder renderer: @escaping (Pick) -> R
+    ) -> some View {
+        VStack(spacing: 8) {
+            HubSectionHead(title: title, meta: meta, live: live)
+                .padding(.bottom, 2)
+                .padding(.horizontal, -16)   // cancel section's 16pt inset
+            ForEach(picks) { p in
+                Button { onTapPick(p) } label: {
+                    renderer(p)
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func settledMetaToday(_ picks: [Pick]) -> String {
+        let w = picks.filter { $0.isWin }.count
+        let l = picks.filter { $0.isLoss }.count
+        return "\(w)-\(l) TODAY"
+    }
+
+    /// All favorited picks, newest first, scoped to the window the
+    /// Live tab cares about (today + the 7-day rolling history).
+    private var favoritePicks: [Pick] {
+        let ids = favorites.ids
+        var byId: [UUID: Pick] = [:]
+        for p in vm.todayPicks      { byId[p.id] = p }
+        for p in vm.yesterdayPicks  { byId[p.id] = p }
+        for p in vm.historyPicks    { byId[p.id] = p }
+        return ids.compactMap { byId[$0] }
+            .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
+                    > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
+    }
+
+    /// Empty state for the Favorites sub-tab.
+    private var nothingFavs: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "star")
+                .font(.system(size: 30))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text("No saved picks")
+                .font(.anton(20))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            Text("Tap the star on a match to save it.")
+                .font(.archivo(12)).foregroundColor(Color(hex: "#6E6F75"))
+        }
+        .padding(.vertical, 50)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Wrapper around the WinsView outcomeCard pattern so the LiveView
+    /// can render past favorites with the same W/L visual language.
+    /// Forwards to a small inline implementation that's specific to
+    /// this view's constraints (no remove-X, no FavoritesStore tie-in).
+    @ViewBuilder
+    private func settledCard(pick: Pick) -> some View {
+        SettledOutcomeCard(pick: pick,
+                           liveScore: liveScore(for: pick))
     }
 
     /// Segmented tabs row — MY PICKS (with cnt) / FAVORITES / ALL LIVE.
@@ -4496,5 +4745,173 @@ struct BookmakerTile: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - SettledOutcomeCard
+// ════════════════════════════════════════════════════════════════
+
+/// Standalone card that renders a pick's outcome state — WIN / LOSS /
+/// LIVE / UPCOMING — with score row + colored badge. Mirrors the
+/// in-WinsView wonCard visual but lives at module scope so any view
+/// (LiveView's Favorites tab, future Picks-tab variants) can render
+/// it without depending on private helpers.
+struct SettledOutcomeCard: View {
+    let pick: Pick
+    let liveScore: LiveScore?
+
+    var body: some View {
+        let isLiveNow = liveScore?.isLive == true && pick.result == "pending"
+        let isFinal = pick.result == "win" || pick.result == "loss"
+        let lost = pick.result == "loss"
+
+        let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
+        let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
+        let homeStrike = isFinal && (lost ? pickedHome
+                                          : (!pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0)))
+        let awayStrike = isFinal && (lost ? pickedAway
+                                          : (!pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0)))
+
+        let topTag: String = {
+            if isLiveNow {
+                let q = liveScore?.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE"
+                return "\(pick.league.uppercased()) · LIVE · \(q)"
+            }
+            if isFinal { return "\(pick.league.uppercased()) · FINAL" }
+            return "\(pick.league.uppercased()) · UPCOMING"
+        }()
+
+        return VStack(spacing: 0) {
+            HStack {
+                Text(topTag)
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                Spacer()
+                badge(pick: pick, isLive: isLiveNow)
+            }
+            .padding(.bottom, 12)
+
+            HStack(alignment: .center, spacing: 10) {
+                HStack(spacing: 9) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam, sport: pick.sport))
+                        .font(.anton(18))
+                        .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Group {
+                    if isLiveNow,
+                       let s = liveScore, let h = s.homeScore, let a = s.awayScore {
+                        score(h: h, a: a, hMute: false, aMute: false, accent: Color(hex: "#FF5A36"))
+                    } else if let h = pick.homeScore, let a = pick.awayScore {
+                        score(h: h, a: a, hMute: homeStrike, aMute: awayStrike, accent: Color(hex: "#F5F3EE"))
+                    } else {
+                        Text("VS").font(.archivoNarrow(11, weight: .bold))
+                            .tracking(2).foregroundColor(Color(hex: "#6E6F75"))
+                    }
+                }
+
+                HStack(spacing: 9) {
+                    Text(teamShortName(pick.awayTeam, sport: pick.sport))
+                        .font(.anton(18))
+                        .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            HStack(spacing: 8) {
+                Text("AI PICK")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text(pick.pick.uppercased())
+                    .font(.archivo(11, weight: .bold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Spacer()
+                Text(pick.keyFactor ?? pick.league.uppercased())
+                    .font(.mono(10, weight: .medium))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .lineLimit(1)
+            }
+            .padding(.top, 10)
+            .overlay(alignment: .top) {
+                DashedLine()
+                    .stroke(Color(hex: "#22252B"),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .frame(height: 1)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                    startPoint: .top, endPoint: .bottom))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
+        )
+    }
+
+    @ViewBuilder
+    private func badge(pick: Pick, isLive: Bool) -> some View {
+        if isLive {
+            HStack(spacing: 5) {
+                Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
+                Text("LIVE").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#FF5A36"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#FF5A36").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else if pick.result == "win" {
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
+                Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#4ade80"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#4ade80").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else if pick.result == "loss" {
+            HStack(spacing: 5) {
+                Image(systemName: "xmark").font(.system(size: 9, weight: .heavy))
+                Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#FF5A36"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#FF5A36").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        } else {
+            Text("UPCOMING")
+                .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Color(hex: "#16181C"))
+                .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                .clipShape(Capsule())
+        }
+    }
+
+    private func score(h: Int, a: Int, hMute: Bool, aMute: Bool,
+                       accent: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text("\(h)").font(.anton(24)).fontWeight(.black)
+                .foregroundColor(hMute ? Color(hex: "#6E6F75") : accent)
+            Text("–").font(.anton(14)).foregroundColor(Color(hex: "#6E6F75"))
+            Text("\(a)").font(.anton(24)).fontWeight(.black)
+                .foregroundColor(aMute ? Color(hex: "#6E6F75") : accent)
+        }
     }
 }
