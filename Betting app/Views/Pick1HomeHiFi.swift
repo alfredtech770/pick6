@@ -380,59 +380,69 @@ struct HeroCard: View {
             .padding(.top, 56)        // status-bar inset
             .padding(.bottom, 32)
         }
-        // Soft lime aura under the card — same color as the brand
-        // accent so the glow feels intentional rather than generic.
-        .shadow(color: Color(hex: "#a8e000").opacity(0.45),
-                radius: 22, x: 0, y: 18)
+        // Subtle drop shadow — matches the panel cards (charcoal
+        // shadow under the surface) plus a faint lime tint so the
+        // brand color still bleeds out from the bottom edge.
+        .shadow(color: Color.black.opacity(0.55),
+                radius: 18, x: 0, y: 14)
+        .shadow(color: Color(hex: "#a8e000").opacity(0.20),
+                radius: 24, x: 0, y: 20)
     }
 
-    /// Premium hero surface — dark ink top, rich lime bottom-right,
-    /// with a soft bright lime glow at the bottom-right corner. The
-    /// brand stays lime but the card now has depth (top-light /
-    /// bottom-shadow / off-axis glow) instead of a flat candy fill.
+    /// Premium hero surface — gray panel base matching the app's
+    /// other cards (WINS / ACCURACY tiles), with a soft lime glow
+    /// fading in from the bottom-right corner. Same chroma palette
+    /// as the rest of the app instead of a green-tinted card.
     private var heroSurface: some View {
         ZStack {
-            // Base linear gradient — dark ink to lime-tinted ink.
+            // Base — same palette as the panel cards (#14161a top →
+            // #0e0f12 bottom). Reads as part of the same family as
+            // the WINS / ACCURACY tiles below.
             LinearGradient(
                 colors: [
-                    Color(hex: "#0E1011"),
-                    Color(hex: "#14181A"),
-                    Color(hex: "#1A2418")
+                    Color(hex: "#1B1D21"),
+                    Color(hex: "#14161A"),
+                    Color(hex: "#0E0F12")
                 ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                startPoint: .top,
+                endPoint: .bottom
             )
-            // Bright lime glow off-canvas at bottom-right — the
-            // off-axis bloom is what gives the card its premium feel.
+
+            // Soft lime fade — bottom-right corner glow that fades
+            // into the gray surface. Reduced intensity vs the
+            // previous green-card so the lime acts as ambient
+            // accent instead of dominating the chroma.
             RadialGradient(
                 colors: [
-                    Color(hex: "#D4FF3A").opacity(0.95),
-                    Color(hex: "#A8E000").opacity(0.55),
-                    Color(hex: "#A8E000").opacity(0.0)
+                    Color(hex: "#D4FF3A").opacity(0.55),
+                    Color(hex: "#A8E000").opacity(0.18),
+                    Color.clear
                 ],
-                center: UnitPoint(x: 0.95, y: 1.05),
+                center: UnitPoint(x: 1.05, y: 1.05),
                 startRadius: 0,
-                endRadius: 520
+                endRadius: 460
             )
-            // Smaller secondary bloom at top-right — adds dimension
-            // and prevents the upper-right from feeling dead.
+            .blur(radius: 18)
+
+            // Smaller secondary bloom at top-right — keeps the upper
+            // edge alive without re-introducing chroma overload.
             RadialGradient(
                 colors: [
-                    Color(hex: "#D4FF3A").opacity(0.35),
+                    Color(hex: "#D4FF3A").opacity(0.14),
                     Color.clear
                 ],
                 center: UnitPoint(x: 1.05, y: -0.05),
                 startRadius: 0,
-                endRadius: 280
+                endRadius: 240
             )
-            // Faint chromatic veil — adds the iOS 26 Liquid Glass
-            // refractive feel without washing out the lime. The
-            // .glassEffect material on a translucent overlay catches
-            // light at the edges.
+            .blur(radius: 14)
+
+            // Liquid Glass veil — refractive depth, very low opacity
+            // so it adds material feel without lightening the gray.
             Color.clear
                 .glassEffect(.regular.interactive(),
                              in: BottomRoundedShape(radius: 32))
-                .opacity(0.18)
+                .opacity(0.10)
                 .allowsHitTesting(false)
         }
     }
