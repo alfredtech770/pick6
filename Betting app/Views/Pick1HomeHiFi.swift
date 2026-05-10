@@ -389,22 +389,22 @@ struct HeroCard: View {
                        period: 14)
                 .allowsHitTesting(false)
         }
-        // Subtle drop shadow — matches the panel cards (charcoal
-        // shadow under the surface) plus a faint lime tint so the
-        // brand color still bleeds out from the bottom edge.
+        // Plain charcoal drop shadow — same as the other panel
+        // cards. No lime tint; the only green element is the
+        // animated AcidBorder traced on the perimeter.
         .shadow(color: Color.black.opacity(0.55),
                 radius: 18, x: 0, y: 14)
-        .shadow(color: Color(hex: "#a8e000").opacity(0.20),
-                radius: 24, x: 0, y: 20)
+        .shadow(color: Color.black.opacity(0.30),
+                radius: 6, x: 0, y: 4)
     }
 
-    /// Premium hero surface — exact same gray palette as the WINS /
-    /// ACCURACY tiles below it (#14161a → #0e0f12), with a faint
-    /// ambient lime glow fading in from the bottom-right corner.
+    /// Plain gray hero surface — same gradient as the WINS /
+    /// ACCURACY tiles. No lime fade, no green tint; the animated
+    /// AcidBorder is the only lime element on the card.
     private var heroSurface: some View {
         ZStack {
-            // Base — identical gradient to `cardBackground` used
-            // throughout the app. No more bespoke hero palette.
+            // Identical gradient to `cardBackground` used throughout
+            // the app — the hero is just another panel card.
             LinearGradient(
                 colors: [
                     Color(hex: "#14161A"),
@@ -413,21 +413,6 @@ struct HeroCard: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-
-            // Faint lime glow — softer than before so the card
-            // reads as gray-with-a-hint-of-glow, not as a tinted
-            // green card.
-            RadialGradient(
-                colors: [
-                    Color(hex: "#D4FF3A").opacity(0.30),
-                    Color(hex: "#A8E000").opacity(0.10),
-                    Color.clear
-                ],
-                center: UnitPoint(x: 1.05, y: 1.05),
-                startRadius: 0,
-                endRadius: 420
-            )
-            .blur(radius: 22)
 
             // Liquid Glass veil — refractive depth, low opacity so
             // it adds material feel without lightening the gray.
