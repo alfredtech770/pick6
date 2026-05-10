@@ -379,6 +379,14 @@ struct HeroCard: View {
             .padding(.horizontal, 22)
             .padding(.top, 56)        // status-bar inset
             .padding(.bottom, 32)
+
+            // Animated acid-green border — a conic gradient stroked
+            // around the card's perimeter, rotating continuously.
+            // The brightest lime "spotlight" travels around the
+            // edge like a stadium-LED accent. Sits as the topmost
+            // layer so it draws on top of all other content.
+            AcidBorder(shape: BottomRoundedShape(radius: 32))
+                .allowsHitTesting(false)
         }
         // Subtle drop shadow — matches the panel cards (charcoal
         // shadow under the surface) plus a faint lime tint so the
@@ -568,6 +576,52 @@ struct HeroCard: View {
         case "F1":   return "F1TV"
         default:     return ""
         }
+    }
+}
+
+// MARK: - Animated acid border
+
+/// Conic-gradient stroke that rotates continuously around any Shape's
+/// perimeter. Used on the HeroCard for an animated "acid green" edge
+/// — most of the perimeter sits at low-alpha lime, with a bright lime
+/// "spotlight" that sweeps clockwise like a stadium-LED accent.
+///
+/// Rotation duration ≈ 6 s for one full loop; slow enough to read as
+/// a deliberate animation rather than nervous flicker, fast enough to
+/// register as motion within a few seconds of glancing at the card.
+struct AcidBorder<S: Shape>: View {
+    let shape: S
+    var lineWidth: CGFloat = 2
+    var period: Double = 6.0   // seconds per full revolution
+
+    @State private var angle: Double = 0
+
+    var body: some View {
+        shape
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.00),
+                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.40),
+                        .init(color: Color(hex: "#D4FF3A").opacity(1.00), location: 0.50),
+                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.60),
+                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 1.00),
+                    ]),
+                    center: .center,
+                    angle: .degrees(angle)
+                ),
+                lineWidth: lineWidth
+            )
+            // Outer halo — the bright spotlight bleeds slightly past
+            // the border itself, picking up the LED-trace feel.
+            .shadow(color: Color(hex: "#D4FF3A").opacity(0.35),
+                    radius: 4, x: 0, y: 0)
+            .onAppear {
+                withAnimation(.linear(duration: period)
+                                .repeatForever(autoreverses: false)) {
+                    angle = 360
+                }
+            }
     }
 }
 
