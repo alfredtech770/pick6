@@ -381,11 +381,12 @@ struct HeroCard: View {
             .padding(.bottom, 32)
 
             // Animated acid-green border — a conic gradient stroked
-            // around the card's perimeter, rotating continuously.
-            // The brightest lime "spotlight" travels around the
-            // edge like a stadium-LED accent. Sits as the topmost
-            // layer so it draws on top of all other content.
-            AcidBorder(shape: BottomRoundedShape(radius: 32))
+            // around the card's perimeter, rotating slowly. The
+            // brightest lime "spotlight" drifts around the edge
+            // like an ambient stadium-LED accent (14s per loop —
+            // slow enough to feel atmospheric).
+            AcidBorder(shape: BottomRoundedShape(radius: 32),
+                       period: 14)
                 .allowsHitTesting(false)
         }
         // Subtle drop shadow — matches the panel cards (charcoal
@@ -397,18 +398,15 @@ struct HeroCard: View {
                 radius: 24, x: 0, y: 20)
     }
 
-    /// Premium hero surface — gray panel base matching the app's
-    /// other cards (WINS / ACCURACY tiles), with a soft lime glow
-    /// fading in from the bottom-right corner. Same chroma palette
-    /// as the rest of the app instead of a green-tinted card.
+    /// Premium hero surface — exact same gray palette as the WINS /
+    /// ACCURACY tiles below it (#14161a → #0e0f12), with a faint
+    /// ambient lime glow fading in from the bottom-right corner.
     private var heroSurface: some View {
         ZStack {
-            // Base — same palette as the panel cards (#14161a top →
-            // #0e0f12 bottom). Reads as part of the same family as
-            // the WINS / ACCURACY tiles below.
+            // Base — identical gradient to `cardBackground` used
+            // throughout the app. No more bespoke hero palette.
             LinearGradient(
                 colors: [
-                    Color(hex: "#1B1D21"),
                     Color(hex: "#14161A"),
                     Color(hex: "#0E0F12")
                 ],
@@ -416,41 +414,27 @@ struct HeroCard: View {
                 endPoint: .bottom
             )
 
-            // Soft lime fade — bottom-right corner glow that fades
-            // into the gray surface. Reduced intensity vs the
-            // previous green-card so the lime acts as ambient
-            // accent instead of dominating the chroma.
+            // Faint lime glow — softer than before so the card
+            // reads as gray-with-a-hint-of-glow, not as a tinted
+            // green card.
             RadialGradient(
                 colors: [
-                    Color(hex: "#D4FF3A").opacity(0.55),
-                    Color(hex: "#A8E000").opacity(0.18),
+                    Color(hex: "#D4FF3A").opacity(0.30),
+                    Color(hex: "#A8E000").opacity(0.10),
                     Color.clear
                 ],
                 center: UnitPoint(x: 1.05, y: 1.05),
                 startRadius: 0,
-                endRadius: 460
+                endRadius: 420
             )
-            .blur(radius: 18)
+            .blur(radius: 22)
 
-            // Smaller secondary bloom at top-right — keeps the upper
-            // edge alive without re-introducing chroma overload.
-            RadialGradient(
-                colors: [
-                    Color(hex: "#D4FF3A").opacity(0.14),
-                    Color.clear
-                ],
-                center: UnitPoint(x: 1.05, y: -0.05),
-                startRadius: 0,
-                endRadius: 240
-            )
-            .blur(radius: 14)
-
-            // Liquid Glass veil — refractive depth, very low opacity
-            // so it adds material feel without lightening the gray.
+            // Liquid Glass veil — refractive depth, low opacity so
+            // it adds material feel without lightening the gray.
             Color.clear
                 .glassEffect(.regular.interactive(),
                              in: BottomRoundedShape(radius: 32))
-                .opacity(0.10)
+                .opacity(0.08)
                 .allowsHitTesting(false)
         }
     }
