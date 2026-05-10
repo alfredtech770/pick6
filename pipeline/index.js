@@ -811,27 +811,25 @@ cron.schedule('* * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-// Pick generation 3× daily, optimized for both European and US slates.
+// Pick generation — once daily at 5am ET (10am UK / 11am CET).
 //
-// 5am ET (10am UK / 11am CET) — Europe morning window
+// One-tick schedule chosen to minimize Anthropic spend (~$5/day instead
+// of ~$15/day at 3× daily). Earliest kick-off-time slot that still
+// gives meaningful lead on every league:
+//
 //   • EPL early Saturday kickoff (12:30 UK = 7:30am ET) — 2.5h lead
 //   • La Liga / Bundesliga afternoon (15:00–17:00 CET) — 4h lead
 //   • F1 Sunday races (14:00 CET = 8am ET) — 3h lead
 //   • MLB matinees (1pm ET) — 8h lead
-//   • Tennis Asia/Europe sessions
+//   • NBA/NHL primetime (7pm ET) — 14h lead
+//   • NFL Sunday (1pm ET) — 8h lead
+//   • UFC main cards (10pm ET) — 17h lead
+//   • Tennis Asia/Europe sessions covered
 //
-// 12pm ET (5pm UK / 6pm CET) — Europe evening + US start window
-//   • EPL evening kickoff (17:30 UK = 12:30pm ET) — 30min lead
-//   • Champions League / Europa (20:00 UK = 3pm ET) — 3h lead
-//   • MLB day-in-progress + night-game lineups
-//   • Early NBA/NHL games (7pm ET) — 7h lead
-//
-// 7pm ET (midnight UK / 1am CET) — US primetime window
-//   • NBA / NHL / MLB primetime (mostly 7-10pm ET)
-//   • NFL Sunday / Monday Night (8:20pm ET) — 80min lead
-//   • UFC main cards (10pm ET) — 3h lead
-//   • West-coast late starts (10pm ET)
-cron.schedule('0 5,12,19 * * *', runPipeline, { timezone: TZ });
+// Trade-off: late-breaking news (injuries, scratches) within game-day
+// won't update an already-published pick. If that becomes a problem,
+// re-add the 12pm ET tick and budget for the extra ~$3/day.
+cron.schedule('0 5 * * *', runPipeline, { timezone: TZ });
 
 // Daily performance snapshot at midnight ET (after final games grade)
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
@@ -844,7 +842,7 @@ log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
 log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
 log(`   Timezone: ${TZ}`);
 log('   Live scores: every 60s during game hours');
-log('   AI picks:    5am, 12pm, 7pm ET (3× daily, optimized for EU + US slates)');
+log('   AI picks:    5am ET (once daily — covers EU morning + US lead time)');
 log('   Snapshot:    midnight ET');
 
 // ─── Boot-time Supabase diagnostic (safe — no secrets logged) ──
