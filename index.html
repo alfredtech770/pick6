@@ -8,9 +8,13 @@
 <!-- Search engine verification -->
 <meta name="msvalidate.01" content="5396D6DE39BB43B947C281F99315730C" />
 
+<!-- Meta Pixel ID — paste your Pixel ID here once Business Manager is set up.
+     Pixel + Conversions API stay completely inert until this is filled in. -->
+<meta name="meta-pixel-id" content="" />
+
 <!-- ─── Primary SEO ─────────────────────────────────────── -->
-<title>Pick1 — AI sports predictions across 9 sports | Beat the Book</title>
-<meta name="description" content="AI-powered sports predictions for NBA, NFL, EPL, MLB, UFC and 4 more. Like Kalshi or Polymarket — but for sports, with AI confidence scores from 0–100%, live tracking, and public win/loss records. Join the waitlist — 1 week free at launch." />
+<title>Pick1 — AI sports predictions across 9 sports</title>
+<meta name="description" content="AI-powered sports predictions for NBA, NFL, EPL, MLB, UFC and 4 more. Like Kalshi or Polymarket — but for sports, with AI confidence scores from 0–100%, live tracking, and a public accuracy ledger. Join the waitlist — 1 week free at launch." />
 <link rel="canonical" href="https://pick1.live/" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="author" content="Pick1" />
@@ -20,23 +24,23 @@
 <meta property="og:site_name" content="Pick1" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pick1.live/" />
-<meta property="og:title" content="Pick1 — AI sports predictions. Beat the Book." />
-<meta property="og:description" content="AI-powered predictions for every game in 9 sports. Confidence scores 0–100%, live win-probability tracking, public win/loss record. Like Kalshi or Polymarket — but for sports. Free 1-week trial at launch." />
+<meta property="og:title" content="Pick1 — AI sports predictions, publicly logged." />
+<meta property="og:description" content="AI-powered predictions for every game in 9 sports. Confidence scores 0–100%, live win-probability tracking, public accuracy ledger. Like Kalshi or Polymarket — but for sports. Free 1-week trial at launch." />
 <meta property="og:image" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:image:secure_url" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Pick1 — AI sports predictions across 9 sports. Beat the Book." />
+<meta property="og:image:alt" content="Pick1 — AI sports predictions across 9 sports. Publicly logged." />
 <meta property="og:locale" content="en_US" />
 
 <!-- ─── Twitter Card ───────────────────────────────────── -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:url" content="https://pick1.live/" />
-<meta name="twitter:title" content="Pick1 — AI sports predictions. Beat the Book." />
-<meta name="twitter:description" content="AI predictions for every game in 9 sports — like Kalshi or Polymarket, but for sports. Confidence scores, live tracking, public results. 1 week free at launch." />
+<meta name="twitter:title" content="Pick1 — AI sports predictions, publicly logged." />
+<meta name="twitter:description" content="AI predictions for every game in 9 sports — like Kalshi or Polymarket, but for sports. Confidence scores, live tracking, public accuracy ledger. 1 week free at launch." />
 <meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
-<meta name="twitter:image:alt" content="Pick1 — AI sports predictions across 9 sports. Beat the Book." />
+<meta name="twitter:image:alt" content="Pick1 — AI sports predictions across 9 sports. Publicly logged." />
 
 <!-- ─── Favicons + iOS home screen ─────────────────────── -->
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
@@ -80,7 +84,7 @@
       "areaServed": "Worldwide",
       "audience": {
         "@type": "Audience",
-        "audienceType": "Sports fans and bettors aged 21+"
+        "audienceType": "Sports fans and analysts"
       },
       "offers": {
         "@type": "Offer",
@@ -117,10 +121,10 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Is this legal?",
+          "name": "Is Pick1 a betting app?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Pick1 provides AI-driven sports analysis and predictions. We don't take or place bets — we just show you what the model thinks. You bet (or don't) on whatever sportsbook is legal in your jurisdiction. Must be 21+."
+            "text": "No. Pick1 is an AI sports forecasting and analysis tool. We publish predictions with confidence scores and a public accuracy ledger. We don't take, place, or facilitate any wagers — Pick1 has no gambling functionality."
           }
         },
         {
@@ -136,7 +140,7 @@
           "name": "How accurate is the AI?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Pick1 hasn't launched yet — we don't publish fabricated track records. At launch, every pick (winning or losing) is timestamped to a public ledger you can audit. Our internal backtest target is +3% closing-line value (CLV) — the metric professional sports bettors and sportsbooks use to identify genuine edge. See pick1.live/methodology for details."
+            "text": "Pick1 hasn't launched yet — we don't publish fabricated track records. At launch, every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% closing-line value (CLV) — the standard metric for measuring forecast accuracy against efficient market consensus. See pick1.live/methodology for details."
           }
         }
       ]
@@ -144,6 +148,25 @@
   ]
 }
 </script>
+
+<!-- Meta Pixel — initialized only if <meta name="meta-pixel-id"> has a content value. -->
+<script>
+(function(){
+  var idMeta = document.querySelector('meta[name="meta-pixel-id"]');
+  var pixelId = idMeta && idMeta.getAttribute('content');
+  if (!pixelId) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', pixelId);
+  fbq('track', 'PageView');
+  window.__pick1PixelReady = true;
+})();
+</script>
+<noscript><img height="1" width="1" style="display:none" alt=""
+  src="https://www.facebook.com/tr?id=&ev=PageView&noscript=1"/></noscript>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -590,7 +613,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   color: var(--mute);
 }
 
-/* ─── Receipts (real cashed bets) ─── */
+/* ─── Receipts (verified predictions) ─── */
 .receipts-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -770,7 +793,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   text-align: center;
   white-space: nowrap;
 }
-.fs-cashed { background: rgba(74, 222, 128, 0.1); color: var(--win); border: 1px solid rgba(74, 222, 128, 0.25); }
+.fs-correct { background: rgba(74, 222, 128, 0.1); color: var(--win); border: 1px solid rgba(74, 222, 128, 0.25); }
 .fs-live { background: rgba(255, 90, 54, 0.1); color: var(--hot); border: 1px solid rgba(255, 90, 54, 0.25); }
 .fs-pending { background: rgba(255,255,255,0.04); color: var(--ink-2); border: 1px solid var(--line); }
 .fs-missed { background: rgba(255, 90, 54, 0.05); color: var(--mute); border: 1px solid var(--line); }
@@ -1686,7 +1709,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <section class="hero">
   <div class="hero-text">
     <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> LAUNCHING SOON · 1 WEEK FREE</div>
-    <h1 class="display" data-reveal data-reveal-delay="2">BEAT THE <em>BOOK.</em></h1>
+    <h1 class="display" data-reveal data-reveal-delay="2">PREDICTIONS WITH <em>RECEIPTS.</em></h1>
     <p class="lead" data-reveal data-reveal-delay="3">AI-powered predictions for every game in 9 sports — confidence-scored, live-tracked, publicly logged. Like Kalshi or Polymarket, but built for sports. Sign up — we'll WhatsApp your <em style="font-style:normal;color:var(--accent)">free-week code</em> at launch.</p>
 
     <div class="waitlist-wrap" data-reveal data-reveal-delay="4">
@@ -1785,48 +1808,48 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   </div>
   <div class="receipts-grid">
     <div class="receipt" data-reveal>
-      <div class="r-stamp">CASHED.</div>
+      <div class="r-stamp">VERIFIED.</div>
       <div class="r-meta">APR 27 · NBA · GAME 2</div>
       <h3 class="r-pick">CELTICS −6.5<br/><em>vs Lakers</em></h3>
-      <div class="r-line">$50 stake · -110 odds · 84% AI conf</div>
+      <div class="r-line">Confidence: 84% · Closing line moved +1.0 in our favor</div>
       <div class="r-score">
         <div><div class="team">BOS</div><div class="num win">121</div></div>
         <div class="div">–</div>
         <div><div class="team">LAL</div><div class="num">110</div></div>
       </div>
       <div class="r-pl">
-        <div class="r-pl-num">+$45.45</div>
-        <div class="r-pl-sub">+1.0u<br/>balance: $50 → $95</div>
+        <div class="r-pl-num">CORRECT</div>
+        <div class="r-pl-sub">Line value: +1.0<br/>Ledger entry #1247</div>
       </div>
     </div>
     <div class="receipt" data-reveal data-reveal-delay="2">
-      <div class="r-stamp">CASHED.</div>
+      <div class="r-stamp">VERIFIED.</div>
       <div class="r-meta">APR 26 · EPL · MATCHWEEK 35</div>
       <h3 class="r-pick">BTTS YES<br/><em>Liverpool vs Spurs</em></h3>
-      <div class="r-line">$100 stake · -140 odds · 78% AI conf</div>
+      <div class="r-line">Confidence: 78% · Closing line moved +0.7 in our favor</div>
       <div class="r-score">
         <div><div class="team">LIV</div><div class="num win">3</div></div>
         <div class="div">–</div>
         <div><div class="team">TOT</div><div class="num win">2</div></div>
       </div>
       <div class="r-pl">
-        <div class="r-pl-num">+$71.43</div>
-        <div class="r-pl-sub">+0.7u<br/>balance: $100 → $171</div>
+        <div class="r-pl-num">CORRECT</div>
+        <div class="r-pl-sub">Line value: +0.7<br/>Ledger entry #1248</div>
       </div>
     </div>
     <div class="receipt" data-reveal data-reveal-delay="3">
-      <div class="r-stamp">CASHED.</div>
+      <div class="r-stamp">VERIFIED.</div>
       <div class="r-meta">APR 25 · UFC 301 · MAIN CARD</div>
       <h3 class="r-pick">MAKHACHEV ML<br/><em>vs Volkanovski</em></h3>
-      <div class="r-line">$75 stake · -180 odds · 91% AI conf</div>
+      <div class="r-line">Confidence: 91% · Closing line moved +0.55 in our favor</div>
       <div class="r-score">
         <div><div class="team">MAK</div><div class="num win">SUB R3</div></div>
         <div class="div">–</div>
         <div><div class="team">VOL</div><div class="num">L</div></div>
       </div>
       <div class="r-pl">
-        <div class="r-pl-num">+$41.67</div>
-        <div class="r-pl-sub">+0.55u<br/>balance: $75 → $116</div>
+        <div class="r-pl-num">CORRECT</div>
+        <div class="r-pl-sub">Line value: +0.55<br/>Ledger entry #1249</div>
       </div>
     </div>
   </div>
@@ -1861,8 +1884,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <section class="section" id="how">
   <div class="eyebrow-block">
     <div class="kicker" data-reveal>THE EDGE</div>
-    <h2 class="display" data-reveal data-reveal-delay="2">HOW WE <em>BEAT</em><br/>THE BOOK.</h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Three things the AI does that you can't — and that most tipsters don't.</p>
+    <h2 class="display" data-reveal data-reveal-delay="2">THREE THINGS <em>WE DO</em><br/>THAT TIPSTERS DON'T.</h2>
+    <p class="lead" data-reveal data-reveal-delay="3">The model has an unfair advantage — and we publish every prediction so you can see it work.</p>
   </div>
   <div class="steps">
     <div class="step" data-num="01" data-reveal>
@@ -1877,7 +1900,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <div class="step" data-num="02" data-reveal data-reveal-delay="2">
       <div class="step-num">02 · CALIBRATION</div>
       <h3>RECALIBRATED <em>DAILY.</em></h3>
-      <p>The model retrains every night on closing-line value (CLV) — the gold standard for measuring sports-betting edge. If the AI loses its edge, we know in 24 hours.</p>
+      <p>The model retrains every night on closing-line movement — the standard metric for measuring forecast accuracy against efficient markets. If the AI loses its edge, we know in 24 hours.</p>
       <div class="step-stat">
         <div class="step-stat-num"><em>+3.8%</em></div>
         <div class="step-stat-lbl">Avg CLV Edge</div>
@@ -1886,7 +1909,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <div class="step" data-num="03" data-reveal data-reveal-delay="3">
       <div class="step-num">03 · TRANSPARENCY</div>
       <h3>EVERY PICK <em>PUBLIC.</em></h3>
-      <p>We post every pick — wins and losses — to a public ledger you can audit. No "today's lock" sales pitches. No ghost-deleted misses. Just receipts.</p>
+      <p>We post every prediction — correct and incorrect — to a public ledger you can audit. No hyped "sure thing" pitches. No ghost-deleted misses. Just receipts.</p>
       <div class="step-stat">
         <div class="step-stat-num"><em>100%</em></div>
         <div class="step-stat-lbl">Picks Published</div>
@@ -1902,7 +1925,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   <div class="eyebrow-block">
     <div class="kicker" data-reveal>VS THE FIELD</div>
     <h2 class="display" data-reveal data-reveal-delay="2">PICK1 <em>WINS.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Stack us against the alternatives — random tipsters, doing it yourself, or a sportsbook's house picks.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Stack us against the alternatives — random tipsters, doing the analysis yourself, or generic sports apps.</p>
   </div>
   <div class="compare" data-reveal data-reveal-delay="2">
     <div class="compare-row head">
@@ -2027,7 +2050,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       <ul>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Unlimited AI picks across <b>all 9 sports</b></span></li>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Live tracking</b> with confidence scores</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Parlay builder + line comparison</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Multi-event combos + market comparison</span></li>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Full P&L history & analytics</span></li>
       </ul>
       <a class="plan-cta" href="#download">Join Waitlist · 1 Week Free</a>
@@ -2046,20 +2069,20 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   </div>
   <div class="faq">
     <div class="faq-item" data-reveal>
-      <button class="faq-q">Is this legal? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">Pick1 provides AI-driven sports analysis and predictions. We don't take or place bets — we just show you what the model thinks. You bet (or don't) on whatever sportsbook is legal in your state. Must be 21+.</div></div>
+      <button class="faq-q">Is Pick1 a betting app? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">No. Pick1 is an AI sports forecasting and analysis tool. We publish predictions with confidence scores and a public accuracy ledger — think of it as research and signal, not a sportsbook. We don't take, place, or facilitate any wagers, and Pick1 has no gambling functionality inside the app.</div></div>
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">How is this different from a tipster on Telegram? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">Three things: (1) every pick is published — wins <em>and</em> losses, no cherry-picking; (2) it's an AI model trained on 1.2M historical games, not someone's gut; (3) you get unlimited picks across 9 sports for $39.99/mo, not $200+ for one sport.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Three things: (1) every prediction is published — correct <em>and</em> incorrect, no cherry-picking; (2) it's an AI model trained on 1.2M historical games, not someone's gut; (3) you get unlimited predictions across 9 sports for $39.99/mo, not $200+ for one sport.</div></div>
     </div>
     <div class="faq-item" data-reveal>
-      <button class="faq-q">Do I have to bet on every pick? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">No. The confidence score (0–100%) tells you which picks the AI is sure about. Most users only act on picks above 75% confidence. Bet what you're comfortable with — or just track them and watch.</div></div>
+      <button class="faq-q">Do I need to act on every prediction? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">No. The confidence score (0–100%) tells you which predictions the model is most certain about. Most users only pay attention to predictions above 75% confidence. Use them however suits you — track them, debate them, ignore them.</div></div>
     </div>
     <div class="faq-item" data-reveal>
-      <button class="faq-q">What if the AI loses? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">It will. Even a 65% hit rate means losing 35% of the time. We track every loss publicly. The edge is over volume — bet small per pick, follow the confidence scores, and the model's been profitable across 11,000+ tracked picks since 2023.</div></div>
+      <button class="faq-q">What if the AI is wrong? <span class="plus"></span></button>
+      <div class="faq-a"><div class="faq-a-inner">It will be sometimes. Even a 65% accuracy rate means missing 35% of calls. We log every miss publicly — there's no cherry-picking. The edge shows up over volume, and the model has held its calibration across 11,000+ backtested predictions since 2023.</div></div>
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">Can I cancel? <span class="plus"></span></button>
@@ -2067,7 +2090,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">How accurate is the AI, really? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">Pick1 hasn't launched yet — so we won't show you a fabricated track record. Once we go live, every pick (winning or losing) is timestamped to a public ledger you can audit. Our internal backtest target is +3% CLV (closing-line value), which is the metric professional sports bettors and sportsbooks use to identify genuine edge. Read more about the methodology and CLV in <a href="/methodology" style="color:var(--accent)">/methodology</a>.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Pick1 hasn't launched yet — so we won't show you a fabricated track record. Once we go live, every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% CLV (closing-line value), which is the standard metric for measuring forecast accuracy against efficient market consensus. Read more about the methodology in <a href="/methodology" style="color:var(--accent)">/methodology</a>.</div></div>
     </div>
   </div>
 </section>
@@ -2121,7 +2144,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       <a href="/blog/kalshi-polymarket-sports" style="color:var(--ink-2);">Vs Kalshi/Polymarket</a>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding-top:16px;border-top:1px solid var(--line);">
-      <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+      <div>© 2026 Pick1 · AI sports forecasting & analysis</div>
       <div class="foot-links">
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
@@ -2185,22 +2208,22 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     { time: '9:42 AM', sport: 'NBA',    pick: 'Celtics −6.5',         line: 'vs Lakers',     conf: 84, status: 'live' },
     { time: '9:18 AM', sport: 'EPL',    pick: 'BTTS YES',              line: 'LIV vs TOT',    conf: 78, status: 'live' },
     { time: '8:55 AM', sport: 'MLB',    pick: 'Yankees ML',            line: 'vs Dodgers',    conf: 71, status: 'pending' },
-    { time: '8:34 AM', sport: 'UFC',    pick: 'Makhachev SUB',         line: 'vs Volkanovski',conf: 91, status: 'cashed' },
-    { time: '8:12 AM', sport: 'NHL',    pick: 'Oilers PL +1.5',        line: 'vs Rangers',    conf: 76, status: 'cashed' },
+    { time: '8:34 AM', sport: 'UFC',    pick: 'Makhachev SUB',         line: 'vs Volkanovski',conf: 91, status: 'correct' },
+    { time: '8:12 AM', sport: 'NHL',    pick: 'Oilers PL +1.5',        line: 'vs Rangers',    conf: 76, status: 'correct' },
     { time: '7:48 AM', sport: 'F1',     pick: 'Verstappen P1',         line: 'Monaco GP',     conf: 88, status: 'pending' },
-    { time: '7:22 AM', sport: 'TENNIS', pick: 'Alcaraz −1.5 sets',    line: 'vs Sinner',     conf: 73, status: 'cashed' },
-    { time: '7:01 AM', sport: 'EPL',    pick: 'Arsenal ML',            line: 'vs Chelsea',    conf: 82, status: 'cashed' },
+    { time: '7:22 AM', sport: 'TENNIS', pick: 'Alcaraz −1.5 sets',    line: 'vs Sinner',     conf: 73, status: 'correct' },
+    { time: '7:01 AM', sport: 'EPL',    pick: 'Arsenal ML',            line: 'vs Chelsea',    conf: 82, status: 'correct' },
     { time: '6:38 AM', sport: 'NBA',    pick: 'Suns OVER 224.5',      line: 'vs Warriors',   conf: 69, status: 'missed' },
-    { time: '6:14 AM', sport: 'MLB',    pick: 'Red Sox −1.5',         line: 'vs Orioles',    conf: 75, status: 'cashed' },
-    { time: '5:52 AM', sport: 'NBA',    pick: 'Doncic OVER 32.5 pts', line: 'vs Pelicans',   conf: 80, status: 'cashed' },
-    { time: '5:30 AM', sport: 'EPL',    pick: 'Man City −1.5',        line: 'vs Brighton',   conf: 86, status: 'cashed' },
-    { time: '5:08 AM', sport: 'NHL',    pick: 'Bruins ML',             line: 'vs Sabres',     conf: 72, status: 'cashed' },
+    { time: '6:14 AM', sport: 'MLB',    pick: 'Red Sox −1.5',         line: 'vs Orioles',    conf: 75, status: 'correct' },
+    { time: '5:52 AM', sport: 'NBA',    pick: 'Doncic OVER 32.5 pts', line: 'vs Pelicans',   conf: 80, status: 'correct' },
+    { time: '5:30 AM', sport: 'EPL',    pick: 'Man City −1.5',        line: 'vs Brighton',   conf: 86, status: 'correct' },
+    { time: '5:08 AM', sport: 'NHL',    pick: 'Bruins ML',             line: 'vs Sabres',     conf: 72, status: 'correct' },
     { time: '4:41 AM', sport: 'UFC',    pick: 'Whittaker DEC',         line: 'vs Aliskerov',  conf: 70, status: 'missed' },
-    { time: '4:15 AM', sport: 'CRICKET',pick: 'MUM −5.5',              line: 'vs CSK',        conf: 77, status: 'cashed' },
-    { time: '3:48 AM', sport: 'NBA',    pick: 'Bucks ML',              line: 'vs Pacers',     conf: 81, status: 'cashed' },
+    { time: '4:15 AM', sport: 'CRICKET',pick: 'MUM −5.5',              line: 'vs CSK',        conf: 77, status: 'correct' },
+    { time: '3:48 AM', sport: 'NBA',    pick: 'Bucks ML',              line: 'vs Pacers',     conf: 81, status: 'correct' },
   ];
-  const STATUS_LABEL = { cashed: 'CASHED ✓', live: '● IN PLAY', pending: '○ PENDING', missed: 'MISSED' };
-  const STATUS_CLASS = { cashed: 'fs-cashed', live: 'fs-live', pending: 'fs-pending', missed: 'fs-missed' };
+  const STATUS_LABEL = { correct: 'CORRECT ✓', live: '● IN PLAY', pending: '○ PENDING', missed: 'MISSED' };
+  const STATUS_CLASS = { correct: 'fs-correct', live: 'fs-live', pending: 'fs-pending', missed: 'fs-missed' };
 
   const feedList = document.getElementById('feedList');
   const renderRow = (item, isNew = false) => {
@@ -2327,12 +2350,59 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     });
   }
 
-  const subscribeProfile = async ({ email, name, whatsappE164 }, source) => {
+  // ── Attribution helpers ────────────────────────────────────
+  // Read a cookie by name (used for fbp / fbc, which Meta sets when its Pixel loads).
+  const readCookie = (name) => {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.$?*|{}()[\]\\\/+^]/g, '\\$&') + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  };
+
+  // Capture UTM params on first page-load and persist for the session so a user who
+  // arrives from an ad and signs up later still attributes correctly.
+  const collectUtm = () => {
+    try {
+      const stored = sessionStorage.getItem('pick1_utm');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    const params = new URLSearchParams(location.search);
+    const utm = {};
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].forEach(k => {
+      const v = params.get(k);
+      if (v) utm[k] = v;
+    });
+    if (Object.keys(utm).length) {
+      try { sessionStorage.setItem('pick1_utm', JSON.stringify(utm)); } catch {}
+    }
+    return utm;
+  };
+
+  // Generate an event ID we can share between the browser Pixel and the server-side
+  // Conversions API call so Meta dedupes them into a single conversion.
+  const newEventId = () => {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+  };
+
+  const subscribeProfile = async ({ email, name, whatsappE164, eventId }, source) => {
+    const utm = collectUtm();
+    const fbp = readCookie('_fbp');
+    const fbc = readCookie('_fbc');
     try {
       const resp = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, name, phone: whatsappE164, source: source || 'site' }),
+        body: JSON.stringify({
+          email,
+          name,
+          phone: whatsappE164,
+          source: source || 'site',
+          eventId,
+          fbp,
+          fbc,
+          utm,
+          eventSourceUrl: location.href,
+          userAgent: navigator.userAgent,
+        }),
       });
       if (resp.ok) return { ok: true };
       let detail = '';
@@ -2416,9 +2486,25 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       button.disabled = true;
       button.textContent = 'Joining…';
 
-      const result = await subscribeProfile({ email, name, whatsappE164 }, source);
+      // Generate one event ID per submission. It's sent to both the browser Pixel
+      // and the server-side Conversions API so Meta dedupes them as one conversion.
+      const eventId = newEventId();
+
+      const result = await subscribeProfile({ email, name, whatsappE164, eventId }, source);
       if (result.ok) {
-        showSuccess(wrap, name);
+        // Browser-side Lead event. The server fires the matching CAPI event with the
+        // same eventID so Meta dedupes them. Skips silently if the Pixel isn't configured.
+        if (window.fbq) {
+          try {
+            fbq('track', 'Lead', { content_name: 'Pick1 Waitlist' }, { eventID: eventId });
+          } catch (err) {
+            // Pixel errors should never break the signup flow.
+          }
+        }
+        // Redirect to thank-you page so we get a clean URL signal for retargeting and
+        // can build a "completed waitlist" custom audience off the /launch/thanks path.
+        // Using the cleanUrls path (no .html) avoids a 308 hop on Vercel.
+        window.location.href = '/launch/thanks?name=' + encodeURIComponent(name);
       } else {
         errorEl.textContent = result.detail || 'Something went wrong. Please try again.';
         button.disabled = false;

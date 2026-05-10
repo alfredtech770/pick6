@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0d" />
+<meta name="robots" content="noindex,nofollow" />
+
+<!-- Meta Pixel ID — keep in sync with index.html. Stays inert until filled in. -->
+<meta name="meta-pixel-id" content="" />
+
+<title>You're in — Pick1</title>
+<meta name="description" content="You're on the Pick1 waitlist. We'll WhatsApp your free-week code at launch." />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+
+<!-- Meta Pixel — same snippet as index.html. Firing PageView here lets us build a
+     "completed waitlist" custom audience and exclude these users from acquisition. -->
+<script>
+(function(){
+  var idMeta = document.querySelector('meta[name="meta-pixel-id"]');
+  var pixelId = idMeta && idMeta.getAttribute('content');
+  if (!pixelId) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', pixelId);
+  fbq('track', 'PageView');
+})();
+</script>
+<noscript><img height="1" width="1" style="display:none" alt=""
+  src="https://www.facebook.com/tr?id=&ev=PageView&noscript=1"/></noscript>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0a0b0d;
+  --panel: #111317;
+  --line: #1a1d22;
+  --text: #f6f7f8;
+  --muted: #9095a0;
+  --dim: #b8bcc1;
+  --accent: #d4ff3a;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+.brand {
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin-bottom: 36px;
+}
+.brand-1 {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 1px 8px;
+  border-radius: 6px;
+  margin-left: 2px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 36px 32px;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+h1 {
+  margin: 0 0 14px;
+  font-weight: 900;
+  font-size: 44px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+h1 .accent { color: var(--accent); }
+.lede {
+  margin: 0 0 26px;
+  color: var(--dim);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.reward {
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 18px 0 28px;
+}
+.reward-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.7;
+}
+.reward-headline {
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+}
+.reward-sub {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+h2 {
+  margin: 28px 0 14px;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.steps { padding: 0; margin: 0; list-style: none; }
+.steps li { padding: 8px 0; display: flex; gap: 14px; }
+.steps .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 13px;
+  min-width: 28px;
+}
+.steps strong { font-size: 14px; }
+.steps .desc { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.55; }
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 28px 0 22px;
+}
+.share {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.share a {
+  flex: 1 1 140px;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.share a:hover { border-color: var(--accent); color: var(--accent); }
+.foot {
+  margin-top: 32px;
+  font-size: 12px;
+  color: #666b73;
+  line-height: 1.6;
+}
+.foot a { color: var(--muted); text-decoration: underline; }
+@media (max-width: 540px) {
+  h1 { font-size: 34px; }
+  .card { padding: 28px 22px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">PICK<span class="brand-1">1</span></div>
+
+  <div class="card">
+    <div class="eyebrow">● You're on the list</div>
+    <h1>YOU'RE <span class="accent">IN</span><span id="namebit"></span>.</h1>
+    <p class="lede">Pick1 launches soon. When we go live, your <strong>first week is free</strong> — and we'll send your redemption code straight to your WhatsApp.</p>
+
+    <div class="reward">
+      <div class="reward-tag">Your reward</div>
+      <div class="reward-headline">7 DAYS FREE</div>
+      <div class="reward-sub">Redeemable at launch via WhatsApp code</div>
+    </div>
+
+    <h2>WHAT HAPPENS NEXT.</h2>
+    <ul class="steps">
+      <li>
+        <span class="num">01</span>
+        <div>
+          <strong>We're finishing the AI</strong>
+          <div class="desc">Final calibration across all 9 sports — NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket.</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div>
+          <strong>Beta opens to first 100</strong>
+          <div class="desc">A week before public launch — we'll WhatsApp you a head-start link.</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div>
+          <strong>Public launch</strong>
+          <div class="desc">Your free-week code lands the same day. Use it across every sport.</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="divider"></div>
+
+    <h2 style="margin-top:0">KNOW SOMEONE WHO'D WANT THIS?</h2>
+    <p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.55">First 100 waitlist members get a personal welcome at launch and an invite to the closed beta. Pass the link.</p>
+    <div class="share">
+      <a id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
+      <a id="share-wa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>
+      <a id="share-copy" href="#">Copy link</a>
+    </div>
+  </div>
+
+  <div class="foot">
+    While you're waiting:
+    <a href="/methodology">how the model is calibrated</a> ·
+    <a href="/blog/kalshi-polymarket-sports">why Kalshi/Polymarket don't work for sports</a><br/>
+    <a href="/">← back to pick1.live</a>
+  </div>
+</main>
+
+<script>
+(function(){
+  // Personalized greeting from ?name=
+  var params = new URLSearchParams(location.search);
+  var name = (params.get('name') || '').trim().slice(0, 40);
+  if (name) {
+    var firstName = name.split(/\s+/)[0]
+      .replace(/[<>"'&]/g, '')
+      .toUpperCase();
+    if (firstName) {
+      var bit = document.getElementById('namebit');
+      if (bit) bit.textContent = ', ' + firstName;
+    }
+  }
+
+  // Share links — keep copy Meta-policy safe (analysis tool, not betting).
+  var shareUrl = 'https://pick1.live/';
+  var shareText = "Just joined the Pick1 waitlist — AI sports predictions for 9 sports, publicly logged. First week's free at launch.";
+  var x = document.getElementById('share-x');
+  if (x) x.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(shareUrl);
+  var wa = document.getElementById('share-wa');
+  if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + shareUrl);
+  var copy = document.getElementById('share-copy');
+  if (copy) {
+    copy.addEventListener('click', function(e){
+      e.preventDefault();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(function(){
+          copy.textContent = 'Copied ✓';
+          setTimeout(function(){ copy.textContent = 'Copy link'; }, 2000);
+        });
+      }
+    });
+  }
+})();
+</script>
+
+<!-- Vercel Analytics + Speed Insights, matching index.html -->
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+</body>
+</html>
