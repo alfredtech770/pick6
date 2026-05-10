@@ -1254,10 +1254,14 @@ struct GameCard: View {
         }
     }
 
-    /// True for sports whose picks are individual events (F1 races,
-    /// UFC fights, F1 props) rather than two-team matchups.
+    /// True for sports whose picks are single-event outcomes (an F1
+    /// race winner) rather than two-competitor matchups. Combat used
+    /// to be in here too, but UFC fights ARE two-competitor matchups
+    /// — same shape as tennis — so they now render through the team-
+    /// card layout (which already wires AthleteHeadshot for the two
+    /// fighters via TeamColumn → TeamLogo).
     private var isEventLayout: Bool {
-        pick.sport == "f1" || pick.sport == "combat"
+        pick.sport == "f1"
     }
 
     // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
@@ -1348,42 +1352,8 @@ struct GameCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            // Combat fighter faceoff — circular headshots flanking
-            // a "VS". Surfaces the fighters' faces on cards (the team-
-            // layout already shows team logos; combat needed the
-            // equivalent treatment for individual athletes).
-            if pick.sport == "combat",
-               !pick.homeTeam.isEmpty, !pick.awayTeam.isEmpty {
-                HStack(alignment: .center, spacing: 18) {
-                    VStack(spacing: 6) {
-                        AthleteHeadshot(sport: pick.sport,
-                                        name: pick.homeTeam,
-                                        size: .big)
-                        Text(teamShortName(pick.homeTeam, sport: pick.sport))
-                            .font(.archivoNarrow(10, weight: .bold))
-                            .tracking(1.6)
-                            .foregroundColor(Color(hex: "#B9B7B0"))
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                    Text("VS")
-                        .font(.archivoNarrow(11, weight: .bold))
-                        .tracking(2.4)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    VStack(spacing: 6) {
-                        AthleteHeadshot(sport: pick.sport,
-                                        name: pick.awayTeam,
-                                        size: .big)
-                        Text(teamShortName(pick.awayTeam, sport: pick.sport))
-                            .font(.archivoNarrow(10, weight: .bold))
-                            .tracking(1.6)
-                            .foregroundColor(Color(hex: "#B9B7B0"))
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .padding(.top, 14)
-            }
+            // (Combat used to render its faceoff here; combat now uses
+            //  the team-card layout instead, alongside tennis.)
 
             // Dashed divider
             Rectangle()
