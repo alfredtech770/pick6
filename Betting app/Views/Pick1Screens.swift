@@ -453,11 +453,28 @@ struct MatchDetailView: View {
         if let s = liveScore,
            (s.isLive || s.isFinal),
            let h = s.homeScore, let a = s.awayScore {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text("\(h)").font(.anton(56)).foregroundColor(Color(hex: "#F5F3EE"))
-                Text("–").font(.anton(28)).foregroundColor(Color(hex: "#6E6F75"))
-                Text("\(a)").font(.anton(56)).foregroundColor(Color(hex: "#B9B7B0"))
+            // Single-line score row. Three Texts in a HStack used to
+            // wrap to 3 lines on basketball (3-digit scores in a
+            // narrow center column) — fixedSize forces SwiftUI to
+            // honor the natural width, and lineLimit + minimumScaleFactor
+            // keep "112-108" readable in tight space.
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(h)")
+                    .font(.anton(46))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .lineLimit(1)
+                Text("–")
+                    .font(.anton(32))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .lineLimit(1)
+                Text("\(a)")
+                    .font(.anton(46))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
             }
+            .monospacedDigit()
+            .minimumScaleFactor(0.6)
+            .fixedSize(horizontal: true, vertical: false)
         } else {
             VStack(spacing: 4) {
                 Text("VS")
