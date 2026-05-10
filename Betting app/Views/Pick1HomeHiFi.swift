@@ -343,55 +343,31 @@ struct HeroCard: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // Lime gradient background
-            heroGradient
+            // Deep premium gradient base — replaces the flat lime
+            // wash. Dark ink at the top fading into rich lime at the
+            // bottom right, anchored by a soft pulsing lime glow.
+            // Reads as a sports-broadcast scoreboard rather than a
+            // candy-bright tile.
+            heroSurface
                 .clipShape(BottomRoundedShape(radius: 32))
 
-            // Diagonal stripe overlay — near-vertical (100° from horizontal),
-            // 41pt pitch, very faint dark lines (per spec opacity 0.03).
-            DiagonalStripe()
-                .clipShape(BottomRoundedShape(radius: 32))
-                .allowsHitTesting(false)
-
-            // iOS 26 Liquid Glass texture layer. Sits on top of the
-            // lime gradient as a clear glass surface — adds the
-            // refractive depth, specular highlights, and chromatic
-            // sheen that Apple's new glass material provides. The
-            // underlying lime gradient still drives the color; the
-            // glass adds physical-feeling texture on top.
-            Color.clear
-                .glassEffect(
-                    .regular.interactive(),
-                    in: BottomRoundedShape(radius: 32)
-                )
-                .opacity(0.65)
-                .allowsHitTesting(false)
-
-            // Iridescent shimmer — subtle violet-to-lime-to-cyan ramp
-            // diagonal across the surface, very low alpha (~6 %), so
-            // the card catches light differently as it tilts. Mimics
-            // the chromatic edges of real Liquid Glass.
+            // Single bright top sheen — keeps the glassy specular
+            // edge without piling on shimmer/stripes.
             LinearGradient(
-                colors: [
-                    Color(hex: "#B9A6FF").opacity(0.06),
-                    Color.clear,
-                    Color(hex: "#7AE2FF").opacity(0.06)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [Color.white.opacity(0.18), .clear],
+                startPoint: .top,
+                endPoint: UnitPoint(x: 0.5, y: 0.12)
             )
             .clipShape(BottomRoundedShape(radius: 32))
-            .blendMode(.screen)
             .allowsHitTesting(false)
 
-            // Top sheen — bright inset highlight on the top edge.
-            // Sits OVER the glass so the upper rim catches a clean
-            // specular highlight (per spec `inset 0 2px 0
-            // rgba(255,255,255,0.35)`).
+            // Subtle inset bottom shadow — gives the card a slight
+            // inner depth so it feels like a physical surface rather
+            // than a flat fill.
             LinearGradient(
-                colors: [Color.white.opacity(0.35), .clear],
-                startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.08)
+                colors: [.clear, Color.black.opacity(0.22)],
+                startPoint: UnitPoint(x: 0.5, y: 0.6),
+                endPoint: .bottom
             )
             .clipShape(BottomRoundedShape(radius: 32))
             .allowsHitTesting(false)
@@ -404,13 +380,68 @@ struct HeroCard: View {
             .padding(.top, 56)        // status-bar inset
             .padding(.bottom, 32)
         }
-        // Single soft lime-green glow under the hero (spec
-        // `0 20px 40px -10px rgba(168,224,0,0.35)`).
-        .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 12, x: 0, y: 16)
+        // Soft lime aura under the card — same color as the brand
+        // accent so the glow feels intentional rather than generic.
+        .shadow(color: Color(hex: "#a8e000").opacity(0.45),
+                radius: 22, x: 0, y: 18)
     }
 
+    /// Premium hero surface — dark ink top, rich lime bottom-right,
+    /// with a soft bright lime glow at the bottom-right corner. The
+    /// brand stays lime but the card now has depth (top-light /
+    /// bottom-shadow / off-axis glow) instead of a flat candy fill.
+    private var heroSurface: some View {
+        ZStack {
+            // Base linear gradient — dark ink to lime-tinted ink.
+            LinearGradient(
+                colors: [
+                    Color(hex: "#0E1011"),
+                    Color(hex: "#14181A"),
+                    Color(hex: "#1A2418")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            // Bright lime glow off-canvas at bottom-right — the
+            // off-axis bloom is what gives the card its premium feel.
+            RadialGradient(
+                colors: [
+                    Color(hex: "#D4FF3A").opacity(0.95),
+                    Color(hex: "#A8E000").opacity(0.55),
+                    Color(hex: "#A8E000").opacity(0.0)
+                ],
+                center: UnitPoint(x: 0.95, y: 1.05),
+                startRadius: 0,
+                endRadius: 520
+            )
+            // Smaller secondary bloom at top-right — adds dimension
+            // and prevents the upper-right from feeling dead.
+            RadialGradient(
+                colors: [
+                    Color(hex: "#D4FF3A").opacity(0.35),
+                    Color.clear
+                ],
+                center: UnitPoint(x: 1.05, y: -0.05),
+                startRadius: 0,
+                endRadius: 280
+            )
+            // Faint chromatic veil — adds the iOS 26 Liquid Glass
+            // refractive feel without washing out the lime. The
+            // .glassEffect material on a translucent overlay catches
+            // light at the edges.
+            Color.clear
+                .glassEffect(.regular.interactive(),
+                             in: BottomRoundedShape(radius: 32))
+                .opacity(0.18)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// (Old `heroGradient` kept as a no-op to avoid breaking other
+    /// references; superseded by `heroSurface`.)
     private var heroGradient: some View {
-        // Radial as in CSS: 140% 120% at 110% -20%, eaff7a → D4FF3A → a8e000
+        // Replaced — see heroSurface. Returning the same surface for
+        // any caller that still references this name.
         ZStack {
             Color(hex: "#D4FF3A")
             RadialGradient(
@@ -442,30 +473,27 @@ struct HeroCard: View {
     private var heroBody: some View {
         HStack(alignment: .bottom, spacing: 16) {
             VStack(alignment: .leading, spacing: 14) {
+                // Lime kicker — pops against the dark surface much
+                // harder than the previous black-on-lime treatment.
                 Text("★ TOP PICK · TONIGHT")
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(2.4)
-                    .foregroundColor(Color.black.opacity(0.6))
-                    .padding(.bottom, -8)  // tighten spec gap of 6 vs VStack's 14
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .padding(.bottom, -8)
 
-                // Two-line headline (50pt Anton, line-height 0.86 → spec).
-                // SwiftUI clamps lineSpacing to ≥0, so split the lines into
-                // a VStack with negative spacing to actually achieve the
-                // tight stadium-scoreboard line-height the design specifies.
-                // Empty state ("NO PICKS / YET") uses extra-tight spacing
-                // so the two short words read as one block, not as a
-                // sentence with a gap.
+                // Two-line headline — predicted team in lime, "OVER
+                // OTHER" in white. Reads "ADESANYA / over VOLKANOVSKI"
+                // at a glance: the lime line is the call, the white
+                // line is the opponent.
                 VStack(alignment: .leading, spacing: pick == nil ? -28 : -7) {
-                    ForEach(headlineLines, id: \.self) { line in
+                    ForEach(Array(headlineLines.enumerated()), id: \.offset) { idx, line in
                         Text(line)
                             .font(.anton(50))
                             .tracking(-0.7)
-                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .foregroundColor(idx == 0
+                                             ? Color(hex: "#D4FF3A")
+                                             : Color.white)
                             .lineLimit(1)
-                            // Long team names ("PHILADELPHIA 76ERS") still
-                            // overflow even after teamShortName trimming —
-                            // shrink down to ~30pt when needed instead of
-                            // truncating to "BOSTON…".
                             .minimumScaleFactor(0.6)
                     }
                 }
@@ -476,12 +504,14 @@ struct HeroCard: View {
             Spacer(minLength: 0)
 
             VStack(spacing: 12) {
+                // Lime ring on dark — much higher contrast than the
+                // dark-on-lime version.
                 HiFiConfidenceRing(percent: pick?.probability ?? 0,
-                               color: Color(hex: "#0A0B0D"),
-                               trackColor: Color.black.opacity(0.15),
-                               size: 110,
-                               stroke: 6,
-                               numberColor: Color(hex: "#0A0B0D"))
+                                   color: Color(hex: "#D4FF3A"),
+                                   trackColor: Color.white.opacity(0.12),
+                                   size: 110,
+                                   stroke: 6,
+                                   numberColor: Color.white)
                 CrestPair(home: pick?.homeTeam, away: pick?.awayTeam, sport: pick?.sport ?? "")
             }
             .frame(width: 130)
@@ -572,19 +602,21 @@ struct DiagonalStripe: View {
 
 struct Pick1Logo: View {
     var body: some View {
+        // White "PICK" + lime "1" tile on the dark hero surface.
+        // Mirrors the canonical Pick1 wordmark.
         HStack(alignment: .lastTextBaseline, spacing: 0) {
             Text("PICK")
                 .font(.anton(34))
                 .tracking(-0.34)
-                .foregroundColor(Color(hex: "#0A0B0D"))
+                .foregroundColor(.white)
 
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: "#0A0B0D"))
+                    .fill(Color(hex: "#D4FF3A"))
                     .frame(width: 30, height: 30)
                 Text("1")
                     .font(.anton(22))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#0A0B0D"))
                     .padding(.bottom, 2)
             }
             .padding(.leading, 4)
@@ -596,18 +628,19 @@ struct HeroPill: View {
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(Color(hex: "#0A0B0D"))
+                .fill(Color(hex: "#D4FF3A"))
                 .frame(width: 6, height: 6)
+                .shadow(color: Color(hex: "#D4FF3A").opacity(0.6), radius: 3)
             Text("AI · LIVE")
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2)
-                .foregroundColor(Color(hex: "#0A0B0D"))
+                .foregroundColor(.white)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color.black.opacity(0.12))
+        .background(Color.white.opacity(0.08))
         .overlay(
-            Capsule().stroke(Color.black.opacity(0.2), lineWidth: 1)
+            Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
         .clipShape(Capsule())
     }
