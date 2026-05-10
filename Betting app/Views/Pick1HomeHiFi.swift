@@ -615,6 +615,11 @@ struct HiFiConfidenceRing: View {
     let numberColor: Color
     let label: String
 
+    /// Drives both the trim and the number text — animates from 0 →
+    /// `percent` once on appear, and re-animates whenever `percent`
+    /// changes (e.g. switching cards).
+    @State private var displayed: Double = 0
+
     init(percent: Double,
          color: Color,
          trackColor: Color = Color.white.opacity(0.1),
@@ -638,17 +643,20 @@ struct HiFiConfidenceRing: View {
                 .frame(width: size, height: size)
 
             Circle()
-                .trim(from: 0, to: max(0.05, min(1, percent / 100)))
+                .trim(from: 0, to: max(0.02, min(1, displayed / 100)))
                 .stroke(color, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(-90))
-                .animation(.easeOut(duration: 1.0), value: percent)
 
             VStack(spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text("\(Int(percent.rounded()))")
+                    Text("\(Int(displayed.rounded()))")
                         .font(.anton(36))
                         .foregroundColor(numberColor)
+                        // Mono digit width so the number doesn't jitter
+                        // horizontally as it climbs (1 → 12 → 123).
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
                     Text("%")
                         .font(.archivo(18, weight: .regular))
                         .foregroundColor(numberColor)
@@ -660,6 +668,21 @@ struct HiFiConfidenceRing: View {
             }
         }
         .frame(width: size, height: size)
+        .onAppear { animateTo(percent) }
+        .onChange(of: percent) { _, new in
+            // Reset to 0 then climb so the count-up replays whenever
+            // the displayed pick changes.
+            displayed = 0
+            animateTo(new)
+        }
+    }
+
+    /// 1.4 s easeOut climb — fast enough to feel snappy, slow enough
+    /// for the count-up to register visually.
+    private func animateTo(_ target: Double) {
+        withAnimation(.easeOut(duration: 1.4)) {
+            displayed = target
+        }
     }
 }
 
@@ -1325,6 +1348,43 @@ struct GameCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
+            // Combat fighter faceoff — circular headshots flanking
+            // a "VS". Surfaces the fighters' faces on cards (the team-
+            // layout already shows team logos; combat needed the
+            // equivalent treatment for individual athletes).
+            if pick.sport == "combat",
+               !pick.homeTeam.isEmpty, !pick.awayTeam.isEmpty {
+                HStack(alignment: .center, spacing: 18) {
+                    VStack(spacing: 6) {
+                        AthleteHeadshot(sport: pick.sport,
+                                        name: pick.homeTeam,
+                                        size: .big)
+                        Text(teamShortName(pick.homeTeam, sport: pick.sport))
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .tracking(1.6)
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    Text("VS")
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    VStack(spacing: 6) {
+                        AthleteHeadshot(sport: pick.sport,
+                                        name: pick.awayTeam,
+                                        size: .big)
+                        Text(teamShortName(pick.awayTeam, sport: pick.sport))
+                            .font(.archivoNarrow(10, weight: .bold))
+                            .tracking(1.6)
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 14)
+            }
+
             // Dashed divider
             Rectangle()
                 .fill(Color.clear)
@@ -1571,19 +1631,34 @@ struct ScoreView: View {
 struct MiniRing: View {
     let percent: Double
 
+    /// Same count-up driver as HiFiConfidenceRing — animates 0 → percent
+    /// on appear, replays on change.
+    @State private var displayed: Double = 0
+
     var body: some View {
         ZStack {
             Circle()
                 .stroke(Color(hex: "#2D3038"), lineWidth: 3)
             Circle()
-                .trim(from: 0, to: max(0.05, min(1, percent / 100)))
+                .trim(from: 0, to: max(0.02, min(1, displayed / 100)))
                 .stroke(Color(hex: "#D4FF3A"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            Text("\(Int(percent.rounded()))")
+            Text("\(Int(displayed.rounded()))")
                 .font(.mono(11, weight: .heavy))
                 .foregroundColor(Color(hex: "#F5F3EE"))
+                .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .frame(width: 38, height: 38)
+        .onAppear { animateTo(percent) }
+        .onChange(of: percent) { _, new in
+            displayed = 0
+            animateTo(new)
+        }
+    }
+
+    private func animateTo(_ target: Double) {
+        withAnimation(.easeOut(duration: 1.2)) { displayed = target }
     }
 }
 
