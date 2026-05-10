@@ -261,6 +261,10 @@ enum TeamLogoLookup {
         case "soccer":
             // Soccer uses team IDs not 3-letter codes, look up directly.
             return soccerLogoURL(team: team)
+        case "cricket":
+            // IPL uses ESPN cricket team IDs — same name-keyed lookup
+            // approach as soccer.
+            return cricketLogoURL(team: team)
         default:
             return nil
         }
@@ -328,6 +332,50 @@ enum TeamLogoLookup {
             return nil
         }
         return URL(string: "https://a.espncdn.com/i/teamlogos/soccer/500/\(id).png")
+    }
+
+    // MARK: - Cricket (IPL — name → ESPN team ID)
+
+    /// IPL franchise IDs verified against ESPN's cricket CDN
+    /// (a.espncdn.com/i/teamlogos/cricket/500/{id}.png). Mined from
+    /// ESPN's search API and confirmed each one returns 200.
+    private static func cricketLogoURL(team: String) -> URL? {
+        let key = team.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let id: String
+        switch true {
+        case key.contains("mumbai"):                            id = "335978"
+        case key.contains("chennai"),
+             key.contains("super kings"),
+             key == "csk":                                       id = "335974"
+        case key.contains("royal challengers"),
+             key.contains("bangalore"),
+             key.contains("bengaluru"),
+             key == "rcb":                                       id = "335970"
+        case key.contains("kolkata"),
+             key.contains("knight riders"),
+             key == "kkr":                                       id = "335971"
+        case key.contains("delhi"),
+             key.contains("capitals"),
+             key == "dc":                                        id = "335975"
+        case key.contains("punjab"),
+             key.contains("kings xi"),
+             key == "pbks":                                      id = "335973"
+        case key.contains("rajasthan"),
+             key.contains("royals"),
+             key == "rr":                                        id = "335977"
+        case key.contains("sunrisers"),
+             key.contains("hyderabad"),
+             key == "srh":                                       id = "628333"
+        case key.contains("gujarat"),
+             key.contains("titans"),
+             key == "gt":                                        id = "1298769"
+        case key.contains("lucknow"),
+             key.contains("super giants"),
+             key == "lsg":                                       id = "1298768"
+        default:
+            return nil
+        }
+        return URL(string: "https://a.espncdn.com/i/teamlogos/cricket/500/\(id).png")
     }
 }
 

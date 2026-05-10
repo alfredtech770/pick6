@@ -353,8 +353,41 @@ struct HeroCard: View {
                 .clipShape(BottomRoundedShape(radius: 32))
                 .allowsHitTesting(false)
 
-            // Top sheen — tight inset edge (≈8% of height), per spec
-            // `inset 0 2px 0 rgba(255,255,255,0.35)`.
+            // iOS 26 Liquid Glass texture layer. Sits on top of the
+            // lime gradient as a clear glass surface — adds the
+            // refractive depth, specular highlights, and chromatic
+            // sheen that Apple's new glass material provides. The
+            // underlying lime gradient still drives the color; the
+            // glass adds physical-feeling texture on top.
+            Color.clear
+                .glassEffect(
+                    .regular.interactive(),
+                    in: BottomRoundedShape(radius: 32)
+                )
+                .opacity(0.65)
+                .allowsHitTesting(false)
+
+            // Iridescent shimmer — subtle violet-to-lime-to-cyan ramp
+            // diagonal across the surface, very low alpha (~6 %), so
+            // the card catches light differently as it tilts. Mimics
+            // the chromatic edges of real Liquid Glass.
+            LinearGradient(
+                colors: [
+                    Color(hex: "#B9A6FF").opacity(0.06),
+                    Color.clear,
+                    Color(hex: "#7AE2FF").opacity(0.06)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .clipShape(BottomRoundedShape(radius: 32))
+            .blendMode(.screen)
+            .allowsHitTesting(false)
+
+            // Top sheen — bright inset highlight on the top edge.
+            // Sits OVER the glass so the upper rim catches a clean
+            // specular highlight (per spec `inset 0 2px 0
+            // rgba(255,255,255,0.35)`).
             LinearGradient(
                 colors: [Color.white.opacity(0.35), .clear],
                 startPoint: .top,
@@ -1870,20 +1903,70 @@ struct ProUnlockCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(18)
             .background(
-                ZStack {
-                    Color(hex: "#D4FF3A")
-                    RadialGradient(
-                        colors: [Color(hex: "#eaff7a"), Color(hex: "#D4FF3A").opacity(0)],
-                        center: UnitPoint(x: 1.1, y: -0.2),
-                        startRadius: 30,
-                        endRadius: 350
-                    )
-                }
+                LimeGlassSurface(cornerRadius: 22)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 14, x: 0, y: 12)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - LimeGlassSurface
+// ════════════════════════════════════════════════════════════════
+
+/// Shared lime "Liquid Glass" background used by every green featured
+/// card in the app — hero, ProUnlockCard, SmallPickHero, Profile's
+/// upgrade card. Composes the iOS 26 .glassEffect material on top of
+/// the original radial-lime gradient + adds an iridescent chromatic
+/// sheen so the surface feels like glass rather than flat paint.
+struct LimeGlassSurface: View {
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        ZStack {
+            // Lime gradient base.
+            Color(hex: "#D4FF3A")
+            RadialGradient(
+                colors: [Color(hex: "#eaff7a"), Color(hex: "#D4FF3A").opacity(0)],
+                center: UnitPoint(x: 1.1, y: -0.2),
+                startRadius: 30,
+                endRadius: 350
+            )
+
+            // iOS 26 Liquid Glass texture overlay. Sits on top of the
+            // lime so the surface gets the refractive depth +
+            // specular highlights of Apple's glass material while the
+            // lime color still drives the chroma.
+            Color.clear
+                .glassEffect(.regular.interactive(), in: shape)
+                .opacity(0.55)
+                .allowsHitTesting(false)
+
+            // Iridescent shimmer — violet-to-cyan ramp at low alpha so
+            // the card catches light differently as it tilts.
+            LinearGradient(
+                colors: [
+                    Color(hex: "#B9A6FF").opacity(0.06),
+                    Color.clear,
+                    Color(hex: "#7AE2FF").opacity(0.06)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .blendMode(.screen)
+            .allowsHitTesting(false)
+
+            // Top sheen — bright inset highlight on the top edge.
+            LinearGradient(
+                colors: [Color.white.opacity(0.32), .clear],
+                startPoint: .top,
+                endPoint: UnitPoint(x: 0.5, y: 0.18)
+            )
+            .allowsHitTesting(false)
+        }
+        .clipShape(shape)
     }
 }
 

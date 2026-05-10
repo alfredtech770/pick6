@@ -2074,18 +2074,7 @@ struct SmallPickHero: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                ZStack {
-                    Color(hex: "#D4FF3A")
-                    RadialGradient(
-                        colors: [Color(hex: "#eaff7a"), Color(hex: "#D4FF3A").opacity(0)],
-                        center: UnitPoint(x: 1.1, y: -0.2),
-                        startRadius: 30,
-                        endRadius: 400
-                    )
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(LimeGlassSurface(cornerRadius: 22))
             .shadow(color: Color(hex: "#a8e000").opacity(0.35), radius: 16, x: 0, y: 16)
         }
         .buttonStyle(.plain)
@@ -2595,19 +2584,7 @@ struct ProfileView: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                ZStack {
-                    Color(hex: "#D4FF3A")
-                    RadialGradient(
-                        colors: [Color(hex: "#eaff7a"),
-                                 Color(hex: "#D4FF3A").opacity(0)],
-                        center: UnitPoint(x: 1.1, y: -0.2),
-                        startRadius: 30,
-                        endRadius: 350
-                    )
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(LimeGlassSurface(cornerRadius: 22))
             .shadow(color: Color(hex: "#a8e000").opacity(0.35),
                     radius: 14, x: 0, y: 12)
         }
