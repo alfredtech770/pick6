@@ -216,10 +216,24 @@ private let f1Ids: [String: String] = [
     "zhou":       "5588",  "guanyu zhou":        "5588",
 ]
 
-/// Tennis IDs not yet verified — table left empty; AthleteHeadshot
-/// renders the placeholder for tennis picks until we wire a real
-/// source. (ESPN's tennis CDN path may differ from /tennis/.)
-private let tennisIds: [String: String] = [:]
+/// Verified ATP tennis IDs (mined from ESPN search.image URLs and
+/// confirmed against the headshot CDN at /tennis/players/full/).
+private let tennisIds: [String: String] = [
+    "djokovic":      "296",      "novak djokovic":     "296",
+    "alcaraz":       "3782",     "carlos alcaraz":     "3782",
+    "sinner":        "3623",     "jannik sinner":      "3623",
+    "zverev":        "2375",     "alexander zverev":   "2375",
+    "tsitsipas":     "2869",     "stefanos tsitsipas": "2869",
+    "medvedev":      "2383",     "daniil medvedev":    "2383",
+    "rublev":        "2642",     "andrey rublev":      "2642",
+    "ruud":          "2989",     "casper ruud":        "2989",
+    "fritz":         "2946",     "taylor fritz":       "2946",
+    "schwartzman":   "2324",     "diego schwartzman":  "2324",
+    "tiafoe":        "2708",     "frances tiafoe":     "2708",
+    "shapovalov":    "2860",     "denis shapovalov":   "2860",
+    "auger-aliassime":"3209",    "felix auger-aliassime":"3209",
+    "paul":          "2964",     "tommy paul":         "2964",
+]
 
 // ════════════════════════════════════════════════════════════════
 // MARK: - Lookup

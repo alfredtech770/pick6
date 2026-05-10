@@ -99,14 +99,36 @@ struct Pick1HomeHiFi: View {
                     // bottom). Tapping the back chevron in SportHubView's
                     // TopNavBar clears `sportHub` and returns to Home.
                     if let id = sportHub {
-                        SportHubView(
-                            sport: id,
-                            vm: vm,
-                            isPro: subs.isPro,
-                            onClose: { sportHub = nil },
-                            onTapPick: { detailPick = $0 },
-                            onUnlock: { showPaywall = true }
-                        )
+                        // F1 and UFC route to dedicated event-layout
+                        // hubs (Pick1F1Hub.swift / Pick1UFCHub.swift).
+                        // Every other sport keeps the generic team-vs-team
+                        // SportHubView.
+                        if id == "f1" {
+                            F1HubView(
+                                vm: vm,
+                                isPro: subs.isPro,
+                                onClose: { sportHub = nil },
+                                onTapPick: { detailPick = $0 },
+                                onUnlock: { showPaywall = true }
+                            )
+                        } else if id == "combat" {
+                            UFCHubView(
+                                vm: vm,
+                                isPro: subs.isPro,
+                                onClose: { sportHub = nil },
+                                onTapPick: { detailPick = $0 },
+                                onUnlock: { showPaywall = true }
+                            )
+                        } else {
+                            SportHubView(
+                                sport: id,
+                                vm: vm,
+                                isPro: subs.isPro,
+                                onClose: { sportHub = nil },
+                                onTapPick: { detailPick = $0 },
+                                onUnlock: { showPaywall = true }
+                            )
+                        }
                     } else {
                         HomeHiFiContent(vm: vm,
                                         isPro: subs.isPro,
@@ -248,10 +270,8 @@ struct HomeHiFiContent: View {
                 // pick a sport first.
                 SectionHeader(
                     title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
-                    cta: isPro ? "SEE ALL →" : nil,
-                    onTapCTA: (isPro && vm.selectedSport != "all")
-                        ? { onTapSport(vm.selectedSport) }
-                        : nil
+                    cta: nil,
+                    onTapCTA: nil
                 )
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
@@ -444,8 +464,8 @@ struct HeroCard: View {
         let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
             || pick.homeTeam.lowercased().contains(pick.pick.lowercased())
         let other = pickedHome ? pick.awayTeam : pick.homeTeam
-        let pickShort = teamShortName(pick.pick).uppercased()
-        let otherShort = teamShortName(other).uppercased()
+        let pickShort = teamShortName(pick.pick, sport: pick.sport).uppercased()
+        let otherShort = teamShortName(other, sport: pick.sport).uppercased()
         return "\(pickShort)\nOVER \(otherShort)"
     }
 
@@ -736,8 +756,20 @@ private func crestAbbrev(_ team: String) -> String {
 ///   "Tampa Bay Lightning"  → "LIGHTNING"
 ///   "Jannik Sinner"        → "SINNER"
 ///   "CLE" (already short)  → "CLE"
-func teamShortName(_ team: String) -> String {
+func teamShortName(_ team: String, sport: String? = nil) -> String {
     let trimmed = team.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Individual-athlete sports always render the surname, regardless
+    // of total length — "Jon Jones" → "JONES", "Jannik Sinner" →
+    // "SINNER", "Lando Norris" → "NORRIS". Keeps cards tight and
+    // matches how UFC / F1 / tennis broadcasts label competitors.
+    if let sport, sport == "combat" || sport == "f1" || sport == "tennis" {
+        if let last = trimmed.split(separator: " ").last {
+            return String(last).uppercased()
+        }
+        return trimmed.uppercased()
+    }
+    // Team sports — short names render as-is, long ones drop to the
+    // nickname token ("Boston Celtics" → "CELTICS").
     if trimmed.count <= 12 { return trimmed.uppercased() }
     if let last = trimmed.split(separator: " ").last, last.count <= 12 {
         return String(last).uppercased()
@@ -1047,7 +1079,7 @@ struct SportFilter: View {
                     vm.selectedSport = "all"
                 }
                 ForEach(visibleSports, id: \.self) { sport in
-                    HiFiSportChip(label: leagueLabel(sport),
+                    HiFiSportChip(label: sportLabel(sport),
                               icon: sportIcon(sport),
                               isActive: vm.selectedSport == sport) {
                         vm.selectedSport = sport
@@ -1070,17 +1102,22 @@ struct SportFilter: View {
         ["football", "basketball", "baseball", "f1", "combat", "soccer", "cricket", "hockey"]
     }
 
-    private func leagueLabel(_ sport: String) -> String {
+    /// Carousel label — uses the SPORT category name (Basketball, Soccer)
+    /// rather than the league abbreviation (NBA, EPL). Sport-first labels
+    /// match the design's mental model: a chip filters by sport, and each
+    /// sport's hub then exposes its specific leagues (NBA, G-League, etc.)
+    /// inside the league rail.
+    private func sportLabel(_ sport: String) -> String {
         switch sport {
-        case "basketball": return "NBA"
-        case "football":   return "NFL"
-        case "soccer":     return "EPL"
-        case "baseball":   return "MLB"
-        case "hockey":     return "NHL"
-        case "combat":     return "UFC"
-        case "f1":         return "F1"
-        case "cricket":    return "IPL"
-        default:           return sport.uppercased()
+        case "basketball": return "Basketball"
+        case "football":   return "Football"
+        case "soccer":     return "Soccer"
+        case "baseball":   return "Baseball"
+        case "hockey":     return "Hockey"
+        case "combat":     return "MMA"
+        case "f1":         return "Racing"
+        case "cricket":    return "Cricket"
+        default:           return sport.capitalized
         }
     }
 
@@ -1182,6 +1219,26 @@ struct GameCard: View {
     let score: LiveScore?
 
     var body: some View {
+        // F1 / MMA picks aren't two-team matchups — they're standalone
+        // events (a race, a fight, a prop). Render those as event cards
+        // matching the design's `.ev-card` (same component used inside
+        // F1HubView and UFCHubView). Everything else keeps the original
+        // home/away/score-grid layout.
+        if isEventLayout {
+            eventCardBody
+        } else {
+            teamCardBody
+        }
+    }
+
+    /// True for sports whose picks are individual events (F1 races,
+    /// UFC fights, F1 props) rather than two-team matchups.
+    private var isEventLayout: Bool {
+        pick.sport == "f1" || pick.sport == "combat"
+    }
+
+    // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
+    private var teamCardBody: some View {
         VStack(spacing: 0) {
             // Top row
             HStack {
@@ -1233,27 +1290,139 @@ struct GameCard: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(
-            // `.gcard` per spec: vertical gradient bg #14161a → #0e0f12,
-            // line border, inset top highlight, drop-shadow stack.
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
-                    startPoint: .top, endPoint: .bottom
-                ))
+        .background(homeCardBackground)
+    }
+
+    // ─── EVENT LAYOUT (F1, MMA) ─────────────────────────────────
+    private var eventCardBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Tag + AI pill
+            HStack {
+                Text(eventTag)
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.0)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Spacer()
+                ConfChip(percent: pick.probability,
+                         hot: pick.probability >= 70)
+            }
+            .padding(.bottom, 10)
+
+            // Title (e.g. "MONACO GP", "O'MALLEY vs VERA 2")
+            Text(eventTitle)
+                .font(.anton(22))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Sub (key factor / context)
+            if !eventSub.isEmpty {
+                Text(eventSub)
+                    .font(.mono(10))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .padding(.top, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Dashed divider
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: 1)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    GeometryReader { proxy in
+                        Path { p in
+                            p.move(to: CGPoint(x: 0, y: 0.5))
+                            p.addLine(to: CGPoint(x: proxy.size.width, y: 0.5))
+                        }
+                        .stroke(Color(hex: "#22252B"),
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color.white.opacity(0.07), lineWidth: 1)
-                        .mask(LinearGradient(colors: [.white, .clear],
-                                             startPoint: .top, endPoint: .center))
-                )
-                .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 10)
-                .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
-        )
+                .padding(.top, 10)
+
+            // Pick row
+            HStack {
+                Text(pick.pick.uppercased())
+                    .font(.archivo(12, weight: .bold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Spacer()
+                MiniRing(percent: pick.probability)
+                    .frame(width: 36, height: 36)
+            }
+            .padding(.top, 10)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(homeCardBackground)
+    }
+
+    // ─── Shared card background (matches design's `.gcard`) ─────
+    private var homeCardBackground: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(LinearGradient(
+                colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                startPoint: .top, endPoint: .bottom
+            ))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                    .mask(LinearGradient(colors: [.white, .clear],
+                                         startPoint: .top, endPoint: .center))
+            )
+            .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 10)
+            .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
+    }
+
+    // ─── Event-card helpers ─────────────────────────────────────
+
+    /// Tag line above the event title — sport-specific copy.
+    private var eventTag: String {
+        switch pick.sport {
+        case "f1":     return "RACE · \(formattedDate)"
+        case "combat": return "MAIN CARD · \(pick.league.uppercased())"
+        default:       return pick.league.uppercased()
+        }
+    }
+
+    /// Event title — for UFC two-fighter matchup, for F1 the GP name
+    /// (which lives in homeTeam after the F1 pipeline). Falls back to
+    /// the pick text if the upstream data is sparse.
+    private var eventTitle: String {
+        if pick.sport == "combat",
+           !pick.homeTeam.isEmpty, !pick.awayTeam.isEmpty {
+            // Last names only for fighters — "ADESANYA VS VOLKANOVSKI"
+            // beats "ISRAEL ADESANYA VS ALEXANDER VOLKANOVSKI" for the
+            // card headline (fits the 16pt frame, reads broadcast-style).
+            let h = teamShortName(pick.homeTeam, sport: pick.sport)
+            let a = teamShortName(pick.awayTeam, sport: pick.sport)
+            return "\(h) VS \(a)"
+        }
+        if !pick.homeTeam.isEmpty {
+            return pick.homeTeam.uppercased()
+        }
+        return pick.pick.uppercased()
+    }
+
+    private var eventSub: String {
+        pick.keyFactor ?? ""
+    }
+
+    private var formattedDate: String {
+        // gameDate ships as "yyyy-MM-dd"; show abbreviated weekday.
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        if let d = f.date(from: pick.gameDate) {
+            let out = DateFormatter()
+            out.dateFormat = "EEE HH:mm"
+            return out.string(from: d).uppercased()
+        }
+        return "TODAY"
     }
 
     private var scheduledTopLine: String {
@@ -1342,7 +1511,7 @@ struct TeamColumn: View {
             // teamShortName keeps every card's name slot at the same
             // 16pt font height — no auto-shrink, so HEAT, CAVALIERS,
             // LIGHTNING, ARSENAL all render uniformly.
-            Text(teamShortName(team))
+            Text(teamShortName(team, sport: sport))
                 .font(.anton(16))
                 .tracking(0.16)
                 .foregroundColor(Color(hex: "#F5F3EE"))
@@ -1697,7 +1866,7 @@ struct LockedPickCard: View {
                             TeamLogo(sport: pick.sport,
                                      team: pick.awayTeam,
                                      size: .big)
-                            Text(teamShortName(pick.awayTeam))
+                            Text(teamShortName(pick.awayTeam, sport: pick.sport))
                                 .font(.anton(16))
                                 .foregroundColor(Color(hex: "#F5F3EE"))
                         }
@@ -1712,7 +1881,7 @@ struct LockedPickCard: View {
                             TeamLogo(sport: pick.sport,
                                      team: pick.homeTeam,
                                      size: .big)
-                            Text(teamShortName(pick.homeTeam))
+                            Text(teamShortName(pick.homeTeam, sport: pick.sport))
                                 .font(.anton(16))
                                 .foregroundColor(Color(hex: "#F5F3EE"))
                         }
