@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px;overflow:hidden;background:#0a0b0d;color:#f6f7f8;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  .canvas{position:relative;width:1080px;height:1080px}
+  /* Pick1 wordmark */
+  .brand{position:absolute;top:44px;left:44px;font-family:'Anton',sans-serif;font-size:40px;letter-spacing:-2px;line-height:1;display:flex;align-items:center;gap:4px;z-index:5}
+  .brand .one{display:inline-block;background:#d4ff3a;color:#0a0b0d;padding:0 9px;border-radius:7px;line-height:.95;font-size:36px}
+  /* Headline at top */
+  .headline{position:absolute;top:130px;left:0;right:0;text-align:center;
+    font-family:'Anton',sans-serif;font-size:72px;letter-spacing:-2px;line-height:.95;padding:0 60px}
+  .headline em{font-style:normal;color:#d4ff3a}
+  /* Two columns */
+  .split{position:absolute;top:280px;left:60px;right:60px;height:540px;display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:24px;overflow:hidden}
+  .col{padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center}
+  .vegas{background:#16181c;border-right:1px solid #1a1d22}
+  .pick1{background:linear-gradient(180deg,#0f1813 0%, #111317 100%);position:relative}
+  .pick1::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(212,255,58,.12),transparent 60%);pointer-events:none}
+  .col .col-label{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+  .vegas .col-label{color:#6b6f78}
+  .pick1 .col-label{color:#d4ff3a}
+  .col .big{font-family:'Anton',sans-serif;letter-spacing:-4px;line-height:.9}
+  .vegas .big{font-size:140px;color:#9095a0}
+  .pick1 .big{font-size:140px;color:#f6f7f8}
+  .pick1 .big i{font-style:normal;color:#d4ff3a;font-size:90px;margin-left:4px}
+  .col .small{font-family:'JetBrains Mono',monospace;font-size:13px;color:#9095a0;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+  /* Result strip */
+  .result{position:absolute;bottom:170px;left:60px;right:60px;
+    background:#111317;border:1px solid #1a1d22;border-radius:18px;
+    padding:24px 32px;display:flex;justify-content:space-between;align-items:center}
+  .result .left{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.16em;color:#9095a0;text-transform:uppercase;font-weight:700}
+  .result .score{font-family:'Anton',sans-serif;font-size:50px;letter-spacing:-1.5px;color:#f6f7f8}
+  .result .score span{color:#d4ff3a}
+  .result .badge{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.16em;color:#4ade80;text-transform:uppercase;font-weight:700;border:1.5px solid rgba(74,222,128,.55);padding:8px 12px;border-radius:999px;background:rgba(74,222,128,.1)}
+  /* Subline */
+  .sub{position:absolute;bottom:80px;left:60px;right:60px;text-align:center;
+    font-family:'Archivo',sans-serif;font-size:24px;color:#9095a0;font-weight:500}
+  .sub strong{color:#f6f7f8;font-weight:800}
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brand">PICK<span class="one">1</span></div>
+  <h1 class="headline">WHAT VEGAS<br/><em>GOT WRONG.</em></h1>
+  <div class="split">
+    <div class="col vegas">
+      <div class="col-label">Vegas Line</div>
+      <div class="big">−3.5</div>
+      <div class="small">Closing line</div>
+    </div>
+    <div class="col pick1">
+      <div class="col-label">PICK1 MODEL</div>
+      <div class="big">−7<i></i></div>
+      <div class="small">73% confidence</div>
+    </div>
+  </div>
+  <div class="result">
+    <div class="left">Final</div>
+    <div class="score">BOS 121 <span>·</span> LAL 110</div>
+    <div class="badge">Covered by 8</div>
+  </div>
+  <div class="sub"><strong>1.2M games trained.</strong> Daily recalibration. <strong>1 week free at launch.</strong></div>
+</div>
+</body></html>

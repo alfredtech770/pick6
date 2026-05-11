@@ -1,0 +1,80 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px;overflow:hidden;background:#0a0b0d;color:#f6f7f8;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  .canvas{position:relative;width:1080px;height:1080px;padding:48px 44px}
+  /* Pick1 wordmark */
+  .brand{font-family:'Anton',sans-serif;font-size:42px;letter-spacing:-2px;line-height:1;display:inline-flex;align-items:center;gap:4px}
+  .brand .one{display:inline-block;background:#d4ff3a;color:#0a0b0d;padding:0 10px;border-radius:7px;line-height:.95;font-size:38px}
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .top .tag{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#d4ff3a;font-weight:700;display:flex;align-items:center;gap:8px}
+  .top .tag::before{content:'';width:8px;height:8px;border-radius:50%;background:#d4ff3a;box-shadow:0 0 10px #d4ff3a}
+  /* Headline */
+  .headline{margin-top:36px;font-family:'Anton',sans-serif;font-size:88px;letter-spacing:-3px;line-height:.92}
+  .headline em{font-style:normal;color:#d4ff3a}
+  /* Grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:42px}
+  .card{background:#111317;border:1px solid #1a1d22;border-radius:18px;padding:18px;height:170px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
+  .card.win::after{content:'✓';position:absolute;top:14px;right:18px;width:30px;height:30px;border-radius:50%;background:rgba(74,222,128,.16);color:#4ade80;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(74,222,128,.5)}
+  .card.miss::after{content:'✕';position:absolute;top:14px;right:18px;width:30px;height:30px;border-radius:50%;background:rgba(255,90,54,.14);color:#ff5a36;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,90,54,.45)}
+  .card .meta{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:#9095a0;text-transform:uppercase;font-weight:700}
+  .card .pick{font-family:'Anton',sans-serif;font-size:30px;letter-spacing:-1.5px;line-height:1;margin-top:6px;color:#f6f7f8}
+  .card .conf{font-family:'JetBrains Mono',monospace;font-size:13px;color:#9095a0;letter-spacing:.06em}
+  .card .conf b{color:#d4ff3a;font-weight:700}
+  /* Footer line */
+  .foot{position:absolute;bottom:48px;left:44px;right:44px;text-align:center;font-family:'Archivo',sans-serif;font-size:24px;color:#9095a0;letter-spacing:-.2px}
+  .foot strong{color:#f6f7f8;font-weight:800}
+</style></head>
+<body>
+<div class="canvas">
+  <div class="top">
+    <div class="brand">PICK<span class="one">1</span></div>
+    <div class="tag">PUBLIC LEDGER</div>
+  </div>
+  <h1 class="headline">EVERY PREDICTION.<br/><em>LOGGED.</em></h1>
+  <div class="grid">
+    <div class="card win">
+      <div><div class="meta">APR 27 · NBA</div><div class="pick">Celtics −6.5</div></div>
+      <div class="conf">Conf <b>84%</b> · Line moved +1.0</div>
+    </div>
+    <div class="card win">
+      <div><div class="meta">APR 26 · EPL</div><div class="pick">Liverpool BTTS</div></div>
+      <div class="conf">Conf <b>78%</b> · Line moved +0.7</div>
+    </div>
+    <div class="card win">
+      <div><div class="meta">APR 25 · UFC</div><div class="pick">Makhachev ML</div></div>
+      <div class="conf">Conf <b>91%</b> · Line moved +0.55</div>
+    </div>
+    <div class="card miss">
+      <div><div class="meta">APR 24 · NFL</div><div class="pick">Bills −3.5</div></div>
+      <div class="conf">Conf <b>72%</b> · Result: missed</div>
+    </div>
+    <div class="card win">
+      <div><div class="meta">APR 23 · MLB</div><div class="pick">Yankees ML</div></div>
+      <div class="conf">Conf <b>67%</b> · Line moved +0.3</div>
+    </div>
+    <div class="card win">
+      <div><div class="meta">APR 22 · NBA</div><div class="pick">Nuggets −4</div></div>
+      <div class="conf">Conf <b>81%</b> · Line moved +1.5</div>
+    </div>
+    <div class="card miss">
+      <div><div class="meta">APR 21 · F1</div><div class="pick">Verstappen P1</div></div>
+      <div class="conf">Conf <b>88%</b> · Result: missed</div>
+    </div>
+    <div class="card win">
+      <div><div class="meta">APR 20 · NHL</div><div class="pick">Oilers PL +1.5</div></div>
+      <div class="conf">Conf <b>76%</b> · Line moved +0.4</div>
+    </div>
+    <div class="card miss">
+      <div><div class="meta">APR 19 · TENNIS</div><div class="pick">Alcaraz −1.5</div></div>
+      <div class="conf">Conf <b>69%</b> · Result: missed</div>
+    </div>
+  </div>
+  <div class="foot">Wins <strong>and</strong> misses. <strong>No cherry-picking.</strong></div>
+</div>
+</body></html>

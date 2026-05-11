@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px;overflow:hidden;background:#0a0b0d;color:#f6f7f8;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  .canvas{position:relative;width:1080px;height:1080px;padding:60px}
+  /* Pick1 wordmark */
+  .brand{font-family:'Anton',sans-serif;font-size:48px;letter-spacing:-2px;line-height:1;display:inline-flex;align-items:center;gap:4px}
+  .brand .one{display:inline-block;background:#d4ff3a;color:#0a0b0d;padding:0 11px;border-radius:8px;line-height:.95;font-size:44px}
+  /* eyebrow */
+  .eyebrow{margin-top:80px;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.32em;color:#d4ff3a;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:14px}
+  .eyebrow::before{content:'';width:48px;height:1.5px;background:#d4ff3a}
+  /* Main statement */
+  .statement{margin-top:30px;font-family:'Anton',sans-serif;font-size:124px;letter-spacing:-5px;line-height:.92}
+  .statement .row{display:block}
+  .statement .accent{color:#d4ff3a}
+  /* Strike-through "wagers" label */
+  .strike{margin-top:42px;display:inline-flex;align-items:center;gap:14px}
+  .strike .x{width:46px;height:46px;border-radius:50%;background:rgba(255,90,54,.14);color:#ff5a36;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,90,54,.45)}
+  .strike .label{font-family:'Archivo',sans-serif;font-weight:800;font-size:36px;color:#f6f7f8}
+  .strike .label s{color:#6b6f78;text-decoration-color:#ff5a36;text-decoration-thickness:3px}
+  /* Affirm row */
+  .affirm{margin-top:18px;display:inline-flex;align-items:center;gap:14px}
+  .affirm .check{width:46px;height:46px;border-radius:50%;background:rgba(74,222,128,.14);color:#4ade80;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid rgba(74,222,128,.55)}
+  .affirm .label{font-family:'Archivo',sans-serif;font-weight:800;font-size:36px;color:#f6f7f8}
+  /* Footer */
+  .foot{position:absolute;bottom:60px;left:60px;right:60px;
+    padding-top:28px;border-top:1px solid #1a1d22;
+    display:flex;justify-content:space-between;align-items:center}
+  .foot .left{font-family:'Archivo',sans-serif;font-size:22px;color:#9095a0;font-weight:500;max-width:680px;line-height:1.35}
+  .foot .left strong{color:#f6f7f8;font-weight:800}
+  .foot .right{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.22em;color:#d4ff3a;text-transform:uppercase;font-weight:700;text-align:right;line-height:1.5}
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brand">PICK<span class="one">1</span></div>
+  <div class="eyebrow">A FORECASTING TOOL</div>
+  <h1 class="statement">
+    <span class="row">We don't</span>
+    <span class="row">take <span class="accent">bets.</span></span>
+  </h1>
+  <div class="strike"><div class="x">✕</div><div class="label"><s>No sportsbook.</s></div></div>
+  <div class="affirm"><div class="check">✓</div><div class="label">Just AI predictions, publicly logged.</div></div>
+  <div class="foot">
+    <div class="left">Pick1 publishes AI sports predictions with confidence scores and a public accuracy ledger. <strong>We don't take, place, or facilitate any wagers.</strong></div>
+    <div class="right">1 WEEK FREE<br/>AT LAUNCH</div>
+  </div>
+</div>
+</body></html>
