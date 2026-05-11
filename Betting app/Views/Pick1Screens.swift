@@ -45,6 +45,7 @@ struct TopNavBar: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back")
             } else {
                 // Invisible spacer so the centered crumb stays centered.
                 Color.clear.frame(width: 38, height: 38)
@@ -234,7 +235,14 @@ struct MatchDetailView: View {
     enum Tab: String, CaseIterable { case summary, lineups, odds, h2h }
     @State private var tab: Tab = .summary
     @State private var showBookmakers: Bool = false
+    @State private var showAgeGate: Bool = false
     @State private var showToast: Bool = false
+
+    /// One-time 21+ confirmation. Required by App Review for any app
+    /// that surfaces sportsbook deep-links — Apple expects an explicit
+    /// affirmation gate, not just static "Must be 21+" body copy.
+    /// Persisted across launches so users only see it once.
+    @AppStorage("pick1.ageVerified") private var ageVerified: Bool = false
 
     /// Persistent favorites (drives the Wins/Picks tab list). Replaces
     /// the prior local `@State starred` flag — that flag was per-sheet
@@ -317,6 +325,19 @@ struct MatchDetailView: View {
                 .presentationContentInteraction(.scrolls)
                 .presentationDetents([.medium, .large])
         }
+        .alert("21+ ONLY", isPresented: $showAgeGate) {
+            Button("I'm 21 or older", role: .none) {
+                ageVerified = true
+                // Defer the sheet by one tick so the alert can dismiss
+                // cleanly before the sheet animation kicks in.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    showBookmakers = true
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pick1 surfaces AI sports predictions for entertainment. Sportsbook integrations require you to be 21 or older. By continuing you confirm you meet the legal gambling age in your jurisdiction.\n\nIf you or someone you know has a gambling problem, call 1-800-GAMBLER.")
+        }
     }
 
     private var detailTopNav: some View {
@@ -358,6 +379,7 @@ struct MatchDetailView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(starred ? "Remove from favorites" : "Add to favorites")
             .padding(.trailing, 18)
         }
     }
@@ -1423,10 +1445,18 @@ struct MatchDetailView: View {
     /// with a left-side `LOCK IN AI PICK / <value>` block and a
     /// right-side `$<stake> →` block. Tapping opens BookmakerSheet
     /// so the user can place the pick at their preferred sportsbook;
-    /// Pick6 itself never processes the wager.
+    /// Pick1 itself never processes the wager.
+    ///
+    /// First tap shows an explicit 21+ age gate. Once confirmed the
+    /// flag persists across launches (UserDefaults via @AppStorage) and
+    /// subsequent taps open the sheet directly.
     private var savePickCTA: some View {
         Button {
-            showBookmakers = true
+            if ageVerified {
+                showBookmakers = true
+            } else {
+                showAgeGate = true
+            }
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -2396,6 +2426,7 @@ struct ProfileView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Edit profile")
                         .padding(.trailing, 18)
                     }
                 profileHead
@@ -2414,11 +2445,17 @@ struct ProfileView: View {
                 auth: auth,
                 isOpen: $showEditProfile,
                 onDeleteAccount: {
-                    // Best-effort: sign out + flag account for
-                    // deletion. Backend should run a 30-day soft-delete
-                    // via webhook; wire that up next time we touch
-                    // AuthManager.
-                    onSignOut()
+                    // Real delete — calls the `delete_current_user`
+                    // Postgres function (security definer, pinned to
+                    // auth.uid()), which removes the auth.users row
+                    // and cascades through profiles + any user-owned
+                    // tables with ON DELETE CASCADE. On success, the
+                    // local state is wiped and onSignOut() bounces
+                    // the UI back to the welcome flow.
+                    Task {
+                        let ok = await auth.deleteAccount()
+                        if ok { onSignOut() }
+                    }
                 }
             )
         }
@@ -3485,20 +3522,12 @@ struct LiveView: View {
                     .lineLimit(1)
             }
             Spacer()
-            Button { /* TODO: schedule local notification */ } label: {
-                // 2-line uppercase label, matches the design's stacked
-                // "REMIND / ME" pill on the right of the NEXT UP card.
-                Text("REMIND\nME")
-                    .font(.archivoNarrow(10, weight: .heavy))
-                    .tracking(1.8)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color(hex: "#0A0B0D"))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(hex: "#D4FF3A")))
-            }
-            .buttonStyle(.plain)
+            // "REMIND ME" pill removed for v1 — wiring local
+            // notifications would require NSUserNotifications usage
+            // strings + a permission prompt, neither of which we
+            // ship today. The kickoff-time line above is enough
+            // signal; the banner itself disappears once the game
+            // is live.
         }
         .padding(14)
         .background(
@@ -3938,7 +3967,7 @@ struct PrivacySecuritySheet: View {
 
                     // ── Change password section ──────────────────
                     fieldLabel("CHANGE PASSWORD")
-                    Text("Add or update an account password as a second way to sign in. Pick6 still works without one — magic-link sign-in stays available.")
+                    Text("Add or update an account password as a second way to sign in. Pick1 still works without one — magic-link sign-in stays available.")
                         .font(.archivo(11, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                         .padding(.horizontal, 22)
@@ -4388,7 +4417,7 @@ struct EditProfileSheet: View {
                 onDeleteAccount?()
             }
         } message: {
-            Text("This permanently deletes your Pick6 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
+            Text("This permanently deletes your Pick1 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
         }
     }
 
@@ -4900,7 +4929,7 @@ struct BookmakerSheet: View {
                 .font(.archivo(10, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
-            Text("Sportsbook availability depends on your jurisdiction. Pick6 is not affiliated with the sportsbooks listed.")
+            Text("Sportsbook availability depends on your jurisdiction. Pick1 is not affiliated with the sportsbooks listed.")
                 .font(.archivo(10, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)

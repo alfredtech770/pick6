@@ -53,13 +53,27 @@ struct Pick: Identifiable, Codable {
     var isPending: Bool { result == "pending" }
 
     /// Parses `gameDate` (ISO yyyy-MM-dd) into a Date at midnight
-    /// local time. Returns nil if the string is malformed.
+    /// in the pipeline's timezone (America/New_York). Using
+    /// TimeZone.current here was a subtle bug: a user in PT would
+    /// see "yesterday's" pick as today's because midnight ET is
+    /// 9 PM PT the previous day. The pipeline writes dates in ET
+    /// so we parse them as ET.
+    ///
+    /// The formatter is hoisted to a static let (with en_US_POSIX
+    /// locale) — the previous per-call allocation cost was visible
+    /// in render-path profiling once realtime updates started
+    /// triggering re-renders on every score tick.
     var gameDateValue: Date? {
+        return Self.gameDateFormatter.date(from: gameDate)
+    }
+
+    private static let gameDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone.current
-        return f.date(from: gameDate)
-    }
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        return f
+    }()
 
     /// Single source of truth for "what badge / chrome should this
     /// pick render with right now?". Considers (1) the graded

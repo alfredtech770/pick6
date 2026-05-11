@@ -73,16 +73,34 @@ final class SubscriptionManager: ObservableObject {
         // miss a purchase that completes mid-app-launch.
         transactionListenerTask = listenForTransactions()
 
-        // In DEBUG, prime isPro=true on the very first paint so the
-        // splash → home transition doesn't briefly flash the Free UI
-        // before refreshEntitlements() reasserts the override. See
-        // refreshEntitlements() for the canonical override.
-        #if DEBUG
-        self.isPro = true
-        self.activeProductId = "com.pick1.app.pro.monthly"
-        self.activeExpiration = Calendar.current.date(
-            byAdding: .year, value: 10, to: Date()
-        )
+        // Dev-only override. Was previously gated by `#if DEBUG`, but
+        // that flag bleeds into TestFlight builds if a scheme inherits
+        // it — which would silently grant every user free Pro. Now
+        // gated by a dedicated `PICK1_DEV_OVERRIDE` compilation flag
+        // that MUST be opt-in via xcconfig for local dev only, never
+        // set on the Release scheme.
+        if Self.devOverrideActive {
+            self.isPro = true
+            self.activeProductId = "com.pick1.app.pro.monthly"
+            self.activeExpiration = Calendar.current.date(
+                byAdding: .year, value: 10, to: Date()
+            )
+        }
+    }
+
+    /// True only when both:
+    ///   • The build is DEBUG (Xcode's automatic Debug configuration)
+    ///   • The dedicated `PICK1_DEV_OVERRIDE` compilation flag is set
+    ///     via xcconfig / OTHER_SWIFT_FLAGS for the developer's local
+    ///     scheme. Neither alone is enough — this stops a stray DEBUG
+    ///     leak in a Release build from granting free Pro.
+    /// To enable for local dev, add to your scheme's "Run" settings:
+    ///   OTHER_SWIFT_FLAGS = -D PICK1_DEV_OVERRIDE
+    static var devOverrideActive: Bool {
+        #if DEBUG && PICK1_DEV_OVERRIDE
+        return true
+        #else
+        return false
         #endif
     }
 
@@ -198,25 +216,23 @@ final class SubscriptionManager: ObservableObject {
             self.activeExpiration = nil
         }
 
-        // ── DEBUG / SIMULATOR OVERRIDE ─────────────────────────────
-        // Always grant Pro in debug builds so devs see the full app
-        // without configuring a StoreKit configuration file or buying
-        // a real subscription. Re-asserted on every refresh so the
-        // listener can't silently downgrade us back to Free.
-        // Compiled out of Release/TestFlight/App Store builds.
-        #if DEBUG
-        self.isPro = true
-        if self.activeProductId == nil {
-            self.activeProductId = "com.pick1.app.pro.monthly"
+        // ── DEV OVERRIDE ───────────────────────────────────────────
+        // Always grant Pro when the PICK1_DEV_OVERRIDE flag is set on
+        // a DEBUG build, so devs see the full app without StoreKit
+        // config. Re-asserted on every refresh so the listener can't
+        // silently downgrade us back to Free. NEVER active in
+        // TestFlight/Release builds (see Self.devOverrideActive).
+        if Self.devOverrideActive {
+            self.isPro = true
+            if self.activeProductId == nil {
+                self.activeProductId = "com.pick1.app.pro.monthly"
+            }
+            if self.activeExpiration == nil {
+                self.activeExpiration = Calendar.current.date(
+                    byAdding: .year, value: 10, to: Date()
+                )
+            }
         }
-        if self.activeExpiration == nil {
-            // Far-future expiration so any "expires in N days" copy
-            // doesn't render as "expired".
-            self.activeExpiration = Calendar.current.date(
-                byAdding: .year, value: 10, to: Date()
-            )
-        }
-        #endif
     }
 
     // MARK: - Listener

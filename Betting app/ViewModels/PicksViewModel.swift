@@ -476,14 +476,27 @@ class PicksViewModel: ObservableObject {
     }
 
     // MARK: - Realtime
+    //
+    // Channel refs are stored so stopLiveSession() can tear them down
+    // when the user signs out or the app is force-quit. Without this,
+    // the channels accumulate across reconnects (Supabase realtime
+    // reconnects on network blips with a new channel each time),
+    // leaking bandwidth + memory the longer the session runs.
+
+    private var picksChannel: RealtimeChannelV2?
+    private var scoresChannel: RealtimeChannelV2?
 
     func subscribeToPickUpdates() async {
+        // Reuse the existing channel if already subscribed — guards
+        // against double-subscribe (would deliver every event twice).
+        if picksChannel != nil { return }
+
         let today = Self.dateString(daysAgo: 0)
         let channel = supabase.realtimeV2.channel("picks_realtime")
 
         // Today's row updates → refresh today + history (a graded result
         // also affects streak math).
-        let updateSub = channel.onPostgresChange(
+        _ = channel.onPostgresChange(
             UpdateAction.self,
             schema: "public",
             table: "picks",
@@ -496,10 +509,9 @@ class PicksViewModel: ObservableObject {
                 }
             }
         }
-        _ = updateSub
 
         // Inserts (new picks land mid-day from a fresh pipeline run).
-        let insertSub = channel.onPostgresChange(
+        _ = channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "picks",
@@ -512,15 +524,17 @@ class PicksViewModel: ObservableObject {
                 }
             }
         }
-        _ = insertSub
 
         await channel.subscribe()
+        picksChannel = channel
     }
 
     func subscribeToLiveScores() async {
+        if scoresChannel != nil { return }
+
         let channel = supabase.realtimeV2.channel("scores_realtime")
 
-        let insertSub = channel.onPostgresChange(
+        _ = channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "live_scores"
@@ -532,9 +546,8 @@ class PicksViewModel: ObservableObject {
                 }
             }
         }
-        _ = insertSub
 
-        let updateSub = channel.onPostgresChange(
+        _ = channel.onPostgresChange(
             UpdateAction.self,
             schema: "public",
             table: "live_scores"
@@ -546,9 +559,35 @@ class PicksViewModel: ObservableObject {
                 }
             }
         }
-        _ = updateSub
 
         await channel.subscribe()
+        scoresChannel = channel
+    }
+
+    /// Tear down both realtime channels. Call from the root view's
+    /// `.onDisappear` (or implicitly via deinit). Safe to call when
+    /// nothing is subscribed.
+    func stopLiveSession() async {
+        if let p = picksChannel {
+            await p.unsubscribe()
+            picksChannel = nil
+        }
+        if let s = scoresChannel {
+            await s.unsubscribe()
+            scoresChannel = nil
+        }
+    }
+
+    deinit {
+        // Fire-and-forget unsubscribe — deinit can't be async, but the
+        // SDK is tolerant of being torn down with channels still open.
+        // The Task hop ensures we don't block deallocation.
+        let p = picksChannel
+        let s = scoresChannel
+        Task.detached {
+            await p?.unsubscribe()
+            await s?.unsubscribe()
+        }
     }
 
     // MARK: - Helpers

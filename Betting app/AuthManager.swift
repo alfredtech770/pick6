@@ -1,11 +1,30 @@
 // AuthManager.swift
 // Manages Supabase authentication state (email OTP + Apple Sign In).
+//
+// Concurrency notes:
+//   • `@MainActor` annotation keeps every @Observable mutation on main, so
+//     SwiftUI doesn't re-render off-thread. The class also owns long-lived
+//     UI state (isAuthenticated, userEmail, error string), which all
+//     naturally belong on main.
+//   • The single `Task` in `listenToAuthChanges` inherits the actor; the
+//     async sequence is delivered on main, so we don't need explicit hops.
 
 import SwiftUI
 import Supabase
 import AuthenticationServices
 import CryptoKit
 
+/// Distinguishes "no session" (normal: user is logged out) from "we
+/// couldn't reach the server" (transient: don't bounce the user back to
+/// welcome — show a retry banner). Used by the splash flow to decide
+/// whether to clear UI state vs hold the loader and offer retry.
+enum SessionCheckOutcome {
+    case authenticated
+    case noSession
+    case networkUnavailable
+}
+
+@MainActor
 @Observable
 final class AuthManager {
     var isAuthenticated = false
@@ -18,12 +37,23 @@ final class AuthManager {
     var isLoading = false
     var error: String?
 
+    /// Set to true when the last `checkSession` failed because the
+    /// network/Supabase was unreachable (NOT because the user has no
+    /// session). The splash flow watches this to show a retry banner
+    /// instead of silently logging the user out on a flaky cell.
+    var networkUnavailable = false
+
     var displayName: String {
         if let f = firstName, let l = lastName { return "\(f) \(l)".uppercased() }
         return "PICK1 FAN"
     }
 
-    private var authListener: Task<Void, Never>?
+    // `nonisolated(unsafe)` because deinit runs on whatever queue ARC
+    // dropped the last reference on, but we need to cancel the listener
+    // from there. The Task itself is well-behaved (weak self check
+    // exits on first iteration after dealloc), so the cancel is a
+    // safety belt, not load-bearing.
+    private nonisolated(unsafe) var authListener: Task<Void, Never>?
 
     init() {
         listenToAuthChanges()
@@ -35,7 +65,14 @@ final class AuthManager {
 
     // MARK: - Session
 
-    func checkSession() async {
+    /// Restore the session from Keychain on launch. Distinguishes:
+    ///   • Valid session  → isAuthenticated=true, loadProfile
+    ///   • No session     → isAuthenticated=false (welcome flow)
+    ///   • Network error  → networkUnavailable=true, KEEP previous auth
+    ///                      state (don't bounce returning users on a
+    ///                      flaky cell — the splash shows a retry).
+    @discardableResult
+    func checkSession() async -> SessionCheckOutcome {
         // Minimum splash hold — keeps the loader visible for at least
         // 3.5s so the brand mark + ticker get a beat to land before
         // the home screen swaps in. Real session work runs in
@@ -43,15 +80,30 @@ final class AuthManager {
         let started = Date()
         let minimumSplash: TimeInterval = 3.5
 
+        var outcome: SessionCheckOutcome = .noSession
+        networkUnavailable = false
+
         do {
             let session = try await SupabaseManager.client.auth.session
             isAuthenticated = true
             userEmail = session.user.email
             await loadProfile(userId: session.user.id)
+            outcome = .authenticated
         } catch {
-            // No valid session in Keychain — show login screen
-            isAuthenticated = false
-            isProfileComplete = false
+            // Tell apart "no session in keychain" (expected) from
+            // "couldn't reach Supabase" (transient). The Supabase-Swift
+            // SDK throws a generic AuthError for both — we sniff the
+            // underlying NSError code or message string.
+            if isNetworkError(error) {
+                // Don't change isAuthenticated — preserve whatever was
+                // there. The retry banner will offer to try again.
+                networkUnavailable = true
+                outcome = .networkUnavailable
+            } else {
+                isAuthenticated = false
+                isProfileComplete = false
+                outcome = .noSession
+            }
         }
 
         let elapsed = Date().timeIntervalSince(started)
@@ -61,6 +113,36 @@ final class AuthManager {
             )
         }
         isCheckingSession = false
+        return outcome
+    }
+
+    /// Heuristic: does this error look like network unreachability vs a
+    /// real auth failure? We don't want to mis-categorize "invalid
+    /// refresh token" as a network problem (that would loop the retry
+    /// banner forever).
+    private nonisolated func isNetworkError(_ error: Error) -> Bool {
+        let ns = error as NSError
+        // URLError codes for offline / DNS / timeout
+        if ns.domain == NSURLErrorDomain {
+            let offlineCodes: Set<Int> = [
+                NSURLErrorNotConnectedToInternet,
+                NSURLErrorTimedOut,
+                NSURLErrorCannotFindHost,
+                NSURLErrorCannotConnectToHost,
+                NSURLErrorNetworkConnectionLost,
+                NSURLErrorDNSLookupFailed,
+                NSURLErrorInternationalRoamingOff,
+                NSURLErrorDataNotAllowed
+            ]
+            return offlineCodes.contains(ns.code)
+        }
+        // Best-effort string sniff for SDK-wrapped errors
+        let msg = error.localizedDescription.lowercased()
+        return msg.contains("offline")
+            || msg.contains("network")
+            || msg.contains("timed out")
+            || msg.contains("cannot connect")
+            || msg.contains("could not connect")
     }
 
     // MARK: - Profile
@@ -94,7 +176,10 @@ final class AuthManager {
             whatsapp  = row.whatsapp
             isProfileComplete = true
         } catch {
-            // Profile row doesn't exist yet — send to profile setup
+            // Profile row doesn't exist yet — send to profile setup.
+            // (Network errors here are not fatal: the user can still
+            // re-enter their profile; loadProfile is retried on every
+            // app launch.)
             isProfileComplete = false
         }
     }
@@ -124,7 +209,7 @@ final class AuthManager {
             isProfileComplete = true
             isLoading = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendlyError(error)
             isLoading = false
         }
     }
@@ -138,7 +223,7 @@ final class AuthManager {
             try await SupabaseManager.client.auth.signInWithOTP(email: email)
             isLoading = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendlyError(error)
             isLoading = false
         }
     }
@@ -161,7 +246,7 @@ final class AuthManager {
 
     // MARK: - Password update
 
-    /// Set or change the user's account password. Pick6 sign-in is
+    /// Set or change the user's account password. Pick1 sign-in is
     /// passwordless by default (email OTP / Sign in with Apple), but
     /// Supabase still lets us attach a password to the account so the
     /// user can opt into a second auth path. Throws on validation
@@ -175,7 +260,7 @@ final class AuthManager {
             )
             isLoading = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendlyError(error)
             isLoading = false
         }
     }
@@ -191,7 +276,7 @@ final class AuthManager {
             )
             isLoading = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendlyError(error)
             isLoading = false
         }
     }
@@ -201,16 +286,81 @@ final class AuthManager {
     func signOut() async {
         do {
             try await SupabaseManager.client.auth.signOut()
-            isAuthenticated = false
-            isProfileComplete = false
-            userEmail = nil
-            // Reset the local onboarding flag so signing out returns the user
-            // to the welcome flow on next launch.
-            UserDefaults.standard.set(false, forKey: "hasFinishedOnboarding")
-            UserDefaults.standard.set("", forKey: "selectedSports")
         } catch {
-            self.error = error.localizedDescription
+            // Best-effort: even if the network call fails, clear local
+            // state so the next session check doesn't think we're still
+            // signed in.
+            self.error = friendlyError(error)
         }
+        clearLocalUserState()
+    }
+
+    /// Reset every piece of per-user state stored locally. Called after
+    /// signOut / deleteAccount so a different user signing in next on
+    /// the same device starts clean (no leaked favorites, sport
+    /// selection, plan selection, or onboarding flag).
+    private func clearLocalUserState() {
+        isAuthenticated = false
+        isProfileComplete = false
+        userEmail = nil
+        firstName = nil
+        lastName  = nil
+        whatsapp  = nil
+
+        let d = UserDefaults.standard
+        d.set(false, forKey: "hasFinishedOnboarding")
+        d.set("",    forKey: "selectedSports")
+        d.removeObject(forKey: "selectedPlan")
+        d.removeObject(forKey: "pick1.favorites")
+        d.removeObject(forKey: "pick1.ageVerified")
+    }
+
+    // MARK: - Account Deletion (App Store guideline 5.1.1(v))
+
+    /// Permanently delete the signed-in user. Required by Apple since
+    /// 2022 for any app with account creation (guideline 5.1.1(v)).
+    /// Calls the `public.delete_current_user()` Postgres function which
+    /// is `security definer` — it executes as the function owner but
+    /// pins to `auth.uid()` of the caller, so a user can ONLY delete
+    /// their own account. The function:
+    ///   1. Deletes the `auth.users` row.
+    ///   2. Cascade-deletes `profiles` via the FK on profiles.id.
+    ///   3. Any other user-owned tables (favorites, etc.) must also
+    ///      have ON DELETE CASCADE on their user_id FK.
+    /// After success we sign out locally and clear all device state.
+    @discardableResult
+    func deleteAccount() async -> Bool {
+        isLoading = true
+        error = nil
+        do {
+            try await SupabaseManager.client
+                .rpc("delete_current_user")
+                .execute()
+            // Sign out locally and wipe device state. The remote signOut
+            // call may 401 because the user row is gone — that's fine,
+            // we just need to clear local keychain entries.
+            try? await SupabaseManager.client.auth.signOut()
+            clearLocalUserState()
+            isLoading = false
+            return true
+        } catch {
+            self.error = friendlyError(error)
+            isLoading = false
+            return false
+        }
+    }
+
+    // MARK: - Error formatting
+
+    /// Translate raw SDK errors into user-presentable strings. Network
+    /// errors get a recognizable "couldn't reach server" message so the
+    /// UI can offer a retry; everything else falls back to the SDK's
+    /// localizedDescription.
+    private nonisolated func friendlyError(_ error: Error) -> String {
+        if isNetworkError(error) {
+            return "Couldn't reach the Pick1 server. Check your connection and try again."
+        }
+        return error.localizedDescription
     }
 
     // MARK: - Auth State Listener
@@ -227,12 +377,7 @@ final class AuthManager {
                         await self.loadProfile(userId: userId)
                     }
                 case .signedOut:
-                    self.isAuthenticated = false
-                    self.isProfileComplete = false
-                    self.userEmail = nil
-                    self.firstName = nil
-                    self.lastName  = nil
-                    self.whatsapp  = nil
+                    self.clearLocalUserState()
                 default:
                     break
                 }

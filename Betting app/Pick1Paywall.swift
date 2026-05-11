@@ -48,6 +48,11 @@ struct OBPaywallScreen: View {
     @State private var skipUnlocked: Bool = false
     private let skipDelay: Double = 7.0
 
+    /// Terms / Privacy sheets — required by App Review guideline 3.1.2
+    /// to be reachable on the paywall itself, not just from Profile.
+    @State private var showTerms: Bool = false
+    @State private var showPrivacy: Bool = false
+
     var body: some View {
         VStack(spacing: 0) {
             paywallTopNav
@@ -65,10 +70,20 @@ struct OBPaywallScreen: View {
                         .padding(.top, 4)
                     faq.padding(.top, 6)
                     finePrint.padding(.top, 14)
+                    legalLinks.padding(.top, 10)
                     restorePurchases.padding(.top, 4)
+                    manageSubscriptions.padding(.top, 2)
                     Color.clear.frame(height: 28)
                 }
             }
+        }
+        .sheet(isPresented: $showTerms) {
+            LegalSheet(doc: .terms, isOpen: $showTerms)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPrivacy) {
+            LegalSheet(doc: .privacy, isOpen: $showPrivacy)
+                .presentationDragIndicator(.visible)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -514,7 +529,20 @@ struct OBPaywallScreen: View {
     // MARK: - Fine print + restore
 
     private var finePrint: some View {
-        Text("Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your App Store account.")
+        // App Review 3.1.2 requires the auto-renewal terms be disclosed
+        // adjacent to the purchase action. Spell out:
+        //   • Trial length + price-after-trial
+        //   • Renewal terms (auto, cancel window)
+        //   • That payment goes through Apple
+        let copy: String = {
+            switch plan {
+            case .weekly:
+                return "7-day free trial, then $14.99/week. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID."
+            case .monthly:
+                return "7-day free trial, then $39.99/month. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID."
+            }
+        }()
+        return Text(copy)
             .font(.system(size: 10))
             .foregroundColor(.p1Mute)
             .lineSpacing(3)
@@ -534,6 +562,54 @@ struct OBPaywallScreen: View {
         }
         .buttonStyle(.plain)
         .disabled(subs.purchasing)
+    }
+
+    /// Terms of Service / Privacy Policy links — required by App Review
+    /// guideline 3.1.2 adjacent to the auto-renewable subscription
+    /// disclosure. Renders as two tappable links in a dot-separated row.
+    private var legalLinks: some View {
+        HStack(spacing: 14) {
+            Button { showTerms = true } label: {
+                Text("Terms of Service")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.p1Ink2)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+
+            Text("·").foregroundColor(.p1Mute)
+
+            Button { showPrivacy = true } label: {
+                Text("Privacy Policy")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.p1Ink2)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// "Manage Subscription" — deep-links into the iOS system sheet so
+    /// the user can cancel / change tiers without leaving the app.
+    /// Expected by App Review for any auto-renewing subscription app.
+    private var manageSubscriptions: some View {
+        Button {
+            Task {
+                if let scene = UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    try? await AppStore.showManageSubscriptions(in: scene)
+                }
+            }
+        } label: {
+            Text("Manage Subscription")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.p1Mute)
+                .underline()
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Sticky CTA

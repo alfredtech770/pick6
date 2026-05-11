@@ -155,7 +155,13 @@ struct Pick1HomeHiFi: View {
                                 isPro: subs.isPro,
                                 onShowPaywall: { showPaywall = true },
                                 onSignOut: {
-                                    Task { await auth.signOut() }
+                                    // Tear down realtime channels first
+                                    // so we don't leak subscriptions
+                                    // across the sign-in/sign-out cycle.
+                                    Task {
+                                        await vm.stopLiveSession()
+                                        await auth.signOut()
+                                    }
                                 })
                 }
             }
@@ -1949,6 +1955,8 @@ struct NavItem: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 }
 
@@ -1995,6 +2003,10 @@ struct LiveNavItem: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(liveCount > 0
+                            ? "Live games, \(liveCount) playing now"
+                            : "Live games")
+        .accessibilityAddTraits(isActive ? .isSelected : [])
         .onAppear {
             withAnimation(.easeOut(duration: 1.6)
                 .repeatForever(autoreverses: false)) {
