@@ -2823,31 +2823,35 @@ struct WinsView: View {
     ///   • pending → mute "UPCOMING" badge, scheduled label
     private func wonCard(pick: Pick) -> some View {
         let live = vm.liveScores.first { $0.gameId == pick.gameId }
-        let isLive = live?.isLive == true && pick.result == "pending"
-        let isFinal = pick.result == "win" || pick.result == "loss"
-        let won = pick.result == "win"
-        let lost = pick.result == "loss"
+        // Single source of truth: PickRenderState centralizes the
+        // win/loss/live/awaiting/upcoming decision so all three card
+        // surfaces (Picks tab, Live tab, sport hub) match.
+        let state = pick.renderState(liveScore: live)
+        let isFinal = state == .won || state == .lost
 
-        // For settled picks, strike the team OPPOSITE to the user's pick
-        // (i.e. the team that lost). Falls back to scoreboard math if
-        // the pick text doesn't cleanly match either team.
+        // For settled picks, strike the team opposite the user's pick.
         let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
         let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
-        let homeStrike = isFinal && (lost ? pickedHome
-                                          : (!pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0)))
-        let awayStrike = isFinal && (lost ? pickedAway
-                                          : (!pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0)))
+        let homeStrike = state == .lost
+            ? pickedHome
+            : (state == .won && !pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0))
+        let awayStrike = state == .lost
+            ? pickedAway
+            : (state == .won && !pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0))
 
-        // Top-tag text: "FINAL" / "LIVE · Q3" / "TODAY 7:30 PM"
         let topTag: String = {
-            if isLive {
-                let q = live?.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE"
+            switch state {
+            case .live:
+                let q = live?.quarter.flatMap { Int($0) }
+                    .map { "Q\($0)" } ?? "LIVE"
                 return "\(pick.league.uppercased()) · LIVE · \(q)"
-            }
-            if isFinal {
+            case .won, .lost:
                 return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · FINAL"
+            case .awaitingResult:
+                return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · AWAITING"
+            case .upcoming:
+                return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · UPCOMING"
             }
-            return "\(pick.league.uppercased()) · \(relativeDate(pick.gameDate)) · UPCOMING"
         }()
 
         return VStack(spacing: 0) {
@@ -2857,7 +2861,7 @@ struct WinsView: View {
                     .tracking(2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
                 Spacer()
-                outcomeBadge(pick: pick, isLive: isLive)
+                outcomeBadge(state: state)
             }
             .padding(.bottom, 12)
 
@@ -2873,14 +2877,15 @@ struct WinsView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Score area: live score (if live), final score (if settled),
-                // or schedule/check fallback.
+                // Score area: live score (if live), final score (if
+                // settled), VS for upcoming/awaiting.
                 Group {
-                    if isLive,
+                    if state == .live,
                        let s = live, let h = s.homeScore, let a = s.awayScore {
                         scoreText(home: h, away: a, homeMute: false, awayMute: false,
                                   liveAccent: true)
-                    } else if let h = pick.homeScore, let a = pick.awayScore {
+                    } else if isFinal,
+                              let h = pick.homeScore, let a = pick.awayScore {
                         scoreText(home: h, away: a,
                                   homeMute: homeStrike, awayMute: awayStrike,
                                   liveAccent: false)
@@ -2940,11 +2945,12 @@ struct WinsView: View {
     }
 
     /// Outcome badge — colored capsule pinned right of the top tag
-    /// row. WON (green), LOST (red), LIVE (orange + dot), UPCOMING
-    /// (mute), or AWAITING (mute) for not-yet-graded picks.
+    /// row. Switches on PickRenderState so live / won / lost /
+    /// awaiting / upcoming each get their own distinct treatment.
     @ViewBuilder
-    private func outcomeBadge(pick: Pick, isLive: Bool) -> some View {
-        if isLive {
+    private func outcomeBadge(state: PickRenderState) -> some View {
+        switch state {
+        case .live:
             HStack(spacing: 5) {
                 Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
                 Text("LIVE")
@@ -2955,7 +2961,7 @@ struct WinsView: View {
             .background(Color(hex: "#FF5A36").opacity(0.10))
             .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else if pick.result == "win" {
+        case .won:
             HStack(spacing: 5) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 9, weight: .heavy))
@@ -2967,7 +2973,7 @@ struct WinsView: View {
             .background(Color(hex: "#4ade80").opacity(0.1))
             .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else if pick.result == "loss" {
+        case .lost:
             HStack(spacing: 5) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .heavy))
@@ -2979,8 +2985,21 @@ struct WinsView: View {
             .background(Color(hex: "#FF5A36").opacity(0.10))
             .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else {
-            // Pending + not live = upcoming (or awaiting grading).
+        case .awaitingResult:
+            // Past kickoff, pipeline hasn't graded yet. Amber so
+            // it doesn't masquerade as "this hasn't happened yet".
+            HStack(spacing: 5) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 9, weight: .heavy))
+                Text("AWAITING")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#B98C40"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#B98C40").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#B98C40").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        case .upcoming:
             Text("UPCOMING")
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
@@ -3119,17 +3138,24 @@ struct LiveView: View {
         }
     }
 
-    /// "MY PICKS" — today's picks the user owns: live, settled, or
-    /// upcoming. Live games at the top, then today's results, then
-    /// upcoming.
+    /// "MY PICKS" — today's picks the user owns, grouped by render
+    /// state (live → final → awaiting → upcoming). Filters use the
+    /// same PickRenderState the card chrome uses, so a pick can't
+    /// land in two sections at once or show in "Upcoming" when its
+    /// game is actually over.
     @ViewBuilder
     private var myLiveAndRecentSection: some View {
         let myToday = vm.effectiveTodayPicks
-        let myLive = myToday.filter { isLive($0) }
-        let mySettled = myToday.filter { $0.result == "win" || $0.result == "loss" }
-        let myUpcoming = myToday.filter { $0.result == "pending" && !isLive($0) }
+        let stateOf: (Pick) -> PickRenderState = { p in
+            p.renderState(liveScore: liveScore(for: p))
+        }
+        let myLive     = myToday.filter { stateOf($0) == .live }
+        let mySettled  = myToday.filter { stateOf($0) == .won  || stateOf($0) == .lost }
+        let myAwaiting = myToday.filter { stateOf($0) == .awaitingResult }
+        let myUpcoming = myToday.filter { stateOf($0) == .upcoming }
 
-        if myLive.isEmpty && mySettled.isEmpty && myUpcoming.isEmpty {
+        if myLive.isEmpty && mySettled.isEmpty
+            && myAwaiting.isEmpty && myUpcoming.isEmpty {
             nothingLive
         } else {
             VStack(spacing: 16) {
@@ -3145,6 +3171,13 @@ struct LiveView: View {
                             meta: settledMetaToday(mySettled),
                             live: false,
                             picks: mySettled,
+                            renderer: { settledCard(pick: $0) })
+                }
+                if !myAwaiting.isEmpty {
+                    section(title: "AWAITING",
+                            meta: "\(myAwaiting.count) TO GRADE",
+                            live: false,
+                            picks: myAwaiting,
                             renderer: { settledCard(pick: $0) })
                 }
                 if !myUpcoming.isEmpty {
@@ -4933,24 +4966,34 @@ struct SettledOutcomeCard: View {
     let liveScore: LiveScore?
 
     var body: some View {
-        let isLiveNow = liveScore?.isLive == true && pick.result == "pending"
-        let isFinal = pick.result == "win" || pick.result == "loss"
-        let lost = pick.result == "loss"
+        // Single source of truth — every per-card rendering decision
+        // (badge, top tag, score row, strikethrough) derives from
+        // this state.
+        let state = pick.renderState(liveScore: liveScore)
+        let isFinal = state == .won || state == .lost
 
         let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
         let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
-        let homeStrike = isFinal && (lost ? pickedHome
-                                          : (!pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0)))
-        let awayStrike = isFinal && (lost ? pickedAway
-                                          : (!pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0)))
+        let homeStrike = state == .lost
+            ? pickedHome
+            : (state == .won && !pickedAway && (pick.homeScore ?? 0) < (pick.awayScore ?? 0))
+        let awayStrike = state == .lost
+            ? pickedAway
+            : (state == .won && !pickedHome && (pick.awayScore ?? 0) < (pick.homeScore ?? 0))
 
         let topTag: String = {
-            if isLiveNow {
-                let q = liveScore?.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE"
+            switch state {
+            case .live:
+                let q = liveScore?.quarter.flatMap { Int($0) }
+                    .map { "Q\($0)" } ?? "LIVE"
                 return "\(pick.league.uppercased()) · LIVE · \(q)"
+            case .won, .lost:
+                return "\(pick.league.uppercased()) · FINAL"
+            case .awaitingResult:
+                return "\(pick.league.uppercased()) · AWAITING"
+            case .upcoming:
+                return "\(pick.league.uppercased()) · UPCOMING"
             }
-            if isFinal { return "\(pick.league.uppercased()) · FINAL" }
-            return "\(pick.league.uppercased()) · UPCOMING"
         }()
 
         return VStack(spacing: 0) {
@@ -4960,7 +5003,7 @@ struct SettledOutcomeCard: View {
                     .tracking(2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
                 Spacer()
-                badge(pick: pick, isLive: isLiveNow)
+                badge(state: state)
             }
             .padding(.bottom, 12)
 
@@ -4976,10 +5019,11 @@ struct SettledOutcomeCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Group {
-                    if isLiveNow,
+                    if state == .live,
                        let s = liveScore, let h = s.homeScore, let a = s.awayScore {
                         score(h: h, a: a, hMute: false, aMute: false, accent: Color(hex: "#FF5A36"))
-                    } else if let h = pick.homeScore, let a = pick.awayScore {
+                    } else if isFinal,
+                              let h = pick.homeScore, let a = pick.awayScore {
                         score(h: h, a: a, hMute: homeStrike, aMute: awayStrike, accent: Color(hex: "#F5F3EE"))
                     } else {
                         Text("VS").font(.archivoNarrow(11, weight: .bold))
@@ -5033,8 +5077,9 @@ struct SettledOutcomeCard: View {
     }
 
     @ViewBuilder
-    private func badge(pick: Pick, isLive: Bool) -> some View {
-        if isLive {
+    private func badge(state: PickRenderState) -> some View {
+        switch state {
+        case .live:
             HStack(spacing: 5) {
                 Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
                 Text("LIVE").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
@@ -5044,7 +5089,7 @@ struct SettledOutcomeCard: View {
             .background(Color(hex: "#FF5A36").opacity(0.10))
             .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else if pick.result == "win" {
+        case .won:
             HStack(spacing: 5) {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
                 Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
@@ -5054,7 +5099,7 @@ struct SettledOutcomeCard: View {
             .background(Color(hex: "#4ade80").opacity(0.10))
             .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else if pick.result == "loss" {
+        case .lost:
             HStack(spacing: 5) {
                 Image(systemName: "xmark").font(.system(size: 9, weight: .heavy))
                 Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
@@ -5064,7 +5109,21 @@ struct SettledOutcomeCard: View {
             .background(Color(hex: "#FF5A36").opacity(0.10))
             .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
-        } else {
+        case .awaitingResult:
+            // Past kickoff, pipeline hasn't graded yet. Mute amber
+            // capsule — not a "this hasn't happened yet" UPCOMING.
+            HStack(spacing: 5) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 9, weight: .heavy))
+                Text("AWAITING")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+            }
+            .foregroundColor(Color(hex: "#B98C40"))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color(hex: "#B98C40").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#B98C40").opacity(0.3), lineWidth: 1))
+            .clipShape(Capsule())
+        case .upcoming:
             Text("UPCOMING")
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))

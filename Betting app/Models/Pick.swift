@@ -51,6 +51,64 @@ struct Pick: Identifiable, Codable {
     var isWin: Bool { result == "win" }
     var isLoss: Bool { result == "loss" }
     var isPending: Bool { result == "pending" }
+
+    /// Parses `gameDate` (ISO yyyy-MM-dd) into a Date at midnight
+    /// local time. Returns nil if the string is malformed.
+    var gameDateValue: Date? {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone.current
+        return f.date(from: gameDate)
+    }
+
+    /// Single source of truth for "what badge / chrome should this
+    /// pick render with right now?". Considers (1) the graded
+    /// result, (2) the live-score state of the game, (3) clock
+    /// reality — game_date and start_time vs now. Without (3) a
+    /// pick from yesterday with result=pending stays glued in the
+    /// "UPCOMING" branch forever, which is the bug the user hit.
+    func renderState(liveScore: LiveScore?, now: Date = Date()) -> PickRenderState {
+        // Graded picks short-circuit — once result is win/loss the
+        // game is done and the box-score sits in pick.home/awayScore.
+        if isWin { return .won }
+        if isLoss { return .lost }
+
+        // Pending + the live-score row says "in progress" → LIVE.
+        if liveScore?.isLive == true { return .live }
+
+        // Pending + the live-score row says "final" → game's over
+        // but we haven't graded yet (pipeline is between grade ticks).
+        if liveScore?.isFinal == true { return .awaitingResult }
+
+        // Pending + game time is in the past (either by start_time
+        // or by gameDate) → not really "upcoming" anymore; the
+        // pipeline hasn't caught up.
+        if let kickoff = liveScore?.startTime, kickoff < now {
+            return .awaitingResult
+        }
+        let dayStart = Calendar.current.startOfDay(for: now)
+        if let gd = gameDateValue, gd < dayStart {
+            return .awaitingResult
+        }
+
+        // Pending + future kickoff (or kickoff unknown but date is
+        // today/future) → genuinely upcoming.
+        return .upcoming
+    }
+}
+
+// MARK: - Pick render state
+
+/// Display-state for a single pick card. Every per-card view that
+/// renders a badge / score / kickoff label should switch on this
+/// instead of inferring the state inline from `result` + isLive,
+/// so the rules stay consistent across the app.
+enum PickRenderState {
+    case live              // game in progress; show live score
+    case won               // settled W
+    case lost              // settled L
+    case awaitingResult    // pending but game is in the past — needs grading
+    case upcoming          // pending and game is in the future
 }
 
 enum ConfidenceTier {
