@@ -1340,6 +1340,14 @@ struct GameCard: View {
     let isLive: Bool
     let score: LiveScore?
 
+    /// Authoritative card state — same helper every other surface uses.
+    /// Replaces the old `isLive` Bool for badge / topline decisions so
+    /// past-pending picks render with an "AWAITING" treatment instead
+    /// of a "kickoff in the past" upcoming label.
+    private var state: PickRenderState {
+        pick.renderState(liveScore: score)
+    }
+
     var body: some View {
         // F1 / MMA picks aren't two-team matchups — they're standalone
         // events (a race, a fight, a prop). Render those as event cards
@@ -1366,29 +1374,26 @@ struct GameCard: View {
     // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
     private var teamCardBody: some View {
         VStack(spacing: 0) {
-            // Top row
+            // Top row — switches on the authoritative renderState so
+            // past-pending picks no longer say "TONIGHT" with a stale
+            // kickoff. Four buckets:
+            //   .live          → LIVE pulse + league mute
+            //   .awaitingResult → amber AWAITING badge
+            //   .won/.lost     → FINAL chip
+            //   .upcoming      → original scheduledTopLine (e.g. "NBA · TONIGHT")
             HStack {
-                if isLive, let s = score {
-                    LivePulseBadge(label: livePulseText(s))
-                    Text(pick.league)
-                        .font(.archivoNarrow(10, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                } else {
-                    Text(scheduledTopLine)
-                        .font(.archivoNarrow(10, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                }
+                topRowBadge
                 Spacer()
                 ConfChip(percent: pick.probability, hot: pick.probability >= 80)
             }
             .padding(.bottom, 14)
 
-            // Teams + score
+            // Teams + score — ScoreView now also reads state so a
+            // past-pending pick shows AWAITING / hourglass instead of
+            // "VS · 7:30 PM" in the past.
             HStack(alignment: .center, spacing: 14) {
                 TeamColumn(team: pick.awayTeam, isAway: true, sport: pick.sport)
-                ScoreView(pick: pick, isLive: isLive, score: score)
+                ScoreView(pick: pick, state: state, score: score)
                     .frame(maxWidth: .infinity)
                 TeamColumn(team: pick.homeTeam, isAway: false, sport: pick.sport)
             }
@@ -1422,12 +1427,20 @@ struct GameCard: View {
     // ─── EVENT LAYOUT (F1, MMA) ─────────────────────────────────
     private var eventCardBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Tag + AI pill
+            // Tag + AI pill — for live/awaiting/final states swap the
+            // race-day tag for the same shared badge the team card uses,
+            // so an F1 weekend that's already underway reads "LIVE · L42"
+            // and a past-but-not-yet-graded race reads AWAITING. Upcoming
+            // keeps the sport-specific tag ("RACE · SUN 15:00").
             HStack {
-                Text(eventTag)
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.0)
-                    .foregroundColor(Color(hex: "#6E6F75"))
+                if state == .upcoming {
+                    Text(eventTag)
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.0)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                } else {
+                    topRowBadge
+                }
                 Spacer()
                 ConfChip(percent: pick.probability,
                          hot: pick.probability >= 70)
@@ -1573,6 +1586,53 @@ struct GameCard: View {
         let q = s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? (s.status ?? "LIVE").uppercased()
         return "LIVE · \(q)"
     }
+
+    /// Per-state top-row badge for both team and event card layouts.
+    /// Centralizes the four-way switch (live/awaiting/won-lost/upcoming)
+    /// so every team-card surface in the app reads identically.
+    @ViewBuilder
+    private var topRowBadge: some View {
+        switch state {
+        case .live:
+            if let s = score {
+                HStack(spacing: 6) {
+                    LivePulseBadge(label: livePulseText(s))
+                    Text(pick.league)
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+            } else {
+                LivePulseBadge(label: "LIVE")
+            }
+        case .awaitingResult:
+            HStack(spacing: 5) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(Color(hex: "#F59E0B"))
+                Text("AWAITING")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#F59E0B"))
+            }
+        case .won, .lost:
+            HStack(spacing: 6) {
+                Text("FINAL")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                Text(pick.league)
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+        case .upcoming:
+            Text(scheduledTopLine)
+                .font(.archivoNarrow(10, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(Color(hex: "#B9B7B0"))
+        }
+    }
 }
 
 struct LivePulseBadge: View {
@@ -1656,26 +1716,63 @@ struct TeamColumn: View {
 
 struct ScoreView: View {
     let pick: Pick
-    let isLive: Bool
+    let state: PickRenderState
     let score: LiveScore?
 
     var body: some View {
-        // Show numeric score ONLY when the game is in progress or
-        // final. For not-yet-started games, show "VS" + the kickoff
-        // time so an upcoming game doesn't masquerade as 0-0.
-        if let s = score, (s.isLive || s.isFinal),
-           let h = s.homeScore, let a = s.awayScore {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(a)").font(.anton(28)).tracking(-0.28)
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("–").font(.anton(20))
-                    .foregroundColor(Color(hex: "#6E6F75"))
-                Text("\(h)").font(.anton(28)).tracking(-0.28)
-                    .foregroundColor(pickWon(home: h, away: a, pick: pick)
-                                     ? Color(hex: "#D4FF3A")
-                                     : Color(hex: "#F5F3EE"))
+        // Per-state center column. The previous Bool-driven branch had
+        // no way to express "game ended but isn't graded yet" — so a
+        // past-pending pick rendered "VS · 7:30 PM" hours after kickoff.
+        switch state {
+        case .live, .won, .lost:
+            // Game is in progress or settled — render the numeric score
+            // if we have it. Fall back to a generic indicator otherwise
+            // so a stale live_scores row doesn't blank the column.
+            if let s = score,
+               let h = s.homeScore, let a = s.awayScore {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(a)").font(.anton(28)).tracking(-0.28)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                    Text("–").font(.anton(20))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text("\(h)").font(.anton(28)).tracking(-0.28)
+                        .foregroundColor(pickWon(home: h, away: a, pick: pick)
+                                         ? Color(hex: "#D4FF3A")
+                                         : Color(hex: "#F5F3EE"))
+                }
+            } else if let h = pick.homeScore, let a = pick.awayScore {
+                // Graded picks carry their box score on the row itself
+                // (live_scores may have rolled over) — use that.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(a)").font(.anton(28)).tracking(-0.28)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                    Text("–").font(.anton(20))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text("\(h)").font(.anton(28)).tracking(-0.28)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                }
+            } else {
+                Text(state == .live ? "LIVE" : "FINAL")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
             }
-        } else {
+
+        case .awaitingResult:
+            // Game's over but pipeline hasn't graded it yet — be honest
+            // about the state instead of showing a kickoff time in the
+            // past.
+            VStack(spacing: 4) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(hex: "#F59E0B"))
+                Text("AWAITING")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundColor(Color(hex: "#F59E0B"))
+            }
+
+        case .upcoming:
             VStack(spacing: 2) {
                 Text("VS")
                     .font(.archivoNarrow(10, weight: .bold))
