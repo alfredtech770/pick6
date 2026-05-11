@@ -325,8 +325,8 @@ struct MatchDetailView: View {
                 .presentationContentInteraction(.scrolls)
                 .presentationDetents([.medium, .large])
         }
-        .alert("21+ ONLY", isPresented: $showAgeGate) {
-            Button("I'm 21 or older", role: .none) {
+        .alert(LocalizationManager.shared.t(.age_gate_title), isPresented: $showAgeGate) {
+            Button(LocalizationManager.shared.t(.age_gate_confirm), role: .none) {
                 ageVerified = true
                 // Defer the sheet by one tick so the alert can dismiss
                 // cleanly before the sheet animation kicks in.
@@ -334,9 +334,9 @@ struct MatchDetailView: View {
                     showBookmakers = true
                 }
             }
-            Button("Cancel", role: .cancel) {}
+            Button(LocalizationManager.shared.t(.action_cancel), role: .cancel) {}
         } message: {
-            Text("Pick1 surfaces AI sports predictions for entertainment. Sportsbook integrations require you to be 21 or older. By continuing you confirm you meet the legal gambling age in your jurisdiction.\n\nIf you or someone you know has a gambling problem, call 1-800-GAMBLER.")
+            Text(LocalizationManager.shared.t(.age_gate_message))
         }
     }
 
@@ -2399,6 +2399,10 @@ struct ProfileView: View {
     /// Edit Profile sheet (which calls auth.saveProfile).
     @Environment(AuthManager.self) private var auth
 
+    /// Drives every settings-row title to re-render in the user's
+    /// language as soon as they pick one — no app restart.
+    @Environment(LocalizationManager.self) private var loc
+
     @State private var showEditProfile: Bool = false
 
     var body: some View {
@@ -2649,19 +2653,20 @@ struct ProfileView: View {
 
             // ── ACCOUNT / PREFS ────────────────────────────────────
             VStack(alignment: .leading, spacing: 10) {
-                HubSectionHead(title: "ACCOUNT", meta: "PREFS")
+                HubSectionHead(title: loc.t(.settings_account_section),
+                               meta: loc.t(.settings_prefs_meta))
                     .padding(.horizontal, -20)   // cancel HubSectionHead's 20pt inset
                 VStack(spacing: 0) {
                     settingsToggleRow(
                         icon: "bell.fill",
-                        title: "Notifications",
-                        sub: "Live games · picks · results",
+                        title: loc.t(.settings_notifications),
+                        sub: loc.t(.settings_notifications_sub),
                         isOn: $notificationsOn
                     )
                     divider
                     settingsLinkRow(
                         icon: "globe",
-                        title: "Language",
+                        title: loc.t(.settings_language),
                         sub: languageSub,
                         trailing: languageCode,
                         action: { showLanguagePicker = true }
@@ -2669,15 +2674,17 @@ struct ProfileView: View {
                     divider
                     settingsLinkRow(
                         icon: "creditcard.fill",
-                        title: "Subscription",
-                        sub: isPro ? "Manage in iOS Settings" : "Unlock all picks · go Pro",
-                        trailing: isPro ? "PRO" : "FREE",
+                        title: loc.t(.settings_subscription),
+                        sub: isPro ? loc.t(.settings_subscription_sub_pro)
+                                   : loc.t(.settings_subscription_sub_free),
+                        trailing: isPro ? loc.t(.settings_subscription_pro)
+                                        : loc.t(.settings_subscription_free),
                         action: onShowPaywall
                     )
                     divider
                     settingsLinkRow(
                         icon: "lock.fill",
-                        title: "Privacy & Security",
+                        title: loc.t(.settings_privacy_security),
                         sub: "Sign-in · password",
                         trailing: nil,
                         action: { showPrivacySecurity = true }
@@ -2688,12 +2695,13 @@ struct ProfileView: View {
 
             // ── SUPPORT / HELP ─────────────────────────────────────
             VStack(alignment: .leading, spacing: 10) {
-                HubSectionHead(title: "SUPPORT", meta: "HELP")
+                HubSectionHead(title: loc.t(.settings_support_section),
+                               meta: loc.t(.settings_help_meta))
                     .padding(.horizontal, -20)
                 VStack(spacing: 0) {
                     settingsLinkRow(
                         icon: "questionmark.circle.fill",
-                        title: "Help Center",
+                        title: loc.t(.settings_help_center),
                         sub: "FAQs · contact us",
                         trailing: nil,
                         action: {}
@@ -2701,7 +2709,7 @@ struct ProfileView: View {
                     divider
                     settingsLinkRow(
                         icon: "doc.text.fill",
-                        title: "Terms & Conditions",
+                        title: loc.t(.settings_terms),
                         sub: "Service terms · effective Apr 30, 2026",
                         trailing: nil,
                         action: { showTerms = true }
@@ -2709,7 +2717,7 @@ struct ProfileView: View {
                     divider
                     settingsLinkRow(
                         icon: "rectangle.portrait.and.arrow.right.fill",
-                        title: "Sign Out",
+                        title: loc.t(.settings_sign_out),
                         sub: "You'll stay logged in on web",
                         trailing: nil,
                         danger: true,
@@ -3807,17 +3815,22 @@ struct LanguagePickerSheet: View {
     @Binding var selection: String
     @Binding var isOpen: Bool
 
+    /// Live-translated UI labels — observed so the header text + Done
+    /// button re-render the instant the user picks a new language
+    /// without dismissing first.
+    @Environment(LocalizationManager.self) private var loc
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("LANGUAGE")
+                    Text(loc.t(.lang_picker_title))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Spacer()
-                    Button("Done") { isOpen = false }
+                    Button(loc.t(.action_done)) { isOpen = false }
                         .font(.archivo(13, weight: .bold))
                         .foregroundColor(Color(hex: "#D4FF3A"))
                 }
@@ -3856,7 +3869,12 @@ struct LanguagePickerSheet: View {
 
     private func languageRow(_ lang: (code: String, name: String, native: String, flag: String)) -> some View {
         Button {
+            // Push into both the AppStorage binding (for the trailing pill
+            // on the settings row to update) AND the LocalizationManager
+            // (which drives every t(...) lookup). Keeping the manager in
+            // sync is what makes the change take effect mid-session.
             selection = lang.code
+            loc.languageCode = lang.code
             isOpen = false
         } label: {
             HStack(spacing: 14) {
@@ -4410,14 +4428,14 @@ struct EditProfileSheet: View {
             lastName  = auth.lastName  ?? ""
             phone     = auth.whatsapp  ?? ""
         }
-        .alert("Delete account?", isPresented: $showDeleteAccount) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+        .alert(LocalizationManager.shared.t(.profile_delete_alert_title), isPresented: $showDeleteAccount) {
+            Button(LocalizationManager.shared.t(.action_cancel), role: .cancel) {}
+            Button(LocalizationManager.shared.t(.profile_delete_alert_confirm), role: .destructive) {
                 isOpen = false
                 onDeleteAccount?()
             }
         } message: {
-            Text("This permanently deletes your Pick1 account and pick history within 30 days. Active subscriptions must be cancelled separately in iOS Settings → Subscriptions.")
+            Text(LocalizationManager.shared.t(.profile_delete_alert_message))
         }
     }
 

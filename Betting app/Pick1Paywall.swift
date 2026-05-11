@@ -41,6 +41,7 @@ struct OBPaywallScreen: View {
 
     @State private var plan: PaywallPlan = .monthly
     @EnvironmentObject private var subs: SubscriptionManager
+    @Environment(LocalizationManager.self) private var loc
 
     /// "Access Free" skip button reveals 7 seconds after the paywall opens.
     /// Lets users dismiss the paywall without subscribing — required for
@@ -534,14 +535,9 @@ struct OBPaywallScreen: View {
         //   • Trial length + price-after-trial
         //   • Renewal terms (auto, cancel window)
         //   • That payment goes through Apple
-        let copy: String = {
-            switch plan {
-            case .weekly:
-                return "7-day free trial, then $14.99/week. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID."
-            case .monthly:
-                return "7-day free trial, then $39.99/month. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID."
-            }
-        }()
+        // Localized so the disclosure is honored in the user's language.
+        let copy = loc.t(plan == .weekly ? .paywall_fineprint_weekly
+                                         : .paywall_fineprint_monthly)
         return Text(copy)
             .font(.system(size: 10))
             .foregroundColor(.p1Mute)
@@ -554,7 +550,7 @@ struct OBPaywallScreen: View {
         Button {
             Task { await subs.restorePurchases() }
         } label: {
-            Text("Restore Purchases")
+            Text(loc.t(.paywall_restore))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.p1Ink2)
                 .padding(.vertical, 10)
@@ -570,7 +566,7 @@ struct OBPaywallScreen: View {
     private var legalLinks: some View {
         HStack(spacing: 14) {
             Button { showTerms = true } label: {
-                Text("Terms of Service")
+                Text(loc.t(.paywall_terms))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.p1Ink2)
                     .underline()
@@ -580,7 +576,7 @@ struct OBPaywallScreen: View {
             Text("·").foregroundColor(.p1Mute)
 
             Button { showPrivacy = true } label: {
-                Text("Privacy Policy")
+                Text(loc.t(.paywall_privacy))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.p1Ink2)
                     .underline()
@@ -602,7 +598,7 @@ struct OBPaywallScreen: View {
                 }
             }
         } label: {
-            Text("Manage Subscription")
+            Text(loc.t(.paywall_manage_subscription))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.p1Mute)
                 .underline()
@@ -622,7 +618,7 @@ struct OBPaywallScreen: View {
                         ProgressView()
                             .tint(.p1LimeInk)
                     } else {
-                        Text("Start 7-Day Free Trial")
+                        Text(loc.t(.paywall_cta_trial))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)
@@ -644,7 +640,7 @@ struct OBPaywallScreen: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             } else {
-                Text("Then \(plan == .weekly ? "$14.99/week" : "$39.99/month") · Cancel anytime")
+                Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundColor(.p1Mute)
             }

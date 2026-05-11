@@ -1866,18 +1866,22 @@ struct FloatingNav: View {
     @Binding var tab: Pick1HomeHiFi.Tab
     let liveCount: Int
 
+    /// Observed so the active-tab label re-renders in the new language
+    /// the instant the user picks one in Profile → Language.
+    @Environment(LocalizationManager.self) private var loc
+
     var body: some View {
         HStack(spacing: 2) {
             NavItem(icon: "house",
-                    label: "Home",
+                    label: loc.t(.nav_home),
                     isActive: tab == .home) { tab = .home }
             NavItem(icon: "star",
-                    label: "Picks",
+                    label: loc.t(.nav_picks),
                     isActive: tab == .picks) { tab = .picks }
             LiveNavItem(isActive: tab == .live,
                         liveCount: liveCount) { tab = .live }
             NavItem(icon: "person",
-                    label: "Profile",
+                    label: loc.t(.nav_profile),
                     isActive: tab == .profile) { tab = .profile }
         }
         .padding(8)   // spec: padding 8px around the row
