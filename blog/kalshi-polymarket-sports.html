@@ -80,13 +80,13 @@
     </div>
   </header>
 
-  <p class="lead">Kalshi has a regulated prediction market for politics. Polymarket has one for news and current events. Both have been useful enough at forecasting that academics, journalists, and traders increasingly cite their odds as legitimate signals. Sports — the largest single category of probabilistic bets in the world — has had nothing equivalent. Here's why, and what we built instead.</p>
+  <p class="lead">Kalshi has a regulated prediction market for politics. Polymarket has one for news and current events. Both have been useful enough at forecasting that academics, journalists, and traders increasingly cite their probabilities as legitimate signals. Sports — the largest single category of probabilistic events in the world — has had nothing equivalent. Here's why, and what we built instead.</p>
 
   <h2>What prediction markets actually <em>are</em></h2>
 
   <p>A prediction market is a venue where people trade contracts whose payoff depends on a real-world outcome. Buy a Kalshi contract on "Will the Fed cut rates in December?" for $0.32 and you get $1 if it cuts, $0 if it doesn't — meaning the market currently prices that event at 32%. The price IS the probability.</p>
 
-  <p>The reason these markets are interesting is that they aggregate information faster and more accurately than experts. When traders have skin in the game, motivated reasoning collapses. Prediction-market prices for the 2024 US presidential election shifted toward the eventual outcome days before mainstream polling did. Polymarket called Trump's odds at 60%+ when polling averages still showed a coin flip.</p>
+  <p>The reason these markets are interesting is that they aggregate information faster and more accurately than experts. When traders have skin in the game, motivated reasoning collapses. Prediction-market prices for the 2024 US presidential election shifted toward the eventual outcome days before mainstream polling did. Polymarket priced Trump's probability at 60%+ when polling averages still showed a coin flip.</p>
 
   <h3>Kalshi vs Polymarket — the basic differences</h3>
 
@@ -109,27 +109,27 @@
 
   <p>Three reasons.</p>
 
-  <h3>1. Sportsbooks already do this</h3>
+  <h3>1. Sports markets already do this</h3>
 
-  <p>The reason Kalshi works for politics is that political-event prediction markets didn't exist at scale before. The reason Polymarket works for news is the same. But sports? Sportsbooks are already prediction markets — they just call them "lines" instead of "contracts." When DraftKings shows the Chiefs at -3.5, that's the same thing as a Polymarket contract priced at ~60%.</p>
+  <p>The reason Kalshi works for politics is that political-event prediction markets didn't exist at scale before. The reason Polymarket works for news is the same. But sports? Sports markets are already prediction markets — they just call them "lines" instead of "contracts." When a major operator shows the Chiefs at -3.5, that's the same thing as a Polymarket contract priced at ~60%.</p>
 
-  <p>Sportsbooks have orders of magnitude more liquidity than any prediction market on sports outcomes. The market on Eagles vs Cowboys on a typical Sunday handles more dollar volume than the entire Polymarket platform on a typical day.</p>
+  <p>Sports markets have orders of magnitude more liquidity than any peer prediction market on sports outcomes. The market on Eagles vs Cowboys on a typical Sunday handles more dollar volume than the entire Polymarket platform on a typical day.</p>
 
-  <h3>2. Sportsbook lines are not designed to be informative</h3>
+  <h3>2. Market lines are not designed to be informative</h3>
 
-  <p>Here's the problem: a sportsbook line is not the same thing as a probability estimate. It's a price the book is willing to take both sides of, with vig built in. The market itself is constrained by the book's risk tolerance, customer skew, and inventory. The actual probabilistic estimate is hidden inside the book's risk model.</p>
+  <p>Here's the problem: a market line is not the same thing as a probability estimate. It's a price an operator is willing to take both sides of, with a built-in margin. The market itself is constrained by the operator's risk tolerance, participant skew, and inventory. The actual probabilistic estimate is hidden inside the operator's risk model.</p>
 
-  <p>Public bettors only see the price, not the model. Even sharp bettors only get partial signal — by tracking line movement and identifying sharp money flows. The actual probabilistic forecast — the true 0–100% likelihood of an outcome — is a closely-held internal number at every major sportsbook.</p>
+  <p>The public only sees the price, not the model. Even sharp analysts only get partial signal — by tracking line movement and identifying sharp money flows. The actual probabilistic forecast — the true 0–100% likelihood of an outcome — is a closely-held internal number at every major operator.</p>
 
   <h3>3. The available "sports prediction" services are mostly tipsters</h3>
 
-  <p>The vacuum has been filled by tipsters: people on Telegram, Discord, and Twitter selling picks for $50–$500 a month. The economics are predictable. Tipsters charge per pick or per period. They benefit from confirmation bias (sell wins, hide losses), volume (one pick per day, regardless of edge), and exclusivity (premium tiers, "lock of the day"). Most don't beat the closing line. The ones who do tend to either go to work for a sportsbook or go quiet.</p>
+  <p>The vacuum has been filled by tipsters: people on Telegram, Discord, and Twitter selling picks for $50–$500 a month. The economics are predictable. Tipsters charge per pick or per period. They benefit from confirmation bias (sell wins, hide losses), volume (one pick per day, regardless of edge), and exclusivity (premium tiers, "pick of the day"). Most don't beat the closing line. The ones who do tend to either go to work for an institutional operator or go quiet.</p>
 
   <h2>What an AI-native sports prediction layer looks <em>like</em></h2>
 
   <p>The thing prediction markets prove is that probabilistic forecasts have value when they're <strong>visible, calibrated, and tracked</strong>. You don't need a thousand traders pricing the same event to get a useful forecast — you need any source whose forecasts are calibrated and whose record is auditable.</p>
 
-  <p>Modern machine learning can produce that source. Trained on enough historical games with the right calibration metric, an ML model can output a probability estimate per game that beats the closing line over a long sample. That's what professional sports bettors test their own models against, and what — quietly — most major sportsbooks build internally.</p>
+  <p>Modern machine learning can produce that source. Trained on enough historical games with the right calibration metric, an ML model can output a probability estimate per game that beats the closing line over a long sample. That's what professional sports forecasters test their own models against, and what — quietly — most major institutional operators build internally.</p>
 
   <p>The capability isn't new. What's new is making it accessible.</p>
 
@@ -140,7 +140,7 @@
   <ol>
     <li><strong>Probabilities, not opinions.</strong> Every pick has a confidence score from 0–100% — a calibrated probability you can act on. A 75% pick wins 75% of the time over a long enough sample. <a href="/methodology">More on calibration here.</a></li>
     <li><strong>Auditable record.</strong> Every pick is published. Wins, losses, pushes — everything goes into a public ledger with timestamps. No deletions, no edits. The model's track record is the product.</li>
-    <li><strong>Calibrated against the market.</strong> The model is recalibrated daily on closing-line value (CLV) — the gold standard for measuring sports-betting edge. Picks that beat the close get more weight. Picks that lag the close get less. <a href="/blog/closing-line-value">More on CLV here.</a></li>
+    <li><strong>Calibrated against the market.</strong> The model is recalibrated daily on closing-line value (CLV) — the standard metric for measuring forecast accuracy against efficient markets. Picks that beat the close get more weight. Picks that lag the close get less. <a href="/blog/closing-line-value">More on CLV here.</a></li>
   </ol>
 
   <h3>Side-by-side</h3>
@@ -163,9 +163,9 @@
 
   <h2>The honest caveat</h2>
 
-  <p>An AI source can be wrong. A peer market with thousands of traders is structurally harder to fool than a single model. Pick1's edge is that the model is honest about its track record — every miss is in the ledger — and that the calibration metric (CLV) is the same one professional sports bettors trust.</p>
+  <p>An AI source can be wrong. A peer market with thousands of traders is structurally harder to fool than a single model. Pick1's edge is that the model is honest about its track record — every miss is in the ledger — and that the calibration metric (CLV) is the same one professional sports forecasters trust.</p>
 
-  <p>Kalshi and Polymarket aren't going away — they're great products for the categories they cover. We just don't think the right answer for sports is to graft a peer prediction market on top of a category that already has the world's largest prediction markets (sportsbooks). The right answer is to build a calibrated AI forecaster that's <strong>visible, auditable, and accessible</strong> — the three things sportsbook lines aren't.</p>
+  <p>Kalshi and Polymarket aren't going away — they're great products for the categories they cover. We just don't think the right answer for sports is to graft a peer prediction market on top of a category that already has the world's largest prediction markets (the sports markets themselves). The right answer is to build a calibrated AI forecaster that's <strong>visible, auditable, and accessible</strong> — the three things market lines aren't.</p>
 
   <p>That's the gap Pick1 fills.</p>
 
@@ -184,7 +184,7 @@
     <a class="related-card" href="/blog/closing-line-value">
       <div class="lbl">Read next</div>
       <div class="ttl">CLV explained</div>
-      <div class="desc">A deeper look at closing-line value — the only metric professional sports bettors trust.</div>
+      <div class="desc">A deeper look at closing-line value — the metric professional sports forecasters trust.</div>
     </a>
     <a class="related-card" href="/blog/ai-vs-tipsters">
       <div class="lbl">Read next</div>
@@ -195,7 +195,7 @@
 </main>
 
 <footer class="foot">
-  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div>© 2026 Pick1 · AI sports forecasting & analysis</div>
   <div class="foot-links">
     <a href="/about">About</a>
     <a href="/methodology">Method</a>
