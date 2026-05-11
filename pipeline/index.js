@@ -780,17 +780,17 @@ async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
   try {
+    // ── live_scores refresh ONLY ── this runs every minute. We
+    // deliberately do NOT call backfillMissingScores or gradePicks
+    // here — those use Claude with web_search and at ~$0.05-0.15
+    // per game can burn through $25/day in a couple of hours. They
+    // moved to the hourly gradeAndBackfillTick below.
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       if (cfg.promptMode === 'research') continue;
       if (!cfg.fetcher) continue;
       const raw = await cfg.fetcher();
       if (raw.length) await upsertLiveScores(league, raw);
     }
-    // Some sportsdata.io endpoints flip games to "Final" before scores
-    // are populated. Backfill any Final-status rows still missing scores
-    // via Claude web_search BEFORE we attempt to grade.
-    await backfillMissingScores();
-    await gradePicks();
   } catch (e) {
     err('Live tick crashed:', e.message);
   } finally {
@@ -798,10 +798,31 @@ async function liveTick() {
   }
 }
 
+/// Hourly Claude-using companion to liveTick. Backfills any final-
+/// status rows still missing scores via Claude web_search, then
+/// grades any settled picks. One burst per hour caps spend at
+/// roughly $1-2/hour worst case (when there's a lot to grade) and
+/// $0/hour most of the time.
+let gradeLoopRunning = false;
+async function gradeAndBackfillTick() {
+  if (gradeLoopRunning) return;
+  gradeLoopRunning = true;
+  try {
+    await backfillMissingScores();
+    await gradePicks();
+  } catch (e) {
+    err('Grade tick crashed:', e.message);
+  } finally {
+    gradeLoopRunning = false;
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 // SCHEDULES
 // ════════════════════════════════════════════════════════════════
 
+// Live-score refresh — every minute during the game window. Calls
+// sportsdata.io only; no Claude spend.
 cron.schedule('* * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
@@ -811,38 +832,41 @@ cron.schedule('* * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-// Pick generation — once daily at 5am ET (10am UK / 11am CET).
-//
-// One-tick schedule chosen to minimize Anthropic spend (~$5/day instead
-// of ~$15/day at 3× daily). Earliest kick-off-time slot that still
-// gives meaningful lead on every league:
-//
-//   • EPL early Saturday kickoff (12:30 UK = 7:30am ET) — 2.5h lead
-//   • La Liga / Bundesliga afternoon (15:00–17:00 CET) — 4h lead
-//   • F1 Sunday races (14:00 CET = 8am ET) — 3h lead
-//   • MLB matinees (1pm ET) — 8h lead
-//   • NBA/NHL primetime (7pm ET) — 14h lead
-//   • NFL Sunday (1pm ET) — 8h lead
-//   • UFC main cards (10pm ET) — 17h lead
-//   • Tennis Asia/Europe sessions covered
-//
-// Trade-off: late-breaking news (injuries, scratches) within game-day
-// won't update an already-published pick. If that becomes a problem,
-// re-add the 12pm ET tick and budget for the extra ~$3/day.
+// Grade + backfill — once per HOUR during the game window. Bursts
+// of Claude web_search to settle any Final-status games. Per-hour
+// cap on Anthropic spend (~$0.50-2/hr worst case, $0 most hours).
+cron.schedule('0 * * * *', () => {
+  const hour = parseInt(
+    new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
+    10,
+  );
+  if (hour >= 10 || hour <= 1) gradeAndBackfillTick();
+}, { timezone: TZ });
+
+// Pick generation — once daily at 5am ET. Earliest kick-off-time
+// slot that still gives meaningful lead on every league. See
+// detailed schedule reasoning in CHANGELOG / commit 88c9a0f.
 cron.schedule('0 5 * * *', runPipeline, { timezone: TZ });
 
-// Daily performance snapshot at midnight ET (after final games grade)
+// Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 
-runPipeline();
+// NOTE — we intentionally do NOT run runPipeline() on boot. Every
+// Railway redeploy used to fire a full pipeline run, which costs
+// ~$2 in Anthropic credits per deploy. After a burst of commits
+// that compounded to >$25 in two days. Cron is the only entry
+// point now; manual triggering happens via the deploy schedule
+// (push a commit at 4:59am ET to get a fresh pipeline at 5am).
 
 log('⚡ Pick6 AI pipeline online');
 log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, max effort)`);
 log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
 log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
 log(`   Timezone: ${TZ}`);
-log('   Live scores: every 60s during game hours');
-log('   AI picks:    5am ET (once daily — covers EU morning + US lead time)');
+log('   Live scores:  every 60s during game hours (sportsdata.io, no Claude spend)');
+log('   Grade+backfill: hourly during game hours (Claude web_search burst)');
+log('   AI picks:     5am ET (once daily — covers EU morning + US lead time)');
+log('   Boot pipeline: DISABLED (removed to stop per-deploy Anthropic burn)');
 log('   Snapshot:    midnight ET');
 
 // ─── Boot-time Supabase diagnostic (safe — no secrets logged) ──
