@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px;overflow:hidden;background:#0a0b0d;color:#f6f7f8;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  .canvas{position:relative;width:1080px;height:1080px}
+  /* Pick1 wordmark */
+  .brand{position:absolute;top:44px;left:44px;font-family:'Anton',sans-serif;font-size:40px;letter-spacing:-2px;line-height:1;display:flex;align-items:center;gap:4px;z-index:5}
+  .brand .one{display:inline-block;background:#d4ff3a;color:#0a0b0d;padding:0 9px;border-radius:7px;line-height:.95;font-size:36px}
+  /* Tag */
+  .tag{position:absolute;top:50px;right:44px;font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.24em;text-transform:uppercase;color:#d4ff3a;font-weight:700}
+  /* Top headline */
+  .top-line{position:absolute;top:138px;left:0;right:0;text-align:center;
+    font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.32em;color:#9095a0;text-transform:uppercase;font-weight:500}
+  /* Big headline */
+  .headline{position:absolute;top:172px;left:0;right:0;text-align:center;
+    font-family:'Anton',sans-serif;font-size:96px;letter-spacing:-3px;line-height:.95}
+  .headline .accent{color:#d4ff3a}
+  /* Grid */
+  .grid{position:absolute;top:320px;left:60px;right:60px;height:580px;
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:14px}
+  .cell{background:#111317;border:1px solid #1a1d22;border-radius:18px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    position:relative;overflow:hidden}
+  .cell::before{content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 100%,rgba(212,255,58,.06),transparent 70%);pointer-events:none}
+  .cell .ico{font-size:64px;line-height:1;filter:grayscale(1) brightness(1.5)}
+  .cell .name{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.2em;color:#9095a0;text-transform:uppercase;font-weight:700}
+  /* Bottom strip */
+  .bottom{position:absolute;bottom:64px;left:0;right:0;text-align:center}
+  .bottom .stat{font-family:'Anton',sans-serif;font-size:46px;letter-spacing:-1.5px;color:#f6f7f8;line-height:1}
+  .bottom .stat span{color:#d4ff3a}
+  .bottom .sub{font-family:'Archivo',sans-serif;font-size:18px;color:#9095a0;margin-top:10px;font-weight:500}
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brand">PICK<span class="one">1</span></div>
+  <div class="tag">LAUNCH PREVIEW</div>
+  <div class="top-line">One AI model</div>
+  <h1 class="headline">NINE <span class="accent">SPORTS.</span></h1>
+  <div class="grid">
+    <div class="cell"><div class="ico">🏀</div><div class="name">NBA</div></div>
+    <div class="cell"><div class="ico">🏈</div><div class="name">NFL</div></div>
+    <div class="cell"><div class="ico">⚽</div><div class="name">EPL</div></div>
+    <div class="cell"><div class="ico">⚾</div><div class="name">MLB</div></div>
+    <div class="cell"><div class="ico">🥊</div><div class="name">UFC</div></div>
+    <div class="cell"><div class="ico">🏒</div><div class="name">NHL</div></div>
+    <div class="cell"><div class="ico">🏎️</div><div class="name">F1</div></div>
+    <div class="cell"><div class="ico">🎾</div><div class="name">TENNIS</div></div>
+    <div class="cell"><div class="ico">🏏</div><div class="name">CRICKET</div></div>
+  </div>
+  <div class="bottom">
+    <div class="stat">Trained on <span>1.2M</span> historical games.</div>
+    <div class="sub">Like Kalshi or Polymarket — but for sports forecasting.</div>
+  </div>
+</div>
+</body></html>

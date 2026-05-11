@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px;overflow:hidden;background:#0a0b0d;color:#f6f7f8;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+  .canvas{position:relative;width:1080px;height:1080px}
+  /* Pick1 wordmark */
+  .brand{position:absolute;top:48px;left:48px;font-family:'Anton',sans-serif;font-size:48px;letter-spacing:-2px;line-height:1;display:flex;align-items:center;gap:4px}
+  .brand .one{display:inline-block;background:#d4ff3a;color:#0a0b0d;padding:0 10px;border-radius:8px;line-height:.95;font-size:42px}
+  /* Tag above ring */
+  .tag{position:absolute;top:200px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.2em;text-transform:uppercase;color:#d4ff3a;display:flex;align-items:center;gap:10px;font-weight:700}
+  .tag::before{content:'';width:10px;height:10px;border-radius:50%;background:#d4ff3a;box-shadow:0 0 14px #d4ff3a}
+  /* Ring container */
+  .ring-wrap{position:absolute;top:230px;left:50%;transform:translateX(-50%);width:460px;height:460px}
+  .ring-svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:18}
+  .ring-fg{fill:none;stroke:#d4ff3a;stroke-width:18;stroke-linecap:round;
+    stroke-dasharray:1382.3;stroke-dashoffset:221.2;
+    filter:drop-shadow(0 0 24px rgba(212,255,58,.35))}
+  .ring-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);text-align:center}
+  .ring-num .pct{font-family:'Anton',sans-serif;font-size:180px;line-height:.9;letter-spacing:-8px}
+  .ring-num .pct i{font-style:normal;font-size:108px;color:#d4ff3a;margin-left:2px;letter-spacing:-2px}
+  .ring-num .lbl{font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:.22em;color:#9095a0;text-transform:uppercase;margin-top:6px}
+  /* Pick label below ring */
+  .pick{position:absolute;top:730px;left:50%;transform:translateX(-50%);text-align:center;width:100%}
+  .pick .team{font-family:'Anton',sans-serif;font-size:86px;letter-spacing:-3px;line-height:.95}
+  .pick .vs{font-family:'Archivo',sans-serif;font-style:italic;font-size:22px;color:#9095a0;margin-top:6px}
+  /* Verified pill */
+  .verified{position:absolute;top:48px;right:48px;
+    padding:10px 18px 10px 14px;border-radius:999px;
+    background:rgba(74,222,128,.12);border:1.5px solid rgba(74,222,128,.55);
+    color:#4ade80;font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:.16em;font-weight:700;
+    display:flex;align-items:center;gap:8px}
+  .verified::before{content:'';width:18px;height:18px;background:#4ade80;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 12l5 5 9-9' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 12l5 5 9-9' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat}
+  /* Headline */
+  .headline{position:absolute;top:920px;left:0;right:0;text-align:center;
+    font-family:'Anton',sans-serif;font-size:56px;letter-spacing:-2px;line-height:1.1;padding:0 60px}
+  .headline em{font-style:normal;color:#d4ff3a}
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brand">PICK<span class="one">1</span></div>
+  <div class="verified">VERIFIED</div>
+  <div class="tag">TONIGHT · 7:30 PM ET</div>
+  <div class="ring-wrap">
+    <svg class="ring-svg" viewBox="0 0 500 500">
+      <circle class="ring-bg" cx="250" cy="250" r="220"/>
+      <circle class="ring-fg" cx="250" cy="250" r="220"/>
+    </svg>
+    <div class="ring-num">
+      <div class="pct">84<i>%</i></div>
+      <div class="lbl">AI CONFIDENCE</div>
+    </div>
+  </div>
+  <div class="pick">
+    <div class="team">CELTICS −6.5</div>
+    <div class="vs">vs Lakers</div>
+  </div>
+  <div class="headline">AI THAT <em>SHOWS</em> ITS WORK.</div>
+</div>
+</body></html>
