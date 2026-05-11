@@ -93,7 +93,7 @@
 
   <ul>
     <li><strong>Moneylines</strong> — straight-up winner with implied probability. The most useful market in baseball given how often run lines push.</li>
-    <li><strong>Run lines</strong> — typically -1.5/+1.5 with juice on each side.</li>
+    <li><strong>Run lines</strong> — typically -1.5/+1.5 with a price adjustment on each side.</li>
     <li><strong>Totals</strong> — over/under with ballpark and weather adjustments.</li>
     <li><strong>F5 (first five innings)</strong> — useful for isolating starting-pitcher value before bullpen variance kicks in.</li>
     <li><strong>Live in-game</strong> — inning-by-inning win probability incorporating leverage situations.</li>
@@ -131,7 +131,7 @@
 
   <h2>Common <em>questions</em></h2>
 
-  <h3>Does the AI predict prop bets?</h3>
+  <h3>Does the AI predict player props?</h3>
   <p>Limited. Pitcher strikeout props and total bases for top-tier hitters are supported. Niche batter props are skipped — the per-game sample for any individual batter is too small.</p>
 
   <h3>What about the postseason?</h3>
@@ -141,7 +141,7 @@
   <p>No — these are exotic markets where prior probability is so low that any per-game prediction is dominated by base rate. The model focuses on markets where it can produce a meaningfully more informative probability than the public.</p>
 
   <h3>Can I use it for fantasy baseball?</h3>
-  <p>Pick1 is designed for game-level predictions, not fantasy player projections. There's some signal overlap (player-level features are in the model) but our outputs are bet-level, not lineup-construction-level.</p>
+  <p>Pick1 is designed for game-level predictions, not fantasy player projections. There's some signal overlap (player-level features are in the model) but our outputs are game-outcome forecasts, not lineup-construction-level.</p>
 
   <div class="cta-block">
     <h3>Get Pick1 for MLB at launch.</h3>
@@ -163,13 +163,13 @@
     <a class="related-card" href="/blog/closing-line-value">
       <div class="lbl">Read</div>
       <div class="ttl">CLV explained</div>
-      <div class="desc">The only metric that matters in sports betting — explained without the jargon.</div>
+      <div class="desc">The metric that matters most for sports forecast accuracy — explained without the jargon.</div>
     </a>
   </div>
 </main>
 
 <footer class="foot">
-  <div>© 2026 Pick1 · Must be 21+ · Gambling problem? Call 1-800-GAMBLER</div>
+  <div>© 2026 Pick1 · AI sports forecasting & analysis</div>
   <div class="foot-links">
     <a href="/about">About</a>
     <a href="/methodology">Method</a>
