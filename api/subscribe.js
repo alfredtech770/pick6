@@ -1,10 +1,16 @@
-// Vercel serverless function: proxy waitlist signups into Brevo.
-// Front-end POSTs { email, name, phone } to /api/subscribe, this
-// function calls Brevo with the secret API key (set in Vercel env vars).
+// Vercel serverless function: proxy waitlist signups into Brevo,
+// then fire a server-side Meta Conversions API "Lead" event so the
+// Pixel attributes the conversion even when iOS / Safari kill the
+// browser-side network call.
 //
 // Env vars expected:
-//   BREVO_API_KEY  — secret API key
-//   BREVO_LIST_ID  — numeric list id (default: 3 = Pick1 Waitlist)
+//   BREVO_API_KEY            — secret Brevo API key
+//   BREVO_LIST_ID            — numeric list id (default: 3 = Pick1 Waitlist)
+//   META_PIXEL_ID            — Meta Pixel ID (also pasted into index.html meta tag)
+//   META_CAPI_ACCESS_TOKEN   — Conversions API access token (Events Manager → Settings)
+//   META_TEST_EVENT_CODE     — optional, only set while validating in Events Manager
+
+const crypto = require('crypto');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -24,7 +30,17 @@ module.exports = async (req, res) => {
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
-  const { email, name, phone } = body || {};
+  const {
+    email,
+    name,
+    phone,
+    eventId,
+    fbp,
+    fbc,
+    utm,
+    eventSourceUrl,
+    userAgent,
+  } = body || {};
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return res.status(400).json({ error: 'invalid_email' });
@@ -37,6 +53,14 @@ module.exports = async (req, res) => {
   if (phone && typeof phone === 'string') {
     attributes.SMS = phone;
     attributes.WHATSAPP = phone;
+  }
+  // Persist UTM attribution on the contact so we can segment campaigns later.
+  if (utm && typeof utm === 'object') {
+    if (utm.utm_source)   attributes.UTM_SOURCE   = String(utm.utm_source).slice(0, 80);
+    if (utm.utm_medium)   attributes.UTM_MEDIUM   = String(utm.utm_medium).slice(0, 80);
+    if (utm.utm_campaign) attributes.UTM_CAMPAIGN = String(utm.utm_campaign).slice(0, 120);
+    if (utm.utm_content)  attributes.UTM_CONTENT  = String(utm.utm_content).slice(0, 120);
+    if (utm.utm_term)     attributes.UTM_TERM     = String(utm.utm_term).slice(0, 120);
   }
 
   try {
@@ -57,10 +81,17 @@ module.exports = async (req, res) => {
 
     // Brevo returns 201 (created) or 204 (updated). Both are success.
     if (resp.ok || resp.status === 204) {
-      // Fire-and-forget welcome email. Don't block the response on it —
-      // if SMTP is slow or fails, the contact is still saved.
+      const clientIp = getClientIp(req);
+      // Fire-and-forget welcome email + CAPI Lead event in parallel. We don't
+      // block the user-facing response on either — the contact is already saved.
       sendWelcomeEmail({ email, name }).catch(err => {
         console.error('welcome_email_failed', err);
+      });
+      sendMetaLeadEvent({
+        email, name, phone, eventId, fbp, fbc,
+        eventSourceUrl, userAgent, clientIp,
+      }).catch(err => {
+        console.error('meta_capi_failed', err);
       });
       return res.status(200).json({ ok: true });
     }
@@ -74,6 +105,87 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'fetch_failed' });
   }
 };
+
+// ── Meta Conversions API ──────────────────────────────────────────────────
+// Server-side Lead event paired with the browser Pixel via shared eventId.
+// Meta merges the two into a single conversion (no double counting). Hashed
+// PII follows Meta's required SHA-256 + lowercase + trim normalization.
+
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.headers['x-real-ip'] || req.socket?.remoteAddress || '';
+}
+
+function sha256Hex(input) {
+  return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function hashEmail(email) {
+  return sha256Hex(String(email).trim().toLowerCase());
+}
+
+function hashPhone(phone) {
+  // Meta wants digits only, no '+', for hashed phone (E.164 minus the plus).
+  const digits = String(phone).replace(/\D+/g, '');
+  if (!digits) return '';
+  return sha256Hex(digits);
+}
+
+function hashName(name) {
+  if (!name) return '';
+  return sha256Hex(String(name).trim().toLowerCase());
+}
+
+async function sendMetaLeadEvent({
+  email, name, phone, eventId, fbp, fbc,
+  eventSourceUrl, userAgent, clientIp,
+}) {
+  const pixelId = process.env.META_PIXEL_ID;
+  const token = process.env.META_CAPI_ACCESS_TOKEN;
+  if (!pixelId || !token) return; // CAPI not configured — silently skip.
+
+  const firstName = (name || '').trim().split(/\s+/)[0] || '';
+
+  const userData = {
+    em: [hashEmail(email)],
+  };
+  if (phone) userData.ph = [hashPhone(phone)];
+  if (firstName) userData.fn = [hashName(firstName)];
+  if (fbp) userData.fbp = fbp;
+  if (fbc) userData.fbc = fbc;
+  if (clientIp) userData.client_ip_address = clientIp;
+  if (userAgent) userData.client_user_agent = userAgent;
+
+  const payload = {
+    data: [{
+      event_name: 'Lead',
+      event_time: Math.floor(Date.now() / 1000),
+      event_id: eventId || `lead_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      action_source: 'website',
+      event_source_url: eventSourceUrl || 'https://pick1.live/',
+      user_data: userData,
+      custom_data: {
+        content_name: 'Pick1 Waitlist',
+        content_category: 'waitlist_signup',
+      },
+    }],
+  };
+  if (process.env.META_TEST_EVENT_CODE) {
+    payload.test_event_code = process.env.META_TEST_EVENT_CODE;
+  }
+
+  const url = `https://graph.facebook.com/v19.0/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(token)}`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`meta_capi_${resp.status}: ${detail}`);
+  }
+}
 
 async function sendWelcomeEmail({ email, name }) {
   const apiKey = process.env.BREVO_API_KEY;
