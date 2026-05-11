@@ -194,8 +194,8 @@ async function sendWelcomeEmail({ email, name }) {
   const firstName = (name || '').trim().split(/\s+/)[0] || 'there';
   const safeName = escapeHtml(firstName).toUpperCase();
 
-  const subject = "You're in. Your free week is locked.";
-  const previewText = "Your code arrives via WhatsApp the moment Pick1 launches.";
+  const subject = "You're in. Tomorrow's AI pick lands at 9am ET.";
+  const previewText = "Free, daily, publicly logged. Plus 1 week free when we launch end of May.";
   const html = welcomeEmailHtml({ name: safeName, previewText });
   const textBody = welcomeEmailText({ name: firstName });
 
@@ -232,13 +232,13 @@ function welcomeEmailText({ name }) {
   return [
     `You're in, ${name}.`,
     '',
-    'Pick1 launches soon. When we go live, your first week is free —',
-    "and we'll send your redemption code straight to your WhatsApp.",
+    "Your first AI pick lands tomorrow at 9am ET — Pick1's highest-confidence",
+    'call across 9 sports, delivered to your inbox. Free, daily, publicly logged.',
     '',
     'What happens next:',
-    '01. We finish the AI — final calibration across all 9 sports.',
-    '02. Beta opens to first 100 — we WhatsApp you a head-start link.',
-    '03. Public launch — your free-week code lands the same day.',
+    "01. Tomorrow 9am ET: your first pick lands.",
+    "02. Every morning: a new pick + yesterday's result (wins AND misses).",
+    "03. End of May: app launches with unlimited picks + your 1 week free.",
     '',
     "While you're waiting:",
     '· Methodology: https://pick1.live/methodology',
@@ -254,7 +254,7 @@ function welcomeEmailHtml({ name, previewText }) {
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>You're in. Your free week is locked.</title>
+<title>You're in. Tomorrow's AI pick lands at 9am ET.</title>
 </head>
 <body style="margin:0;padding:0;background:#0a0b0d;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#f6f7f8;-webkit-font-smoothing:antialiased;">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${escapeHtml(previewText)}</div>
@@ -267,17 +267,17 @@ function welcomeEmailHtml({ name, previewText }) {
       <tr><td style="background:#111317;border:1px solid #1a1d22;border-radius:18px;padding:36px 32px;">
         <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;letter-spacing:0.18em;color:#d4ff3a;text-transform:uppercase;margin-bottom:14px;">● You're on the list</div>
         <h1 style="margin:0 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:38px;line-height:1.05;letter-spacing:-0.025em;color:#fff;">YOU'RE <span style="color:#d4ff3a;">IN</span>,<br/>${name}.</h1>
-        <p style="margin:0 0 22px 0;font-size:15px;line-height:1.55;color:#b8bcc1;">Pick1 launches soon. When we go live, your <strong style="color:#fff;">first week is free</strong> — and we'll send your redemption code straight to your WhatsApp.</p>
+        <p style="margin:0 0 22px 0;font-size:15px;line-height:1.55;color:#b8bcc1;">Your first AI pick lands <strong style="color:#fff;">tomorrow at 9am ET</strong> — Pick1's highest-confidence call across 9 sports, delivered to your inbox. Free, daily, publicly logged. Plus 1 week of full access free when we launch end of May.</p>
         <div style="background:#d4ff3a;color:#0a0b0d;border-radius:14px;padding:18px 20px;margin:18px 0 26px 0;">
-          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;opacity:0.7;">🎁 Your reward</div>
-          <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:24px;letter-spacing:-0.02em;margin-top:4px;">7 DAYS FREE</div>
-          <div style="font-size:12px;opacity:0.85;margin-top:2px;">Redeemable at launch via WhatsApp code</div>
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;opacity:0.7;">📨 Starting tomorrow</div>
+          <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:24px;letter-spacing:-0.02em;margin-top:4px;">DAILY AI PICK · 9AM ET</div>
+          <div style="font-size:12px;opacity:0.85;margin-top:2px;">Free · No card · Unsubscribe anytime</div>
         </div>
         <h2 style="margin:28px 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:18px;letter-spacing:-0.01em;color:#fff;">WHAT HAPPENS NEXT.</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">01</span><strong style="color:#fff;font-size:14px;">We're finishing the AI</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">Final calibration across all 9 sports — NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket.</div></td></tr>
-          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">02</span><strong style="color:#fff;font-size:14px;">Beta opens to first 100</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">A week before public launch — we'll WhatsApp you a head-start link.</div></td></tr>
-          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">03</span><strong style="color:#fff;font-size:14px;">Public launch</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">Your free-week code lands the same day. Use it across every sport.</div></td></tr>
+          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">01</span><strong style="color:#fff;font-size:14px;">Tomorrow 9am ET: your first pick lands</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">The model's highest-confidence call across 9 sports — NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket.</div></td></tr>
+          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">02</span><strong style="color:#fff;font-size:14px;">Every morning: new pick + yesterday's result</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">Wins AND misses, publicly logged. Track the model in real time.</div></td></tr>
+          <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">03</span><strong style="color:#fff;font-size:14px;">End of May: app launches + 1 week free</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">Unlimited picks across all 9 sports, live tracking, full ledger.</div></td></tr>
         </table>
         <div style="height:1px;background:#1a1d22;margin:28px 0 22px 0;"></div>
         <p style="margin:0;font-size:13px;color:#9095a0;line-height:1.55;">While you're waiting, see what we're building:</p>
