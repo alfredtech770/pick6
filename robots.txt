@@ -44,6 +44,15 @@ Allow: /
 User-agent: meta-externalagent
 Allow: /
 
+# Meta's content scraper for OG previews, Pixel verification, and domain
+# verification crawl. Must be explicitly allowed for Business Manager
+# domain verification to succeed.
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
 User-agent: Bytespider
 Allow: /
 
