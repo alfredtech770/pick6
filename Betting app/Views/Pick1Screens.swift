@@ -4554,6 +4554,10 @@ struct BookmakerSheet: View {
     let pick: Pick
     @Binding var isOpen: Bool
 
+    /// Hypothetical wager used to compute "Win on $25 →" payouts.
+    /// Display-only; we never actually process money.
+    private let wager: Int = 25
+
     var body: some View {
         ZStack {
             Color(hex: "#07080a").ignoresSafeArea()
@@ -4585,7 +4589,16 @@ struct BookmakerSheet: View {
                         GridItem(.flexible(), spacing: 10),
                     ], spacing: 10) {
                         ForEach(Bookmaker.all) { book in
-                            BookmakerTile(book: book)
+                            BookmakerTile(
+                                book: book,
+                                odds: BookmakerOdds.americanOdds(
+                                    for: pick, book: book
+                                ),
+                                payout: BookmakerOdds.payoutString(
+                                    for: pick, book: book, wager: wager
+                                ),
+                                wager: wager
+                            )
                         }
                     }
                     .padding(.horizontal, 18)
@@ -4740,32 +4753,74 @@ struct Bookmaker: Identifiable {
 
 struct BookmakerTile: View {
     let book: Bookmaker
+    let odds: String          // e.g. "-185" or "+135"
+    let payout: String        // e.g. "$13.51"
+    let wager: Int            // for the "Win on $N" label
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         Button {
             openURL(book.url)
         } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                // Branded color dot — until logos are licensed
-                ZStack {
-                    Circle().fill(book.tint)
-                        .frame(width: 38, height: 38)
-                    Text(String(book.name.prefix(1)))
-                        .font(.anton(20))
-                        .foregroundColor(.white)
+            VStack(alignment: .leading, spacing: 0) {
+                // ── Header: avatar + book name + arrow icon ───────
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle().fill(book.tint)
+                            .frame(width: 36, height: 36)
+                        Text(String(book.name.prefix(1)))
+                            .font(.anton(18))
+                            .foregroundColor(.white)
+                    }
+                    Text(book.name)
+                        .font(.archivo(14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: 4)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(Color(hex: "#6E6F75"))
                 }
-                Text(book.name)
-                    .font(.archivo(14, weight: .heavy))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                HStack(spacing: 4) {
-                    Text("OPEN")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(1.8)
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.system(size: 10, weight: .bold))
+                .padding(.bottom, 12)
+
+                // ── Odds + payout rows — label LEFT, value RIGHT ──
+                // Mono digits so columns of "-185 / -210 / +135"
+                // sit on a clean vertical line across tiles.
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("ODDS")
+                            .font(.archivoNarrow(9, weight: .bold))
+                            .tracking(1.6)
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                        Spacer(minLength: 4)
+                        Text(odds)
+                            .font(.mono(13, weight: .heavy))
+                            .monospacedDigit()
+                            .foregroundColor(Color(hex: "#F5F3EE"))
+                            .lineLimit(1)
+                    }
+                    HStack {
+                        Text("WIN ON $\(wager)")
+                            .font(.archivoNarrow(9, weight: .bold))
+                            .tracking(1.6)
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                        Spacer(minLength: 4)
+                        Text(payout)
+                            .font(.mono(13, weight: .heavy))
+                            .monospacedDigit()
+                            .foregroundColor(Color(hex: "#D4FF3A"))
+                            .lineLimit(1)
+                    }
                 }
-                .foregroundColor(Color(hex: "#D4FF3A"))
+
+                // ── Footer: "OPEN" pill, dim ────────────────────
+                Text("OPEN")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .padding(.top, 12)
+                    .padding(.horizontal, 0)
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -4782,6 +4837,85 @@ struct BookmakerTile: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - BookmakerOdds (deterministic per-book offering)
+// ════════════════════════════════════════════════════════════════
+
+/// Generates realistic American odds + payout strings for displaying
+/// per-bookmaker pricing in the BookmakerSheet. Inputs are the AI's
+/// probability + a per-book offset so each sportsbook shows a
+/// slightly different line — matching how real markets price the
+/// same game with tiny variations.
+///
+/// All output is DETERMINISTIC for the same (pick, book) pair so
+/// the user sees the same number whenever they open the sheet for
+/// the same pick. Crucially, **every bookmaker offers the same
+/// estimated win for the same wager + that book's odds** — there's
+/// no per-second randomness or jitter, which was the user's
+/// complaint.
+enum BookmakerOdds {
+
+    /// Fair decimal odds = 1 / probability. Apply a vig (house edge)
+    /// so the user-facing payout is always slightly worse than fair
+    /// — that's how real sportsbooks make money. Vig is fixed at
+    /// 5.5%, matching the standard market average.
+    private static let vig: Double = 0.055
+
+    /// Per-book additional offset to the implied probability. Real
+    /// books shade lines by 1-3% from each other; DraftKings/FanDuel
+    /// run tighter, regional books spread wider. These are fixed by
+    /// book ID so the same book always shows the same line.
+    private static let bookOffsets: [String: Double] = [
+        "draftkings":  0.000,   // tightest
+        "fanduel":    -0.005,   // slightly better for the bettor
+        "betmgm":      0.010,   // slightly worse
+        "caesars":     0.015,
+        "espnbet":     0.020,
+        "betrivers":   0.005,
+        "hardrock":    0.025,
+        "bet365":     -0.008,   // sharpest in international markets
+    ]
+
+    /// Implied (probability) the book offers, after vig + book offset.
+    private static func bookImplied(for pick: Pick, book: Bookmaker) -> Double {
+        let p = max(0.01, min(0.99, pick.probability / 100))
+        let offset = bookOffsets[book.id] ?? 0
+        // Worsen the line for the bettor by `vig + offset` — i.e.
+        // the book PRICES the probability HIGHER than the AI says.
+        return min(0.99, p + vig + offset)
+    }
+
+    /// American odds for the AI's predicted side at this book.
+    /// Favorite (>50% implied) → negative odds (-150 = bet 150 to win 100).
+    /// Underdog (<50% implied) → positive odds (+135 = bet 100 to win 135).
+    static func americanOdds(for pick: Pick, book: Bookmaker) -> String {
+        let impl = bookImplied(for: pick, book: book)
+        if impl >= 0.5 {
+            // Negative odds: 100 * (impl / (1 - impl))
+            let n = -100 * (impl / (1 - impl))
+            return "−\(Int(round(abs(n))))"
+        } else {
+            let n = 100 * ((1 - impl) / impl)
+            return "+\(Int(round(n)))"
+        }
+    }
+
+    /// Decimal payout for a given wager at this book's odds — the
+    /// PROFIT the user would make (not the total payout). Same
+    /// formula every book uses; output rounds to whole dollars when
+    /// possible for clean tile alignment.
+    static func payoutString(for pick: Pick, book: Bookmaker, wager: Int) -> String {
+        let impl = bookImplied(for: pick, book: book)
+        // decimal odds = 1 / impl
+        let decimal = 1.0 / impl
+        let profit = Double(wager) * (decimal - 1.0)
+        if profit < 10 {
+            return String(format: "$%.2f", profit)
+        }
+        return "$\(Int(round(profit)))"
     }
 }
 
