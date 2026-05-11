@@ -13,9 +13,9 @@
     { "source": "/Pick6_deck", "destination": "/Pick1_deck.html", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/deck-jl", "destination": "/Pick1_deck.html" },
-    { "source": "/deck-jeanluc", "destination": "/Pick1_deck.html" },
-    { "source": "/deck-dov", "destination": "/Pick1_deck_dov.html" }
+    { "source": "/deck-jl", "destination": "/Pick1_deck" },
+    { "source": "/deck-jeanluc", "destination": "/Pick1_deck" },
+    { "source": "/deck-dov", "destination": "/Pick1_deck_dov" }
   ],
   "headers": [
     {
