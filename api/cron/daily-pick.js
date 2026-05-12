@@ -180,7 +180,8 @@ module.exports = async (req, res) => {
         recipients: { listIds: [LIST_ID] },
         // Send immediately by setting scheduledAt to now + 1 minute.
         scheduledAt: new Date(Date.now() + 60 * 1000).toISOString(),
-        tag: 'daily-pick',
+        // NOTE: removed `tag` — Brevo's free/lower-tier accounts reject
+        // it ("You are not allowed to avail tag option for your campaign").
       };
       const r = await fetch('https://api.brevo.com/v3/emailCampaigns', {
         method: 'POST',
