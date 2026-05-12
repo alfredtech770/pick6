@@ -1975,7 +1975,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     </div>
     <div class="compare-row">
       <div class="compare-cell k">Cost</div>
-      <div class="compare-cell us"><b style="color:var(--accent)">$39.99/mo</b></div>
+      <div class="compare-cell us"><b style="color:var(--accent)"><span data-region-price="monthlyFull">$39.99</span>/mo</b></div>
       <div class="compare-cell">$50–$500/mo</div>
       <div class="compare-cell">Free (your time)</div>
     </div>
@@ -2035,7 +2035,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   <div class="eyebrow-block">
     <div class="kicker" data-reveal>PRICING</div>
     <h2 class="display" data-reveal data-reveal-delay="2">7 DAYS <em>FREE.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Then $39.99/mo. Unlimited picks, live tracking, all 9 sports. Cancel anytime — no questions asked.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Then <span data-region-price="monthlyFull">$39.99</span>/mo. Unlimited picks, live tracking, all 9 sports. Cancel anytime — no questions asked.</p>
   </div>
   <div class="pricing" data-reveal data-reveal-delay="2">
     <div class="plan-toggle">
@@ -2045,7 +2045,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <div class="plan">
       <h3>Pro · All-Access</h3>
       <div class="sub">Everything Pick1 has to offer</div>
-      <div class="price"><span class="cur">$</span><span data-price>39.99</span><span class="per" data-per>/mo</span></div>
+      <div class="price"><span class="cur" data-currency>$</span><span data-price>39.99</span><span class="per" data-per>/mo</span></div>
       <div class="billed" data-billed>Billed monthly · Cancel anytime</div>
       <ul>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Unlimited AI picks across <b>all 9 sports</b></span></li>
@@ -2074,7 +2074,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">How is this different from a tipster on Telegram? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">Three things: (1) every prediction is published — correct <em>and</em> incorrect, no cherry-picking; (2) it's an AI model trained on 1.2M historical games, not someone's gut; (3) you get unlimited predictions across 9 sports for $39.99/mo, not $200+ for one sport.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Three things: (1) every prediction is published — correct <em>and</em> incorrect, no cherry-picking; (2) it's an AI model trained on 1.2M historical games, not someone's gut; (3) you get unlimited predictions across 9 sports for <span data-region-price="monthlyFull">$39.99</span>/mo, not $200+ for one sport.</div></div>
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">Do I need to act on every prediction? <span class="plus"></span></button>
@@ -2287,24 +2287,63 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   updateClock();
   setInterval(updateClock, 1000);
 
-  // ─── Pricing toggle ───────────────────────────────────────
-  const PLANS = {
-    weekly:  { price: '14.99', per: '/wk', billed: 'Billed weekly · Cancel anytime' },
-    monthly: { price: '39.99', per: '/mo', billed: 'Billed monthly · Best value'    },
+  // ─── Region-aware pricing ─────────────────────────────────
+  // /api/region inspects the Vercel edge geo header and returns
+  // { symbol, weekly, monthly, weeklyFull, monthlyFull, region }.
+  // Default = US ($) so the page is functional before the fetch lands.
+  let REGION = {
+    symbol: '$', currency: 'USD',
+    weekly: '14.99',  monthly: '39.99',
+    weeklyFull: '$14.99', monthlyFull: '$39.99',
+    region: 'US',
   };
+
+  const planFor = (which) => which === 'weekly'
+    ? { price: REGION.weekly,  per: '/wk', billed: 'Billed weekly · Cancel anytime' }
+    : { price: REGION.monthly, per: '/mo', billed: 'Billed monthly · Best value'    };
+
+  const renderPricing = () => {
+    // Currency symbol next to the pricing card number.
+    document.querySelectorAll('[data-currency]').forEach(el => el.textContent = REGION.symbol);
+    // Inline price strings throughout the page ("$39.99/mo" in lead, FAQ, compare).
+    document.querySelectorAll('[data-region-price]').forEach(el => {
+      const key = el.dataset.regionPrice;            // 'weeklyFull' | 'monthlyFull' | 'weekly' | 'monthly'
+      if (REGION[key] != null) el.textContent = REGION[key];
+    });
+    // The pricing card itself (matches the currently-active plan toggle).
+    const activeSeg = document.querySelector('.plan-toggle .seg.active');
+    const plan = planFor(activeSeg ? activeSeg.dataset.plan : 'monthly');
+    const priceEl = document.querySelector('[data-price]');
+    const perEl   = document.querySelector('[data-per]');
+    const billedEl = document.querySelector('[data-billed]');
+    if (priceEl) priceEl.textContent = plan.price;
+    if (perEl) perEl.textContent = plan.per;
+    if (billedEl) billedEl.textContent = plan.billed;
+  };
+
+  // Pricing toggle handler — re-renders with the active plan + current region.
   document.querySelectorAll('.plan-toggle .seg').forEach(seg => {
     seg.addEventListener('click', () => {
       document.querySelectorAll('.plan-toggle .seg').forEach(s => s.classList.remove('active'));
       seg.classList.add('active');
-      const p = PLANS[seg.dataset.plan];
-      const priceEl = document.querySelector('[data-price]');
-      const perEl = document.querySelector('[data-per]');
-      const billedEl = document.querySelector('[data-billed]');
-      if (priceEl) priceEl.textContent = p.price;
-      if (perEl) perEl.textContent = p.per;
-      if (billedEl) billedEl.textContent = p.billed;
+      renderPricing();
     });
   });
+
+  // Fetch region + swap. Supports ?region=eu | ?region=us URL override.
+  (async () => {
+    try {
+      const override = new URLSearchParams(location.search).get('region');
+      const url = '/api/region' + (override ? `?region=${encodeURIComponent(override)}` : '');
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      REGION = { ...REGION, ...data };
+      renderPricing();
+    } catch {
+      // Network failed — keep US default, page still works.
+    }
+  })();
 
   // ─── FAQ accordion ────────────────────────────────────────
   document.querySelectorAll('.faq-item').forEach(item => {
