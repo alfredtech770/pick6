@@ -40,65 +40,96 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'brevo_not_configured' });
   }
 
+  // ── Test / preview modes (manual invocation only) ─────────────────
+  // ?test=1            — use a synthetic pick (skips Supabase entirely;
+  //                      proves the Brevo send works end-to-end)
+  // ?latest=1          — fetch the most recent pending pick regardless
+  //                      of date (useful before pipeline writes today's)
+  // ?to=email@x.com    — send a single test email to a specific address
+  //                      via SMTP instead of the full list (best to
+  //                      validate before blasting the waitlist)
+  const isTest   = req.query?.test === '1' || req.query?.test === 'true';
+  const isLatest = req.query?.latest === '1' || req.query?.latest === 'true';
+  const testTo   = req.query?.to || null;
+
   try {
-    // ── Fetch today's highest-confidence pick from Supabase ────────
-    // The Railway pipeline writes picks with game_date = todayISO() at
-    // ~05:00 ET. By 09:00 ET when this cron runs, today's row should
-    // already be present. We fetch the single highest-probability pick
-    // that hasn't been graded yet.
     const today = new Date().toISOString().slice(0, 10);
-
-    const pickUrl = `${SUPABASE_URL}/rest/v1/picks`
-      + `?game_date=eq.${today}`
-      + `&result=eq.pending`
-      + `&select=sport,league,home_team,away_team,pick,probability,confidence,reasoning,key_factor,game_date`
-      + `&order=probability.desc`
-      + `&limit=1`;
-
-    const pickResp = await fetch(pickUrl, {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        Accept: 'application/json',
-      },
-    });
-
-    if (!pickResp.ok) {
-      const detail = await pickResp.text();
-      console.error('supabase_fetch_error', pickResp.status, detail);
-      return res.status(502).json({ error: 'supabase_fetch_failed', detail });
-    }
-
-    const picks = await pickResp.json();
-    if (!Array.isArray(picks) || picks.length === 0) {
-      console.log('daily-pick: no pending picks for', today, '— skipping send');
-      return res.status(200).json({ ok: true, skipped: 'no_picks_today', date: today });
-    }
-
-    const pick = picks[0];
-
-    // ── Optional: yesterday's result for the receipts angle ──────
-    // Surface the previous day's pick + outcome alongside today's
-    // call. Builds trust and the "we publish wins AND misses" brand.
-    const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+    let pick;
     let yesterdayPick = null;
-    try {
-      const yUrl = `${SUPABASE_URL}/rest/v1/picks`
-        + `?game_date=eq.${yesterday}`
-        + `&result=in.(win,loss,push)`
-        + `&select=league,home_team,away_team,pick,probability,result`
-        + `&order=probability.desc`
+
+    if (isTest) {
+      // ── Synthetic pick — validates Brevo send without Supabase ─────
+      pick = {
+        sport: 'basketball',
+        league: 'NBA',
+        home_team: 'Celtics',
+        away_team: 'Lakers',
+        pick: 'Celtics −6.5',
+        probability: 84,
+        confidence: '***',
+        reasoning: 'TEST SEND — synthetic pick to validate email infrastructure. The model has Boston winning by 7+ tonight based on rest, home advantage, and recent defensive efficiency. Replace with real Railway pipeline output in production.',
+        key_factor: 'Test send — Boston rest advantage',
+        game_date: today,
+      };
+    } else {
+      // ── Fetch from Supabase ──────────────────────────────────────
+      // Default: today's highest-confidence pending pick.
+      // ?latest=1: most recent pending pick across all dates.
+      const dateFilter = isLatest ? '' : `&game_date=eq.${today}`;
+      const orderClause = isLatest
+        ? '&order=game_date.desc,probability.desc'
+        : '&order=probability.desc';
+
+      const pickUrl = `${SUPABASE_URL}/rest/v1/picks`
+        + `?result=eq.pending`
+        + dateFilter
+        + `&select=sport,league,home_team,away_team,pick,probability,confidence,reasoning,key_factor,game_date`
+        + orderClause
         + `&limit=1`;
-      const yResp = await fetch(yUrl, {
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Accept: 'application/json' },
+
+      const pickResp = await fetch(pickUrl, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Accept: 'application/json',
+        },
       });
-      if (yResp.ok) {
-        const yPicks = await yResp.json();
-        if (yPicks.length) yesterdayPick = yPicks[0];
+
+      if (!pickResp.ok) {
+        const detail = await pickResp.text();
+        console.error('supabase_fetch_error', pickResp.status, detail);
+        return res.status(502).json({ error: 'supabase_fetch_failed', detail });
       }
-    } catch (e) {
-      // Non-fatal — just skip the yesterday section in the email.
-      console.warn('yesterday_fetch_warn', e?.message);
+
+      const picks = await pickResp.json();
+      if (!Array.isArray(picks) || picks.length === 0) {
+        console.log('daily-pick: no pending picks for', today, '— skipping send');
+        return res.status(200).json({ ok: true, skipped: 'no_picks_today', date: today, mode: isLatest ? 'latest' : 'today' });
+      }
+      pick = picks[0];
+
+      // ── Optional: yesterday's result for the receipts angle ──────
+      // Surface the previous day's pick + outcome alongside today's
+      // call. Builds trust and the "we publish wins AND misses" brand.
+      const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+      try {
+        const yUrl = `${SUPABASE_URL}/rest/v1/picks`
+          + `?game_date=eq.${yesterday}`
+          + `&result=in.(win,loss,push)`
+          + `&select=league,home_team,away_team,pick,probability,result`
+          + `&order=probability.desc`
+          + `&limit=1`;
+        const yResp = await fetch(yUrl, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Accept: 'application/json' },
+        });
+        if (yResp.ok) {
+          const yPicks = await yResp.json();
+          if (yPicks.length) yesterdayPick = yPicks[0];
+        }
+      } catch (e) {
+        // Non-fatal — just skip the yesterday section in the email.
+        console.warn('yesterday_fetch_warn', e?.message);
+      }
     }
 
     // ── Build email content ───────────────────────────────────────
@@ -107,45 +138,74 @@ module.exports = async (req, res) => {
     const html = dailyEmailHtml({ pick, yesterdayPick, previewText });
     const text = dailyEmailText({ pick, yesterdayPick });
 
-    // ── Send to the waitlist via Brevo email campaigns API ────────
-    // Create + send-now in one shot. Brevo will send to every contact
-    // on LIST_ID (the Pick1 Waitlist). Lifetime usage limits apply at
-    // the account level but well above our pre-launch volume.
-    const campaign = {
-      name: `Daily AI Pick — ${today} — ${pick.league} ${pick.pick}`,
-      subject,
-      sender: { name: 'Pick1', email: 'admin@pick1.live' },
-      type: 'classic',
-      htmlContent: html,
-      textContent: text,
-      recipients: { listIds: [LIST_ID] },
-      // Send immediately by setting scheduledAt to now + 1 minute. The
-      // Brevo "sendNow" endpoint also works but requires a 2-step call.
-      scheduledAt: new Date(Date.now() + 60 * 1000).toISOString(),
-      tag: 'daily-pick',
-    };
-
-    const sendResp = await fetch('https://api.brevo.com/v3/emailCampaigns', {
-      method: 'POST',
-      headers: {
-        'api-key': BREVO_KEY,
-        accept: 'application/json',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(campaign),
-    });
-
-    if (!sendResp.ok) {
-      const detail = await sendResp.text();
-      console.error('brevo_campaign_error', sendResp.status, detail);
-      return res.status(502).json({ error: 'brevo_send_failed', detail });
+    // ── Send via Brevo ────────────────────────────────────────────
+    // Two modes:
+    // (1) ?to=email@x.com — transactional SMTP send to one address;
+    //     ideal for validating the email rendering before blasting
+    //     the whole list.
+    // (2) default — emailCampaigns API to LIST_ID (Pick1 Waitlist).
+    let result, mode;
+    if (testTo) {
+      const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': BREVO_KEY,
+          accept: 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: 'Pick1', email: 'admin@pick1.live' },
+          to: [{ email: testTo }],
+          subject,
+          htmlContent: html,
+          textContent: text,
+          tags: ['daily-pick-test'],
+        }),
+      });
+      if (!r.ok) {
+        const detail = await r.text();
+        console.error('brevo_smtp_error', r.status, detail);
+        return res.status(502).json({ error: 'brevo_send_failed', detail });
+      }
+      result = await r.json();
+      mode = 'smtp_single';
+    } else {
+      const campaign = {
+        name: `Daily AI Pick — ${today} — ${pick.league} ${pick.pick}`,
+        subject,
+        sender: { name: 'Pick1', email: 'admin@pick1.live' },
+        type: 'classic',
+        htmlContent: html,
+        textContent: text,
+        recipients: { listIds: [LIST_ID] },
+        // Send immediately by setting scheduledAt to now + 1 minute.
+        scheduledAt: new Date(Date.now() + 60 * 1000).toISOString(),
+        tag: 'daily-pick',
+      };
+      const r = await fetch('https://api.brevo.com/v3/emailCampaigns', {
+        method: 'POST',
+        headers: {
+          'api-key': BREVO_KEY,
+          accept: 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(campaign),
+      });
+      if (!r.ok) {
+        const detail = await r.text();
+        console.error('brevo_campaign_error', r.status, detail);
+        return res.status(502).json({ error: 'brevo_send_failed', detail });
+      }
+      result = await r.json();
+      mode = 'campaign_list';
     }
 
-    const result = await sendResp.json();
-    console.log('daily-pick sent:', { campaignId: result.id, pick: pick.pick, prob: pick.probability });
+    console.log('daily-pick sent:', { mode, result, pick: pick.pick, prob: pick.probability });
     return res.status(200).json({
       ok: true,
-      sent: { campaignId: result.id, league: pick.league, pick: pick.pick, probability: pick.probability },
+      mode,
+      isTest,
+      sent: { ...result, league: pick.league, pick: pick.pick, probability: pick.probability },
     });
   } catch (err) {
     console.error('daily-pick_fatal', err);
