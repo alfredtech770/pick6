@@ -2415,6 +2415,27 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     return utm;
   };
 
+  // Capture the referral code from `?r=<code>` on first page-load and stash
+  // it in sessionStorage so it survives anchor-scroll navigation and persists
+  // through the eventual signup submit — same pattern as collectUtm.
+  // Format is enforced loosely (alphanum + hyphen, ≤40 chars) so a malicious
+  // link can't inject HTML or a SQL fragment via the URL.
+  const collectReferralCode = () => {
+    try {
+      const stored = sessionStorage.getItem('pick1_ref');
+      if (stored) return stored;
+    } catch {}
+    const raw = new URLSearchParams(location.search).get('r');
+    if (!raw) return '';
+    const cleaned = String(raw).trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
+    if (!cleaned) return '';
+    try { sessionStorage.setItem('pick1_ref', cleaned); } catch {}
+    return cleaned;
+  };
+  // Run on load so the value is captured even if the user scrolls and lands
+  // on a clean URL via anchor before submitting.
+  collectReferralCode();
+
   // Generate an event ID we can share between the browser Pixel and the server-side
   // Conversions API call so Meta dedupes them into a single conversion.
   const newEventId = () => {
@@ -2426,6 +2447,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     const utm = collectUtm();
     const fbp = readCookie('_fbp');
     const fbc = readCookie('_fbc');
+    const ref = collectReferralCode();
     try {
       const resp = await fetch('/api/subscribe', {
         method: 'POST',
@@ -2439,11 +2461,26 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
           fbp,
           fbc,
           utm,
+          ref,
           eventSourceUrl: location.href,
           userAgent: navigator.userAgent,
         }),
       });
-      if (resp.ok) return { ok: true };
+      if (resp.ok) {
+        // Server returns the assigned position + referral code so we can pass
+        // them straight to the thanks page (no extra round-trip).
+        try {
+          const j = await resp.json();
+          return {
+            ok: true,
+            position: j?.position ?? null,
+            referralCode: j?.referralCode ?? null,
+            isNew: j?.isNew ?? null,
+          };
+        } catch {
+          return { ok: true };
+        }
+      }
       let detail = '';
       try {
         const j = await resp.json();
@@ -2542,8 +2579,13 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         }
         // Redirect to thank-you page so we get a clean URL signal for retargeting and
         // can build a "completed waitlist" custom audience off the /launch/thanks path.
-        // Using the cleanUrls path (no .html) avoids a 308 hop on Vercel.
-        window.location.href = '/launch/thanks?name=' + encodeURIComponent(name);
+        // Position + referral code are passed in the URL so the thanks page can
+        // render them immediately (no extra fetch). Using cleanUrls (no .html)
+        // avoids a 308 hop on Vercel.
+        const qs = new URLSearchParams({ name });
+        if (result.position) qs.set('p', String(result.position));
+        if (result.referralCode) qs.set('code', result.referralCode);
+        window.location.href = '/launch/thanks?' + qs.toString();
       } else {
         errorEl.textContent = result.detail || 'Something went wrong. Please try again.';
         button.disabled = false;

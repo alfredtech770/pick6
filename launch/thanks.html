@@ -171,6 +171,92 @@ h2 {
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .share a:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Position pill ────────────────────────────────────────────
+   Centered band with the user's queue position. Sits right under
+   the headline so the number is the second thing the user sees. */
+.position-pill {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin: 0 0 22px;
+  text-align: center;
+}
+.position-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.position-num {
+  font-weight: 900;
+  font-size: 44px;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+/* ── Referral card ────────────────────────────────────────────
+   The viral mechanic block. Highlighted with accent border so it's
+   visually distinct from the "what happens next" steps below. */
+.referral-card {
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin: 0 0 28px;
+}
+.referral-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+.tiers {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--dim);
+  line-height: 1.65;
+}
+.tiers li { padding: 3px 0; }
+.tiers strong { color: var(--text); }
+.referral-link-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.referral-link {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+.referral-link:focus { outline: none; border-color: var(--accent); }
+.copy-btn {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s ease;
+}
+.copy-btn:hover { opacity: 0.9; }
+.copy-btn:active { transform: scale(0.97); }
 .foot {
   margin-top: 32px;
   font-size: 12px;
@@ -191,12 +277,45 @@ h2 {
   <div class="card">
     <div class="eyebrow">● You're on the list</div>
     <h1>YOU'RE <span class="accent">IN</span><span id="namebit"></span>.</h1>
+
+    <!-- Position pill — populated by JS from ?p=NNN on the URL. Hidden by
+         default so it doesn't render a placeholder if the server didn't
+         return a position. -->
+    <div id="position-pill" class="position-pill" hidden>
+      <div class="position-label">Your waitlist position</div>
+      <div class="position-num">#<span id="position-num">—</span></div>
+    </div>
+
     <p class="lede">Your first AI pick lands <strong>tomorrow at 9am ET</strong>. Pick1's highest-confidence call across 9 sports — delivered free, daily, until we launch (and beyond, with your 1-week free trial on top).</p>
 
     <div class="reward">
       <div class="reward-tag">Starting tomorrow</div>
       <div class="reward-headline">DAILY AI PICK</div>
       <div class="reward-sub">9am ET · Free · No card</div>
+    </div>
+
+    <!-- ── Position-jumping referral block ──────────────────────────────
+         Big incentive panel. Each successful referral moves the user up
+         100 positions (see pipeline/migrations/002_referrals.sql proc).
+         Tiers are cosmetic markers — the math is enforced server-side.
+    -->
+    <div id="referral-card" class="referral-card" hidden>
+      <div class="referral-eyebrow">⚡ Jump the queue</div>
+      <h2 style="margin:6px 0 14px 0">EVERY FRIEND = +100 SPOTS</h2>
+      <ul class="tiers">
+        <li><strong>3 referrals</strong> → 1 month free Pro at launch</li>
+        <li><strong>10 referrals</strong> → 1 year free Pro</li>
+        <li><strong>25 referrals</strong> → lifetime Pro</li>
+      </ul>
+      <div class="referral-link-row">
+        <input id="referral-link" class="referral-link" readonly />
+        <button id="copy-link" type="button" class="copy-btn">Copy</button>
+      </div>
+      <div class="share" style="margin-top:14px">
+        <a id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
+        <a id="share-wa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>
+        <a id="share-sms" href="#">Send via SMS</a>
+      </div>
     </div>
 
     <h2>WHAT HAPPENS NEXT.</h2>
@@ -223,16 +342,6 @@ h2 {
         </div>
       </li>
     </ul>
-
-    <div class="divider"></div>
-
-    <h2 style="margin-top:0">KNOW SOMEONE WHO'D WANT THIS?</h2>
-    <p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.55">First 100 waitlist members get a personal welcome at launch and an invite to the closed beta. Pass the link.</p>
-    <div class="share">
-      <a id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
-      <a id="share-wa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>
-      <a id="share-copy" href="#">Copy link</a>
-    </div>
   </div>
 
   <div class="foot">
@@ -245,8 +354,9 @@ h2 {
 
 <script>
 (function(){
-  // Personalized greeting from ?name=
   var params = new URLSearchParams(location.search);
+
+  // ── Personalized greeting from ?name= ───────────────────────────────
   var name = (params.get('name') || '').trim().slice(0, 40);
   if (name) {
     var firstName = name.split(/\s+/)[0]
@@ -258,22 +368,73 @@ h2 {
     }
   }
 
-  // Share links — keep copy Meta-policy safe (analysis tool, not betting).
-  var shareUrl = 'https://pick1.live/';
-  var shareText = "Just joined the Pick1 waitlist — AI sports predictions for 9 sports, publicly logged. First week's free at launch.";
+  // ── Position pill ───────────────────────────────────────────────────
+  // Server returns the user's assigned position via ?p=NNN. If missing
+  // (e.g. Supabase RPC failed), the block stays hidden — degrading
+  // gracefully to a non-referral thanks page rather than showing "#—".
+  var position = parseInt(params.get('p'), 10);
+  if (position > 0) {
+    var pillEl = document.getElementById('position-pill');
+    var numEl  = document.getElementById('position-num');
+    if (pillEl && numEl) {
+      numEl.textContent = position.toLocaleString();
+      pillEl.hidden = false;
+    }
+  }
+
+  // ── Referral block ──────────────────────────────────────────────────
+  // Each share link includes the user's referral code so signups are
+  // attributed back to them (each = +100 spots up the queue).
+  // Code is sanitized client-side to [a-z0-9-] so it can never break
+  // out of the URL — matches the server-side regex in subscribe.js.
+  var rawCode = (params.get('code') || '').trim().toLowerCase();
+  var code = rawCode.replace(/[^a-z0-9-]/g, '').slice(0, 40);
+  var shareUrl = code
+    ? 'https://pick1.live/?r=' + encodeURIComponent(code)
+    : 'https://pick1.live/';
+
+  // Build the share copy. Slightly different when we have a position to
+  // show — the number makes the tweet/SMS more share-worthy.
+  var shareText = position > 0
+    ? "I'm #" + position + " on the Pick1 waitlist — AI sports predictions across 9 sports, all picks publicly logged. Use my link, jump the queue:"
+    : "Just joined the Pick1 waitlist — AI sports predictions for 9 sports, publicly logged. First week's free at launch.";
+
+  if (code) {
+    var refCard = document.getElementById('referral-card');
+    if (refCard) refCard.hidden = false;
+    var linkEl = document.getElementById('referral-link');
+    if (linkEl) linkEl.value = shareUrl;
+  }
+
   var x = document.getElementById('share-x');
   if (x) x.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(shareUrl);
   var wa = document.getElementById('share-wa');
   if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + shareUrl);
-  var copy = document.getElementById('share-copy');
+  // SMS deep-link — opens the native SMS app prefilled with the share text.
+  // Note: iOS uses `sms:&body=` and Android uses `sms:?body=`. The line
+  // below works on both (Android tolerates the iOS form).
+  var sms = document.getElementById('share-sms');
+  if (sms) sms.href = 'sms:&body=' + encodeURIComponent(shareText + ' ' + shareUrl);
+
+  // Copy-link button — clipboard write with two-second visual feedback.
+  var copy = document.getElementById('copy-link');
   if (copy) {
     copy.addEventListener('click', function(e){
       e.preventDefault();
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(shareUrl).then(function(){
-          copy.textContent = 'Copied ✓';
-          setTimeout(function(){ copy.textContent = 'Copy link'; }, 2000);
+      var doneCopy = function(){
+        copy.textContent = 'Copied ✓';
+        setTimeout(function(){ copy.textContent = 'Copy'; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(doneCopy).catch(function(){
+          // Fallback if clipboard API is blocked (older Safari, etc.) — select
+          // the input so the user can hit Cmd/Ctrl+C themselves.
+          var input = document.getElementById('referral-link');
+          if (input) { input.select(); document.execCommand('copy'); doneCopy(); }
         });
+      } else {
+        var input = document.getElementById('referral-link');
+        if (input) { input.select(); document.execCommand('copy'); doneCopy(); }
       }
     });
   }
