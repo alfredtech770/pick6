@@ -50,6 +50,11 @@ module.exports = async (req, res) => {
     utm,
     eventSourceUrl,
     userAgent,
+    // Referral code captured from `?r=<code>` on the landing page. The
+    // frontend stuffs it into a hidden field on the signup form, so it
+    // travels with the POST even if the user navigates between page
+    // sections before submitting.
+    ref,
   } = body || {};
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
@@ -105,10 +110,26 @@ module.exports = async (req, res) => {
 
     if (upserted) {
       const clientIp = getClientIp(req);
+      const firstName = (name || '').trim().split(/\s+/)[0] || null;
+
+      // Get the waitlist position + referral code FIRST (synchronously),
+      // because the welcome email + thanks page redirect both need to
+      // include them. Failure here degrades to "no referral mechanic"
+      // but the user is still on the list (Resend + Meta CAPI already ran).
+      let referral = null;
+      try {
+        referral = await upsertWaitlistSignup({
+          email, firstName, ref, phone, utm, fbp, fbc,
+        });
+      } catch (err) {
+        console.error('waitlist_rpc_failed', err);
+        // Non-fatal — keep going so the user still sees a confirmation.
+      }
+
       // Fire-and-forget welcome email + CAPI Lead event in parallel.
       // We don't block the user-facing response on either — the contact
       // is already saved.
-      sendWelcomeEmail({ email, name }).catch(err => {
+      sendWelcomeEmail({ email, name, referral }).catch(err => {
         console.error('welcome_email_failed', err);
       });
       sendMetaLeadEvent({
@@ -117,12 +138,12 @@ module.exports = async (req, res) => {
       }).catch(err => {
         console.error('meta_capi_failed', err);
       });
-      // Best-effort: stash UTM + phone in a Supabase contacts table for
-      // later segmentation. Failure here doesn't block the response.
-      saveAttribution({ email, phone, utm, fbp, fbc }).catch(err => {
-        console.error('attribution_save_failed', err);
+      return res.status(200).json({
+        ok: true,
+        position: referral?.position ?? null,
+        referralCode: referral?.referral_code ?? null,
+        isNew: referral?.is_new ?? null,
       });
-      return res.status(200).json({ ok: true });
     }
   } catch (err) {
     console.error('resend_fetch_error', err);
@@ -211,56 +232,70 @@ async function sendMetaLeadEvent({
   }
 }
 
-// ── Attribution sidecar (Supabase) ───────────────────────────────────────
-// Resend's Audiences API only stores email + first/last name. UTM + phone +
-// fbp/fbc are saved alongside the contact in a Supabase table so we can
-// segment campaigns + reconcile Meta ad spend later. Schema:
-//   create table public.waitlist_attribution (
-//     email text primary key,
-//     phone text, utm_source text, utm_medium text, utm_campaign text,
-//     utm_content text, utm_term text, fbp text, fbc text,
-//     created_at timestamptz default now()
-//   );
-async function saveAttribution({ email, phone, utm, fbp, fbc }) {
+// ── Waitlist signup RPC (Supabase) ───────────────────────────────────────
+// Calls the `upsert_waitlist_signup` stored proc from pipeline/migrations/
+// 002_referrals.sql. The proc:
+//   1. Returns the existing row if the email is already on the list
+//      (idempotent — no double-crediting of referrers).
+//   2. Generates a unique `referral_code` of the form "firstname-abcd".
+//   3. Atomically assigns a `position` via the `waitlist_position_seq`
+//      Postgres sequence (no race conditions under concurrent signups).
+//   4. If `ref` was provided, increments the referrer's referrals_count and
+//      lifts their position by 100 (POSITION_JUMP_PER_REFERRAL inside the
+//      proc).
+// Returns: { email, referral_code, position, is_new } or null on failure.
+async function upsertWaitlistSignup({
+  email, firstName, ref, phone, utm, fbp, fbc,
+}) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_KEY) return; // optional sidecar
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
 
-  const row = { email: email.toLowerCase() };
-  if (phone) row.phone = phone;
+  // Build the UTM jsonb payload only with the keys we care about + sane
+  // length limits. Pass null if there's nothing — PostgREST handles it.
+  let utmPayload = null;
   if (utm && typeof utm === 'object') {
-    if (utm.utm_source)   row.utm_source   = String(utm.utm_source).slice(0, 80);
-    if (utm.utm_medium)   row.utm_medium   = String(utm.utm_medium).slice(0, 80);
-    if (utm.utm_campaign) row.utm_campaign = String(utm.utm_campaign).slice(0, 120);
-    if (utm.utm_content)  row.utm_content  = String(utm.utm_content).slice(0, 120);
-    if (utm.utm_term)     row.utm_term     = String(utm.utm_term).slice(0, 120);
+    const u = {};
+    if (utm.utm_source)   u.utm_source   = String(utm.utm_source).slice(0, 80);
+    if (utm.utm_medium)   u.utm_medium   = String(utm.utm_medium).slice(0, 80);
+    if (utm.utm_campaign) u.utm_campaign = String(utm.utm_campaign).slice(0, 120);
+    if (utm.utm_content)  u.utm_content  = String(utm.utm_content).slice(0, 120);
+    if (utm.utm_term)     u.utm_term     = String(utm.utm_term).slice(0, 120);
+    if (Object.keys(u).length) utmPayload = u;
   }
-  if (fbp) row.fbp = fbp;
-  if (fbc) row.fbc = fbc;
 
-  // Only worth saving if we have at least one attribution field beyond email.
-  if (Object.keys(row).length === 1) return;
-
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/waitlist_attribution`, {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_waitlist_signup`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_KEY,
       Authorization: `Bearer ${SUPABASE_KEY}`,
       'content-type': 'application/json',
-      // Upsert on conflict (email is primary key) so repeat submits update
-      // attribution to the latest ad-click context.
-      Prefer: 'resolution=merge-duplicates,return=minimal',
+      Accept: 'application/json',
     },
-    body: JSON.stringify(row),
+    body: JSON.stringify({
+      p_email:            email,
+      p_first_name:       firstName || null,
+      p_referred_by_code: ref || null,
+      p_phone:            phone || null,
+      p_utm:              utmPayload,
+      p_fbp:              fbp || null,
+      p_fbc:              fbc || null,
+    }),
   });
 
   if (!resp.ok) {
     const detail = await resp.text();
-    throw new Error(`supabase_attribution_${resp.status}: ${detail}`);
+    throw new Error(`supabase_rpc_${resp.status}: ${detail}`);
   }
+
+  // PostgREST returns TABLE-returning RPCs as a JSON array. We expect
+  // exactly one row.
+  const rows = await resp.json();
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return rows[0]; // { email, referral_code, position, is_new }
 }
 
-async function sendWelcomeEmail({ email, name }) {
+async function sendWelcomeEmail({ email, name, referral }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
@@ -270,8 +305,8 @@ async function sendWelcomeEmail({ email, name }) {
 
   const subject = "You're in. Tomorrow's AI pick lands at 9am ET.";
   const previewText = "Free, daily, publicly logged. Plus 1 week free when we launch end of May.";
-  const html = welcomeEmailHtml({ name: safeName, previewText });
-  const textBody = welcomeEmailText({ name: firstName });
+  const html = welcomeEmailHtml({ name: safeName, previewText, referral });
+  const textBody = welcomeEmailText({ name: firstName, referral });
 
   const resp = await fetch(`${RESEND_API}/emails`, {
     method: 'POST',
@@ -302,28 +337,64 @@ function escapeHtml(s) {
   ));
 }
 
-function welcomeEmailText({ name }) {
-  return [
+function welcomeEmailText({ name, referral }) {
+  const lines = [
     `You're in, ${name}.`,
     '',
-    "Your first AI pick lands tomorrow at 9am ET — Pick1's highest-confidence",
-    'call across 9 sports, delivered to your inbox. Free, daily, publicly logged.',
-    '',
-    'What happens next:',
-    "01. Tomorrow 9am ET: your first pick lands.",
-    "02. Every morning: a new pick + yesterday's result (wins AND misses).",
-    "03. End of May: app launches with unlimited picks + your 1 week free.",
-    '',
-    "While you're waiting:",
-    '· Methodology: https://pick1.live/methodology',
-    '· How we compare to Kalshi/Polymarket: https://pick1.live/blog/kalshi-polymarket-sports',
-    '',
-    '— Pick1',
-    'pick1.live',
-  ].join('\n');
+  ];
+  if (referral?.position) {
+    lines.push(`You're #${referral.position} on the waitlist.`);
+    lines.push('');
+  }
+  lines.push("Your first AI pick lands tomorrow at 9am ET — Pick1's highest-confidence");
+  lines.push('call across 9 sports, delivered to your inbox. Free, daily, publicly logged.');
+  lines.push('');
+  if (referral?.referral_code) {
+    lines.push('JUMP THE QUEUE:');
+    lines.push('Every friend who signs up via your link moves you up 100 spots.');
+    lines.push(`· 3 referrals → 1 month free Pro at launch`);
+    lines.push(`· 10 referrals → 1 year free Pro`);
+    lines.push(`· 25 referrals → lifetime Pro`);
+    lines.push('');
+    lines.push(`Your link: https://pick1.live/?r=${referral.referral_code}`);
+    lines.push('');
+  }
+  lines.push('What happens next:');
+  lines.push("01. Tomorrow 9am ET: your first pick lands.");
+  lines.push("02. Every morning: a new pick + yesterday's result (wins AND misses).");
+  lines.push("03. End of May: app launches with unlimited picks + your 1 week free.");
+  lines.push('');
+  lines.push("While you're waiting:");
+  lines.push('· Methodology: https://pick1.live/methodology');
+  lines.push('· How we compare to Kalshi/Polymarket: https://pick1.live/blog/kalshi-polymarket-sports');
+  lines.push('');
+  lines.push('— Pick1');
+  lines.push('pick1.live');
+  return lines.join('\n');
 }
 
-function welcomeEmailHtml({ name, previewText }) {
+function welcomeEmailHtml({ name, previewText, referral }) {
+  const positionBlock = referral?.position
+    ? `<div style="background:#0a0b0d;border:1px solid #1a1d22;border-radius:12px;padding:16px 20px;margin:0 0 22px 0;text-align:center;">
+        <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;color:#9095a0;text-transform:uppercase;margin-bottom:4px;">Your position</div>
+        <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:32px;color:#d4ff3a;letter-spacing:-0.02em;line-height:1;">#${referral.position}</div>
+      </div>`
+    : '';
+  const referralBlock = referral?.referral_code
+    ? `<div style="border:1px solid #d4ff3a;border-radius:14px;padding:18px 20px;margin:18px 0 26px 0;">
+        <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;color:#d4ff3a;margin-bottom:6px;">⚡ Jump the queue</div>
+        <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:18px;letter-spacing:-0.01em;margin-bottom:8px;color:#fff;">Every friend = +100 spots</div>
+        <div style="font-size:13px;color:#b8bcc1;line-height:1.55;margin-bottom:12px;">
+          <strong style="color:#fff;">3 referrals</strong> → 1 month free Pro<br/>
+          <strong style="color:#fff;">10 referrals</strong> → 1 year free Pro<br/>
+          <strong style="color:#fff;">25 referrals</strong> → lifetime Pro
+        </div>
+        <div style="background:#0a0b0d;border:1px solid #1a1d22;border-radius:10px;padding:12px 14px;font-family:'JetBrains Mono','Courier New',monospace;font-size:12px;color:#d4ff3a;word-break:break-all;">
+          https://pick1.live/?r=${escapeHtml(referral.referral_code)}
+        </div>
+      </div>`
+    : '';
+
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"/>
@@ -342,11 +413,13 @@ function welcomeEmailHtml({ name, previewText }) {
         <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;letter-spacing:0.18em;color:#d4ff3a;text-transform:uppercase;margin-bottom:14px;">● You're on the list</div>
         <h1 style="margin:0 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:38px;line-height:1.05;letter-spacing:-0.025em;color:#fff;">YOU'RE <span style="color:#d4ff3a;">IN</span>,<br/>${name}.</h1>
         <p style="margin:0 0 22px 0;font-size:15px;line-height:1.55;color:#b8bcc1;">Your first AI pick lands <strong style="color:#fff;">tomorrow at 9am ET</strong> — Pick1's highest-confidence call across 9 sports, delivered to your inbox. Free, daily, publicly logged. Plus 1 week of full access free when we launch end of May.</p>
+        ${positionBlock}
         <div style="background:#d4ff3a;color:#0a0b0d;border-radius:14px;padding:18px 20px;margin:18px 0 26px 0;">
           <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;opacity:0.7;">📨 Starting tomorrow</div>
           <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:24px;letter-spacing:-0.02em;margin-top:4px;">DAILY AI PICK · 9AM ET</div>
           <div style="font-size:12px;opacity:0.85;margin-top:2px;">Free · No card · Unsubscribe anytime</div>
         </div>
+        ${referralBlock}
         <h2 style="margin:28px 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:18px;letter-spacing:-0.01em;color:#fff;">WHAT HAPPENS NEXT.</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr><td valign="top" style="padding:8px 0;"><span style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;color:#d4ff3a;font-size:13px;width:32px;display:inline-block;">01</span><strong style="color:#fff;font-size:14px;">Tomorrow 9am ET: your first pick lands</strong><div style="font-size:13px;color:#9095a0;margin-top:3px;">The model's highest-confidence call across 9 sports — NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket.</div></td></tr>
