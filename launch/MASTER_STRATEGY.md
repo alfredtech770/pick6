@@ -158,11 +158,23 @@ APP INSTALL → PAID SUBSCRIBER
 | **Stock/Canva Pro** | For weekly carousels + cinematic ad cuts | $50 | n/a |
 | **Contingency** | Accelerate whatever's working at day 10 | $200 | n/a |
 
+### 🆕 Tier B+ — Web2 growth platforms (added May 13)
+
+| Platform | Job | Cost | Why this one |
+|---|---|---|---|
+| **Gleam.io** | Sweepstakes engine — "Win 2026 FIFA World Cup tickets" campaign | $39/mo | Mainstream brand precedent (Coca-Cola, ESPN, Shopify), polished UI, anti-bot built-in |
+| **SparkLoop** | Newsletter cross-promotion — pay other newsletters to recommend Pick1 in their welcome emails | $1-2/signup | Used by Morning Brew, The Hustle; warm-audience signups w/ higher LTV than cold Meta clicks |
+| **Telegram channel** | Pre-launch community + auto-pick webhook | $0 | Sports-betting native audience (Discord skews gaming/crypto, Telegram is where the sharps live) |
+| **Custom referral** (already live) | Position-jumping mechanic | $0 | Built in-house, owns the long-term UX, no platform tax |
+
+**Why this stack, not more:** Adding 5+ tools creates UX confusion (multiple referral systems, multiple leaderboards). These 4 cover four distinct jobs with zero overlap.
+
 ### Hard exclusions (do NOT pursue in this window)
 - Google Ads (CPM too high for waitlist play)
 - LinkedIn (wrong audience)
 - Snapchat / BeReal (audience too young + no infrastructure)
 - Podcast sponsorships (>$1K each, too slow)
+- Any web3-adjacent platform (Zealy, Galxe, POAP, Layer3) — wrong brand association for a trusted predictions tool
 
 ---
 
@@ -292,6 +304,35 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
   - IG: same Reel + 4-slide story carousel
   - Substack: full 1,500-word essay
 - **Why it works:** Story compounds across platforms. Builds trust + humanizes the AI.
+
+### 🔥 Activation 6 — Gleam "World Cup Tickets" Sweepstakes (Day 5 launch, runs to launch)
+- **What:** Live sweepstakes on Gleam.io with the prize: **"2 group-stage 2026 FIFA World Cup tickets + Lifetime Pro"**
+- **Total prize value:** ~$500 (within contingency budget)
+- **Tasks (entry-weighted to drive waitlist + IG + TikTok):**
+  - Join Pick1 waitlist → **10 entries** (priority #1)
+  - Follow @pick1 on Instagram → 5 entries
+  - Follow @pick1 on TikTok → 5 entries
+  - Follow @pick1 on Twitter → 3 entries
+  - Share specific tweet (auto-verified) → 3 entries
+  - Refer 1 friend (uses your referral code) → 10 entries
+  - Daily login → 1 entry/day (drives return visits)
+  - Comment "your team for tonight's lock" on the Pick1 tweet → 5 entries (qualitative filter task — defeats sweepstakes hunters)
+- **Runs:** May 17 (Day 5) → May 31 23:59 ET (Day 25)
+- **Winner announced:** June 1 via email + IG + Twitter
+- **Compliance:** "No purchase necessary, open to US/CA/MX residents 18+, void where prohibited" boilerplate (Gleam provides the template)
+- **Expected lift:** 500-1,500 incremental signups + 2-5x increase in IG+TikTok follower count
+- **Status:** ⏳ Setup tonight via Chrome MCP
+
+### 🔥 Activation 7 — SparkLoop Newsletter Cross-Promo (Day 8 launch, ongoing)
+- **What:** Submit Pick1 to SparkLoop's network. Other newsletters (Morning Brew, The Hustle, sports/finance newsletters) recommend Pick1 in their welcome-email sequence. We pay $1-2 per signup that converts.
+- **Why it works:** Warm-audience signups (someone who reads The Hustle daily is 5-10x more likely to engage with Pick1 than a cold Meta click). Higher LTV, lower churn.
+- **Budget:** Cap at $200 for the 18-day window (=100-200 signups @ $1-2 each)
+- **Status:** ⏳ Apply tonight via Chrome MCP; approval typically takes 24-72hrs
+
+### 🔥 Activation 8 — Telegram Pre-Launch Channel (Day 3 launch, ongoing)
+- **What:** "Pick1 Daily Picks" Telegram channel. Auto-posts today's pick at 9am ET via webhook from same Supabase cron. Members can react with 🔥 / 💀 to picks.
+- **Why it works:** Sports betting community lives on Telegram (Discord skews younger/gamier). Member count = social proof embedded on pick1.live ("Join 2,847 sharp bettors").
+- **Status:** ⏳ Setup Day 3
 
 ---
 

@@ -256,7 +256,9 @@ def build_channel_roi(wb):
     channels = ["Meta Ads", "TikTok organic", "TikTok Spark (paid boost)",
                 "X / Twitter organic", "Instagram organic", "Reddit",
                 "Influencer trades", "ProductHunt", "Founder essay",
-                "Email referrals (own list)", "Direct / unknown"]
+                "Email referrals (own list)", "Gleam sweepstakes",
+                "SparkLoop newsletter cross-promo", "Telegram channel",
+                "Direct / unknown"]
     for i, ch in enumerate(channels, start=3):
         ws.cell(row=i, column=1, value=ch)
         # CPL formula
@@ -300,6 +302,15 @@ def build_activations(wb):
         (5, "Founder story drop", "Day 14-15 (May 26-27)", "Planned",
          "Noa (record) + Claude (cross-post)",
          "Coordinated multi-platform 'how I built this' content. Twitter thread + TikTok + IG + Substack."),
+        (6, "Gleam 'World Cup Tickets' Sweepstakes", "Day 5 (May 17)", "Planned",
+         "Claude (setup) + Noa (prize fulfillment)",
+         "Prize: 2 group-stage 2026 FIFA WC tickets + Lifetime Pro (~$500). Tasks weighted to drive waitlist (10pts), IG follow (5pts), TikTok follow (5pts). Runs to May 31. Embed on pick1.live."),
+        (7, "SparkLoop Newsletter Cross-Promo", "Day 8 (May 20)", "Planned",
+         "Claude (apply) + auto",
+         "Pay $1-2/signup for Pick1 to appear in Morning Brew / The Hustle / sports newsletters' welcome emails. Budget cap: $200 for the 18-day window. Higher LTV than Meta cold."),
+        (8, "Telegram Pre-Launch Channel", "Day 3 (May 15)", "Planned",
+         "Claude (setup + webhook)",
+         "Pick1 Daily Picks channel. Auto-posts via Supabase webhook at 9am ET. Member count embedded on pick1.live as social proof."),
     ]
     for r, row in enumerate(activations, start=3):
         for c, v in enumerate(row, start=1):
