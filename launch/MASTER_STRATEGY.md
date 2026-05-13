@@ -308,15 +308,17 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
 ### 🔥 Activation 6 — Gleam "World Cup Tickets" Sweepstakes (Day 5 launch, runs to launch)
 - **What:** Live sweepstakes on Gleam.io with the prize: **"2 group-stage 2026 FIFA World Cup tickets + Lifetime Pro"**
 - **Total prize value:** ~$500 (within contingency budget)
-- **Tasks (entry-weighted to drive waitlist + IG + TikTok):**
-  - Join Pick1 waitlist → **10 entries** (priority #1)
-  - Follow @pick1 on Instagram → 5 entries
-  - Follow @pick1 on TikTok → 5 entries
-  - Follow @pick1 on Twitter → 3 entries
-  - Share specific tweet (auto-verified) → 3 entries
-  - Refer 1 friend (uses your referral code) → 10 entries
-  - Daily login → 1 entry/day (drives return visits)
-  - Comment "your team for tonight's lock" on the Pick1 tweet → 5 entries (qualitative filter task — defeats sweepstakes hunters)
+- **🔒 MANDATORY gateway task — without this, ZERO entries count:**
+  - **Join Pick1 waitlist** → unlocks the campaign + 10 base entries
+- **➕ BONUS entries (only counted once waitlist is verified):**
+  - Follow @pick1 on Instagram → +5 entries
+  - Follow @pick1 on TikTok → +5 entries
+  - Follow @pick1 on Twitter → +3 entries
+  - Retweet the sweepstakes announcement (auto-verified) → +3 entries
+  - Refer 1 friend (uses your referral code) → +10 entries (stacks)
+  - Comment your team for tonight's lock on the Pick1 tweet → +5 entries (qualitative filter — defeats sweepstakes hunters)
+  - Daily login bonus → +1 entry/day until May 31
+- **Why mandatory waitlist:** Guarantees every sweepstakes entrant = real waitlist signup (the actual KPI). Sweepstakes hunters who refuse to join the waitlist self-filter out. Bonus tasks then layer follows on top of already-warm leads.
 - **Runs:** May 17 (Day 5) → May 31 23:59 ET (Day 25)
 - **Winner announced:** June 1 via email + IG + Twitter
 - **Compliance:** "No purchase necessary, open to US/CA/MX residents 18+, void where prohibited" boilerplate (Gleam provides the template)

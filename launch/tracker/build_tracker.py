@@ -304,7 +304,7 @@ def build_activations(wb):
          "Coordinated multi-platform 'how I built this' content. Twitter thread + TikTok + IG + Substack."),
         (6, "Gleam 'World Cup Tickets' Sweepstakes", "Day 5 (May 17)", "Planned",
          "Claude (setup) + Noa (prize fulfillment)",
-         "Prize: 2 group-stage 2026 FIFA WC tickets + Lifetime Pro (~$500). Tasks weighted to drive waitlist (10pts), IG follow (5pts), TikTok follow (5pts). Runs to May 31. Embed on pick1.live."),
+         "Prize: 2 group-stage 2026 FIFA WC tickets + Lifetime Pro (~$500). MANDATORY GATEWAY: waitlist signup required to win (zero entries otherwise). Bonus tasks layer IG +5, TikTok +5, Twitter +3, refer +10, daily +1. Runs May 17 → May 31. Embed on pick1.live."),
         (7, "SparkLoop Newsletter Cross-Promo", "Day 8 (May 20)", "Planned",
          "Claude (apply) + auto",
          "Pay $1-2/signup for Pick1 to appear in Morning Brew / The Hustle / sports newsletters' welcome emails. Budget cap: $200 for the 18-day window. Higher LTV than Meta cold."),
