@@ -50,6 +50,19 @@ We're not competing on volume of picks, on bigger payouts, on flashier interface
 3. Show a **confidence percentage** somewhere (it's our differentiator)
 4. End with **pick1.live** in JetBrains Mono
 
+### Official handles (canonical, use these everywhere)
+| Platform | Handle | URL |
+|---|---|---|
+| Website | — | https://pick1.live |
+| Facebook | @Pick1 | https://www.facebook.com/profile.php?id=61589631453496 |
+| Instagram | @pick1.live | https://www.instagram.com/pick1.live |
+| TikTok | @pick1app | https://www.tiktok.com/@pick1app |
+| X / Twitter | @PICK1sport | https://x.com/PICK1sport |
+| Telegram | (TBD — set up Day 3) | — |
+| Email sender | admin@pick1.live | — |
+
+**Asset rule:** every IG/TikTok/Twitter post must end with the CTA `pick1.live` (the website, not the social handle — the website is what drives waitlist signups).
+
 ---
 
 ## 3 · THE AUDIENCE

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Pick1 Ad #2 — "Tonight's Lock: 81.2% confidence" (urgency / FOMO).
+     1080×1080. Centerpiece is the confidence dial filling to 81.2%. -->
+<title>Pick1 · Tonight's Lock</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --accent: #d4ff3a;
+    --line: #1a1d22;
+    --muted: #9095a0;
+    --dim: #b8bcc1;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    width: 1080px; height: 1080px;
+    background: var(--bg);
+    color: white;
+    font-family: 'Archivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .frame { width: 1080px; height: 1080px; padding: 72px; box-sizing: border-box; position: relative; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .eyebrow::before {
+    content: '🔒';
+    margin-right: 14px;
+    font-size: 22px;
+  }
+  .hero-row {
+    display: flex; align-items: center; gap: 50px;
+    margin: 80px 0 0 0;
+  }
+  /* The confidence dial — SVG */
+  .dial-wrap { position: relative; width: 460px; height: 460px; flex-shrink: 0; }
+  .dial-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dial-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .dial-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 184px;
+    line-height: 1;
+    color: white;
+    letter-spacing: -0.04em;
+  }
+  .dial-num .pct {
+    font-size: 92px;
+    color: var(--accent);
+    margin-left: 4px;
+  }
+  .dial-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  /* Right column — the LOCK label */
+  .right-col {
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .pill-lock {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'Anton', sans-serif;
+    font-size: 76px;
+    padding: 4px 28px;
+    border-radius: 14px;
+    letter-spacing: -0.01em;
+    align-self: flex-start;
+    line-height: 1.05;
+  }
+  .league {
+    font-family: 'Anton', sans-serif;
+    font-size: 132px;
+    line-height: 0.9;
+    color: white;
+  }
+  .game {
+    font-family: 'Archivo', sans-serif;
+    font-size: 28px;
+    color: var(--dim);
+    line-height: 1.35;
+    font-weight: 700;
+  }
+  .game strong { color: white; }
+  /* Bottom band */
+  .bottom-band {
+    position: absolute;
+    bottom: 72px; left: 72px; right: 72px;
+    padding: 32px 36px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .bb-left {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 30px;
+    line-height: 1.2;
+  }
+  .bb-left small {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  .bb-right {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 30px;
+    font-weight: 700;
+  }
+  .bb-right strong { font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="eyebrow">TONIGHT'S LOCK · IN INBOXES NOW</div>
+
+  <div class="hero-row">
+    <div class="dial-wrap">
+      <!-- SVG confidence dial. Stroke filled to 81.2% of circumference.
+           circumference = 2*pi*r ≈ 2*pi*200 = 1257. Filled = 81.2% = 1021.
+           dashoffset = 1257-1021 = 236. -->
+      <svg viewBox="0 0 460 460" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="230" cy="230" r="200" fill="none"
+                stroke="rgba(255,255,255,0.08)" stroke-width="28"/>
+        <circle cx="230" cy="230" r="200" fill="none"
+                stroke="#d4ff3a" stroke-width="28"
+                stroke-linecap="round"
+                stroke-dasharray="1257" stroke-dashoffset="236"/>
+      </svg>
+      <div class="dial-overlay">
+        <div class="dial-num">81<span class="pct">%</span></div>
+        <div class="dial-label">CONFIDENCE</div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="pill-lock">⭐⭐⭐ LOCK</div>
+      <div class="league">EPL</div>
+      <div class="game">
+        <strong>Man City</strong> vs Crystal Palace<br/>
+        3:00 PM ET tonight
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-band">
+    <div class="bb-left">
+      <small>SUBSCRIBERS GOT IT AT 9AM</small>
+      Free in your inbox tomorrow
+    </div>
+    <div class="bb-right">
+      pick<strong>1</strong>.live
+    </div>
+  </div>
+</div>
+</body>
+</html>

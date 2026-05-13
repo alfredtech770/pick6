@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Pick1 Ad #1 — "Yesterday: Spurs 126-97" (the receipts angle).
+     1080×1080 (Meta feed + IG single post + Twitter image).
+     This is also IG Post #2 (Yesterday's win bold static). -->
+<title>Pick1 · Yesterday's Win</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* The brand: black bg, acid green accent, Anton display, Archivo body. */
+  :root {
+    --bg: #0a0b0d;
+    --accent: #d4ff3a;
+    --line: #1a1d22;
+    --muted: #9095a0;
+    --dim: #b8bcc1;
+    --green: #4ade80;
+    --red: #ff5a36;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    width: 1080px; height: 1080px;
+    background: var(--bg);
+    color: white;
+    font-family: 'Archivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .frame { width: 1080px; height: 1080px; padding: 72px; box-sizing: border-box; position: relative; }
+  /* Top eyebrow — what kind of frame is this? */
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .eyebrow::before {
+    content: '●';
+    margin-right: 12px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  /* Massive team line — Anton with extreme tight tracking */
+  .team {
+    font-family: 'Anton', sans-serif;
+    font-size: 188px;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    margin: 32px 0 0 0;
+    text-transform: uppercase;
+  }
+  .team .accent { color: var(--accent); }
+  /* Score line */
+  .score {
+    font-family: 'Anton', sans-serif;
+    font-size: 132px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    margin: 24px 0 0 0;
+  }
+  .score .dash { color: var(--muted); margin: 0 22px; }
+  /* Confidence pill — the differentiator. */
+  .conf-row {
+    display: flex; align-items: center;
+    margin: 56px 0 0 0;
+    gap: 22px;
+  }
+  .conf-pill {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'Anton', sans-serif;
+    font-size: 84px;
+    padding: 8px 28px;
+    border-radius: 18px;
+    letter-spacing: -0.01em;
+  }
+  .conf-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.2;
+  }
+  .conf-label strong {
+    display: block;
+    color: white;
+    font-size: 26px;
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+  }
+  /* ✓ called row */
+  .called-row {
+    display: flex; align-items: center;
+    margin: 48px 0 0 0;
+    gap: 18px;
+  }
+  .check {
+    width: 56px; height: 56px;
+    background: var(--green);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    font-weight: 900;
+  }
+  .called-text {
+    font-family: 'Archivo', sans-serif;
+    font-size: 30px;
+    color: var(--green);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  /* Bottom CTA + logo */
+  .footer {
+    position: absolute;
+    bottom: 72px; left: 72px; right: 72px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .footer-left {
+    font-family: 'Archivo', sans-serif;
+    color: var(--dim);
+    font-size: 24px;
+    max-width: 700px;
+    line-height: 1.35;
+  }
+  .footer-left strong { color: white; font-weight: 900; }
+  .footer-right {
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 8px;
+  }
+  .logo {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    color: white;
+  }
+  .logo .one {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 12px;
+    border-radius: 9px;
+    margin-left: 3px;
+  }
+  .url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="eyebrow">YESTERDAY'S CALL · NBA G5</div>
+
+  <h1 class="team">
+    SAN ANTONIO<br/>
+    <span class="accent">SPURS</span>
+  </h1>
+
+  <div class="score">126 <span class="dash">–</span> 97</div>
+
+  <div class="conf-row">
+    <div class="conf-pill">78.6%</div>
+    <div class="conf-label">
+      Pick1<br/><strong>CALLED IT</strong>
+    </div>
+  </div>
+
+  <div class="called-row">
+    <div class="check">✓</div>
+    <div class="called-text">Series now 3-2 SAS</div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-left">
+      Every Pick1 call publicly logged.<br/>
+      <strong>Wins AND misses. Forever.</strong>
+    </div>
+    <div class="footer-right">
+      <div class="logo">PICK<span class="one">1</span></div>
+      <div class="url">pick1.live</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
