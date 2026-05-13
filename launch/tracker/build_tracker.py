@@ -257,7 +257,7 @@ def build_channel_roi(wb):
                 "X / Twitter organic", "Instagram organic", "Reddit",
                 "Influencer trades", "ProductHunt", "Founder essay",
                 "Email referrals (own list)", "Gleam sweepstakes",
-                "SparkLoop newsletter cross-promo", "Telegram channel",
+                "SparkLoop newsletter cross-promo",
                 "Direct / unknown"]
     for i, ch in enumerate(channels, start=3):
         ws.cell(row=i, column=1, value=ch)
@@ -308,9 +308,9 @@ def build_activations(wb):
         (7, "SparkLoop Newsletter Cross-Promo", "Day 8 (May 20)", "Planned",
          "Claude (apply) + auto",
          "Pay $1-2/signup for Pick1 to appear in Morning Brew / The Hustle / sports newsletters' welcome emails. Budget cap: $200 for the 18-day window. Higher LTV than Meta cold."),
-        (8, "Telegram Pre-Launch Channel", "Day 3 (May 15)", "Planned",
-         "Claude (setup + webhook)",
-         "Pick1 Daily Picks channel. Auto-posts via Supabase webhook at 9am ET. Member count embedded on pick1.live as social proof."),
+        (8, "Live Waitlist Counter on pick1.live", "Day 3 (May 15)", "Planned",
+         "Claude",
+         "Replaces Telegram (dropped May 13 — too crypto/tout adjacent). Embed live 'Waitlist member #X' counter on pick1.live via public Supabase RPC. Same social-proof outcome, brand-aligned surface, no third-party platform tax."),
     ]
     for r, row in enumerate(activations, start=3):
         for c, v in enumerate(row, start=1):

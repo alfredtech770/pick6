@@ -177,10 +177,12 @@ APP INSTALL → PAID SUBSCRIBER
 |---|---|---|---|
 | **Gleam.io** | Sweepstakes engine — "Win 2026 FIFA World Cup tickets" campaign | $39/mo | Mainstream brand precedent (Coca-Cola, ESPN, Shopify), polished UI, anti-bot built-in |
 | **SparkLoop** | Newsletter cross-promotion — pay other newsletters to recommend Pick1 in their welcome emails | $1-2/signup | Used by Morning Brew, The Hustle; warm-audience signups w/ higher LTV than cold Meta clicks |
-| **Telegram channel** | Pre-launch community + auto-pick webhook | $0 | Sports-betting native audience (Discord skews gaming/crypto, Telegram is where the sharps live) |
 | **Custom referral** (already live) | Position-jumping mechanic | $0 | Built in-house, owns the long-term UX, no platform tax |
+| **Daily pick email + Twitter cron** | Daily broadcast / engagement | $0 | Already shipped. Email open rate IS our community engagement metric. Twitter cron auto-broadcasts each pick publicly. |
 
-**Why this stack, not more:** Adding 5+ tools creates UX confusion (multiple referral systems, multiple leaderboards). These 4 cover four distinct jobs with zero overlap.
+**Why this stack, not more:** Adding more tools (Telegram, Discord, Zealy etc.) creates UX confusion + dilutes brand positioning. These 4 cover all distinct jobs with zero overlap.
+
+**Telegram intentionally excluded:** Too crypto/tout-adjacent for Pick1's "trusted predictions platform" positioning. The daily-pick email + Twitter cron + IG Stories deliver the same outcomes (daily touchpoint + broadcast + community signal) on more brand-aligned channels. Revisit WhatsApp Channel post-launch if a paid-tier community is needed.
 
 ### Hard exclusions (do NOT pursue in this window)
 - Google Ads (CPM too high for waitlist play)
@@ -344,10 +346,13 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
 - **Budget:** Cap at $200 for the 18-day window (=100-200 signups @ $1-2 each)
 - **Status:** ⏳ Apply tonight via Chrome MCP; approval typically takes 24-72hrs
 
-### 🔥 Activation 8 — Telegram Pre-Launch Channel (Day 3 launch, ongoing)
-- **What:** "Pick1 Daily Picks" Telegram channel. Auto-posts today's pick at 9am ET via webhook from same Supabase cron. Members can react with 🔥 / 💀 to picks.
-- **Why it works:** Sports betting community lives on Telegram (Discord skews younger/gamier). Member count = social proof embedded on pick1.live ("Join 2,847 sharp bettors").
-- **Status:** ⏳ Setup Day 3
+### 🔥 Activation 8 — Waitlist Member Counter (Day 3 launch, ongoing)
+- **What:** Embed a live "Waitlist member #X" counter on pick1.live, pulling the cumulative signup count from Supabase. New visitors see "1,247 already on the list" instead of an empty page.
+- **Why this replaces Telegram:** Same social-proof outcome (the implicit "many people are doing this"), achieved on our own surface, with our own data. No third-party platform UX cost. No tout-adjacent vibe.
+- **Spec:** Public read-only Supabase RPC `get_waitlist_count()` → fetched by index.html at page-load → displayed above the signup form ("Be #1,248 on the waitlist — pick locked at 9am ET")
+- **Status:** ⏳ Setup Day 3 (server-side already supports this; just need the index.html change + RPC)
+
+**Note:** Telegram was originally Activation 8 but removed May 13. Sports-betting Telegram is crypto/tout-adjacent and conflicts with Pick1's trust positioning. Daily-pick email + Twitter cron + IG Stories deliver the same outcomes (daily touchpoint + broadcast + community signal) on brand-aligned channels.
 
 ---
 
