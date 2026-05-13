@@ -22,6 +22,57 @@ const crypto = require('crypto');
 const RESEND_API = 'https://api.resend.com';
 const DEFAULT_FROM = 'Pick1 <admin@pick1.live>';
 
+// ─── In-memory rate limiter ──────────────────────────────────────────
+// Simple sliding-window per-IP cap. Vercel keeps the function warm for
+// some minutes between invocations, which is good enough to throttle
+// scripted floods. Real production hardening should add a Redis/Upstash
+// store so multiple cold lambdas share a counter — file this as v2.
+const RATE_LIMIT_WINDOW_MS = 60_000;   // 1 minute
+const RATE_LIMIT_MAX       = 5;        // 5 signups per IP per minute
+const rateLog = new Map();             // ip → [timestamps]
+
+function rateLimitExceeded(ip) {
+  if (!ip) return false;               // unknown IP → don't block
+  const now = Date.now();
+  const window = (rateLog.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (window.length >= RATE_LIMIT_MAX) {
+    rateLog.set(ip, window);
+    return true;
+  }
+  window.push(now);
+  rateLog.set(ip, window);
+  // Cheap GC: keep the map from growing unbounded across cold starts.
+  if (rateLog.size > 5000) {
+    const cutoff = now - RATE_LIMIT_WINDOW_MS;
+    for (const [k, v] of rateLog.entries()) {
+      const fresh = v.filter(t => t >= cutoff);
+      if (fresh.length === 0) rateLog.delete(k);
+      else rateLog.set(k, fresh);
+    }
+  }
+  return false;
+}
+
+// Allowlist for the public Origin header. Anything else is rejected to
+// stop scripted abuse from arbitrary domains (the rate limiter still
+// catches direct curl traffic). Keep this in sync with the actual
+// hosting domains.
+const ALLOWED_ORIGINS = new Set([
+  'https://pick1.live',
+  'https://www.pick1.live',
+  'https://pick1.app',
+  'https://www.pick1.app',
+]);
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;            // curl / native fetch has no origin → defer to rate limit
+  try {
+    return ALLOWED_ORIGINS.has(new URL(origin).origin);
+  } catch {
+    return false;
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -35,7 +86,27 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'server_misconfigured' });
   }
 
-  // Vercel may not auto-parse JSON for some runtimes; handle both.
+  // ── Origin check ────────────────────────────────────────────────
+  const origin = req.headers.origin || req.headers.referer;
+  if (!isAllowedOrigin(origin)) {
+    return res.status(403).json({ error: 'forbidden_origin' });
+  }
+
+  // ── Rate limit ──────────────────────────────────────────────────
+  const clientIp = getClientIp(req);
+  if (rateLimitExceeded(clientIp)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'too_many_requests' });
+  }
+
+  // ── Content-Length cap ──────────────────────────────────────────
+  // Anything bigger than 2 KB is abuse — legit payloads are <500B.
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+  if (contentLength > 2048) {
+    return res.status(413).json({ error: 'payload_too_large' });
+  }
+
+  // Vercel may not auto-parse JSON for some runtimes; handle both
   let body = req.body;
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
@@ -57,8 +128,19 @@ module.exports = async (req, res) => {
     ref,
   } = body || {};
 
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  // Email: must be a sane shape (RFC-light, not a regex novel).
+  if (!email
+      || typeof email !== 'string'
+      || email.length > 254
+      || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'invalid_email' });
+  }
+  // Name and phone are optional but if present must be strings and bounded.
+  if (name  && (typeof name  !== 'string' || name.length  > 120)) {
+    return res.status(400).json({ error: 'invalid_name' });
+  }
+  if (phone && (typeof phone !== 'string' || phone.length > 32))  {
+    return res.status(400).json({ error: 'invalid_phone' });
   }
 
   // Split full name into first/last for Resend's audience schema.
@@ -109,7 +191,9 @@ module.exports = async (req, res) => {
     }
 
     if (upserted) {
-      const clientIp = getClientIp(req);
+      // clientIp is already captured at the top of the handler for rate
+      // limiting — reuse it for the CAPI Lead event (Meta uses IP for the
+      // user_data fingerprint).
       const firstName = (name || '').trim().split(/\s+/)[0] || null;
 
       // Get the waitlist position + referral code FIRST (synchronously),

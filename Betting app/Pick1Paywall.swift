@@ -41,12 +41,18 @@ struct OBPaywallScreen: View {
 
     @State private var plan: PaywallPlan = .monthly
     @EnvironmentObject private var subs: SubscriptionManager
+    @Environment(LocalizationManager.self) private var loc
 
     /// "Access Free" skip button reveals 7 seconds after the paywall opens.
     /// Lets users dismiss the paywall without subscribing — required for
     /// good UX (and several App Review precedents).
     @State private var skipUnlocked: Bool = false
     private let skipDelay: Double = 7.0
+
+    /// Terms / Privacy sheets — required by App Review guideline 3.1.2
+    /// to be reachable on the paywall itself, not just from Profile.
+    @State private var showTerms: Bool = false
+    @State private var showPrivacy: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,10 +71,20 @@ struct OBPaywallScreen: View {
                         .padding(.top, 4)
                     faq.padding(.top, 6)
                     finePrint.padding(.top, 14)
+                    legalLinks.padding(.top, 10)
                     restorePurchases.padding(.top, 4)
+                    manageSubscriptions.padding(.top, 2)
                     Color.clear.frame(height: 28)
                 }
             }
+        }
+        .sheet(isPresented: $showTerms) {
+            LegalSheet(doc: .terms, isOpen: $showTerms)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPrivacy) {
+            LegalSheet(doc: .privacy, isOpen: $showPrivacy)
+                .presentationDragIndicator(.visible)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -514,7 +530,15 @@ struct OBPaywallScreen: View {
     // MARK: - Fine print + restore
 
     private var finePrint: some View {
-        Text("Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your App Store account.")
+        // App Review 3.1.2 requires the auto-renewal terms be disclosed
+        // adjacent to the purchase action. Spell out:
+        //   • Trial length + price-after-trial
+        //   • Renewal terms (auto, cancel window)
+        //   • That payment goes through Apple
+        // Localized so the disclosure is honored in the user's language.
+        let copy = loc.t(plan == .weekly ? .paywall_fineprint_weekly
+                                         : .paywall_fineprint_monthly)
+        return Text(copy)
             .font(.system(size: 10))
             .foregroundColor(.p1Mute)
             .lineSpacing(3)
@@ -526,7 +550,7 @@ struct OBPaywallScreen: View {
         Button {
             Task { await subs.restorePurchases() }
         } label: {
-            Text("Restore Purchases")
+            Text(loc.t(.paywall_restore))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.p1Ink2)
                 .padding(.vertical, 10)
@@ -536,17 +560,68 @@ struct OBPaywallScreen: View {
         .disabled(subs.purchasing)
     }
 
+    /// Terms of Service / Privacy Policy links — required by App Review
+    /// guideline 3.1.2 adjacent to the auto-renewable subscription
+    /// disclosure. Renders as two tappable links in a dot-separated row.
+    private var legalLinks: some View {
+        HStack(spacing: 14) {
+            Button { showTerms = true } label: {
+                Text(loc.t(.paywall_terms))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.p1Ink2)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+
+            Text("·").foregroundColor(.p1Mute)
+
+            Button { showPrivacy = true } label: {
+                Text(loc.t(.paywall_privacy))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.p1Ink2)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// "Manage Subscription" — deep-links into the iOS system sheet so
+    /// the user can cancel / change tiers without leaving the app.
+    /// Expected by App Review for any auto-renewing subscription app.
+    private var manageSubscriptions: some View {
+        Button {
+            Task {
+                if let scene = UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    try? await AppStore.showManageSubscriptions(in: scene)
+                }
+            }
+        } label: {
+            Text(loc.t(.paywall_manage_subscription))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.p1Mute)
+                .underline()
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Sticky CTA
 
     private var stickyBar: some View {
         VStack(spacing: 8) {
-            Button(action: triggerPurchase) {
+            Button {
+                Haptics.medium()
+                triggerPurchase()
+            } label: {
                 Group {
                     if subs.purchasing {
                         ProgressView()
                             .tint(.p1LimeInk)
                     } else {
-                        Text("Start 7-Day Free Trial")
+                        Text(loc.t(.paywall_cta_trial))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)
@@ -557,9 +632,12 @@ struct OBPaywallScreen: View {
                 .padding(.vertical, 16)
                 .background(Color.p1Lime)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .pressableScale(0.97)
             }
             .buttonStyle(.plain)
             .disabled(subs.purchasing)
+            // Success haptic the moment Apple confirms the purchase.
+            .sensoryFeedback(.success, trigger: subs.isPro)
 
             if let err = subs.lastError {
                 Text(err)
@@ -568,7 +646,7 @@ struct OBPaywallScreen: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             } else {
-                Text("Then \(plan == .weekly ? "$14.99/week" : "$39.99/month") · Cancel anytime")
+                Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundColor(.p1Mute)
             }

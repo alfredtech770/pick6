@@ -19,6 +19,12 @@ struct Betting_appApp: App {
     @StateObject private var subscriptions = SubscriptionManager()
     @StateObject private var favorites = FavoritesStore()
 
+    /// Drives every t(...) lookup in the app. Picking a new language in
+    /// Profile → Language mutates `languageCode` here, which propagates
+    /// through @Environment(LocalizationManager.self) and triggers a
+    /// view-tree re-render — no app restart needed.
+    @State private var localization = LocalizationManager.shared
+
     init() {
         registerCustomFonts()
     }
@@ -42,8 +48,13 @@ struct Betting_appApp: App {
                 }
             }
             .environment(authManager)
+            .environment(localization)
             .environmentObject(subscriptions)
             .environmentObject(favorites)
+            // Flip the whole view tree to RTL when the user picks Arabic.
+            // SwiftUI mirrors layout (HStack ordering, leading/trailing
+            // edges, sheet animations) automatically once this is set.
+            .environment(\.layoutDirection, localization.layoutDirection)
             .task {
                 await authManager.checkSession()
                 await subscriptions.bootstrap()

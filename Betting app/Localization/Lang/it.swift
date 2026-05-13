@@ -1,0 +1,154 @@
+// Italian — manually translated from en.swift.
+// Brand names, Pick1, USD currency stay verbatim.
+
+enum ItalianStrings {
+    static let table: [L10nKey: String] = [
+
+        // App / brand
+        .app_name:                       "Pick1",
+        .app_tagline:                    "Pronostici sportivi IA",
+        .app_displayname_default:        "FAN PICK1",
+
+        // Bottom nav
+        .nav_home:                       "Home",
+        .nav_picks:                      "Pronostici",
+        .nav_live:                       "Live",
+        .nav_profile:                    "Profilo",
+        .nav_live_count_singular:        "Partite live, 1 in corso ora",
+        .nav_live_count_plural:          "Partite live, {n} in corso ora",
+
+        // Generic actions
+        .action_done:                    "Fatto",
+        .action_cancel:                  "Annulla",
+        .action_continue:                "Continua",
+        .action_back:                    "Indietro",
+        .action_close:                   "Chiudi",
+        .action_save:                    "Salva",
+        .action_edit:                    "Modifica",
+        .action_delete:                  "Elimina",
+        .action_confirm:                 "Conferma",
+        .action_retry:                   "Riprova",
+        .action_skip:                    "Salta",
+        .action_next:                    "Avanti",
+        .action_share:                   "Condividi",
+
+        // State / errors
+        .state_loading:                  "Caricamento…",
+        .state_no_picks_today:           "Nessun pronostico oggi.",
+        .state_offline_title:            "Impossibile raggiungere Pick1",
+        .state_offline_body:             "Controlla la connessione e riprova.",
+        .error_generic:                  "Qualcosa è andato storto. Riprova.",
+        .error_network:                  "Impossibile raggiungere il server Pick1. Controlla la connessione e riprova.",
+
+        // Auth
+        .auth_welcome_title:             "Accedi",
+        .auth_welcome_sub:               "Pronostici IA per ogni sport. Scelte più intelligenti.",
+        .auth_apple_button:              "Accedi con Apple",
+        .auth_or_divider:                "OPPURE",
+        .auth_email_placeholder:         "Indirizzo email",
+        .auth_send_code:                 "Inviami un codice via email",
+        .auth_code_title:                "Inserisci il codice",
+        .auth_code_sub:                  "Abbiamo inviato un codice a 6 cifre alla tua email.",
+        .auth_code_placeholder:          "Codice a 6 cifre",
+        .auth_code_verify:               "Verifica",
+        .auth_code_resend:               "Reinvia codice",
+        .auth_must_be_21:                "Devi avere almeno 21 anni per usare Pick1",
+        .auth_terms_disclaimer:          "Continuando accetti i nostri Termini di Servizio e l'Informativa sulla Privacy.",
+
+        // Settings
+        .settings_account_section:       "ACCOUNT",
+        .settings_prefs_meta:            "PREFERENZE",
+        .settings_notifications:         "Notifiche",
+        .settings_notifications_sub:     "Partite live · pronostici · risultati",
+        .settings_language:              "Lingua",
+        .settings_language_sub_default:  "Predefinita di sistema",
+        .settings_subscription:          "Abbonamento",
+        .settings_subscription_free:     "GRATIS",
+        .settings_subscription_pro:      "PRO",
+        .settings_subscription_sub_pro:  "Gestisci in Impostazioni iOS",
+        .settings_subscription_sub_free: "Sblocca tutti i pronostici · passa a Pro",
+        .settings_support_section:       "SUPPORTO",
+        .settings_help_meta:             "AIUTO",
+        .settings_help_center:           "Centro assistenza",
+        .settings_privacy_security:      "Privacy e Sicurezza",
+        .settings_terms:                 "Termini di Servizio",
+        .settings_privacy_policy:        "Informativa sulla Privacy",
+        .settings_sign_out:              "Esci",
+        .settings_app_version:           "Versione app",
+
+        // Edit profile
+        .profile_edit_title:             "Modifica profilo",
+        .profile_first_name:             "Nome",
+        .profile_last_name:              "Cognome",
+        .profile_whatsapp:               "WhatsApp",
+        .profile_dob:                    "Data di nascita",
+        .profile_delete_account:         "Elimina account",
+        .profile_delete_alert_title:     "Eliminare l'account?",
+        .profile_delete_alert_message:   "Questo elimina definitivamente il tuo account Pick1 e la cronologia dei pronostici entro 30 giorni. Gli abbonamenti attivi devono essere annullati separatamente in Impostazioni iOS → Abbonamenti.",
+        .profile_delete_alert_confirm:   "Elimina",
+
+        // Language picker
+        .lang_picker_title:              "LINGUA",
+
+        // Paywall
+        .paywall_kicker:                 "PASSA A PRO",
+        .paywall_title:                  "Sblocca ogni pronostico.",
+        .paywall_subtitle:               "Ogni sport. Ogni partita. Ogni giorno.",
+        .paywall_weekly:                 "Settimanale",
+        .paywall_monthly:                "Mensile",
+        .paywall_save_badge:             "RISPARMIA 33%",
+        .paywall_best_value:             "MIGLIOR PREZZO",
+        .paywall_compare_title:          "GRATIS vs PRO",
+        .paywall_compare_meta:           "COSA OTTIENI",
+        .paywall_faq_title:              "DOMANDE?",
+        .paywall_faq_meta:               "FAQ",
+        .paywall_fineprint_weekly:       "7 giorni di prova gratuita, poi $14.99/settimana. L'abbonamento si rinnova automaticamente salvo annullamento almeno 24h prima della fine del periodo. I pagamenti vengono elaborati tramite il tuo ID Apple.",
+        .paywall_fineprint_monthly:      "7 giorni di prova gratuita, poi $39.99/mese. L'abbonamento si rinnova automaticamente salvo annullamento almeno 24h prima della fine del periodo. I pagamenti vengono elaborati tramite il tuo ID Apple.",
+        .paywall_then_weekly:            "Poi $14.99/settimana · Annulla in qualsiasi momento",
+        .paywall_then_monthly:           "Poi $39.99/mese · Annulla in qualsiasi momento",
+        .paywall_cta_trial:              "Inizia 7 giorni di prova gratuita",
+        .paywall_restore:                "Ripristina acquisti",
+        .paywall_terms:                  "Termini di Servizio",
+        .paywall_privacy:                "Informativa sulla Privacy",
+        .paywall_manage_subscription:    "Gestisci abbonamento",
+        .paywall_skip:                   "Accedi gratis",
+        .paywall_purchase_pending:       "Il tuo acquisto è in attesa di approvazione. Sbloccheremo Pro non appena verrà confermato.",
+
+        // Cards
+        .card_live:                      "LIVE",
+        .card_final:                     "FINALE",
+        .card_awaiting:                  "IN ATTESA",
+        .card_pending_grade:             "VALUTAZIONE IN CORSO",
+        .card_vs:                        "VS",
+        .card_ai_picks:                  "PICKS IA",
+        .card_my_picks:                  "I MIEI PICKS",
+        .card_home_team:                 "CASA",
+        .card_away_team:                 "TRASFERTA",
+        .card_pick_label:                "IA",
+        .card_lock_in:                   "BLOCCA PICK IA",
+        .card_save_pick:                 "Salva pronostico",
+        .card_saved_toast:               "SALVATO · {n}% FIDUCIA IA",
+
+        // Bookmaker / age gate
+        .bookmaker_sheet_title:          "PIAZZA IL TUO PRONOSTICO",
+        .bookmaker_disclaimer:           "Pick1 mostra pronostici IA a scopo di intrattenimento. Non piazziamo, accettiamo o elaboriamo scommesse.",
+        .bookmaker_gambler_hotline:      "Se tu o qualcuno che conosci ha problemi di gioco d'azzardo, chiama 1-800-GAMBLER.",
+        .age_gate_title:                 "SOLO 21+",
+        .age_gate_message:               "Pick1 mostra pronostici sportivi IA a scopo di intrattenimento. Le integrazioni con i bookmaker richiedono che tu abbia almeno 21 anni. Continuando confermi di avere l'età legale per il gioco d'azzardo nella tua giurisdizione.\n\nSe tu o qualcuno che conosci ha problemi di gioco d'azzardo, chiama 1-800-GAMBLER.",
+        .age_gate_confirm:               "Ho 21 anni o più",
+
+        // Wins
+        .wins_tab_title:                 "VITTORIE",
+        .wins_empty_title:               "Ancora nessuna vittoria.",
+        .wins_empty_sub:                 "Pronostici conclusi e preferiti appariranno qui.",
+
+        // Live
+        .live_tab_title:                 "LIVE",
+        .live_section_live:              "LIVE ORA",
+        .live_section_awaiting:          "IN ATTESA DI VALUTAZIONE",
+        .live_section_final:             "FINALE",
+        .live_section_upcoming:          "IN ARRIVO",
+        .live_empty_title:               "Nulla in diretta al momento.",
+        .live_empty_sub:                 "Ricontrolla più vicino al fischio d'inizio.",
+    ]
+}

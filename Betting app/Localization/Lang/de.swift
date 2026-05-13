@@ -1,0 +1,154 @@
+// German (Hochdeutsch) — manually translated from en.swift.
+// Brand names, Pick1, USD currency stay verbatim.
+
+enum GermanStrings {
+    static let table: [L10nKey: String] = [
+
+        // App / brand
+        .app_name:                       "Pick1",
+        .app_tagline:                    "KI-Sportprognosen",
+        .app_displayname_default:        "PICK1 FAN",
+
+        // Bottom nav
+        .nav_home:                       "Start",
+        .nav_picks:                      "Tipps",
+        .nav_live:                       "Live",
+        .nav_profile:                    "Profil",
+        .nav_live_count_singular:        "Live-Spiele, 1 läuft jetzt",
+        .nav_live_count_plural:          "Live-Spiele, {n} laufen jetzt",
+
+        // Generic actions
+        .action_done:                    "Fertig",
+        .action_cancel:                  "Abbrechen",
+        .action_continue:                "Weiter",
+        .action_back:                    "Zurück",
+        .action_close:                   "Schließen",
+        .action_save:                    "Speichern",
+        .action_edit:                    "Bearbeiten",
+        .action_delete:                  "Löschen",
+        .action_confirm:                 "Bestätigen",
+        .action_retry:                   "Erneut",
+        .action_skip:                    "Überspringen",
+        .action_next:                    "Weiter",
+        .action_share:                   "Teilen",
+
+        // State / errors
+        .state_loading:                  "Wird geladen…",
+        .state_no_picks_today:           "Heute keine Tipps.",
+        .state_offline_title:            "Pick1 nicht erreichbar",
+        .state_offline_body:             "Verbindung prüfen und erneut versuchen.",
+        .error_generic:                  "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+        .error_network:                  "Pick1-Server nicht erreichbar. Verbindung prüfen und erneut versuchen.",
+
+        // Auth
+        .auth_welcome_title:             "Anmelden",
+        .auth_welcome_sub:               "KI-Tipps für jeden Sport. Triff klügere Entscheidungen.",
+        .auth_apple_button:              "Mit Apple anmelden",
+        .auth_or_divider:                "ODER",
+        .auth_email_placeholder:         "E-Mail-Adresse",
+        .auth_send_code:                 "Code per E-Mail senden",
+        .auth_code_title:                "Code eingeben",
+        .auth_code_sub:                  "Wir haben einen 6-stelligen Code an deine E-Mail geschickt.",
+        .auth_code_placeholder:          "6-stelliger Code",
+        .auth_code_verify:               "Bestätigen",
+        .auth_code_resend:               "Code erneut senden",
+        .auth_must_be_21:                "Pick1 ist erst ab 21 Jahren nutzbar",
+        .auth_terms_disclaimer:          "Mit dem Fortfahren akzeptierst du unsere Nutzungsbedingungen und Datenschutzrichtlinie.",
+
+        // Settings
+        .settings_account_section:       "KONTO",
+        .settings_prefs_meta:            "EINSTELLUNGEN",
+        .settings_notifications:         "Benachrichtigungen",
+        .settings_notifications_sub:     "Live-Spiele · Tipps · Ergebnisse",
+        .settings_language:              "Sprache",
+        .settings_language_sub_default:  "Systemstandard",
+        .settings_subscription:          "Abo",
+        .settings_subscription_free:     "GRATIS",
+        .settings_subscription_pro:      "PRO",
+        .settings_subscription_sub_pro:  "In iOS-Einstellungen verwalten",
+        .settings_subscription_sub_free: "Alle Tipps freischalten · Pro werden",
+        .settings_support_section:       "SUPPORT",
+        .settings_help_meta:             "HILFE",
+        .settings_help_center:           "Hilfecenter",
+        .settings_privacy_security:      "Datenschutz & Sicherheit",
+        .settings_terms:                 "Nutzungsbedingungen",
+        .settings_privacy_policy:        "Datenschutzrichtlinie",
+        .settings_sign_out:              "Abmelden",
+        .settings_app_version:           "App-Version",
+
+        // Edit profile
+        .profile_edit_title:             "Profil bearbeiten",
+        .profile_first_name:             "Vorname",
+        .profile_last_name:              "Nachname",
+        .profile_whatsapp:               "WhatsApp",
+        .profile_dob:                    "Geburtsdatum",
+        .profile_delete_account:         "Konto löschen",
+        .profile_delete_alert_title:     "Konto löschen?",
+        .profile_delete_alert_message:   "Dies löscht dein Pick1-Konto und deinen Tippverlauf innerhalb von 30 Tagen dauerhaft. Aktive Abos müssen separat in den iOS-Einstellungen → Abonnements gekündigt werden.",
+        .profile_delete_alert_confirm:   "Löschen",
+
+        // Language picker
+        .lang_picker_title:              "SPRACHE",
+
+        // Paywall
+        .paywall_kicker:                 "PRO WERDEN",
+        .paywall_title:                  "Jeden Tipp freischalten.",
+        .paywall_subtitle:               "Jeder Sport. Jedes Spiel. Jeden Tag.",
+        .paywall_weekly:                 "Wöchentlich",
+        .paywall_monthly:                "Monatlich",
+        .paywall_save_badge:             "33% SPAREN",
+        .paywall_best_value:             "BESTES ANGEBOT",
+        .paywall_compare_title:          "GRATIS vs PRO",
+        .paywall_compare_meta:           "DEINE VORTEILE",
+        .paywall_faq_title:              "FRAGEN?",
+        .paywall_faq_meta:               "FAQ",
+        .paywall_fineprint_weekly:       "7 Tage kostenlos testen, danach $14.99/Woche. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird. Zahlungen erfolgen über deine Apple-ID.",
+        .paywall_fineprint_monthly:      "7 Tage kostenlos testen, danach $39.99/Monat. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird. Zahlungen erfolgen über deine Apple-ID.",
+        .paywall_then_weekly:            "Danach $14.99/Woche · Jederzeit kündbar",
+        .paywall_then_monthly:           "Danach $39.99/Monat · Jederzeit kündbar",
+        .paywall_cta_trial:              "7 Tage gratis starten",
+        .paywall_restore:                "Käufe wiederherstellen",
+        .paywall_terms:                  "Nutzungsbedingungen",
+        .paywall_privacy:                "Datenschutzrichtlinie",
+        .paywall_manage_subscription:    "Abo verwalten",
+        .paywall_skip:                   "Gratis weiter",
+        .paywall_purchase_pending:       "Dein Kauf wartet auf Freigabe. Sobald er bestätigt ist, schalten wir Pro frei.",
+
+        // Cards
+        .card_live:                      "LIVE",
+        .card_final:                     "ENDSTAND",
+        .card_awaiting:                  "AUSSTEHEND",
+        .card_pending_grade:             "AUSWERTUNG LÄUFT",
+        .card_vs:                        "VS",
+        .card_ai_picks:                  "KI-TIPPS",
+        .card_my_picks:                  "MEINE TIPPS",
+        .card_home_team:                 "HEIM",
+        .card_away_team:                 "AUSWÄRTS",
+        .card_pick_label:                "KI",
+        .card_lock_in:                   "KI-TIPP SICHERN",
+        .card_save_pick:                 "Tipp speichern",
+        .card_saved_toast:               "GESPEICHERT · {n}% KI-KONFIDENZ",
+
+        // Bookmaker / age gate
+        .bookmaker_sheet_title:          "TIPP ABGEBEN",
+        .bookmaker_disclaimer:           "Pick1 zeigt KI-Prognosen zur Unterhaltung. Wir nehmen, vermitteln oder verarbeiten keine Wetten.",
+        .bookmaker_gambler_hotline:      "Wenn du oder jemand, den du kennst, ein Glücksspielproblem hat, rufe 1-800-GAMBLER an.",
+        .age_gate_title:                 "NUR AB 21",
+        .age_gate_message:               "Pick1 zeigt KI-Sportprognosen zur Unterhaltung. Sportwetten-Integrationen setzen ein Mindestalter von 21 Jahren voraus. Mit dem Fortfahren bestätigst du, dass du das gesetzliche Mindestalter für Glücksspiel in deinem Land erfüllst.\n\nWenn du oder jemand, den du kennst, ein Glücksspielproblem hat, rufe 1-800-GAMBLER an.",
+        .age_gate_confirm:               "Ich bin 21 oder älter",
+
+        // Wins
+        .wins_tab_title:                 "SIEGE",
+        .wins_empty_title:               "Noch keine Siege.",
+        .wins_empty_sub:                 "Abgerechnete Tipps und Favoriten erscheinen hier.",
+
+        // Live
+        .live_tab_title:                 "LIVE",
+        .live_section_live:              "JETZT LIVE",
+        .live_section_awaiting:          "AUSWERTUNG LÄUFT",
+        .live_section_final:             "ENDSTAND",
+        .live_section_upcoming:          "DEMNÄCHST",
+        .live_empty_title:               "Aktuell nichts live.",
+        .live_empty_sub:                 "Schau kurz vor Spielbeginn wieder vorbei.",
+    ]
+}

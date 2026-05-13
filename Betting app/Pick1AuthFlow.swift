@@ -408,7 +408,7 @@ struct OBWelcomeScreen: View {
                         .kerning(0.5)
                         .padding(.bottom, 22)
 
-                        OBKicker(text: "WELCOME TO PICK6")
+                        OBKicker(text: "WELCOME TO PICK1")
                             .padding(.bottom, 14)
 
                         OBTitle("PICK", "SHARPER", emphasis: "TODAY.", size: 78)

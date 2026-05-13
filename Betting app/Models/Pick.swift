@@ -51,6 +51,78 @@ struct Pick: Identifiable, Codable {
     var isWin: Bool { result == "win" }
     var isLoss: Bool { result == "loss" }
     var isPending: Bool { result == "pending" }
+
+    /// Parses `gameDate` (ISO yyyy-MM-dd) into a Date at midnight
+    /// in the pipeline's timezone (America/New_York). Using
+    /// TimeZone.current here was a subtle bug: a user in PT would
+    /// see "yesterday's" pick as today's because midnight ET is
+    /// 9 PM PT the previous day. The pipeline writes dates in ET
+    /// so we parse them as ET.
+    ///
+    /// The formatter is hoisted to a static let (with en_US_POSIX
+    /// locale) — the previous per-call allocation cost was visible
+    /// in render-path profiling once realtime updates started
+    /// triggering re-renders on every score tick.
+    var gameDateValue: Date? {
+        return Self.gameDateFormatter.date(from: gameDate)
+    }
+
+    private static let gameDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        return f
+    }()
+
+    /// Single source of truth for "what badge / chrome should this
+    /// pick render with right now?". Considers (1) the graded
+    /// result, (2) the live-score state of the game, (3) clock
+    /// reality — game_date and start_time vs now. Without (3) a
+    /// pick from yesterday with result=pending stays glued in the
+    /// "UPCOMING" branch forever, which is the bug the user hit.
+    func renderState(liveScore: LiveScore?, now: Date = Date()) -> PickRenderState {
+        // Graded picks short-circuit — once result is win/loss the
+        // game is done and the box-score sits in pick.home/awayScore.
+        if isWin { return .won }
+        if isLoss { return .lost }
+
+        // Pending + the live-score row says "in progress" → LIVE.
+        if liveScore?.isLive == true { return .live }
+
+        // Pending + the live-score row says "final" → game's over
+        // but we haven't graded yet (pipeline is between grade ticks).
+        if liveScore?.isFinal == true { return .awaitingResult }
+
+        // Pending + game time is in the past (either by start_time
+        // or by gameDate) → not really "upcoming" anymore; the
+        // pipeline hasn't caught up.
+        if let kickoff = liveScore?.startTime, kickoff < now {
+            return .awaitingResult
+        }
+        let dayStart = Calendar.current.startOfDay(for: now)
+        if let gd = gameDateValue, gd < dayStart {
+            return .awaitingResult
+        }
+
+        // Pending + future kickoff (or kickoff unknown but date is
+        // today/future) → genuinely upcoming.
+        return .upcoming
+    }
+}
+
+// MARK: - Pick render state
+
+/// Display-state for a single pick card. Every per-card view that
+/// renders a badge / score / kickoff label should switch on this
+/// instead of inferring the state inline from `result` + isLive,
+/// so the rules stay consistent across the app.
+enum PickRenderState {
+    case live              // game in progress; show live score
+    case won               // settled W
+    case lost              // settled L
+    case awaitingResult    // pending but game is in the past — needs grading
+    case upcoming          // pending and game is in the future
 }
 
 enum ConfidenceTier {
@@ -102,13 +174,34 @@ struct LiveScore: Identifiable, Codable {
         case updatedAt = "updated_at"
     }
 
+    /// True iff the game is currently in progress. Defensive against
+    /// the wide variety of status strings sportsdata.io / Ergast return
+    /// ("InProgress", "In Progress", "Halftime", "Q3", "1st", "Bot 7",
+    /// "1H", "2H", "HT", "OT", etc.). Anything that's NOT clearly
+    /// final/scheduled and has scores or a live-shaped status counts
+    /// as live.
     var isLive: Bool {
-        guard let s = status else { return false }
-        return ["InProgress", "live", "1H", "2H", "HT"].contains(s)
+        let s = (status ?? "")
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { return false }
+        if isFinal { return false }
+        if s.contains("schedul") || s == "ns" || s == "tbd"
+            || s == "pre" || s == "preview" || s == "postponed"
+            || s == "canceled" || s == "cancelled" || s == "delayed" {
+            return false
+        }
+        return true
     }
 
+    /// True iff the game has finished. Same defensive parsing.
     var isFinal: Bool {
-        guard let s = status else { return false }
-        return ["Final", "F", "FT", "AET", "closed"].contains(s)
+        let s = (status ?? "")
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { return false }
+        return s.contains("final")
+            || s == "f" || s == "ft" || s == "aet" || s == "closed"
+            || s == "f/ot" || s == "f/so" || s == "ended"
     }
 }

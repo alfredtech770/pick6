@@ -1,0 +1,155 @@
+// Arabic (Modern Standard / al-fuṣḥā) — manually translated from en.swift.
+// Brand names "Pick1", USD currency stay verbatim. UI handles RTL layout
+// automatically when languageCode == "ar".
+
+enum ArabicStrings {
+    static let table: [L10nKey: String] = [
+
+        // App / brand
+        .app_name:                       "Pick1",
+        .app_tagline:                    "توقعات رياضية بالذكاء الاصطناعي",
+        .app_displayname_default:        "مشجع PICK1",
+
+        // Bottom nav
+        .nav_home:                       "الرئيسية",
+        .nav_picks:                      "التوقعات",
+        .nav_live:                       "مباشر",
+        .nav_profile:                    "الملف الشخصي",
+        .nav_live_count_singular:        "مباريات مباشرة، مباراة واحدة جارية الآن",
+        .nav_live_count_plural:          "مباريات مباشرة، {n} جارية الآن",
+
+        // Generic actions
+        .action_done:                    "تم",
+        .action_cancel:                  "إلغاء",
+        .action_continue:                "متابعة",
+        .action_back:                    "رجوع",
+        .action_close:                   "إغلاق",
+        .action_save:                    "حفظ",
+        .action_edit:                    "تعديل",
+        .action_delete:                  "حذف",
+        .action_confirm:                 "تأكيد",
+        .action_retry:                   "إعادة المحاولة",
+        .action_skip:                    "تخطّي",
+        .action_next:                    "التالي",
+        .action_share:                   "مشاركة",
+
+        // State / errors
+        .state_loading:                  "جارٍ التحميل…",
+        .state_no_picks_today:           "لا توجد توقعات اليوم.",
+        .state_offline_title:            "تعذّر الوصول إلى Pick1",
+        .state_offline_body:             "تحقّق من اتصالك وحاول مرة أخرى.",
+        .error_generic:                  "حدث خطأ ما. يُرجى المحاولة مرة أخرى.",
+        .error_network:                  "تعذّر الوصول إلى خادم Pick1. تحقّق من اتصالك وحاول مرة أخرى.",
+
+        // Auth
+        .auth_welcome_title:             "تسجيل الدخول",
+        .auth_welcome_sub:               "توقعات بالذكاء الاصطناعي لكل رياضة. اتخذ قرارات أذكى.",
+        .auth_apple_button:              "تسجيل الدخول باستخدام Apple",
+        .auth_or_divider:                "أو",
+        .auth_email_placeholder:         "البريد الإلكتروني",
+        .auth_send_code:                 "أرسل لي رمزًا عبر البريد",
+        .auth_code_title:                "أدخل الرمز",
+        .auth_code_sub:                  "أرسلنا رمزًا مكوّنًا من 6 أرقام إلى بريدك الإلكتروني.",
+        .auth_code_placeholder:          "رمز من 6 أرقام",
+        .auth_code_verify:               "تحقّق",
+        .auth_code_resend:               "إعادة إرسال الرمز",
+        .auth_must_be_21:                "يجب أن يكون عمرك 21 عامًا أو أكثر لاستخدام Pick1",
+        .auth_terms_disclaimer:          "بمتابعتك، فإنك توافق على شروط الخدمة وسياسة الخصوصية.",
+
+        // Settings
+        .settings_account_section:       "الحساب",
+        .settings_prefs_meta:            "التفضيلات",
+        .settings_notifications:         "الإشعارات",
+        .settings_notifications_sub:     "المباريات المباشرة · التوقعات · النتائج",
+        .settings_language:              "اللغة",
+        .settings_language_sub_default:  "إعداد النظام الافتراضي",
+        .settings_subscription:          "الاشتراك",
+        .settings_subscription_free:     "مجاني",
+        .settings_subscription_pro:      "PRO",
+        .settings_subscription_sub_pro:  "إدارة من إعدادات iOS",
+        .settings_subscription_sub_free: "افتح جميع التوقعات · ترقّ إلى PRO",
+        .settings_support_section:       "الدعم",
+        .settings_help_meta:             "المساعدة",
+        .settings_help_center:           "مركز المساعدة",
+        .settings_privacy_security:      "الخصوصية والأمان",
+        .settings_terms:                 "شروط الخدمة",
+        .settings_privacy_policy:        "سياسة الخصوصية",
+        .settings_sign_out:              "تسجيل الخروج",
+        .settings_app_version:           "إصدار التطبيق",
+
+        // Edit profile
+        .profile_edit_title:             "تعديل الملف الشخصي",
+        .profile_first_name:             "الاسم الأول",
+        .profile_last_name:              "اسم العائلة",
+        .profile_whatsapp:               "واتساب",
+        .profile_dob:                    "تاريخ الميلاد",
+        .profile_delete_account:         "حذف الحساب",
+        .profile_delete_alert_title:     "حذف الحساب؟",
+        .profile_delete_alert_message:   "سيؤدي ذلك إلى حذف حسابك في Pick1 وسجلّ توقعاتك نهائيًا خلال 30 يومًا. يجب إلغاء الاشتراكات النشطة بشكل منفصل من إعدادات iOS ← الاشتراكات.",
+        .profile_delete_alert_confirm:   "حذف",
+
+        // Language picker
+        .lang_picker_title:              "اللغة",
+
+        // Paywall
+        .paywall_kicker:                 "ترقّ إلى PRO",
+        .paywall_title:                  "افتح كل توقّع.",
+        .paywall_subtitle:               "كل رياضة. كل مباراة. كل يوم.",
+        .paywall_weekly:                 "أسبوعي",
+        .paywall_monthly:                "شهري",
+        .paywall_save_badge:             "وفّر 33%",
+        .paywall_best_value:             "أفضل قيمة",
+        .paywall_compare_title:          "مجاني مقابل PRO",
+        .paywall_compare_meta:           "ما الذي تحصل عليه",
+        .paywall_faq_title:              "أسئلة؟",
+        .paywall_faq_meta:               "الأسئلة الشائعة",
+        .paywall_fineprint_weekly:       "تجربة مجانية لمدة 7 أيام، ثم 14.99$ أسبوعيًا. يتجدّد الاشتراك تلقائيًا ما لم يُلغَ قبل انتهاء الفترة بـ 24 ساعة على الأقل. تُعالَج المدفوعات عبر معرّف Apple الخاص بك.",
+        .paywall_fineprint_monthly:      "تجربة مجانية لمدة 7 أيام، ثم 39.99$ شهريًا. يتجدّد الاشتراك تلقائيًا ما لم يُلغَ قبل انتهاء الفترة بـ 24 ساعة على الأقل. تُعالَج المدفوعات عبر معرّف Apple الخاص بك.",
+        .paywall_then_weekly:            "ثم 14.99$ أسبوعيًا · ألغِ في أي وقت",
+        .paywall_then_monthly:           "ثم 39.99$ شهريًا · ألغِ في أي وقت",
+        .paywall_cta_trial:              "ابدأ التجربة المجانية لمدة 7 أيام",
+        .paywall_restore:                "استعادة المشتريات",
+        .paywall_terms:                  "شروط الخدمة",
+        .paywall_privacy:                "سياسة الخصوصية",
+        .paywall_manage_subscription:    "إدارة الاشتراك",
+        .paywall_skip:                   "الدخول مجانًا",
+        .paywall_purchase_pending:       "عملية الشراء قيد الموافقة. سنفتح PRO فور اكتمالها.",
+
+        // Cards
+        .card_live:                      "مباشر",
+        .card_final:                     "انتهت",
+        .card_awaiting:                  "قيد الانتظار",
+        .card_pending_grade:             "بانتظار التقييم",
+        .card_vs:                        "ضد",
+        .card_ai_picks:                  "توقعات AI",
+        .card_my_picks:                  "توقعاتي",
+        .card_home_team:                 "المضيف",
+        .card_away_team:                 "الضيف",
+        .card_pick_label:                "AI",
+        .card_lock_in:                   "ثبّت توقّع AI",
+        .card_save_pick:                 "حفظ التوقّع",
+        .card_saved_toast:               "تم الحفظ · ثقة AI {n}%",
+
+        // Bookmaker / age gate
+        .bookmaker_sheet_title:          "ضع توقّعك",
+        .bookmaker_disclaimer:           "يعرض Pick1 توقعات الذكاء الاصطناعي لأغراض الترفيه. نحن لا نضع أو نقبل أو نعالج أي رهانات.",
+        .bookmaker_gambler_hotline:      "إذا كنت أنت أو شخص تعرفه تعاني من إدمان المقامرة، فاتصل بـ 1-800-GAMBLER.",
+        .age_gate_title:                 "للأعمار 21+ فقط",
+        .age_gate_message:               "يعرض Pick1 توقعات رياضية بالذكاء الاصطناعي لأغراض الترفيه. تتطلب عمليات الربط مع شركات الرهان أن يكون عمرك 21 عامًا أو أكثر. بمتابعتك، فإنك تؤكد أنك بلغت السن القانونية للمقامرة في منطقتك.\n\nإذا كنت أنت أو شخص تعرفه تعاني من إدمان المقامرة، فاتصل بـ 1-800-GAMBLER.",
+        .age_gate_confirm:               "عمري 21 عامًا أو أكثر",
+
+        // Wins
+        .wins_tab_title:                 "الفوزات",
+        .wins_empty_title:               "لا توجد فوزات بعد.",
+        .wins_empty_sub:                 "ستظهر هنا التوقعات المُحسومة والمفضّلة.",
+
+        // Live
+        .live_tab_title:                 "مباشر",
+        .live_section_live:              "مباشر الآن",
+        .live_section_awaiting:          "بانتظار التقييم",
+        .live_section_final:             "انتهت",
+        .live_section_upcoming:          "قادمة",
+        .live_empty_title:               "لا شيء مباشر الآن.",
+        .live_empty_sub:                 "تحقّق مجددًا مع اقتراب موعد البداية.",
+    ]
+}

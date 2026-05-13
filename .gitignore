@@ -1,0 +1,90 @@
+# ── Secrets ───────────────────────────────────────────────────────────
+# Never commit env files; .env.example documents the schema.
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+!.env.example
+
+# ── Node ──────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+.pnp.*
+
+# ── macOS ─────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Xcode ─────────────────────────────────────────────────────────────
+# User-specific Xcode state — should never be committed.
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.xcscheme
+!default.xcscheme
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Build artifacts
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# ── CocoaPods (if added later) ────────────────────────────────────────
+Pods/
+Podfile.lock
+
+# ── Carthage (if added later) ─────────────────────────────────────────
+Carthage/Build/
+Carthage/Checkouts/
+
+# ── Editors ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs & temp ───────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.backup-*
+
+# ── Pick1 project-specific ────────────────────────────────────────────
+# Backups created during HTML editing
+*.html.backup-*
+*.html.bak
+*.old.html
+website.old.html
+pick6-site.zip
+
+# Local scratch directories
+.agents/
+.claude/
+
+# Generated audit/research artifacts
+audit-*/
+
+# Skill lock files
+skills-lock.json

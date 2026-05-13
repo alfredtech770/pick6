@@ -37,8 +37,43 @@ const TZ = 'America/New_York';
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   // SDK auto-retries 408/409/429/5xx with exponential backoff.
-  maxRetries: 4,
+  // Lowered from 4 → 2: with adaptive thinking + web_search a single
+  // failed retry can cost ~$0.50–$1.50, so 4 retries means a single
+  // hung daily run can compound to $6+. Two is enough for transient
+  // 429s; persistent failures should fail loudly, not silently retry.
+  maxRetries: 2,
+  // Per-request timeout — defaults to 10 min in the SDK, which means
+  // a hung stream can hold a cron tick open and pile up. Two minutes
+  // is well over the realistic p99 for a single-league pick run.
+  timeout: 120_000,
 });
+
+// ─── Daily web_search budget ─────────────────────────────────────────
+// Cost ceiling for the agentic web_search tool across one UTC day.
+// Each search ≈ $0.01 and each thinking-step around a search can add
+// $0.05-$0.15. With 8 leagues × research mode + hourly backfill the
+// worst-case fan-out is large; this is a hard guardrail.
+//
+// Counter is in-memory (per-process), reset on midnight UTC. For a
+// single Railway worker that's sufficient; multi-worker deployments
+// would need a Supabase counter table.
+const WEB_SEARCH_DAILY_LIMIT = Number(process.env.WEB_SEARCH_DAILY_LIMIT || 200);
+let webSearchUses = 0;
+let webSearchBudgetDate = new Date().toISOString().slice(0, 10);
+
+function checkWebSearchBudget(expectedUses = 1) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== webSearchBudgetDate) {
+    webSearchBudgetDate = today;
+    webSearchUses = 0;
+  }
+  if (webSearchUses + expectedUses > WEB_SEARCH_DAILY_LIMIT) {
+    return false;
+  }
+  webSearchUses += expectedUses;
+  return true;
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY,
@@ -388,6 +423,18 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) 
 async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const cfg = LEAGUES[league];
   const useResearch = cfg.promptMode === 'research' || forceResearch;
+
+  // Budget check — research mode + forceResearch both fan out web_search
+  // calls. Reserve a generous slice (10 searches) per league pick run,
+  // and bail if we can't afford it. Pure feed-mode pick runs still hit
+  // web_search for late-breaking news but at much lower volume; charge
+  // them 3 against the budget.
+  const expectedSearches = useResearch ? 10 : 3;
+  if (!checkWebSearchBudget(expectedSearches)) {
+    log(`💸 Skipping ${league} pick gen: daily web_search budget reached (${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT}).`);
+    return [];
+  }
+
   const stats30 = await getPerformanceStats(league, 30);
   const stats7 = await getPerformanceStats(league, 7);
   const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch);
@@ -547,17 +594,30 @@ const FINAL_STATUSES = new Set(['Final', 'F', 'FT', 'closed', 'Final OT', 'Final
 /// flips a game to "Final" before populating the score. We use Claude
 /// web_search to fill the missing scores so gradePicks() can run.
 async function backfillMissingScores() {
+  // Hard ceiling: 5 games per tick. Each backfill is ~$0.05-$0.15 in
+  // Claude web_search; 5 × hourly × 24 hours = 120 calls/day worst-case
+  // (~$6-18). 20/tick (the old value) was ~$24-72/day worst-case which
+  // was the source of the original cost incident.
+  const PER_TICK_CAP = 5;
   const finalsArr = [...FINAL_STATUSES];
   const { data: missing, error } = await supabase
     .from('live_scores')
     .select('game_id, league, home_team, away_team, start_time, status')
     .in('status', finalsArr)
     .or('home_score.is.null,away_score.is.null')
-    .limit(20);
+    .limit(PER_TICK_CAP);
   if (error) { err('Backfill scan failed:', error.message); return 0; }
   if (!missing?.length) return 0;
 
-  log(`🔁 Backfilling ${missing.length} final game(s) with missing scores via web_search…`);
+  // Daily budget gate. If we're out, skip the burst entirely — the
+  // games will retry next tick (or tomorrow); we'd rather have a
+  // 12-hour data delay than a $50 cost blowout.
+  if (!checkWebSearchBudget(missing.length)) {
+    log(`💸 Skipping backfill: daily web_search budget (${WEB_SEARCH_DAILY_LIMIT}) reached.`);
+    return 0;
+  }
+
+  log(`🔁 Backfilling ${missing.length} final game(s) with missing scores via web_search… (budget used: ${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT})`);
 
   let filled = 0;
   for (const row of missing) {
@@ -780,17 +840,17 @@ async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
   try {
+    // ── live_scores refresh ONLY ── this runs every minute. We
+    // deliberately do NOT call backfillMissingScores or gradePicks
+    // here — those use Claude with web_search and at ~$0.05-0.15
+    // per game can burn through $25/day in a couple of hours. They
+    // moved to the hourly gradeAndBackfillTick below.
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       if (cfg.promptMode === 'research') continue;
       if (!cfg.fetcher) continue;
       const raw = await cfg.fetcher();
       if (raw.length) await upsertLiveScores(league, raw);
     }
-    // Some sportsdata.io endpoints flip games to "Final" before scores
-    // are populated. Backfill any Final-status rows still missing scores
-    // via Claude web_search BEFORE we attempt to grade.
-    await backfillMissingScores();
-    await gradePicks();
   } catch (e) {
     err('Live tick crashed:', e.message);
   } finally {
@@ -798,10 +858,31 @@ async function liveTick() {
   }
 }
 
+/// Hourly Claude-using companion to liveTick. Backfills any final-
+/// status rows still missing scores via Claude web_search, then
+/// grades any settled picks. One burst per hour caps spend at
+/// roughly $1-2/hour worst case (when there's a lot to grade) and
+/// $0/hour most of the time.
+let gradeLoopRunning = false;
+async function gradeAndBackfillTick() {
+  if (gradeLoopRunning) return;
+  gradeLoopRunning = true;
+  try {
+    await backfillMissingScores();
+    await gradePicks();
+  } catch (e) {
+    err('Grade tick crashed:', e.message);
+  } finally {
+    gradeLoopRunning = false;
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 // SCHEDULES
 // ════════════════════════════════════════════════════════════════
 
+// Live-score refresh — every minute during the game window. Calls
+// sportsdata.io only; no Claude spend.
 cron.schedule('* * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
@@ -811,38 +892,41 @@ cron.schedule('* * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-// Pick generation — once daily at 5am ET (10am UK / 11am CET).
-//
-// One-tick schedule chosen to minimize Anthropic spend (~$5/day instead
-// of ~$15/day at 3× daily). Earliest kick-off-time slot that still
-// gives meaningful lead on every league:
-//
-//   • EPL early Saturday kickoff (12:30 UK = 7:30am ET) — 2.5h lead
-//   • La Liga / Bundesliga afternoon (15:00–17:00 CET) — 4h lead
-//   • F1 Sunday races (14:00 CET = 8am ET) — 3h lead
-//   • MLB matinees (1pm ET) — 8h lead
-//   • NBA/NHL primetime (7pm ET) — 14h lead
-//   • NFL Sunday (1pm ET) — 8h lead
-//   • UFC main cards (10pm ET) — 17h lead
-//   • Tennis Asia/Europe sessions covered
-//
-// Trade-off: late-breaking news (injuries, scratches) within game-day
-// won't update an already-published pick. If that becomes a problem,
-// re-add the 12pm ET tick and budget for the extra ~$3/day.
+// Grade + backfill — once per HOUR during the game window. Bursts
+// of Claude web_search to settle any Final-status games. Per-hour
+// cap on Anthropic spend (~$0.50-2/hr worst case, $0 most hours).
+cron.schedule('0 * * * *', () => {
+  const hour = parseInt(
+    new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
+    10,
+  );
+  if (hour >= 10 || hour <= 1) gradeAndBackfillTick();
+}, { timezone: TZ });
+
+// Pick generation — once daily at 5am ET. Earliest kick-off-time
+// slot that still gives meaningful lead on every league. See
+// detailed schedule reasoning in CHANGELOG / commit 88c9a0f.
 cron.schedule('0 5 * * *', runPipeline, { timezone: TZ });
 
-// Daily performance snapshot at midnight ET (after final games grade)
+// Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 
-runPipeline();
+// NOTE — we intentionally do NOT run runPipeline() on boot. Every
+// Railway redeploy used to fire a full pipeline run, which costs
+// ~$2 in Anthropic credits per deploy. After a burst of commits
+// that compounded to >$25 in two days. Cron is the only entry
+// point now; manual triggering happens via the deploy schedule
+// (push a commit at 4:59am ET to get a fresh pipeline at 5am).
 
-log('⚡ Pick6 AI pipeline online');
+log('⚡ Pick1 AI pipeline online');
 log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, max effort)`);
 log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
 log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
 log(`   Timezone: ${TZ}`);
-log('   Live scores: every 60s during game hours');
-log('   AI picks:    5am ET (once daily — covers EU morning + US lead time)');
+log('   Live scores:  every 60s during game hours (sportsdata.io, no Claude spend)');
+log('   Grade+backfill: hourly during game hours (Claude web_search burst)');
+log('   AI picks:     5am ET (once daily — covers EU morning + US lead time)');
+log('   Boot pipeline: DISABLED (removed to stop per-deploy Anthropic burn)');
 log('   Snapshot:    midnight ET');
 
 // ─── Boot-time Supabase diagnostic (safe — no secrets logged) ──
@@ -852,23 +936,23 @@ log('   Snapshot:    midnight ET');
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
     const urlHost = url.replace(/^https?:\/\//, '').split('/')[0] || '(unset)';
     const keyLen = key.length;
-    const keyHead = key.slice(0, 4);
-    const keyTail = key.slice(-4);
-    let jwtRef = '(not-jwt)';
+    // Only log whether the key parses as a JWT and what role it claims.
+    // Head/tail previews of a JWT add nothing to debugging but give a
+    // log reader real recon (confirms a service-role token is on this
+    // machine). Same for the REST body — status is what we need to know.
     let jwtRole = '(not-jwt)';
     try {
       const payload = JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString('utf8'));
-      jwtRef = payload.ref || '(no-ref-claim)';
       jwtRole = payload.role || '(no-role-claim)';
     } catch (_) { /* not a JWT */ }
-    log(`🔎 Supabase diag: url_host=${urlHost} key_len=${keyLen} key_head=${keyHead} key_tail=${keyTail} jwt_ref=${jwtRef} jwt_role=${jwtRole}`);
-    // Live REST round-trip
+    log(`🔎 Supabase diag: url_host=${urlHost} key_len=${keyLen} jwt_role=${jwtRole}`);
+    // Live REST round-trip — log status only, never body.
     const test = await axios.get(`${url}/rest/v1/picks?select=id&limit=1`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
       timeout: 10000,
       validateStatus: () => true,
     });
-    log(`🔎 Supabase REST test: status=${test.status} body=${JSON.stringify(test.data).slice(0, 200)}`);
+    log(`🔎 Supabase REST test: status=${test.status}`);
   } catch (e) {
     err('Supabase diag failed:', e.message);
   }
