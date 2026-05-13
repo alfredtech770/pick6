@@ -81,14 +81,18 @@ CREATE OR REPLACE FUNCTION public.upsert_waitlist_signup(
   p_fbp               text DEFAULT NULL,
   p_fbc               text DEFAULT NULL
 )
--- The output column is `queue_position`, not `position`, because the latter
--- is a reserved keyword in Postgres RETURNS TABLE syntax. The browser-facing
--- /api/subscribe response remaps it to `position` for clean external naming.
+-- Output columns are prefixed `out_*` to avoid two collisions:
+--   1. `position` is a reserved keyword in RETURNS TABLE syntax.
+--   2. An unprefixed `referral_code` clashes with the table column of the
+--      same name when referenced inside the proc body (PL/pgSQL ambiguity
+--      error: "It could refer to either a PL/pgSQL variable or a table
+--      column"). The browser-facing /api/subscribe response normalizes
+--      these to clean names (`position`, `referralCode`, `isNew`).
 RETURNS TABLE (
-  email           text,
-  referral_code   text,
-  queue_position  bigint,
-  is_new          boolean
+  out_email           text,
+  out_referral_code   text,
+  out_queue_position  bigint,
+  out_is_new          boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -134,9 +138,12 @@ BEGIN
       || '-'
       || encode(gen_random_bytes(2), 'hex');
 
+    -- Qualify column with table alias so it can't be confused with a
+    -- local variable named `referral_code` (PL/pgSQL would error
+    -- otherwise).
     EXIT WHEN NOT EXISTS (
-      SELECT 1 FROM public.waitlist_attribution
-       WHERE referral_code = v_referral_code
+      SELECT 1 FROM public.waitlist_attribution wa
+       WHERE wa.referral_code = v_referral_code
     );
 
     IF v_attempt > 10 THEN
@@ -175,7 +182,7 @@ BEGIN
     UPDATE public.waitlist_attribution
        SET referrals_count = referrals_count + 1,
            position = greatest(1, coalesce(position, 1) - v_jump_per_referral)
-     WHERE referral_code = v_referred_by_norm;
+     WHERE waitlist_attribution.referral_code = v_referred_by_norm;
   END IF;
 
   RETURN QUERY SELECT v_email_norm, v_referral_code, v_position, true;

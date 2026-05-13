@@ -140,13 +140,14 @@ module.exports = async (req, res) => {
       });
       return res.status(200).json({
         ok: true,
-        // The SQL proc returns the column as `queue_position` because
-        // `position` is a Postgres reserved keyword in RETURNS TABLE
-        // context. The browser-facing API still calls it `position`
-        // (cleaner), so we map here.
-        position: referral?.queue_position ?? null,
-        referralCode: referral?.referral_code ?? null,
-        isNew: referral?.is_new ?? null,
+        // The SQL proc returns columns prefixed with `out_` because the
+        // RETURNS TABLE param names would otherwise collide with the
+        // `referral_code` column inside the proc body (ambiguity error)
+        // and `position` is a Postgres reserved keyword in this context.
+        // The browser-facing API normalizes to clean names here.
+        position: referral?.out_queue_position ?? null,
+        referralCode: referral?.out_referral_code ?? null,
+        isNew: referral?.out_is_new ?? null,
       });
     }
   } catch (err) {
