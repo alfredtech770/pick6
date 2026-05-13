@@ -140,7 +140,11 @@ module.exports = async (req, res) => {
       });
       return res.status(200).json({
         ok: true,
-        position: referral?.position ?? null,
+        // The SQL proc returns the column as `queue_position` because
+        // `position` is a Postgres reserved keyword in RETURNS TABLE
+        // context. The browser-facing API still calls it `position`
+        // (cleaner), so we map here.
+        position: referral?.queue_position ?? null,
         referralCode: referral?.referral_code ?? null,
         isNew: referral?.is_new ?? null,
       });

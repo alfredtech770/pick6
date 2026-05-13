@@ -81,11 +81,14 @@ CREATE OR REPLACE FUNCTION public.upsert_waitlist_signup(
   p_fbp               text DEFAULT NULL,
   p_fbc               text DEFAULT NULL
 )
+-- The output column is `queue_position`, not `position`, because the latter
+-- is a reserved keyword in Postgres RETURNS TABLE syntax. The browser-facing
+-- /api/subscribe response remaps it to `position` for clean external naming.
 RETURNS TABLE (
-  email          text,
-  referral_code  text,
-  position       bigint,
-  is_new         boolean
+  email           text,
+  referral_code   text,
+  queue_position  bigint,
+  is_new          boolean
 )
 LANGUAGE plpgsql
 AS $$
@@ -102,7 +105,7 @@ DECLARE
   v_jump_per_referral integer := 100;
 BEGIN
   -- 1. Email-already-exists short-circuit.
-  SELECT wa.email, wa.referral_code, wa.position
+  SELECT wa.email AS wa_email, wa.referral_code AS wa_code, wa.position AS wa_pos
     INTO v_existing
     FROM public.waitlist_attribution wa
    WHERE wa.email = v_email_norm;
@@ -110,9 +113,9 @@ BEGIN
   IF FOUND THEN
     -- Return the existing row. Don't re-credit the referrer (prevents
     -- "delete + re-signup with the same link" gaming).
-    RETURN QUERY SELECT v_existing.email,
-                        v_existing.referral_code,
-                        v_existing.position,
+    RETURN QUERY SELECT v_existing.wa_email,
+                        v_existing.wa_code,
+                        v_existing.wa_pos,
                         false;
     RETURN;
   END IF;
