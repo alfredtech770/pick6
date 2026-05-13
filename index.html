@@ -1195,6 +1195,52 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .foot-links a { transition: color 0.15s; }
 .foot-links a:hover { color: var(--ink); }
 
+/* ─── Waitlist counter pill — "1,248 already in" social proof.
+       Populated client-side by /api/waitlist-count (replaces what a
+       Telegram channel member count would have done). Sits right above
+       the form so the number reads as the reason to scroll the eye
+       down to the inputs.  */
+.waitlist-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  background: rgba(212, 255, 58, 0.08);
+  border: 1px solid rgba(212, 255, 58, 0.30);
+  border-radius: 999px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  animation: counterFadeIn 0.6s ease both;
+}
+.waitlist-counter .wc-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(212, 255, 58, 0.7);
+  animation: countPulse 2s ease-in-out infinite;
+}
+.waitlist-counter .wc-num {
+  color: var(--accent);
+  font-weight: 900;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0;
+}
+.waitlist-counter .wc-label { color: var(--ink-2); opacity: 0.8; }
+@keyframes counterFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes countPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(212, 255, 58, 0.7); }
+  60%  { box-shadow: 0 0 0 10px rgba(212, 255, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 255, 58, 0); }
+}
+
 /* ─── Waitlist form (multi-field: name, email, whatsapp) ─── */
 .waitlist-wrap { max-width: 480px; }
 .hero-text .waitlist-wrap, .final-cta .waitlist-wrap { margin-bottom: 24px; }
@@ -1713,6 +1759,16 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <p class="lead" data-reveal data-reveal-delay="3">Every morning at 9am ET, Pick1's AI delivers tomorrow's highest-confidence pick across 9 sports — confidence-scored, line-tracked, publicly logged. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
 
     <div class="waitlist-wrap" data-reveal data-reveal-delay="4">
+      <!-- Live waitlist counter — populated by /api/waitlist-count at
+           page-load. Replaces what a Telegram member count would have
+           done: shows new visitors "this is a real, populated list, not
+           empty air." Hidden by default until the count loads so we
+           never flash a wrong placeholder. -->
+      <div class="waitlist-counter" data-counter hidden>
+        <span class="wc-dot"></span>
+        <strong class="wc-num">—</strong>
+        <span class="wc-label">on the waitlist · be next</span>
+      </div>
       <form class="waitlist-form" data-source="hero" novalidate>
         <label class="field">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
@@ -2102,6 +2158,13 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   <h2 class="display" data-reveal>GET TOMORROW'S<br/><em>PICK FREE.</em></h2>
   <p class="lead" data-reveal data-reveal-delay="2">The AI's highest-confidence call across 9 sports, delivered to your inbox at 9am ET — starting tomorrow. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
   <div class="waitlist-wrap" data-reveal data-reveal-delay="3">
+    <!-- Same live counter as the hero. Both elements with [data-counter]
+         get populated by the single fetch at page-load. -->
+    <div class="waitlist-counter" data-counter hidden>
+      <span class="wc-dot"></span>
+      <strong class="wc-num">—</strong>
+      <span class="wc-label">on the waitlist · be next</span>
+    </div>
     <form class="waitlist-form" data-source="final" novalidate>
       <label class="field">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
@@ -2395,6 +2458,30 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.$?*|{}()[\]\\\/+^]/g, '\\$&') + '=([^;]*)'));
     return m ? decodeURIComponent(m[1]) : '';
   };
+
+  // ─── Live waitlist counter ────────────────────────────────────
+  // Fetch the next-member number from /api/waitlist-count and populate
+  // every [data-counter] element on the page. The endpoint caches for
+  // 30s at the Vercel edge so this is essentially free per request.
+  // Fails silently — the [hidden] attribute on each counter element
+  // stays in place if the fetch errors, no broken UI.
+  (function loadWaitlistCount() {
+    const els = document.querySelectorAll('[data-counter]');
+    if (!els.length) return;
+    fetch('/api/waitlist-count', { headers: { Accept: 'application/json' } })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        const n = j && j.count;
+        if (!Number.isFinite(n) || n < 1) return;
+        const formatted = n.toLocaleString('en-US');
+        els.forEach(el => {
+          const numEl = el.querySelector('.wc-num');
+          if (numEl) numEl.textContent = '#' + formatted;
+          el.removeAttribute('hidden');
+        });
+      })
+      .catch(() => {/* fail silently */});
+  })();
 
   // Capture UTM params on first page-load and persist for the session so a user who
   // arrives from an ad and signs up later still attributes correctly.
