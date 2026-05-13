@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Pick1 IG Carousel — "How Pick1 picks one game per day" (educational pillar).
+     6 slides at 1080×1350 (IG portrait, dominates the feed).
+     Render via headless Chrome — each slide as a separate screenshot. -->
+<title>Pick1 · How It Works (carousel)</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --accent: #d4ff3a;
+    --line: #1a1d22;
+    --muted: #9095a0;
+    --dim: #b8bcc1;
+    --panel: #111317;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: #2a2a2a;
+    font-family: 'Archivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Each slide is its own page-sized div. The render script
+     extracts each via a fragment URL. */
+  .slide {
+    width: 1080px; height: 1350px;
+    background: var(--bg);
+    color: white;
+    box-sizing: border-box;
+    padding: 96px 88px;
+    position: relative;
+    display: none;
+    overflow: hidden;
+  }
+  .slide.active { display: block; }
+  /* Per-slide hash routing: only show the slide matching #N */
+  :target { display: block !important; }
+  body:not(:has(:target)) .slide.s1 { display: block; }
+
+  /* Shared header */
+  .pagenum {
+    position: absolute;
+    top: 72px; right: 88px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  /* Brand logo bottom-right of every slide */
+  .brand {
+    position: absolute;
+    bottom: 72px; right: 88px;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+  }
+  .brand .one {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 10px;
+    border-radius: 7px;
+    margin-left: 2px;
+  }
+  .url {
+    position: absolute;
+    bottom: 72px; left: 88px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  /* === SLIDE 1 — TITLE === */
+  .s1 .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .s1 h1 {
+    font-family: 'Anton', sans-serif;
+    font-size: 152px;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    margin: 60px 0 40px;
+    text-transform: uppercase;
+  }
+  .s1 h1 .accent { color: var(--accent); }
+  .s1 .sub {
+    font-family: 'Archivo', sans-serif;
+    font-size: 32px;
+    color: var(--dim);
+    line-height: 1.4;
+    max-width: 800px;
+    font-weight: 500;
+  }
+  .s1 .swipe {
+    position: absolute;
+    bottom: 280px; left: 88px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .s1 .swipe::after {
+    content: ' →';
+    animation: nudge 1.2s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes nudge {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
+  }
+
+  /* === SLIDES 2-5 — Step cards (shared styling) === */
+  .step .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .step h2 {
+    font-family: 'Anton', sans-serif;
+    font-size: 116px;
+    line-height: 0.96;
+    margin: 40px 0 36px;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+  .step h2 .accent { color: var(--accent); }
+  .step .body {
+    font-family: 'Archivo', sans-serif;
+    font-size: 30px;
+    color: var(--dim);
+    line-height: 1.45;
+    font-weight: 500;
+    max-width: 800px;
+  }
+  .step .body strong { color: white; }
+  /* Visual block on the lower half of step slides */
+  .step .visual {
+    margin-top: 56px;
+    padding: 38px 42px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+  .step .visual-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .step .visual-body {
+    font-family: 'Archivo', sans-serif;
+    font-size: 26px;
+    color: white;
+    line-height: 1.4;
+    margin-top: 14px;
+    font-weight: 500;
+  }
+  .step .visual-body .accent { color: var(--accent); font-weight: 800; }
+
+  /* Specific bg variants for steps to add visual rhythm */
+  .s3 .visual { border-color: var(--accent); }
+
+  /* === SLIDE 6 — CTA === */
+  .s6 .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .s6 .big-cta {
+    font-family: 'Anton', sans-serif;
+    font-size: 168px;
+    line-height: 0.94;
+    margin: 60px 0 50px;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+  }
+  .s6 .big-cta .accent { color: var(--accent); }
+  .s6 .body {
+    font-family: 'Archivo', sans-serif;
+    font-size: 30px;
+    color: var(--dim);
+    line-height: 1.45;
+    font-weight: 500;
+  }
+  .s6 .body strong { color: white; }
+  .s6 .cta-pill {
+    margin-top: 80px;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 32px 56px;
+    border-radius: 20px;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 44px;
+    display: inline-block;
+    letter-spacing: -0.01em;
+  }
+  .s6 .cta-pill .url {
+    position: static;
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    margin-left: 12px;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<!-- Slide 1: TITLE -->
+<div class="slide s1" id="s1">
+  <div class="pagenum">1 / 6</div>
+  <div class="eyebrow">● METHODOLOGY · 4 STEPS</div>
+  <h1>HOW<br/>PICK1<br/>PICKS<br/><span class="accent">ONE</span> GAME.</h1>
+  <div class="sub">No black box. No "guaranteed locks." Here's exactly how the model calls one game per day across 9 sports →</div>
+  <div class="swipe">SWIPE</div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+<!-- Slide 2: Step 1 — Ingest -->
+<div class="slide s2 step" id="s2">
+  <div class="pagenum">2 / 6</div>
+  <div class="step-num">STEP 01 · INGEST</div>
+  <h2><span class="accent">40+</span> DATA POINTS PER TEAM</h2>
+  <div class="body">
+    Form, rest days, injuries, refs, weather, line movement, advanced stats, player-prop history. <strong>Updated every 6 hours.</strong>
+  </div>
+  <div class="visual">
+    <div class="visual-label">Sources</div>
+    <div class="visual-body">
+      Sportsdata.io · Pinnacle line history · public injury reports · advanced stats feeds · referee assignment data
+    </div>
+  </div>
+  <div class="url">pick1.live</div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+<!-- Slide 3: Step 2 — Models -->
+<div class="slide s3 step" id="s3">
+  <div class="pagenum">3 / 6</div>
+  <div class="step-num">STEP 02 · MODEL</div>
+  <h2><span class="accent">12</span> MODELS RUN IN PARALLEL.</h2>
+  <div class="body">
+    Bayesian, gradient-boosted, neural, factor-based. Each casts a vote. <strong>Only the consensus wins.</strong>
+  </div>
+  <div class="visual">
+    <div class="visual-label">Calibration</div>
+    <div class="visual-body">
+      <span class="accent">81.2%</span> stated confidence means the model expects to be right 81% of the time at that confidence — and we publish reliability diagrams so you can check.
+    </div>
+  </div>
+  <div class="url">pick1.live</div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+<!-- Slide 4: Step 3 — Filter -->
+<div class="slide s4 step" id="s4">
+  <div class="pagenum">4 / 6</div>
+  <div class="step-num">STEP 03 · FILTER</div>
+  <h2>ONLY THE<br/><span class="accent">HIGHEST</span><br/>CONFIDENCE.</h2>
+  <div class="body">
+    Out of every game played today across NBA, NFL, EPL, MLB, UFC, NHL, F1, ATP, Cricket — <strong>only one</strong> gets published.
+  </div>
+  <div class="visual">
+    <div class="visual-label">Why one</div>
+    <div class="visual-body">
+      Every additional pick dilutes the signal. The discipline IS the product.
+    </div>
+  </div>
+  <div class="url">pick1.live</div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+<!-- Slide 5: Step 4 — Receipts -->
+<div class="slide s5 step" id="s5">
+  <div class="pagenum">5 / 6</div>
+  <div class="step-num">STEP 04 · RECEIPTS</div>
+  <h2>EVERY PICK<br/><span class="accent">LOGGED</span><br/>FOREVER.</h2>
+  <div class="body">
+    Wins AND misses. Publicly. No cherry-picking. No deleting bad calls. <strong>The transparency is the brand.</strong>
+  </div>
+  <div class="visual">
+    <div class="visual-label">Yesterday</div>
+    <div class="visual-body">
+      <span class="accent">✓</span> Spurs 126-97 (78.6%)<br/>
+      <span class="accent">✓</span> Vegas G5 (57.7%)<br/>
+      <span style="color:#ff5a36">✕</span> Canadiens G4 (56.1%) · <em>logged it anyway</em>
+    </div>
+  </div>
+  <div class="url">pick1.live</div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+<!-- Slide 6: CTA -->
+<div class="slide s6" id="s6">
+  <div class="pagenum">6 / 6</div>
+  <div class="eyebrow">● TOMORROW'S PICK</div>
+  <h2 class="big-cta">FREE<br/>IN YOUR<br/><span class="accent">INBOX.</span></h2>
+  <div class="body">
+    9am ET, every day. Confidence tier, reasoning, key factor. <strong>No card. No spam. Unsubscribe anytime.</strong>
+  </div>
+  <div class="cta-pill">
+    Join<span class="url">pick1.live</span>
+  </div>
+  <div class="brand">PICK<span class="one">1</span></div>
+</div>
+
+</body>
+</html>
