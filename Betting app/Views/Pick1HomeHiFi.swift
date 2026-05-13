@@ -99,36 +99,17 @@ struct Pick1HomeHiFi: View {
                     // bottom). Tapping the back chevron in SportHubView's
                     // TopNavBar clears `sportHub` and returns to Home.
                     if let id = sportHub {
-                        // F1 and UFC route to dedicated event-layout
-                        // hubs (Pick1F1Hub.swift / Pick1UFCHub.swift).
-                        // Every other sport keeps the generic team-vs-team
-                        // SportHubView.
-                        if id == "f1" {
-                            F1HubView(
-                                vm: vm,
-                                isPro: subs.isPro,
-                                onClose: { sportHub = nil },
-                                onTapPick: { detailPick = $0 },
-                                onUnlock: { showPaywall = true }
-                            )
-                        } else if id == "combat" {
-                            UFCHubView(
-                                vm: vm,
-                                isPro: subs.isPro,
-                                onClose: { sportHub = nil },
-                                onTapPick: { detailPick = $0 },
-                                onUnlock: { showPaywall = true }
-                            )
-                        } else {
-                            SportHubView(
-                                sport: id,
-                                vm: vm,
-                                isPro: subs.isPro,
-                                onClose: { sportHub = nil },
-                                onTapPick: { detailPick = $0 },
-                                onUnlock: { showPaywall = true }
-                            )
-                        }
+                        // Every sport (including F1 + UFC) uses the
+                        // generic SportHubView for v1. Dedicated F1 /
+                        // UFC event-layout hubs are a v1.1 follow-up.
+                        SportHubView(
+                            sport: id,
+                            vm: vm,
+                            isPro: subs.isPro,
+                            onClose: { sportHub = nil },
+                            onTapPick: { detailPick = $0 },
+                            onUnlock: { showPaywall = true }
+                        )
                     } else {
                         HomeHiFiContent(vm: vm,
                                         isPro: subs.isPro,
@@ -166,6 +147,18 @@ struct Pick1HomeHiFi: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Tab content crossfades on switch instead of snapping. The
+            // `.id(tab)` forces SwiftUI to treat each tab as a discrete
+            // view tree so .transition fires cleanly on swap.
+            .id(tab)
+            .transition(.opacity)
+            .animation(Pick1Springs.smooth, value: tab)
+            // Subtle "tick" haptic on every tab change — the standard
+            // iOS selection feedback. Cheap signal that the tap landed.
+            .sensoryFeedback(.selection, trigger: tab)
+            // Inside-Home back/forward (sport hub push/pop) also gets
+            // a soft crossfade so the page swap doesn't snap.
+            .animation(Pick1Springs.smooth, value: sportHub)
 
             FloatingNav(tab: $tab, liveCount: liveCount)
                 // Pushed below the safe-area bottom so the nav sits
@@ -242,7 +235,12 @@ struct HomeHiFiContent: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                Button(action: { if let t = topPick { onTapPick(t) } }) {
+                Button(action: {
+                    if let t = topPick {
+                        Haptics.tap()
+                        onTapPick(t)
+                    }
+                }) {
                     if let top = topPick {
                         HeroCard(pick: top, isLive: isLive(top))
                     } else {
@@ -250,6 +248,9 @@ struct HomeHiFiContent: View {
                     }
                 }
                 .buttonStyle(.plain)
+                // Hero card press feels great with a tiny 0.99 dip —
+                // bigger surfaces want subtler scale.
+                .pressableScale(0.99)
 
                 StatsRow(winsThisWeek: vm.winsThisWeek,
                          gamesThisWeek: vm.gamesThisWeek,
@@ -291,12 +292,27 @@ struct HomeHiFiContent: View {
                         EmptyTodayState()
                             .padding(.top, 40)
                     } else {
-                        ForEach(visible.indices, id: \.self) { idx in
-                            let pick = visible[idx]
-                            Button { onTapPick(pick) } label: {
+                        ForEach(Array(visible.enumerated()), id: \.element.id) { idx, pick in
+                            Button {
+                                Haptics.tap()
+                                onTapPick(pick)
+                            } label: {
                                 GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                                    .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
+                            // Stagger each card's appearance so the list
+                            // cascades in over ~250ms instead of popping.
+                            // Reads as "curated" rather than "dumped".
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom)
+                                    .combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                            .animation(
+                                Pick1Springs.smooth.delay(Double(idx) * 0.05),
+                                value: visible.count
+                            )
                         }
                         // Free tier: show locked picks beneath as Pro upsell
                         if !isPro && !vm.lockedTodayPicks.isEmpty {
@@ -318,6 +334,13 @@ struct HomeHiFiContent: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 120)
             }
+        }
+        // Pull-to-refresh — for a sports app the user opens at game
+        // time, "tug down to fetch new scores" is muscle memory. Reuses
+        // the same loadAll() path that runs on `.task`.
+        .refreshable {
+            await vm.loadAll()
+            Haptics.success()
         }
     }
 
@@ -976,10 +999,13 @@ struct WinsThisWeekTile: View {
                     .font(.anton(72))
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .tracking(-1.4)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
                 Text(wins == 1 ? "win" : "wins")
                     .font(.archivo(18, weight: .bold))
                     .foregroundColor(Color(hex: "#B9B7B0"))
             }
+            .animation(Pick1Springs.smooth, value: wins)
             // Segmented bar — each played game lights a segment.
             HStack(spacing: 3) {
                 ForEach(0..<slots, id: \.self) { i in
@@ -1037,12 +1063,15 @@ struct AccuracyTile: View {
                     .font(.anton(72))
                     .foregroundColor(numberColor)
                     .tracking(-1.4)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
                 if mood != .empty {
                     Text("%")
                         .font(.archivo(18, weight: .bold))
                         .foregroundColor(Color(hex: "#B9B7B0"))
                 }
             }
+            .animation(Pick1Springs.smooth, value: accuracy)
             // Last-10 segmented bar — same visual rhythm as the
             // weekly bar on the sibling tile. Reverses the array so
             // the OLDEST pick is on the left and the most recent on
@@ -1681,6 +1710,11 @@ struct ConfChip: View {
             Text("\(Int(percent.rounded()))%")
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#F5F3EE"))
+                .monospacedDigit()
+                // Digit-roll animation when the confidence value
+                // updates (rare but happens when a pick re-grades).
+                .contentTransition(.numericText())
+                .animation(Pick1Springs.snappy, value: percent)
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
@@ -1736,26 +1770,36 @@ struct ScoreView: View {
             // so a stale live_scores row doesn't blank the column.
             if let s = score,
                let h = s.homeScore, let a = s.awayScore {
+                // Score digits animate when the live_scores stream
+                // ticks — the most-watched numbers in the app.
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("\(a)").font(.anton(28)).tracking(-0.28)
                         .foregroundColor(Color(hex: "#F5F3EE"))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
                     Text("–").font(.anton(20))
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Text("\(h)").font(.anton(28)).tracking(-0.28)
                         .foregroundColor(pickWon(home: h, away: a, pick: pick)
                                          ? Color(hex: "#D4FF3A")
                                          : Color(hex: "#F5F3EE"))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
                 }
+                .animation(Pick1Springs.smooth, value: s.homeScore)
+                .animation(Pick1Springs.smooth, value: s.awayScore)
             } else if let h = pick.homeScore, let a = pick.awayScore {
                 // Graded picks carry their box score on the row itself
                 // (live_scores may have rolled over) — use that.
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("\(a)").font(.anton(28)).tracking(-0.28)
                         .foregroundColor(Color(hex: "#F5F3EE"))
+                        .monospacedDigit()
                     Text("–").font(.anton(20))
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Text("\(h)").font(.anton(28)).tracking(-0.28)
                         .foregroundColor(Color(hex: "#F5F3EE"))
+                        .monospacedDigit()
                 }
             } else {
                 Text(state == .live ? "LIVE" : "FINAL")
@@ -1934,6 +1978,9 @@ struct NavItem: View {
                     Text(label)
                         .font(.archivo(13, weight: .bold))
                         .foregroundColor(Color(hex: "#F5F3EE"))
+                        // Label fades in when the tab becomes active so
+                        // the pill grows smoothly rather than popping.
+                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 }
             }
             .padding(.vertical, 10)
@@ -1957,8 +2004,13 @@ struct NavItem: View {
             // was unreachable because the user's thumb was hitting
             // padding rather than the 17pt person glyph.
             .contentShape(Capsule())
+            // Subtle scale-down on press for tactile feedback.
+            .pressableScale(0.95)
         }
         .buttonStyle(.plain)
+        // Animate the pill width / label appearance when the active
+        // tab swaps — keeps the floating nav from snapping mid-press.
+        .animation(Pick1Springs.snappy, value: isActive)
         .accessibilityLabel(label)
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
@@ -1994,6 +2046,9 @@ struct LiveNavItem: View {
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.8)
                         .foregroundColor(textColor)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 }
             }
             .padding(.vertical, 10)
@@ -2005,8 +2060,11 @@ struct LiveNavItem: View {
                         : .clear,
                     radius: isActive ? 10 : 0, x: 0, y: 4)
             .contentShape(Capsule())
+            .pressableScale(0.95)
         }
         .buttonStyle(.plain)
+        .animation(Pick1Springs.snappy, value: isActive)
+        .animation(Pick1Springs.smooth, value: liveCount)
         .accessibilityLabel(liveCount > 0
                             ? "Live games, \(liveCount) playing now"
                             : "Live games")

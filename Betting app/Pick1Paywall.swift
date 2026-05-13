@@ -612,7 +612,10 @@ struct OBPaywallScreen: View {
 
     private var stickyBar: some View {
         VStack(spacing: 8) {
-            Button(action: triggerPurchase) {
+            Button {
+                Haptics.medium()
+                triggerPurchase()
+            } label: {
                 Group {
                     if subs.purchasing {
                         ProgressView()
@@ -629,9 +632,12 @@ struct OBPaywallScreen: View {
                 .padding(.vertical, 16)
                 .background(Color.p1Lime)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .pressableScale(0.97)
             }
             .buttonStyle(.plain)
             .disabled(subs.purchasing)
+            // Success haptic the moment Apple confirms the purchase.
+            .sensoryFeedback(.success, trigger: subs.isPro)
 
             if let err = subs.lastError {
                 Text(err)

@@ -327,6 +327,7 @@ struct MatchDetailView: View {
         }
         .alert(LocalizationManager.shared.t(.age_gate_title), isPresented: $showAgeGate) {
             Button(LocalizationManager.shared.t(.age_gate_confirm), role: .none) {
+                Haptics.success()
                 ageVerified = true
                 // Defer the sheet by one tick so the alert can dismiss
                 // cleanly before the sheet animation kicks in.
@@ -359,7 +360,19 @@ struct MatchDetailView: View {
             // RoundedRectangle that draws the border makes the corner
             // radius authoritative.
             Button {
+                let wasStarred = starred
                 favorites.toggle(pick.id)
+                // Haptic + brief toast on add; only haptic on remove
+                // (toast on every tap would be noisy).
+                if !wasStarred {
+                    Haptics.success()
+                    withAnimation(Pick1Springs.smooth) { showToast = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                        withAnimation(Pick1Springs.smooth) { showToast = false }
+                    }
+                } else {
+                    Haptics.selection()
+                }
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -373,10 +386,15 @@ struct MatchDetailView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(starred ? Color(hex: "#D4FF3A")
                                                   : Color(hex: "#F5F3EE"))
+                        // Tiny scale pulse when starring so the
+                        // glyph swap doesn't look like a static swap.
+                        .scaleEffect(starred ? 1.0 : 0.92)
+                        .animation(Pick1Springs.bouncy, value: starred)
                 }
                 .frame(width: 38, height: 38)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .pressableScale(0.92)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(starred ? "Remove from favorites" : "Add to favorites")
@@ -1452,6 +1470,7 @@ struct MatchDetailView: View {
     /// subsequent taps open the sheet directly.
     private var savePickCTA: some View {
         Button {
+            Haptics.medium()
             if ageVerified {
                 showBookmakers = true
             } else {
@@ -1487,6 +1506,7 @@ struct MatchDetailView: View {
                     .fill(Color(hex: "#D4FF3A"))
                     .shadow(color: Color(hex: "#D4FF3A").opacity(0.4), radius: 10, x: 0, y: 8)
             )
+            .pressableScale(0.97)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
@@ -1694,6 +1714,10 @@ struct SportHubView: View {
 
                     Spacer().frame(height: 140)
                 }
+            }
+            .refreshable {
+                await vm.loadAll()
+                Haptics.success()
             }
         }
         .preferredColorScheme(.dark)
@@ -2377,11 +2401,14 @@ struct ConfPill: View {
             Text("\(Int(probability))%")
                 .font(.mono(10, weight: .heavy))
                 .foregroundColor(Color(hex: "#F5F3EE"))
+                .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(Capsule().fill(hot ? Color(hex: "#D4FF3A").opacity(0.08) : Color(hex: "#16181C")))
         .overlay(Capsule().stroke(hot ? Color(hex: "#D4FF3A").opacity(0.3) : Color(hex: "#2D3038"), lineWidth: 1))
+        .animation(Pick1Springs.snappy, value: probability)
     }
 }
 
@@ -2900,8 +2927,12 @@ struct WinsView: View {
                 } else {
                     LazyVStack(spacing: 8) {
                         ForEach(wonPicks) { p in
-                            Button { onTapPick(p) } label: {
+                            Button {
+                                Haptics.tap()
+                                onTapPick(p)
+                            } label: {
                                 wonCard(pick: p)
+                                    .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
                         }
@@ -2910,6 +2941,10 @@ struct WinsView: View {
                 }
                 Spacer().frame(height: 140)
             }
+        }
+        .refreshable {
+            await vm.loadAll()
+            Haptics.success()
         }
     }
 
@@ -3278,6 +3313,10 @@ struct LiveView: View {
 
                 Spacer().frame(height: 140)
             }
+        }
+        .refreshable {
+            await vm.loadAll()
+            Haptics.success()
         }
     }
 
