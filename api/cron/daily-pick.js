@@ -2,7 +2,10 @@
 // EDT — see vercel.json cron expression). Queries Supabase for today's
 // highest-confidence pick written by the Railway pipeline, formats it
 // into a branded email, and sends to the entire Pick1 waitlist via
-// Brevo's email-campaigns API.
+// Resend's Broadcasts API.
+//
+// Migrated from Brevo (suspended us) → Resend, which doesn't flag
+// predictions/forecasting content via aggressive compliance bots.
 //
 // Env vars expected on Vercel (all required):
 //   SUPABASE_URL                  — e.g. https://jisbgspvllgwtfgoeihx.supabase.co
@@ -10,12 +13,17 @@
 //                                   (read-only for picks table is enough; the
 //                                   service-role key bypasses RLS the same way
 //                                   the Railway pipeline does)
-//   BREVO_API_KEY                 — already set; reused
-//   BREVO_LIST_ID                 — numeric list id (default 3 = Pick1 Waitlist)
+//   RESEND_API_KEY                — Resend API key (re_xxx)
+//   RESEND_AUDIENCE_ID            — uuid of the Pick1 Waitlist audience
+//   RESEND_FROM                   — verified from address, default:
+//                                   "Pick1 <admin@pick1.live>"
 //   CRON_SECRET                   — random string; Vercel injects it as a Bearer
 //                                   token in the cron-trigger header. Reject
 //                                   requests without it so the endpoint can't
 //                                   be invoked by random visitors.
+
+const RESEND_API = 'https://api.resend.com';
+const DEFAULT_FROM = 'Pick1 <admin@pick1.live>';
 
 module.exports = async (req, res) => {
   // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` on scheduled
@@ -30,24 +38,25 @@ module.exports = async (req, res) => {
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const BREVO_KEY   = process.env.BREVO_API_KEY;
-  const LIST_ID     = parseInt(process.env.BREVO_LIST_ID || '3', 10);
+  const RESEND_KEY   = process.env.RESEND_API_KEY;
+  const AUDIENCE_ID  = process.env.RESEND_AUDIENCE_ID;
+  const FROM         = process.env.RESEND_FROM || DEFAULT_FROM;
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return res.status(500).json({ error: 'supabase_not_configured' });
   }
-  if (!BREVO_KEY) {
-    return res.status(500).json({ error: 'brevo_not_configured' });
+  if (!RESEND_KEY || !AUDIENCE_ID) {
+    return res.status(500).json({ error: 'resend_not_configured' });
   }
 
   // ── Test / preview modes (manual invocation only) ─────────────────
   // ?test=1            — use a synthetic pick (skips Supabase entirely;
-  //                      proves the Brevo send works end-to-end)
+  //                      proves the Resend send works end-to-end)
   // ?latest=1          — fetch the most recent pending pick regardless
   //                      of date (useful before pipeline writes today's)
   // ?to=email@x.com    — send a single test email to a specific address
-  //                      via SMTP instead of the full list (best to
-  //                      validate before blasting the waitlist)
+  //                      via /emails instead of the full broadcast (best
+  //                      to validate before blasting the waitlist)
   const isTest   = req.query?.test === '1' || req.query?.test === 'true';
   const isLatest = req.query?.latest === '1' || req.query?.latest === 'true';
   const testTo   = req.query?.to || null;
@@ -58,7 +67,7 @@ module.exports = async (req, res) => {
     let yesterdayPick = null;
 
     if (isTest) {
-      // ── Synthetic pick — validates Brevo send without Supabase ─────
+      // ── Synthetic pick — validates Resend send without Supabase ─────
       pick = {
         sport: 'basketball',
         league: 'NBA',
@@ -138,67 +147,85 @@ module.exports = async (req, res) => {
     const html = dailyEmailHtml({ pick, yesterdayPick, previewText });
     const text = dailyEmailText({ pick, yesterdayPick });
 
-    // ── Send via Brevo ────────────────────────────────────────────
+    // ── Send via Resend ────────────────────────────────────────────
     // Two modes:
-    // (1) ?to=email@x.com — transactional SMTP send to one address;
-    //     ideal for validating the email rendering before blasting
-    //     the whole list.
-    // (2) default — emailCampaigns API to LIST_ID (Pick1 Waitlist).
+    // (1) ?to=email@x.com — POST /emails (single recipient, transactional);
+    //     ideal for validating the rendering before blasting the audience.
+    // (2) default — POST /broadcasts (create draft) then POST /broadcasts/:id/send
+    //     to fan out to the entire Pick1 Waitlist audience.
     let result, mode;
     if (testTo) {
-      const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+      const r = await fetch(`${RESEND_API}/emails`, {
         method: 'POST',
         headers: {
-          'api-key': BREVO_KEY,
-          accept: 'application/json',
+          Authorization: `Bearer ${RESEND_KEY}`,
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          sender: { name: 'Pick1', email: 'admin@pick1.live' },
-          to: [{ email: testTo }],
+          from: FROM,
+          to: [testTo],
           subject,
-          htmlContent: html,
-          textContent: text,
-          tags: ['daily-pick-test'],
+          html,
+          text,
+          tags: [{ name: 'category', value: 'daily_pick_test' }],
         }),
       });
       if (!r.ok) {
         const detail = await r.text();
-        console.error('brevo_smtp_error', r.status, detail);
-        return res.status(502).json({ error: 'brevo_send_failed', detail });
+        console.error('resend_emails_error', r.status, detail);
+        return res.status(502).json({ error: 'resend_send_failed', detail });
       }
       result = await r.json();
-      mode = 'smtp_single';
+      mode = 'emails_single';
     } else {
-      const campaign = {
-        name: `Daily AI Pick — ${today} — ${pick.league} ${pick.pick}`,
-        subject,
-        sender: { name: 'Pick1', email: 'admin@pick1.live' },
-        type: 'classic',
-        htmlContent: html,
-        textContent: text,
-        recipients: { listIds: [LIST_ID] },
-        // Send immediately by setting scheduledAt to now + 1 minute.
-        scheduledAt: new Date(Date.now() + 60 * 1000).toISOString(),
-        // NOTE: removed `tag` — Brevo's free/lower-tier accounts reject
-        // it ("You are not allowed to avail tag option for your campaign").
-      };
-      const r = await fetch('https://api.brevo.com/v3/emailCampaigns', {
+      // Step 1: create the broadcast as a draft.
+      const createResp = await fetch(`${RESEND_API}/broadcasts`, {
         method: 'POST',
         headers: {
-          'api-key': BREVO_KEY,
-          accept: 'application/json',
+          Authorization: `Bearer ${RESEND_KEY}`,
           'content-type': 'application/json',
         },
-        body: JSON.stringify(campaign),
+        body: JSON.stringify({
+          audience_id: AUDIENCE_ID,
+          from: FROM,
+          subject,
+          html,
+          text,
+          name: `Daily AI Pick — ${today} — ${pick.league} ${pick.pick}`,
+          preview_text: previewText,
+        }),
       });
-      if (!r.ok) {
-        const detail = await r.text();
-        console.error('brevo_campaign_error', r.status, detail);
-        return res.status(502).json({ error: 'brevo_send_failed', detail });
+      if (!createResp.ok) {
+        const detail = await createResp.text();
+        console.error('resend_broadcast_create_error', createResp.status, detail);
+        return res.status(502).json({ error: 'resend_send_failed', detail });
       }
-      result = await r.json();
-      mode = 'campaign_list';
+      const created = await createResp.json();
+      const broadcastId = created?.id;
+      if (!broadcastId) {
+        return res.status(502).json({ error: 'resend_broadcast_no_id', detail: created });
+      }
+
+      // Step 2: send the broadcast. Omitting scheduled_at = send immediately.
+      const sendResp = await fetch(`${RESEND_API}/broadcasts/${broadcastId}/send`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${RESEND_KEY}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      if (!sendResp.ok) {
+        const detail = await sendResp.text();
+        console.error('resend_broadcast_send_error', sendResp.status, detail);
+        return res.status(502).json({
+          error: 'resend_send_failed',
+          detail,
+          broadcastId, // surface so we can manually retry from the dashboard
+        });
+      }
+      result = { ...created, ...(await sendResp.json()) };
+      mode = 'broadcast_audience';
     }
 
     console.log('daily-pick sent:', { mode, result, pick: pick.pick, prob: pick.probability });
@@ -318,7 +345,7 @@ function dailyEmailHtml({ pick, yesterdayPick, previewText }) {
 
       <tr><td style="padding:18px 4px 0 4px;font-size:12px;color:#666b73;line-height:1.6;">
         Every pick — wins <strong style="color:#9095a0;">and</strong> misses — gets logged publicly. Pick1's app launches end of May. Waitlist members get <strong style="color:#d4ff3a;">1 week free</strong>.<br/><br/>
-        <strong style="color:#9095a0;">Pick1</strong> · pick1.live · <a href="{{ unsubscribe }}" style="color:#666b73;text-decoration:underline;">Unsubscribe</a>
+        <strong style="color:#9095a0;">Pick1</strong> · pick1.live
       </td></tr>
     </table>
   </td></tr>

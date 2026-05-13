@@ -1,16 +1,26 @@
-// Vercel serverless function: proxy waitlist signups into Brevo,
+// Vercel serverless function: proxy waitlist signups into Resend,
 // then fire a server-side Meta Conversions API "Lead" event so the
 // Pixel attributes the conversion even when iOS / Safari kill the
 // browser-side network call.
 //
+// Resend was chosen over Brevo (which suspended us with no warning)
+// because their AUP doesn't flag predictions/forecasting content,
+// they have first-class Audiences + Broadcasts APIs, and the migration
+// is essentially endpoint-for-endpoint.
+//
 // Env vars expected:
-//   BREVO_API_KEY            — secret Brevo API key
-//   BREVO_LIST_ID            — numeric list id (default: 3 = Pick1 Waitlist)
-//   META_PIXEL_ID            — Meta Pixel ID (also pasted into index.html meta tag)
-//   META_CAPI_ACCESS_TOKEN   — Conversions API access token (Events Manager → Settings)
-//   META_TEST_EVENT_CODE     — optional, only set while validating in Events Manager
+//   RESEND_API_KEY            — secret Resend API key (re_xxx)
+//   RESEND_AUDIENCE_ID        — uuid of the Pick1 Waitlist audience
+//   RESEND_FROM               — verified from address, default:
+//                               "Pick1 <admin@pick1.live>"
+//   META_PIXEL_ID             — Meta Pixel ID (also pasted into index.html meta tag)
+//   META_CAPI_ACCESS_TOKEN    — Conversions API access token (Events Manager → Settings)
+//   META_TEST_EVENT_CODE      — optional, only set while validating in Events Manager
 
 const crypto = require('crypto');
+
+const RESEND_API = 'https://api.resend.com';
+const DEFAULT_FROM = 'Pick1 <admin@pick1.live>';
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -18,14 +28,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
 
-  const apiKey = process.env.BREVO_API_KEY;
-  const listId = parseInt(process.env.BREVO_LIST_ID || '3', 10);
+  const apiKey = process.env.RESEND_API_KEY;
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
 
-  if (!apiKey) {
+  if (!apiKey || !audienceId) {
     return res.status(500).json({ error: 'server_misconfigured' });
   }
 
-  // Vercel may not auto-parse JSON for some runtimes; handle both
+  // Vercel may not auto-parse JSON for some runtimes; handle both.
   let body = req.body;
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
@@ -46,44 +56,58 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'invalid_email' });
   }
 
-  const attributes = {};
-  if (name && typeof name === 'string') attributes.FIRSTNAME = name.trim().slice(0, 80);
-  // Brevo's standard SMS attribute holds the E.164 phone number.
-  // We use the same number for WhatsApp follow-up at launch.
-  if (phone && typeof phone === 'string') {
-    attributes.SMS = phone;
-    attributes.WHATSAPP = phone;
-  }
-  // Persist UTM attribution on the contact so we can segment campaigns later.
-  if (utm && typeof utm === 'object') {
-    if (utm.utm_source)   attributes.UTM_SOURCE   = String(utm.utm_source).slice(0, 80);
-    if (utm.utm_medium)   attributes.UTM_MEDIUM   = String(utm.utm_medium).slice(0, 80);
-    if (utm.utm_campaign) attributes.UTM_CAMPAIGN = String(utm.utm_campaign).slice(0, 120);
-    if (utm.utm_content)  attributes.UTM_CONTENT  = String(utm.utm_content).slice(0, 120);
-    if (utm.utm_term)     attributes.UTM_TERM     = String(utm.utm_term).slice(0, 120);
-  }
+  // Split full name into first/last for Resend's audience schema.
+  // Resend doesn't have a "custom attributes" surface like Brevo — UTM /
+  // phone are stashed in a separate Supabase contacts table downstream
+  // (or, for now, captured only via the Meta CAPI payload below).
+  const fullName = (name || '').trim();
+  const firstName = fullName.split(/\s+/)[0] || '';
+  const lastName  = fullName.split(/\s+/).slice(1).join(' ') || '';
 
   try {
-    const resp = await fetch('https://api.brevo.com/v3/contacts', {
+    // ── Upsert contact into Resend audience ─────────────────────────
+    // Resend's POST /audiences/:id/contacts creates the contact. If the
+    // email already exists in the audience the API returns 422 with an
+    // "already exists" error — we treat that as success since the user
+    // is already on the list.
+    const createResp = await fetch(`${RESEND_API}/audiences/${audienceId}/contacts`, {
       method: 'POST',
       headers: {
-        'api-key': apiKey,
-        'accept': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         email,
-        attributes,
-        listIds: [listId],
-        updateEnabled: true, // upsert: don't error on duplicate
+        first_name: firstName || undefined,
+        last_name:  lastName  || undefined,
+        unsubscribed: false,
       }),
     });
 
-    // Brevo returns 201 (created) or 204 (updated). Both are success.
-    if (resp.ok || resp.status === 204) {
+    // 200/201 = created. 422 with "already exists" message = upsert hit
+    // existing row; that's still success from the user's POV.
+    let upserted = false;
+    if (createResp.ok) {
+      upserted = true;
+    } else {
+      const detail = await createResp.text();
+      const alreadyExists =
+        createResp.status === 422 &&
+        /already exists|duplicate/i.test(detail);
+      if (alreadyExists) {
+        upserted = true;
+        console.log('resend_contact_existing', email);
+      } else {
+        console.error('resend_contact_error', createResp.status, detail);
+        return res.status(502).json({ error: 'upstream_error' });
+      }
+    }
+
+    if (upserted) {
       const clientIp = getClientIp(req);
-      // Fire-and-forget welcome email + CAPI Lead event in parallel. We don't
-      // block the user-facing response on either — the contact is already saved.
+      // Fire-and-forget welcome email + CAPI Lead event in parallel.
+      // We don't block the user-facing response on either — the contact
+      // is already saved.
       sendWelcomeEmail({ email, name }).catch(err => {
         console.error('welcome_email_failed', err);
       });
@@ -93,15 +117,15 @@ module.exports = async (req, res) => {
       }).catch(err => {
         console.error('meta_capi_failed', err);
       });
+      // Best-effort: stash UTM + phone in a Supabase contacts table for
+      // later segmentation. Failure here doesn't block the response.
+      saveAttribution({ email, phone, utm, fbp, fbc }).catch(err => {
+        console.error('attribution_save_failed', err);
+      });
       return res.status(200).json({ ok: true });
     }
-
-    // Surface a generic message; log details server-side.
-    const detail = await resp.text();
-    console.error('brevo_error', resp.status, detail);
-    return res.status(502).json({ error: 'upstream_error' });
   } catch (err) {
-    console.error('brevo_fetch_error', err);
+    console.error('resend_fetch_error', err);
     return res.status(500).json({ error: 'fetch_failed' });
   }
 };
@@ -187,10 +211,60 @@ async function sendMetaLeadEvent({
   }
 }
 
+// ── Attribution sidecar (Supabase) ───────────────────────────────────────
+// Resend's Audiences API only stores email + first/last name. UTM + phone +
+// fbp/fbc are saved alongside the contact in a Supabase table so we can
+// segment campaigns + reconcile Meta ad spend later. Schema:
+//   create table public.waitlist_attribution (
+//     email text primary key,
+//     phone text, utm_source text, utm_medium text, utm_campaign text,
+//     utm_content text, utm_term text, fbp text, fbc text,
+//     created_at timestamptz default now()
+//   );
+async function saveAttribution({ email, phone, utm, fbp, fbc }) {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_KEY) return; // optional sidecar
+
+  const row = { email: email.toLowerCase() };
+  if (phone) row.phone = phone;
+  if (utm && typeof utm === 'object') {
+    if (utm.utm_source)   row.utm_source   = String(utm.utm_source).slice(0, 80);
+    if (utm.utm_medium)   row.utm_medium   = String(utm.utm_medium).slice(0, 80);
+    if (utm.utm_campaign) row.utm_campaign = String(utm.utm_campaign).slice(0, 120);
+    if (utm.utm_content)  row.utm_content  = String(utm.utm_content).slice(0, 120);
+    if (utm.utm_term)     row.utm_term     = String(utm.utm_term).slice(0, 120);
+  }
+  if (fbp) row.fbp = fbp;
+  if (fbc) row.fbc = fbc;
+
+  // Only worth saving if we have at least one attribution field beyond email.
+  if (Object.keys(row).length === 1) return;
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/waitlist_attribution`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'content-type': 'application/json',
+      // Upsert on conflict (email is primary key) so repeat submits update
+      // attribution to the latest ad-click context.
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(row),
+  });
+
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`supabase_attribution_${resp.status}: ${detail}`);
+  }
+}
+
 async function sendWelcomeEmail({ email, name }) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
   const firstName = (name || '').trim().split(/\s+/)[0] || 'there';
   const safeName = escapeHtml(firstName).toUpperCase();
 
@@ -199,26 +273,26 @@ async function sendWelcomeEmail({ email, name }) {
   const html = welcomeEmailHtml({ name: safeName, previewText });
   const textBody = welcomeEmailText({ name: firstName });
 
-  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const resp = await fetch(`${RESEND_API}/emails`, {
     method: 'POST',
     headers: {
-      'api-key': apiKey,
-      'accept': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      sender: { name: 'Pick1', email: 'admin@pick1.live' },
-      to: [{ email, name: name || undefined }],
+      from,
+      to: [email],
       subject,
-      htmlContent: html,
-      textContent: textBody,
-      tags: ['waitlist-welcome'],
+      html,
+      text: textBody,
+      // Resend tags — used for downstream filtering in their dashboard.
+      tags: [{ name: 'category', value: 'waitlist_welcome' }],
     }),
   });
 
   if (!resp.ok) {
     const detail = await resp.text();
-    throw new Error(`brevo_smtp_${resp.status}: ${detail}`);
+    throw new Error(`resend_emails_${resp.status}: ${detail}`);
   }
 }
 
@@ -288,7 +362,7 @@ function welcomeEmailHtml({ name, previewText }) {
       </td></tr>
       <tr><td style="padding:24px 4px 0 4px;font-size:12px;color:#666b73;line-height:1.6;">
         <strong style="color:#9095a0;">Pick1</strong> · AI sports prediction engine<br/>
-        You're getting this because you joined the waitlist at pick1.live. <a href="{{ unsubscribe }}" style="color:#9095a0;text-decoration:underline;">Unsubscribe</a>.
+        You're getting this because you joined the waitlist at pick1.live.
       </td></tr>
     </table>
   </td></tr>
