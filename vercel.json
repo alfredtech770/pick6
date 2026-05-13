@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/daily-pick",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/daily-tweet",
+      "schedule": "5 13 * * *"
     }
   ],
   "redirects": [
