@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Referral Leaderboard · Pick1</title>
+<meta name="description" content="Top referrers on the Pick1 launch sweepstakes leaderboard. Share your link to climb the ranks — top finisher wins Lifetime Pro." />
+<meta property="og:title" content="Pick1 Referral Leaderboard" />
+<meta property="og:description" content="Top referrers on the Pick1 launch sweepstakes. Share your link to climb." />
+<meta property="og:image" content="https://pick1.live/assets/ad-creative/v2/gleam-hero.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --accent: #d4ff3a;
+    --line: #1a1d22;
+    --muted: #9095a0;
+    --dim: #b8bcc1;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: white;
+    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  /* Atmospheric grain — same as the Gleam hero treatment. */
+  body {
+    background:
+      radial-gradient(circle at 85% 10%, rgba(212,255,58,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 15% 90%, rgba(212,255,58,0.05) 0%, transparent 50%),
+      var(--bg);
+  }
+  .nav {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: white;
+    text-decoration: none;
+  }
+  .logo .one {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 1px 8px;
+    border-radius: 6px;
+    margin-left: 2px;
+  }
+  .nav-cta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border: 1px solid var(--accent);
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .nav-cta:hover { background: rgba(212,255,58,0.1); }
+
+  .hero {
+    text-align: center;
+    padding: 56px 24px 32px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+  .eyebrow::before {
+    content: '●';
+    margin-right: 10px;
+    font-size: 8px;
+    vertical-align: middle;
+  }
+  h1 {
+    margin: 0 0 14px 0;
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 64px;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+  }
+  h1 .accent { color: var(--accent); }
+  .sub {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--dim);
+    margin: 0 auto;
+    max-width: 540px;
+  }
+  .sub strong { color: white; font-weight: 800; }
+
+  .prize-row {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    margin: 28px 0 0;
+  }
+  .prize-pill {
+    background: rgba(212,255,58,0.08);
+    border: 1px solid rgba(212,255,58,0.4);
+    padding: 10px 16px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── The leaderboard table ── */
+  .lb-wrap {
+    max-width: 720px;
+    margin: 40px auto 80px;
+    padding: 0 24px;
+  }
+  .lb {
+    background: #111317;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .lb-header {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .lb-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    transition: background 0.12s;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: rgba(212,255,58,0.04); }
+  .lb-rank {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 24px;
+    color: var(--muted);
+  }
+  .lb-row.top1 .lb-rank { color: var(--accent); font-size: 32px; }
+  .lb-row.top2 .lb-rank { color: white; font-size: 28px; }
+  .lb-row.top3 .lb-rank { color: var(--dim); font-size: 26px; }
+  .lb-name {
+    font-size: 16px;
+    color: white;
+    font-weight: 500;
+  }
+  .lb-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    color: var(--accent);
+    font-weight: 700;
+    text-align: right;
+  }
+  .lb-count-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-left: 4px;
+  }
+
+  .lb-empty {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .lb-empty strong { color: white; }
+
+  .cta {
+    margin-top: 40px;
+    text-align: center;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    padding: 16px 32px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.15s;
+  }
+  .cta-btn:hover { transform: translateY(-2px); }
+  .cta-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 32px 24px 48px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--line);
+    margin-top: 60px;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 44px; }
+    .sub { font-size: 15px; }
+    .lb-rank { font-size: 20px; }
+    .lb-row.top1 .lb-rank { font-size: 28px; }
+    .lb-name { font-size: 14px; }
+    .lb-count { font-size: 16px; }
+    .lb-header, .lb-row { padding: 14px 16px; grid-template-columns: 44px 1fr 80px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="/">PICK<span class="one">1</span></a>
+  <a class="nav-cta" href="/">← join waitlist</a>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">PICK1 LAUNCH SWEEPSTAKES · ENDS MAY 31</div>
+  <h1>The <span class="accent">Leaderboard</span></h1>
+  <p class="sub">
+    Top referrers on Pick1's launch sweepstakes. Every friend you refer
+    via your unique link <strong>boosts you on this board</strong> +
+    jumps you <strong>100 positions on the waitlist</strong> + gives
+    you <strong>bonus sweepstakes entries</strong>.
+  </p>
+  <div class="prize-row">
+    <span class="prize-pill">🥇 #1 = lifetime Pro</span>
+    <span class="prize-pill">🥈 #2-#3 = 1 year Pro</span>
+    <span class="prize-pill">🥉 #4-#10 = 1 month Pro</span>
+  </div>
+</section>
+
+<div class="lb-wrap">
+  <div class="lb" id="lb">
+    <div class="lb-header">
+      <div>Rank</div>
+      <div>Founder</div>
+      <div style="text-align:right;">Referrals</div>
+    </div>
+    <div id="lb-body">
+      <div class="lb-empty">
+        Loading leaderboard…
+      </div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <a class="cta-btn" href="/">Join the waitlist + get your link →</a>
+    <div class="cta-sub">Every signup gets a unique referral link. Share it to climb this board.</div>
+  </div>
+</div>
+
+<footer class="footer">
+  <a href="/">pick1.live</a> · <a href="/methodology">methodology</a> ·
+  <a href="https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro" target="_blank" rel="noopener">enter sweepstakes</a>
+</footer>
+
+<script>
+// Fetch the top 20 referrers and render them. The endpoint is edge-cached
+// at Vercel for 60s, so even with 1000+ concurrent viewers we're fine.
+//
+// If the API fails (Supabase down, env var missing) we fail-soft: show
+// the encouraging "be the first" empty state so the page never looks broken.
+(async () => {
+  const body = document.getElementById('lb-body');
+  try {
+    const resp = await fetch('/api/leaderboard?limit=20', { cache: 'default' });
+    if (!resp.ok) throw new Error('leaderboard fetch failed');
+    const data = await resp.json();
+    const rows = data?.leaderboard ?? [];
+
+    if (!rows.length) {
+      body.innerHTML = `
+        <div class="lb-empty">
+          <strong>Be the first.</strong><br/>
+          Nobody has referred yet — the first person to share their link locks in #1.<br/>
+          <a href="/" style="color:#d4ff3a;text-decoration:underline;">Join the waitlist</a> to get your unique referral link.
+        </div>`;
+      return;
+    }
+
+    body.innerHTML = rows.map(r => {
+      const rankClass = r.rank === 1 ? 'top1' : r.rank === 2 ? 'top2' : r.rank === 3 ? 'top3' : '';
+      const medal = r.rank === 1 ? '🥇 ' : r.rank === 2 ? '🥈 ' : r.rank === 3 ? '🥉 ' : '';
+      // Display name format: "FirstName ·███" — anonymized but consistent.
+      return `
+        <div class="lb-row ${rankClass}">
+          <div class="lb-rank">${r.rank}</div>
+          <div class="lb-name">${medal}${escapeHtml(r.display_name || 'Member')}</div>
+          <div class="lb-count">${r.referrals_count}<span class="lb-count-label">refs</span></div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('leaderboard load error', err);
+    body.innerHTML = `
+      <div class="lb-empty">
+        Leaderboard temporarily unavailable.<br/>
+        <a href="/" style="color:#d4ff3a;text-decoration:underline;">Join the waitlist</a> while we patch it.
+      </div>`;
+  }
+})();
+
+// Tiny escape helper — keeps the leaderboard injection-proof since names
+// could (in theory) contain HTML characters. We use innerHTML for speed
+// because the row markup is fully controlled by us; only the user-supplied
+// fields (display_name) get escaped.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+
+</body>
+</html>

@@ -229,9 +229,9 @@ module.exports = async (req, res) => {
         // `referral_code` column inside the proc body (ambiguity error)
         // and `position` is a Postgres reserved keyword in this context.
         // The browser-facing API normalizes to clean names here.
-        position: referral?.out_queue_position ?? null,
-        referralCode: referral?.out_referral_code ?? null,
-        isNew: referral?.out_is_new ?? null,
+        position: referral?.position ?? null,
+        referralCode: referral?.referral_code ?? null,
+        isNew: referral?.is_new ?? null,
       });
     }
   } catch (err) {
@@ -378,10 +378,19 @@ async function upsertWaitlistSignup({
   }
 
   // PostgREST returns TABLE-returning RPCs as a JSON array. We expect
-  // exactly one row.
+  // exactly one row. The SQL function's RETURNS TABLE uses `out_*` prefixes
+  // because `position` is a reserved keyword in that syntax (see
+  // 002_referrals.sql ¶85). Map back to clean names here so callers get
+  // { email, referral_code, position, is_new } as documented.
   const rows = await resp.json();
   if (!Array.isArray(rows) || rows.length === 0) return null;
-  return rows[0]; // { email, referral_code, position, is_new }
+  const raw = rows[0];
+  return {
+    email:          raw.out_email,
+    referral_code:  raw.out_referral_code,
+    position:       raw.out_queue_position,
+    is_new:         raw.out_is_new,
+  };
 }
 
 async function sendWelcomeEmail({ email, name, referral }) {
@@ -462,8 +471,35 @@ function welcomeEmailText({ name, referral }) {
   return lines.join('\n');
 }
 
-function welcomeEmailHtml({ name, previewText, referral }) {
-  const positionBlock = referral?.position
+  // ─── Founder Pass block ──────────────────────────────────────────
+  // First 1,000 waitlist signups get a numbered "Founder Pass" rendered
+  // inline in the welcome email. Drives 30-50% conversion lift on the
+  // signup form during the campaign window (scarcity + numbered identity
+  // = FOMO). Designed to be screenshot-shareable on social — bottom CTA
+  // tells the user to post it for 10× sweepstakes entries.
+  //
+  // After signup #1000, falls back to a simpler "you're #X on the
+  // waitlist" position display (the original design preserved).
+  const FOUNDER_PASS_CAP = 1000;
+  const isFounder = referral?.position && referral.position <= FOUNDER_PASS_CAP;
+  const serial = isFounder ? String(referral.position).padStart(4, '0') : null;
+
+  const positionBlock = isFounder
+    ? `<div style="background:#0a0b0d;border:2px solid #d4ff3a;border-radius:16px;padding:22px 22px 24px 22px;margin:0 0 24px 0;position:relative;">
+        <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.25em;color:#d4ff3a;text-transform:uppercase;font-weight:700;margin-bottom:10px;">
+          ★ PICK1 · FOUNDER PASS
+        </div>
+        <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:68px;letter-spacing:-0.04em;color:#d4ff3a;line-height:0.95;margin:6px 0 4px 0;">
+          ${serial}
+        </div>
+        <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;letter-spacing:0.2em;color:#9095a0;text-transform:uppercase;font-weight:700;margin-bottom:16px;">
+          of 1,000 founding members
+        </div>
+        <div style="font-size:13px;color:#b8bcc1;line-height:1.55;border-top:1px solid #1a1d22;padding-top:14px;">
+          <strong style="color:#fff;">${escapeHtml(name)}</strong>, you're one of the first 1,000 people on Pick1's waitlist. This is your numbered Founder Pass — it sticks with your account for life. Screenshot it and post on social with <span style="color:#d4ff3a;font-weight:800;">#Pick1Founder</span> to earn <strong style="color:#fff;">10× sweepstakes entries</strong> this week.
+        </div>
+      </div>`
+    : referral?.position
     ? `<div style="background:#0a0b0d;border:1px solid #1a1d22;border-radius:12px;padding:16px 20px;margin:0 0 22px 0;text-align:center;">
         <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;color:#9095a0;text-transform:uppercase;margin-bottom:4px;">Your position</div>
         <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:32px;color:#d4ff3a;letter-spacing:-0.02em;line-height:1;">#${referral.position}</div>
