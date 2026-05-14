@@ -275,15 +275,21 @@ struct HomeHiFiContent: View {
                 // the SportHub is per-sport. When ALL is selected, the
                 // CTA renders as a passive caption nudging the user to
                 // pick a sport first.
-                // SEE ALL CTA — when a specific sport is selected, the
-                // CTA pushes that sport's SportHubView (which has the
-                // full per-sport feed + league rail). When ALL is
-                // selected we don't show the CTA because "all sports"
-                // isn't a single destination — there are eight hubs,
-                // not one. The user picks a sport chip first, then
-                // the affordance lights up.
+                // SEE ALL CTA — Pro-only. The destination (SportHubView)
+                // contains the full per-sport feed including locked picks
+                // beneath a paywall card for Free tier; but the discovery
+                // affordance itself is a Pro perk. Free users still
+                // reach SportHub via long-press on a sport chip, where
+                // they'll see the lock state.
+                //
+                // Three preconditions before the CTA renders:
+                //   1. User is Pro.
+                //   2. A specific sport chip is active (ALL has no
+                //      single destination — eight hubs, not one).
+                //   3. There's at least one Pro chip selected (the chip
+                //      isn't the ALL chip, which is just the default).
                 let activeSport: String? =
-                    (vm.selectedSport != "all") ? vm.selectedSport : nil
+                    (isPro && vm.selectedSport != "all") ? vm.selectedSport : nil
                 SectionHeader(
                     title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
                     cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
@@ -297,6 +303,7 @@ struct HomeHiFiContent: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
                 .animation(Pick1Springs.snappy, value: vm.selectedSport)
+                .animation(Pick1Springs.snappy, value: isPro)
 
                 LazyVStack(spacing: 10) {
                     let visible = vm.visiblePicks(isPro: isPro)
