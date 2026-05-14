@@ -1,0 +1,38 @@
+[
+  {
+    "name": "the-ledger",
+    "prompt": "Cinematic close-up of an old leather-bound ledger opening on a wooden desk, dramatic spotlight from above, fountain pen writes 'PICK1 78.6%' on a page in slow-motion ink, dark atmospheric studio background, single acid-green accent light from upper-left, dust particles floating in light beam, hyperreal cinematic style",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  },
+  {
+    "name": "9-sports-orbit",
+    "prompt": "Hyperreal animation: 9 sports objects (basketball, football, soccer ball, baseball, hockey puck, F1 helmet, tennis ball, UFC glove, cricket ball) orbit slowly around a central glowing acid-green '1' logo that pulses with energy, dark studio background, atmospheric haze, lens flares, cinematic hyperreal",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  },
+  {
+    "name": "vegas-vs-pick1",
+    "prompt": "Split-screen vertical composition: LEFT half shows chaotic Las Vegas sportsbook at night with line numbers rapidly flickering and changing on giant screens, neon signs; RIGHT half shows calm sterile data lab with single steady acid-green '81%' glowing on clean dark monitor, one figure in shadow watching, atmospheric haze, dark cinematic lighting throughout, documentary style",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  },
+  {
+    "name": "buzzer-beater",
+    "prompt": "Slow-motion shot of basketball arcing through air toward a hoop in packed dark-lit arena, dramatic single key light follows the ball, time freezes for 2 seconds as ball reaches the rim, glowing acid-green '78%' probability number materializes from particles next to ball mid-air, then time resumes and ball swishes through net, crowd erupts in cinematic slow-motion silhouette, hyperreal cinematic",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  },
+  {
+    "name": "inside-the-lab",
+    "prompt": "Cinematic dolly-zoom into futuristic AI sports lab interior: dark room with 6 vertical monitors arranged in curved arc showing live game stats, central holographic basketball court projection floating in air, glowing acid-green data streams flowing from monitors toward central glowing 'PICK1' logo, atmospheric haze, single warm key light from monitors only, hyperreal cinematic",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  },
+  {
+    "name": "trophy-reveal",
+    "prompt": "Cinematic slow zoom-in on single elegant trophy emerging from darkness, the FIFA World Cup-style trophy spins slowly in 360°, acid-green spotlight from above creates dramatic shadows, dark cinematic studio background, dust particles floating, atmospheric haze, no text overlay, hyperreal cinematic",
+    "duration": 5,
+    "aspect_ratio": "9:16"
+  }
+]

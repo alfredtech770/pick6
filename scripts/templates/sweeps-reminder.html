@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<title>Pick1 daily — sweeps reminder</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1080px;background:#0a0b0d;color:#fff;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.frame{width:1080px;height:1080px;padding:80px;display:flex;flex-direction:column;justify-content:space-between;
+  background:radial-gradient(circle at 70% 25%, rgba(212,255,58,0.15) 0%, transparent 55%),#0a0b0d}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:22px;letter-spacing:0.28em;color:#d4ff3a;text-transform:uppercase;font-weight:700}
+.eyebrow::before{content:'●';margin-right:14px;font-size:14px;vertical-align:middle}
+.countdown-row{display:flex;align-items:center;gap:30px;margin-top:48px}
+.countdown-num{font-family:'Anton',sans-serif;font-size:340px;letter-spacing:-0.04em;color:#d4ff3a;line-height:0.9}
+.countdown-label{font-family:'Anton',sans-serif;font-size:96px;line-height:0.9;color:#fff;text-transform:uppercase;letter-spacing:-0.025em}
+.headline{font-family:'Anton',sans-serif;font-size:88px;letter-spacing:-0.025em;text-transform:uppercase;line-height:0.95;margin-top:40px}
+.headline em{font-style:normal;color:#d4ff3a;text-decoration:underline;text-decoration-thickness:6px;text-underline-offset:10px}
+.detail{font-family:'Archivo',sans-serif;font-size:22px;color:#b8bcc1;line-height:1.55;font-weight:600;margin-top:24px;max-width:920px}
+.detail strong{color:#fff;font-weight:900}
+.detail .green{color:#d4ff3a;font-weight:800}
+.footer{display:flex;justify-content:space-between;align-items:flex-end}
+.logo{font-family:'Archivo',sans-serif;font-weight:900;font-size:42px;letter-spacing:-0.02em;color:#fff}
+.logo .one{background:#d4ff3a;color:#0a0b0d;padding:2px 12px;border-radius:9px;margin-left:3px}
+.cta{font-family:'JetBrains Mono',monospace;font-size:20px;color:#d4ff3a;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;border:1.5px solid #d4ff3a;padding:14px 22px;border-radius:10px}
+</style></head>
+<body>
+<div class="frame">
+  <div>
+    <div class="eyebrow">★ LAUNCH SWEEPSTAKES</div>
+    <div class="countdown-row">
+      <div class="countdown-num">{{sweeps.days_left}}</div>
+      <div class="countdown-label">DAYS<br/>LEFT</div>
+    </div>
+    <div class="headline">WIN 2 <em>WORLD CUP</em><br/>TICKETS.</div>
+    <div class="detail">
+      $1,499 prize value · <span class="green">Free to enter</span> · <strong>Drawn live May 31</strong> at 11:59 PM ET.<br/>
+      Refer friends with your unique link for bonus entries.
+    </div>
+  </div>
+  <div class="footer">
+    <div class="logo">PICK<span class="one">1</span></div>
+    <div class="cta">ENTER → PICK1.LIVE</div>
+  </div>
+</div>
+</body></html>

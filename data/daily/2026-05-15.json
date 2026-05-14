@@ -1,0 +1,47 @@
+{
+  "date_label": "MAY 15",
+
+  "pick": {
+    "matchup":       "DEN @ MIN",
+    "line":          "OVER 224.5",
+    "sport":         "NBA",
+    "confidence":    81,
+    "vegas_implied": 52,
+    "tip_time":      "8:00 PM ET",
+    "edge_label":    "+29 pts",
+    "edge_takeaway": "Vegas thinks this is a coin flip. Pick1's model disagrees — strongly. We'll log the result tomorrow either way."
+  },
+
+  "yesterday": {
+    "pick":          "SPURS +5.5",
+    "confidence":    78.6,
+    "verdict":       "win",
+    "verdict_label": "✓ WIN",
+    "result_score":  "126—97",
+    "result_detail": "SPURS COVERED BY 23.5"
+  },
+
+  "streak": {
+    "window_days":    14,
+    "wins":           9,
+    "losses":         3,
+    "pending":        2,
+    "win_rate":       75,
+    "avg_confidence": 76.4,
+    "clv":            3.2,
+    "clv_label":      "+3.2%"
+  },
+
+  "games": [
+    { "time": "8:00P",  "matchup": "DEN @ MIN", "line": "over 224.5", "confidence": 81, "is_pick": true  },
+    { "time": "7:00P",  "matchup": "BOS @ MIA", "line": "BOS -3.5",   "confidence": 67, "is_pick": false },
+    { "time": "7:30P",  "matchup": "PHI @ NYK", "line": "over 218",   "confidence": 62, "is_pick": false },
+    { "time": "10:00P", "matchup": "LAL @ GSW", "line": "GSW -2.5",   "confidence": 58, "is_pick": false },
+    { "time": "10:30P", "matchup": "DAL @ LAC", "line": "over 222",   "confidence": 54, "is_pick": false }
+  ],
+
+  "sweeps": {
+    "days_left": 16,
+    "url":       "https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro"
+  }
+}

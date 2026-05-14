@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<title>Pick1 daily — yesterday's result</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1080px;background:#0a0b0d;color:#fff;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.frame{width:1080px;height:1080px;padding:80px;display:flex;flex-direction:column;justify-content:space-between}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:22px;letter-spacing:0.28em;color:#d4ff3a;text-transform:uppercase;font-weight:700}
+.eyebrow::before{content:'●';margin-right:14px;font-size:14px;vertical-align:middle}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:0.22em;color:#9095a0;text-transform:uppercase;font-weight:700;margin-top:48px;margin-bottom:14px}
+.pick-row{display:flex;align-items:baseline;gap:30px;flex-wrap:wrap}
+.pick-text{font-family:'Anton',sans-serif;font-size:130px;line-height:0.92;letter-spacing:-0.025em;color:#fff;text-transform:uppercase}
+.pick-conf{font-family:'JetBrains Mono',monospace;font-size:48px;color:#d4ff3a;font-weight:700;letter-spacing:0.02em}
+.divider{height:2px;background:#1a1d22;margin:48px 0}
+.verdict{display:flex;align-items:center;gap:30px}
+.verdict-flag{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;letter-spacing:0.18em;padding:14px 28px;border-radius:10px;text-transform:uppercase;color:#0a0b0d}
+.verdict-flag.win{background:#22c55e}
+.verdict-flag.loss{background:#ff5a36}
+.verdict-flag.push{background:#9095a0}
+.result-text{font-family:'Anton',sans-serif;font-size:110px;line-height:0.92;letter-spacing:-0.025em;text-transform:uppercase;color:#fff}
+.result-detail{font-family:'JetBrains Mono',monospace;font-size:26px;color:#9095a0;margin-top:18px;letter-spacing:0.1em}
+.footer{display:flex;justify-content:space-between;align-items:flex-end}
+.logo{font-family:'Archivo',sans-serif;font-weight:900;font-size:42px;letter-spacing:-0.02em;color:#fff}
+.logo .one{background:#d4ff3a;color:#0a0b0d;padding:2px 12px;border-radius:9px;margin-left:3px}
+.cta{font-family:'JetBrains Mono',monospace;font-size:18px;color:#d4ff3a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700}
+</style></head>
+<body>
+<div class="frame">
+  <div>
+    <div class="eyebrow">YESTERDAY'S CALL · LOGGED BEFORE TIP-OFF</div>
+    <div class="section-label">PICK</div>
+    <div class="pick-row">
+      <div class="pick-text">{{yesterday.pick}}</div>
+    </div>
+    <div class="pick-conf" style="margin-top:18px">{{yesterday.confidence}}% AI CONFIDENCE</div>
+    <div class="divider"></div>
+    <div class="section-label">RESULT</div>
+    <div class="verdict">
+      <div class="verdict-flag {{yesterday.verdict}}">{{yesterday.verdict_label}}</div>
+    </div>
+    <div class="result-text" style="margin-top:24px">{{yesterday.result_score}}</div>
+    <div class="result-detail">{{yesterday.result_detail}}</div>
+  </div>
+  <div class="footer">
+    <div class="logo">PICK<span class="one">1</span></div>
+    <div class="cta">PICK1.LIVE/TRACKER</div>
+  </div>
+</div>
+</body></html>
