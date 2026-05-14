@@ -49,49 +49,74 @@ enum Pick1Springs {
 
 // MARK: - Press-state modifier
 
-/// Apply to any Button label that needs press feedback. Uses a
-/// DragGesture-driven `@GestureState` so the press feels instant
-/// (no Button-style indirection) and springs back via Pick1Springs.snappy
-/// when released — the same hand-feel as Apple's own primary CTAs.
+/// Press-state feedback applied as a custom `ButtonStyle`. This is the
+/// ONLY pattern that doesn't steal taps from the enclosing Button —
+/// because it IS the button's style, not a competing gesture overlay.
 ///
-/// Usage:
-///   Button { … } label: {
-///       MyLabel().pressableScale()
-///   }
-///   .buttonStyle(.plain)
-struct PressableScale: ViewModifier {
+/// History (what NOT to do, with the symptoms they each produced):
+///
+///   v1 — `.gesture(DragGesture(minimumDistance: 0))` on the label.
+///        ⛔ Broken. Drag-gesture wins over the Button's TapGesture; the
+///        Button's action closure never fires. Floating bottom-nav was
+///        completely unresponsive to taps.
+///
+///   v2 — `.onLongPressGesture(minimumDuration: 0, perform: {},
+///        onPressingChanged: ...)` on the label.
+///        ⛔ Also broken. Even with minimumDuration: 0 and an empty
+///        perform closure, the long-press recognizer still consumes
+///        touches on iOS 26. Taps don't reach the parent Button.
+///
+///   v3 (this one) — `ButtonStyle`. Apple's intended API for "react to
+///        the button being pressed". `configuration.isPressed` comes
+///        from the Button itself, no separate gesture, no conflict.
+///        ✅ Works. Taps fire. Press feedback animates.
+///
+/// Apply on the Button (NOT inside its label):
+///
+///   Button { ... } label: { MyLabel() }
+///       .buttonStyle(PressableButtonStyle())
+struct PressableButtonStyle: ButtonStyle {
     /// Scale at full press. 0.97 is the sweet spot — visible but not
-    /// goofy. 0.95 is for tiles; 0.99 is for large hero cards where
-    /// a smaller delta reads more "responsive" than "rubbery".
-    var pressedScale: CGFloat = 0.97
+    /// goofy. 0.95 is for tiles; 0.99 is for large hero cards.
+    var scale: CGFloat = 0.97
 
-    /// Opacity at full press. Subtle dim adds tactile feel; 0.92 is
-    /// enough to register without breaking color identity.
-    var pressedOpacity: Double = 0.92
+    /// Opacity at full press. Subtle dim adds tactile feel.
+    var opacity: Double = 0.92
 
-    @GestureState private var isPressed: Bool = false
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPressed ? pressedScale : 1)
-            .opacity(isPressed ? pressedOpacity : 1)
-            .animation(Pick1Springs.snappy, value: isPressed)
-            // `minimumDistance: 0` makes the gesture fire instantly on
-            // touch-down rather than waiting for a drag threshold —
-            // critical for the "this responded" feel.
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .updating($isPressed) { _, state, _ in state = true }
-            )
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .opacity(configuration.isPressed ? opacity : 1)
+            .animation(Pick1Springs.snappy, value: configuration.isPressed)
     }
 }
 
 extension View {
-    /// Apply press-state feedback (subtle scale + dim, springs back on
-    /// release). The default `pressedScale: 0.97` is right for buttons
-    /// and small tiles; pass `0.99` for large cards (HeroCard, GameCard).
+    /// Compatibility no-op. Existing call sites apply `.pressableScale()`
+    /// to the *label* inside a Button — that placement cannot work
+    /// without stealing the Button's tap (see header doc). Rather than
+    /// touch every call site immediately, we keep this as a no-op so
+    /// the app remains functional, and migrate sites one by one to
+    /// `.buttonStyle(PressableButtonStyle(...))` on the Button itself.
+    ///
+    /// **DO NOT** use this on new code; reach for the ButtonStyle
+    /// directly. Migration path:
+    ///
+    ///   // Old (broken — press feedback OR working tap, never both)
+    ///   Button { … } label: {
+    ///       MyLabel().pressableScale(0.95)
+    ///   }
+    ///   .buttonStyle(.plain)
+    ///
+    ///   // New
+    ///   Button { … } label: { MyLabel() }
+    ///       .buttonStyle(PressableButtonStyle(scale: 0.95))
     func pressableScale(_ scale: CGFloat = 0.97, opacity: Double = 0.92) -> some View {
-        modifier(PressableScale(pressedScale: scale, pressedOpacity: opacity))
+        // No-op: returning self lets call sites compile while we
+        // gradually migrate them. The arguments are accepted (and
+        // currently ignored) so the migration is mechanical when we
+        // pull each site over to the ButtonStyle form.
+        self
     }
 }
 

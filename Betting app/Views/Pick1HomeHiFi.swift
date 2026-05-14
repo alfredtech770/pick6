@@ -2004,10 +2004,12 @@ struct NavItem: View {
             // was unreachable because the user's thumb was hitting
             // padding rather than the 17pt person glyph.
             .contentShape(Capsule())
-            // Subtle scale-down on press for tactile feedback.
-            .pressableScale(0.95)
         }
-        .buttonStyle(.plain)
+        // Press-state feedback applied as a ButtonStyle (the canonical
+        // SwiftUI pattern). Earlier the press feedback was a separate
+        // gesture inside the label, which competed with the Button's
+        // tap recognizer and broke navigation — this is the fix.
+        .buttonStyle(PressableButtonStyle(scale: 0.95))
         // Animate the pill width / label appearance when the active
         // tab swaps — keeps the floating nav from snapping mid-press.
         .animation(Pick1Springs.snappy, value: isActive)
@@ -2060,9 +2062,9 @@ struct LiveNavItem: View {
                         : .clear,
                     radius: isActive ? 10 : 0, x: 0, y: 4)
             .contentShape(Capsule())
-            .pressableScale(0.95)
         }
-        .buttonStyle(.plain)
+        // ButtonStyle-based press feedback (no gesture conflict).
+        .buttonStyle(PressableButtonStyle(scale: 0.95))
         .animation(Pick1Springs.snappy, value: isActive)
         .animation(Pick1Springs.smooth, value: liveCount)
         .accessibilityLabel(liveCount > 0
