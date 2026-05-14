@@ -342,7 +342,7 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
 - **Winner announced:** June 1 via email + IG + Twitter
 - **Compliance:** "No purchase necessary, open to US/CA/MX residents 18+, void where prohibited" boilerplate (Gleam provides the template)
 - **Expected lift:** 500-1,500 incremental signups + 2-5x increase in IG+TikTok follower count
-- **Status:** ⏳ Setup tonight via Chrome MCP
+- **Status:** ✅ LIVE since May 14. Optimization pass in flight (prize-first title, branded hero image, Viral Share entry, Visit-a-Page for TikTok/X) — see `launch/GLEAM_OPTIMIZATION.md` for the paste-ready copy.
 
 ### 🔥 Activation 7 — SparkLoop Newsletter Cross-Promo (Day 8 launch, ongoing)
 - **What:** Submit Pick1 to SparkLoop's network. Other newsletters (Morning Brew, The Hustle, sports/finance newsletters) recommend Pick1 in their welcome-email sequence. We pay $1-2 per signup that converts.
