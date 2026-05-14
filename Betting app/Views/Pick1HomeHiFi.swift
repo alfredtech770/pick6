@@ -275,13 +275,28 @@ struct HomeHiFiContent: View {
                 // the SportHub is per-sport. When ALL is selected, the
                 // CTA renders as a passive caption nudging the user to
                 // pick a sport first.
+                // SEE ALL CTA — when a specific sport is selected, the
+                // CTA pushes that sport's SportHubView (which has the
+                // full per-sport feed + league rail). When ALL is
+                // selected we don't show the CTA because "all sports"
+                // isn't a single destination — there are eight hubs,
+                // not one. The user picks a sport chip first, then
+                // the affordance lights up.
+                let activeSport: String? =
+                    (vm.selectedSport != "all") ? vm.selectedSport : nil
                 SectionHeader(
                     title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
-                    cta: nil,
-                    onTapCTA: nil
+                    cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
+                    onTapCTA: activeSport.map { sport in
+                        {
+                            Haptics.tap()
+                            onTapSport(sport)
+                        }
+                    }
                 )
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
+                .animation(Pick1Springs.snappy, value: vm.selectedSport)
 
                 LazyVStack(spacing: 10) {
                     let visible = vm.visiblePicks(isPro: isPro)
@@ -359,6 +374,25 @@ struct HomeHiFiContent: View {
     private func liveScore(for pick: Pick) -> LiveScore? {
         guard let gid = pick.gameId else { return nil }
         return vm.liveScores.first { $0.gameId == gid }
+    }
+
+    /// Caps-cased league display name for the "SEE ALL <SPORT> →" CTA.
+    /// The chip filter uses generic sport categories ("basketball",
+    /// "football") which read awkwardly in caps; here we map to the
+    /// league acronym (NBA, NFL) the user is most likely to recognize.
+    private func sportLabelFull(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "NBA"
+        case "football":   return "NFL"
+        case "soccer":     return "SOCCER"
+        case "baseball":   return "MLB"
+        case "hockey":     return "NHL"
+        case "combat":     return "UFC"
+        case "f1":         return "F1"
+        case "tennis":     return "TENNIS"
+        case "cricket":    return "CRICKET"
+        default:           return sport.uppercased()
+        }
     }
 }
 
