@@ -3,6 +3,33 @@
 Built-in-audience plays to drive entries to the live sweeps without
 spending Meta budget. Every item below is paste-ready or auto-running.
 
+---
+
+## ⚠️ 2026 aggregator-landscape audit (May 14, live check)
+
+I audited the major directories tonight. **The landscape has consolidated and most charge or require accounts.** Findings:
+
+| Site | 2026 status | Cost |
+|---|---|---|
+| BetaList | Account required for submission | Free account |
+| Futurepedia | Paid only | $247-$497 one-time |
+| There's An AI For That | Paid only | "Get $300 PPC bonus" = it's all paid PPC now |
+| Sweepstakes Today | Curated — they pick what to feature | n/a |
+| OnlineSweepstakes | Account required | Free account |
+| Sweepstakes Advantage | Email submission via contact form | Free if accepted |
+| Contest Girl | Email submission via contact form | Free if accepted |
+
+**Practical implication:** the "free anonymous form submission" era for big-traffic directories is largely over. The real plays in 2026 are:
+
+1. **Reddit** (massive built-in audience, free, just need an account with karma)
+2. **Hacker News Show HN** (4M monthly readers, free, no account threshold but timing-sensitive)
+3. **Indie Hackers** (engaged audience, free, account-gated)
+4. **LinkedIn** (founder's personal network + algo discovery)
+5. **SparkLoop** (newsletter cross-promo, $200 from our budget — but real traffic)
+6. **Product Hunt** (real audience, free, Day 21 plan)
+
+The directories above are nice-to-have but not where the leverage is.
+
 **Sweeps URL (with UTM template):**
 ```
 https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro?utm_source={SRC}&utm_medium={MED}&utm_campaign=sweeps_launch
