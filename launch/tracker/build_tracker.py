@@ -10,7 +10,8 @@ $100K scenario projection:
   2. Content Calendar    — what's getting posted where + perf
   3. Ad Performance      — Meta + TikTok Spark spend / CPL / conversions
   4. Channel ROI         — which channel is winning, % of total
-  5. Activation Pipeline — the 11 viral activations + their state
+  5. Activation Pipeline — the 22 viral activations + their state
+                           (incl. web3 quests, Discord, Founder Pass)
   6. Influencer Outreach — 20-DM micro-influencer trade program
   7. Pick Performance    — daily pick record (the receipts wall data)
   8. $100K Scenario      — what the marketing spend would look like
@@ -259,14 +260,19 @@ def build_channel_roi(wb):
 
     channels = ["Meta Ads (cold)", "Meta Ads (retargeting)",
                 "TikTok organic", "TikTok Spark (paid boost)",
+                "TikTok #BeatPick1 challenge",
                 "X / Twitter organic", "Twitter Daily Drop",
+                "Crypto Twitter shilling (paid)",
                 "Instagram organic", "Instagram bio link",
+                "Instagram Story takeovers",
                 "Facebook Page organic",
                 "Reddit r/SideProject", "Reddit r/giveaways",
                 "Reddit r/contests", "Reddit r/sportsbook",
+                "Reddit niche-sport subs",
                 "Hacker News (Show HN)", "Indie Hackers milestone",
                 "LinkedIn (founder post)",
                 "Influencer trades (organic)", "Influencer (paid)",
+                "YouTube creator sponsors",
                 "ProductHunt launch", "Founder essay drop",
                 "Email — welcome CTA (Resend)", "Email — daily pick CTA (Resend)",
                 "Email — blast to existing list",
@@ -275,6 +281,15 @@ def build_channel_roi(wb):
                 "SparkLoop newsletter cross-promo",
                 "Sweep aggregator submissions",
                 "AI directory submissions",
+                # Web3 channels (added May 14)
+                "Zealy quest 'Pick1 Sprint'",
+                "Galxe sports quest",
+                "Layer3 quest",
+                "TaskOn quest (APAC)",
+                "Pick1 Discord server",
+                "Pick1 Founder Pass (collectible)",
+                "Prediction-market community seeding",
+                "Daily lineup card shares",
                 "Direct / unknown"]
     for i, ch in enumerate(channels, start=3):
         ws.cell(row=i, column=1, value=ch)
@@ -337,6 +352,39 @@ def build_activations(wb):
         (11, "KingSumo viral giveaway (week 2)", "Day 10 (May 22)", "Planned",
          "Claude (setup) + Noa (prize)",
          "Free-tier KingSumo, 1,000-entry cap. Prize: 10× Lifetime Pro accounts ($0 in-kind cost, $9,990 perceived value). Built-in exponential referral multiplier - each entrant's odds scale with each friend they refer. Run in parallel with Gleam."),
+        (12, "Zealy quest 'Pick1 Sprint'", "Day 2 (May 14)", "Planned",
+         "Claude (spec) + Noa (account)",
+         "1M+ quest hunters on Zealy. 10-task sprint with waitlist gateway. XP-based leaderboard, top 50 win Pro accounts. Quest config spec ready in launch/GROWTH_ACTIVATIONS.md A1. Free. Expected: 5-50K quest completions → 1.5-15K waitlist signups."),
+        (13, "Galxe sports quest", "Day 2 (May 14)", "Planned",
+         "Claude (spec) + Noa (account)",
+         "13M+ users — largest quest platform. Same task list as Zealy. Off-chain only (no token integration needed). Free tier. Expected: 10-100K participants → 2-25K waitlist signups."),
+        (14, "Layer3 quest", "Day 3 (May 15)", "Planned",
+         "Noa",
+         "1M+ users, higher-quality crypto-native audience. Free. Cross-list of same task structure. Expected: 2-20K participants → 500-5K signups."),
+        (15, "TaskOn quest (APAC reach)", "Day 3 (May 15)", "Planned",
+         "Noa",
+         "3M+ users, APAC-dominant. Adds geographic spread + raw count. Free. Expected: 3-30K participants → 600-6K signups. Lower US conversion but counts."),
+        (16, "Pick1 Discord server", "Day 2 (May 14)", "Planned",
+         "Noa (setup) + Claude (welcome bot)",
+         "Custom Discord with role-gated #daily-pick channel (15-min early access). Carl-bot + Mee6 + custom Pick1 bot (Day 14 build). Brand-safety mod rules: zero crypto/NFA talk. Expected 3-15K members in 30 days."),
+        (17, "Pick1 Founder Pass (digital collectible)", "Day 4 (May 16)", "Planned",
+         "Claude (PNG generator) + Noa (creative approval)",
+         "First 1,000 waitlist signups get a numbered Pick1 Founder Pass PNG (optionally minted free on Base L2 for crypto users; ~$10 total gas). Scarcity → 30-50% conversion lift on the signup form. Sent via Resend with unique serial."),
+        (18, "Prediction-market community seeding", "Day 5-12", "Planned",
+         "Noa",
+         "Polymarket + Kalshi + Overtime Discord servers. Founder joins, becomes known commenter, posts high-value 7-day audit. Mentions Pick1 in passing — no shill. Expected 500-3K targeted signups."),
+        (19, "Crypto sports Twitter deal (10-20 accounts)", "Day 3-5", "Planned",
+         "Noa",
+         "Pay 10-20 crypto-sports Twitter accounts (5-50K followers, >2% engagement) $50-100 USDC OR Lifetime Pro to retweet sweeps + 1 thread on Pick1. $500-2K cash or $0 in-kind. 200K-1M impressions, 500-5K signups."),
+        (20, "TikTok #BeatPick1 challenge", "Day 6 (May 18)", "Planned",
+         "Noa (launch) + founder team (engage)",
+         "Daily AI pick reveal video — users duet with their own contrarian pick. Use trending sound. Founder team responds to every duet under 50 likes for algo boost. Expected 50-500 duets, 1-8K signups."),
+        (21, "IG Story takeover program", "Day 7 (May 19)", "Planned",
+         "Noa (recruit) + creators (post)",
+         "10 micro creators (50-200K followers) each do 24-hr IG Story takeover on @pick1.live. Free in exchange for Lifetime Pro. Pre-vetted, founder-approved. 5-15K new IG followers."),
+        (22, "Daily lineup card downloadable", "Day 10 (May 22)", "Planned",
+         "Claude (build) + Noa (design)",
+         "Beautifully designed daily card with Pick1's pick + 4 top games. Shareable IG Stories format. Embedded pick1.live CTA. Expected 10-30% of email subscribers share daily."),
     ]
     for r, row in enumerate(activations, start=3):
         for c, v in enumerate(row, start=1):
@@ -344,18 +392,21 @@ def build_activations(wb):
             if c == 6: cell.alignment = WRAP
         ws.row_dimensions[r].height = 38
 
-    # Status colour coding
-    ws.conditional_formatting.add("D3:D20",
+    # Status colour coding — expanded range for 22+ activations
+    ws.conditional_formatting.add("D3:D30",
         CellIsRule(operator="equal", formula=['"LIVE"'],
                    fill=PatternFill("solid", fgColor="C6EFCE")))
-    ws.conditional_formatting.add("D3:D20",
+    ws.conditional_formatting.add("D3:D30",
         CellIsRule(operator="equal", formula=['"Planned"'],
                    fill=PatternFill("solid", fgColor="FFEB9C")))
-    ws.conditional_formatting.add("D3:D20",
+    ws.conditional_formatting.add("D3:D30",
+        CellIsRule(operator="equal", formula=['"Drafted"'],
+                   fill=PatternFill("solid", fgColor="DDEBF7")))
+    ws.conditional_formatting.add("D3:D30",
         CellIsRule(operator="equal", formula=['"Blocked"'],
                    fill=PatternFill("solid", fgColor="FFC7CE")))
 
-    autosize(ws, [5, 32, 22, 11, 28, 55])
+    autosize(ws, [5, 36, 22, 11, 28, 65])
 
 
 # ── Tab 6: Influencer Outreach ───────────────────────────────────────────
@@ -704,8 +755,8 @@ def build_readme(wb):
         ("1. KPI Dashboard         — top-level daily numbers (signups, CPL, etc.)", "body"),
         ("2. Content Calendar      — every post planned + posted, with perf", "body"),
         ("3. Ad Performance        — Meta + TikTok Spark per-day per-ad", "body"),
-        ("4. Channel ROI           — which channel is winning, % of total (29 channels tracked)", "body"),
-        ("5. Activations           — the 11 viral activations + state", "body"),
+        ("4. Channel ROI           — which channel is winning, % of total (40+ channels tracked)", "body"),
+        ("5. Activations           — the 22 viral activations + state (incl. web3 quests, Discord, Founder Pass)", "body"),
         ("6. Influencer Outreach   — the 20-DM micro-trade program", "body"),
         ("7. Pick Performance      — daily pick record (the receipts wall)", "body"),
         ("8. $100K Scenario        — what marketing spend would look like at $1K vs $25K vs $100K", "body"),
