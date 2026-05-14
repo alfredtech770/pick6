@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Pick1 Gleam Sweepstakes Hero Banner.
+     1200×600 (Gleam standard campaign-hero aspect ratio).
+     The single most important conversion asset on the Gleam page —
+     it's what makes a cold visitor want to enter. Lead with the
+     prize ("WORLD CUP TICKETS") in massive type; brand is secondary. -->
+<title>Pick1 · Sweeps Hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --accent: #d4ff3a;
+    --line: #1a1d22;
+    --muted: #9095a0;
+    --dim: #b8bcc1;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    width: 1200px; height: 600px;
+    background: var(--bg);
+    color: white;
+    font-family: 'Archivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  /* Atmospheric grain/gradient overlay to add depth (otherwise the
+     pure-black background looks dead). Layered radial spotlight from
+     the upper-right pulls focus toward the trophy emoji. */
+  .frame {
+    width: 1200px; height: 600px;
+    padding: 56px 64px;
+    box-sizing: border-box;
+    position: relative;
+    background:
+      radial-gradient(circle at 85% 30%, rgba(212,255,58,0.10) 0%, transparent 50%),
+      radial-gradient(circle at 15% 80%, rgba(212,255,58,0.06) 0%, transparent 45%),
+      var(--bg);
+  }
+  /* Left column — typographic stack. Flex column with the bottom-row
+     pushed down via margin-top:auto, so content stacks cleanly even if
+     copy grows. */
+  .left {
+    position: absolute;
+    top: 48px; left: 64px; right: 380px; bottom: 48px;
+    display: flex; flex-direction: column;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .eyebrow::before {
+    content: '●';
+    margin-right: 12px;
+    font-size: 10px;
+    vertical-align: middle;
+  }
+  h1 {
+    margin: 18px 0 0;
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 96px;
+    line-height: 0.94;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+  }
+  h1 .accent { color: var(--accent); }
+  /* Smaller sub-headline + value prop */
+  .sub {
+    margin-top: 16px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 19px;
+    color: var(--dim);
+    line-height: 1.4;
+    font-weight: 500;
+    max-width: 540px;
+  }
+  .sub strong { color: white; font-weight: 800; }
+  .sub .accent { color: var(--accent); font-weight: 800; }
+  /* Bottom row — brand chip + deadline. Not absolutely positioned —
+     uses margin-top:auto inside the .left flex column so it sits at
+     the bottom while the rest of the stack flows naturally. */
+  .bottom-row {
+    margin-top: auto;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 24px;
+  }
+  .logo {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    color: white;
+  }
+  .logo .one {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 12px;
+    border-radius: 9px;
+    margin-left: 3px;
+  }
+  .deadline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  /* Right column — trophy + prize value card */
+  .right {
+    position: absolute;
+    top: 50%; right: 56px; transform: translateY(-50%);
+    width: 320px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 18px;
+  }
+  .trophy {
+    font-size: 200px;
+    line-height: 1;
+    filter: drop-shadow(0 0 60px rgba(212,255,58,0.35));
+  }
+  .prize-card {
+    background: rgba(212,255,58,0.10);
+    border: 1.5px solid var(--accent);
+    border-radius: 16px;
+    padding: 14px 22px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .prize-card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .prize-card-value {
+    font-family: 'Anton', sans-serif;
+    font-size: 40px;
+    color: white;
+    letter-spacing: -0.01em;
+    margin-top: 2px;
+    line-height: 1.05;
+  }
+  .prize-card-sub {
+    font-family: 'Archivo', sans-serif;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="left">
+    <div class="eyebrow">PICK1 LAUNCH SWEEPSTAKES · MAY 14 – 31</div>
+    <h1>WIN 2<br/><span class="accent">WORLD CUP</span><br/>TICKETS.</h1>
+    <div class="sub">
+      Plus <span class="accent">Lifetime Pick1 Pro</span> access — AI sports predictions across 9 sports, every call logged publicly. <strong>Free to enter. Drawn May 31.</strong>
+    </div>
+    <div class="bottom-row">
+      <div class="logo">PICK<span class="one">1</span></div>
+      <div class="deadline">⏰ ENTRIES CLOSE 11:59 PM ET · MAY 31</div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="trophy">🏆</div>
+    <div class="prize-card">
+      <div class="prize-card-label">PRIZE VALUE</div>
+      <div class="prize-card-value">$1,499</div>
+      <div class="prize-card-sub">2 WC group-stage tix + Lifetime Pro</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
