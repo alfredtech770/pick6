@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<!-- IG grid tile #7 — BOTTOM-LEFT. Acid green dominant. Visual grid of
+     all 9 sports Pick1 covers. Communicates breadth at a glance. -->
+<title>IG Tile 7 · 9 Sports</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1080px;background:#d4ff3a;color:#0a0b0d;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.frame{width:1080px;height:1080px;padding:80px;position:relative;display:flex;flex-direction:column;justify-content:space-between}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:22px;letter-spacing:0.28em;color:#0a0b0d;text-transform:uppercase;font-weight:700}
+.eyebrow::before{content:'●';margin-right:14px;font-size:14px;vertical-align:middle}
+.title{font-family:'Anton',sans-serif;font-size:140px;line-height:0.92;letter-spacing:-0.025em;text-transform:uppercase;margin-top:20px}
+.sports-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:48px}
+.sport{background:#0a0b0d;color:#d4ff3a;font-family:'Archivo',sans-serif;font-weight:900;font-size:54px;letter-spacing:-0.02em;text-align:center;padding:36px 12px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.sport .emoji{font-size:60px;line-height:1}
+.footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px}
+.logo{font-family:'Archivo',sans-serif;font-weight:900;font-size:48px;letter-spacing:-0.02em;color:#0a0b0d}
+.logo .one{background:#0a0b0d;color:#d4ff3a;padding:3px 14px;border-radius:10px;margin-left:4px}
+.url{font-family:'JetBrains Mono',monospace;font-size:22px;color:#0a0b0d;letter-spacing:0.12em;text-transform:uppercase;font-weight:700}
+</style></head>
+<body>
+<div class="frame">
+  <div>
+    <div class="eyebrow">ALL CALLS, ONE MODEL</div>
+    <div class="title">9 SPORTS<br/>1 PICK / DAY</div>
+    <div class="sports-grid">
+      <div class="sport"><div class="emoji">🏀</div>NBA</div>
+      <div class="sport"><div class="emoji">🏈</div>NFL</div>
+      <div class="sport"><div class="emoji">⚽</div>EPL</div>
+      <div class="sport"><div class="emoji">⚾</div>MLB</div>
+      <div class="sport"><div class="emoji">🥊</div>UFC</div>
+      <div class="sport"><div class="emoji">🏒</div>NHL</div>
+      <div class="sport"><div class="emoji">🏎️</div>F1</div>
+      <div class="sport"><div class="emoji">🎾</div>TENNIS</div>
+      <div class="sport"><div class="emoji">🏏</div>CRICKET</div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="logo">PICK<span class="one">1</span></div>
+    <div class="url">PICK1.LIVE</div>
+  </div>
+</div>
+</body></html>
