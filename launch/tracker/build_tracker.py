@@ -30,6 +30,11 @@ everything we plan and measure during the 18-day pre-launch sprint:
                            with tier-coded tactics (T1 = do all; T5
                            = guerrilla picks). Read alongside
                            launch/CMO_PLAYBOOK.md for the full memo.
+ 12. $25K Active Plan    — ⭐ CURRENT BUDGET. Full $25K allocation,
+                           week-by-week paid cadence, immediate
+                           first moves, expected outcomes vs $1K
+                           and $100K, risk callouts. Companion
+                           doc: launch/AT_25K.md.
 
 Re-run any time to regenerate from scratch:
     python3 launch/tracker/build_tracker.py
@@ -398,6 +403,40 @@ def build_activations(wb):
         (22, "Daily lineup card downloadable", "Day 10 (May 22)", "Planned",
          "Claude (build) + Noa (design)",
          "Beautifully designed daily card with Pick1's pick + 4 top games. Shareable IG Stories format. Embedded pick1.live CTA. Expected 10-30% of email subscribers share daily."),
+        # ── $25K BUDGET ACTIVATIONS (added May 14 after budget authorization) ──
+        (23, "🎯 Gleam Hobby tier upgrade", "Day 2 (May 14)", "Planned",
+         "Noa (pay $39) + Claude (configure)",
+         "$39/mo. Unlocks Feature Media (upload hero image), Viral Share entry method (multiplicative referrals), Repeat Action Limit (daily-redo social entries). Removes ALL Free-tier blockers we hit Day 2. Single highest-ROI move at $25K budget — first action."),
+        (24, "💰 Meta Ads at scale", "Day 3 (May 15)", "Planned",
+         "Noa (auth payment) + Claude (creative briefs)",
+         "$500/day combined ($350 cold + $147 retargeting × 17 days = $8,500 total). At $1.50 CPL = 5-6K signups. Existing Campaign 1 already set up at $50/day — just scale the budget."),
+        (25, "🎬 TikTok Spark Ads (reactive)", "Day 3 (May 15)", "Planned",
+         "Noa (set up TikTok Ads Manager) + Claude (boost decisions)",
+         "$175/day budget, reactive. Only boost Reels that organically pass 50K views. $3K cap over campaign. Decision window: within 6 hours of crossing threshold."),
+        (26, "📣 1 × mid-tier sports creator", "Day 9 (May 21)", "Planned",
+         "Noa (negotiate) + creator (post)",
+         "$3K paid post from a 300-500K-follower sports/betting creator. Vet engagement >2% before signing. Outreach Day 4, contract Day 5, post drops Day 9. Single biggest single-shot reach line in $25K plan."),
+        (27, "👥 5-7 × micro creators (paid)", "Day 7-12", "Planned",
+         "Noa (outreach) + creators (post)",
+         "$300-500 each, mix paid + product trade. From INFLUENCER_OUTREACH.md list, prioritized by engagement rate. Total: $2,500. DMs Day 7, posts roll Day 9-12."),
+        (28, "✏️ Upwork content editor", "Day 5 (May 17)", "Planned",
+         "Noa (hire) + editor (post)",
+         "$500 one-off for 18-day gig. Daily cross-posting + basic editing while founder records. Frees founder time. Filipino or LatAm editor for ~$300; US-based $500-700."),
+        (29, "🎞️ Production shoot day (street TikTok)", "Day 10 (May 22)", "Planned",
+         "Noa (book) + creator (shoot)",
+         "$1.5K one-day shoot in NYC or LA. Pro creator + lighting + edit. Produces 4-6 polished street-TikTok pieces. Block 2 backup weather dates."),
+        (30, "💸 Sweepstakes prize-stack bump", "Day 12 (May 24)", "Planned",
+         "Noa (announce + fund)",
+         "$2,000 cash 2nd prize added to the WC tix grand prize. Mid-campaign announcement creates fresh news hook. Drives entry surge."),
+        (31, "🚀 ProductHunt paid hunter", "Day 18 (May 30)", "Planned",
+         "Noa (book) + hunter (launch day)",
+         "$500 for an experienced hunter to do the launch coordination + animated demo + day-of comms on Day 21 (originally Day 21, accelerated to Day 18 with budget). Critical for top-3 daily."),
+        (32, "📰 Press kit + media training", "Day 14 (May 26)", "Planned",
+         "Noa (book session)",
+         "$500 for professional photography + founder bio + 30-min media-training call. Sharpens press intake for the founder story drop wave."),
+        (33, "🛠️ Infra upgrades (Resend Pro etc.)", "Day 5 (May 17)", "Planned",
+         "Noa (pay) + Claude (configure)",
+         "$200 one-off. Resend Pro (10K+ recipients), Vercel Pro (zero rate limit), Supabase Pro (production-tier). Needed once waitlist crosses 5K."),
     ]
     for r, row in enumerate(activations, start=3):
         for c, v in enumerate(row, start=1):
@@ -405,20 +444,20 @@ def build_activations(wb):
             if c == 6: cell.alignment = WRAP
         ws.row_dimensions[r].height = 38
 
-    # Status colour coding — expanded range for 22+ activations
-    ws.conditional_formatting.add("D3:D30",
+    # Status colour coding — expanded range for 33 activations
+    ws.conditional_formatting.add("D3:D40",
         CellIsRule(operator="equal", formula=['"LIVE"'],
                    fill=PatternFill("solid", fgColor="C6EFCE")))
-    ws.conditional_formatting.add("D3:D30",
+    ws.conditional_formatting.add("D3:D40",
         CellIsRule(operator="equal", formula=['"Planned"'],
                    fill=PatternFill("solid", fgColor="FFEB9C")))
-    ws.conditional_formatting.add("D3:D30",
+    ws.conditional_formatting.add("D3:D40",
         CellIsRule(operator="equal", formula=['"Drafted"'],
                    fill=PatternFill("solid", fgColor="DDEBF7")))
-    ws.conditional_formatting.add("D3:D30",
+    ws.conditional_formatting.add("D3:D40",
         CellIsRule(operator="equal", formula=['"Blocked"'],
                    fill=PatternFill("solid", fgColor="FFC7CE")))
-    ws.conditional_formatting.add("D3:D30",
+    ws.conditional_formatting.add("D3:D40",
         CellIsRule(operator="equal", formula=['"Cancelled"'],
                    fill=PatternFill("solid", fgColor="E0E0E0")))
 
@@ -1283,6 +1322,273 @@ def build_aggressive_tactics(wb):
         ws.row_dimensions[r].height = 38
 
 
+# ── Tab 12: $25K Active Plan ─────────────────────────────────────────────
+# The CURRENT budget (authorized May 14, Day 2). Shows the actual spend
+# plan, week-by-week cadence, expected outcomes, and immediate first
+# moves. Tab 8 has the side-by-side scenarios; this tab is the live plan.
+def build_active_plan(wb):
+    ws = wb.create_sheet("12 · $25K Active Plan")
+    ws.sheet_view.showGridLines = False
+
+    # Section banner
+    ws.merge_cells("A1:F1")
+    ws["A1"] = "$25K ACTIVE BUDGET — current plan (authorized Day 2, May 14)"
+    ws["A1"].font = SECTION_FONT; ws["A1"].fill = SECTION_FILL; ws["A1"].alignment = CENTER
+    ws.row_dimensions[1].height = 32
+
+    # Intro
+    ws.merge_cells("A2:F2")
+    ws["A2"] = ("Total: $25,000 over 17 days (~$1,470/day). "
+                "Expected: 8K-15K signups, 5K-15K IG followers, 8K-20K TikTok, 3-5 mid press, 2-4 viral pieces. "
+                "Companion doc: launch/AT_25K.md")
+    ws["A2"].font = SUBTLE_FONT; ws["A2"].alignment = WRAP
+    ws.row_dimensions[2].height = 38
+
+    # ── IMMEDIATE first moves banner ──
+    ws.merge_cells("A4:F4")
+    ws["A4"] = "🚨 IMMEDIATE FIRST MOVES — tonight (~10 min)"
+    ws["A4"].font = Font(name="Calibri", bold=True, size=13, color=WHITE)
+    ws["A4"].fill = PatternFill("solid", fgColor="D32F2F")
+    ws["A4"].alignment = CENTER
+    ws.row_dimensions[4].height = 28
+
+    first_moves = [
+        ("1.", "Upgrade Gleam to Hobby plan — $39 — at https://gleam.io/billing"),
+        ("2.", "Reply 'done' so Claude can autonomously upload hero image + add Viral Share + Visit-a-Page (TT/X) + Question entry"),
+        ("3.", "Authorize Meta Ads payment method (Campaign 1 already set up at $50/day; scale to $350/day tomorrow morning)"),
+    ]
+    for r, (n, txt) in enumerate(first_moves, start=5):
+        ws.cell(row=r, column=1, value=n).font = Font(name="Calibri", bold=True, size=12)
+        ws.cell(row=r, column=1).alignment = CENTER
+        ws.merge_cells(f"B{r}:F{r}")
+        ws.cell(row=r, column=2, value=txt).font = BODY_FONT
+        ws.cell(row=r, column=2).alignment = WRAP
+        ws.row_dimensions[r].height = 26
+
+    # ── Budget breakdown table ──
+    bud_row = len(first_moves) + 6
+
+    ws.merge_cells(f"A{bud_row}:F{bud_row}")
+    ws.cell(row=bud_row, column=1, value="BUDGET BREAKDOWN — where every dollar goes")
+    ws.cell(row=bud_row, column=1).font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+    ws.cell(row=bud_row, column=1).fill = PatternFill("solid", fgColor="EFEFEF")
+    ws.row_dimensions[bud_row].height = 22
+
+    bud_headers = ["Category", "Line item", "$ amount", "Cadence", "Status", "Notes"]
+    for c, h in enumerate(bud_headers, start=1):
+        ws.cell(row=bud_row + 1, column=c, value=h)
+    style_header_row(ws, bud_row + 1, len(bud_headers))
+
+    budget = [
+        # Paid social
+        ("[PAID SOCIAL]", "", "", "", "", ""),
+        ("Paid social", "Meta Ads — cold (Pixel-validated)", 6000, "$353/day × 17", "Pending auth", "At $1.50 CPL = 4K signups"),
+        ("Paid social", "Meta Ads — retargeting", 2500, "$147/day × 17", "Pending auth", "3-7× lower CPL. Burns hot."),
+        ("Paid social", "TikTok Spark Ads", 3000, "Reactive on >50K Reels", "Pending setup", "Only boost organic winners. $3K cap."),
+        ("  → Subtotal", "Paid social", 11500, "", "", "~6-10K signups"),
+        # Influencer
+        ("[INFLUENCER]", "", "", "", "", ""),
+        ("Influencer", "1 × mid-tier sports creator (300-500K)", 3000, "One-off", "Pending outreach Day 4", "Single biggest single-shot reach. Vet engagement >2%."),
+        ("Influencer", "5-7 × micro creators (50-150K)", 2500, "Day 7-12 rollout", "Pending outreach Day 7", "$300-500 each. Mix paid + product trade."),
+        ("Influencer", "Lifetime Pro trades (15-20 micros)", 0, "Always-on", "Pending Day 7", "From INFLUENCER_OUTREACH.md. In-kind only."),
+        ("  → Subtotal", "Influencer", 5500, "", "", "200K-1M impressions"),
+        # Production
+        ("[CONTENT PRODUCTION]", "", "", "", "", ""),
+        ("Production", "Upwork content editor (18 days)", 500, "$28/day × 18", "Pending Day 5 hire", "Cross-posting + editing while founder records"),
+        ("Production", "1 × day production shoot (street TikTok)", 1500, "Day 10 (May 22)", "Pending", "NYC or LA. Creator + lighting + edit. 4-6 pieces."),
+        ("Production", "Canva Pro Team + Pond5 + motion design", 500, "One-off", "Pending Day 6", "Reusable asset library"),
+        ("  → Subtotal", "Production", 2500, "", "", "Quality + volume both up"),
+        # Sweeps & viral
+        ("[SWEEPS & VIRAL]", "", "", "", "", ""),
+        ("Sweeps", "🎯 Gleam Hobby plan ($39 × 1 mo)", 40, "Tonight", "★ FIRST ACTION", "Unlocks Feature Media + Viral Share + Repeat Action Limit"),
+        ("Sweeps", "Sweepstakes prize stack upgrade", 2000, "Day 12 announce", "Pending", "Add $1.5K cash 2nd prize. Mid-campaign news hook."),
+        ("Sweeps", "SparkLoop newsletter cross-promo", 1500, "Day 8 submit", "Pending", "750-1500 signups expected."),
+        ("Sweeps", "Daily Drop on Twitter (7 × $40-50)", 300, "$43/day × 7", "Pending Day 16", "Week-of-launch micro-prizes."),
+        ("Sweeps", "KingSumo Pro (free tier sufficient)", 0, "Day 10 launch", "Pending", "Free tier supports 1,000 entries — enough for our scale."),
+        ("  → Subtotal", "Sweeps & viral", 3840, "", "", "More entries + better mechanics"),
+        # PR
+        ("[PR & LAUNCH]", "", "", "", "", ""),
+        ("PR", "ProductHunt paid hunter (Day 18 launch)", 500, "One-off", "Pending Day 17 outreach", "Experienced hunter + animated demo + day-of comms."),
+        ("PR", "Press kit (photography + bio + media training)", 500, "Day 14 session", "Pending booking", "Professional shots for press intake."),
+        ("  → Subtotal", "PR", 1000, "", "", "Founder story drop amplification"),
+        # Tooling
+        ("[TOOLING & INFRA]", "", "", "", "", ""),
+        ("Tooling", "Resend Pro + Vercel Pro + Supabase Pro", 200, "Day 5 upgrade", "Pending auth", "Needed once waitlist crosses 5K"),
+        ("  → Subtotal", "Tooling", 200, "", "", ""),
+        # Contingency
+        ("[CONTINGENCY]", "", "", "", "", ""),
+        ("Contingency", "Day 10 reallocation reserve", 460, "Day 10 decision", "Held", "★ Critical lever. Whatever's winning gets this."),
+        # ── TOTAL ──
+        ("", "", "", "", "", ""),
+        ("TOTAL", "", 25000, "", "", "$1,470/day equivalent"),
+    ]
+
+    for r_idx, row in enumerate(budget, start=bud_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r_idx, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP if c == 6 else (CENTER if c in (3, 4) else LEFT)
+            if c == 3 and isinstance(v, (int, float)):
+                cell.number_format = "$#,##0"
+
+            # Section header rows
+            if str(row[0]).startswith("[") and str(row[1]) == "":
+                cell.font = Font(name="Calibri", bold=True, size=11, color=BRAND_BG)
+                cell.fill = PatternFill("solid", fgColor="F4F4F4")
+            # Subtotal rows
+            elif str(row[0]).strip().startswith("→"):
+                cell.font = Font(name="Calibri", bold=True, size=10, color="333333")
+                cell.fill = PatternFill("solid", fgColor="EFEFEF")
+            # TOTAL row
+            elif row[0] == "TOTAL":
+                cell.font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+                cell.fill = HEADER_FILL
+            # First action highlight
+            if "FIRST ACTION" in str(v):
+                cell.fill = PatternFill("solid", fgColor="FFE082")
+                cell.font = Font(name="Calibri", bold=True, size=10)
+
+        ws.row_dimensions[r_idx].height = 28
+
+    autosize(ws, [16, 38, 11, 22, 18, 50])
+
+    # ── Week-by-week cadence ──
+    week_row = bud_row + 2 + len(budget) + 3
+
+    ws.merge_cells(f"A{week_row}:F{week_row}")
+    ws.cell(row=week_row, column=1, value="WEEK-BY-WEEK PAID CADENCE")
+    ws.cell(row=week_row, column=1).font = SECTION_FONT
+    ws.cell(row=week_row, column=1).fill = SECTION_FILL
+    ws.cell(row=week_row, column=1).alignment = CENTER
+    ws.row_dimensions[week_row].height = 32
+
+    week_headers = ["Day", "Date", "Paid action", "$ spent (cumulative)", "Notes"]
+    for c, h in enumerate(week_headers, start=1):
+        ws.cell(row=week_row + 1, column=c, value=h)
+    style_header_row(ws, week_row + 1, len(week_headers))
+
+    cadence = [
+        # Week 1: Ramp up
+        ("[Week 1: RAMP UP]", "", "", "", ""),
+        (2, "May 14", "Gleam Hobby upgrade ($39) — TONIGHT", 39, "★ First action. Unlocks everything else."),
+        (3, "May 15", "Meta Ads cold scaled to $350/day starts", 389, "Existing Campaign 1 just gets the bigger budget"),
+        (3, "May 15", "TikTok Spark Ads $175/day reactive starts", 389, "Only fires on Reels >50K views"),
+        (4, "May 16", "DM 5 mid-tier creators with $3K paid offer", 389, "No spend yet — outreach phase"),
+        (5, "May 17", "Upwork content editor hired ($500 one-off)", 889, "18-day gig"),
+        (5, "May 17", "Infra upgrades ($200): Resend/Vercel/Supabase Pro", 1089, ""),
+        (6, "May 18", "Canva Pro Team + Pond5 ($500 one-off)", 1589, ""),
+        (7, "May 19", "DM 15-20 micros with $300-500 paid offer", 1589, "Outreach phase"),
+        (8, "May 20", "SparkLoop submission ($1,500 cap)", 3089, "24-72hr approval"),
+        ("  → Week 1 spend", "", "", 3089, "$181/day avg — mostly setup"),
+        # Week 2: Amplify
+        ("[Week 2: AMPLIFY]", "", "", "", ""),
+        (9, "May 21", "Mid-tier creator post drops ($3K)", 6089, "Single biggest line item lands"),
+        (9, "May 21", "First micro creator posts drop ($1,500)", 7589, "3-4 micros over Day 9-12"),
+        (10, "May 22", "Production shoot day ($1,500)", 9089, "Street TikTok content"),
+        (10, "May 22", "★ HARD REALLOCATION ($460 contingency)", 9549, "★★★ Critical decision moment"),
+        (11, "May 23", "More micro posts drop ($1,000)", 10549, "Remaining 2-3 micros"),
+        (12, "May 24", "Sweepstakes prize bump announcement ($2,000)", 12549, "Cash 2nd prize added"),
+        (14, "May 26", "Founder story drop + paid amplification ($500)", 13049, "Boost the best story-drop video"),
+        (14, "May 26", "Press kit photography session ($500)", 13549, "For founder story wave press intake"),
+        ("  → Week 2 spend", "", "", 13549, "$1,494/day avg — heaviest week"),
+        # Week 3: Final push
+        ("[Week 3: FINAL PUSH]", "", "", "", ""),
+        (16, "May 28", "Daily Drop on Twitter starts ($43/day × 7 = $300)", 13849, "$300 across week"),
+        (17, "May 29", "Meta retargeting full-throttle ($147/day)", 16349, "Cumulative retargeting line keeps adding"),
+        (18, "May 30", "ProductHunt paid hunter engaged ($500)", 16849, "Day-of comms support"),
+        (18, "May 30", "TikTok Spark Ads final push ($1,000 of $3K cap)", 17849, "Use remaining boost budget on top performers"),
+        (19, "May 31", "Final-day Meta ad surge ($500 extra)", 18349, "Last-day FOMO"),
+        ("  → Week 3 spend", "", "", 18349, "—"),
+        # Cumulative running through May 31
+        ("", "", "", "", ""),
+        ("Always-on through May 31", "Meta cold ($350/day × 17)", "", 25000, "Cumulative total all in"),
+    ]
+
+    for r_idx, row in enumerate(cadence, start=week_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r_idx, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP if c == 5 else CENTER
+            if c == 4 and isinstance(v, (int, float)):
+                cell.number_format = "$#,##0"
+
+            # Section header rows
+            if str(row[0]).startswith("["):
+                cell.font = Font(name="Calibri", bold=True, size=11, color=BRAND_BG)
+                cell.fill = PatternFill("solid", fgColor="F4F4F4")
+            elif str(row[0]).strip().startswith("→"):
+                cell.font = Font(name="Calibri", bold=True, size=10, color="333333")
+                cell.fill = PatternFill("solid", fgColor="EFEFEF")
+
+        ws.row_dimensions[r_idx].height = 24
+
+    # ── Expected outcomes ──
+    out_row = week_row + 2 + len(cadence) + 3
+
+    ws.merge_cells(f"A{out_row}:F{out_row}")
+    ws.cell(row=out_row, column=1, value="EXPECTED OUTCOMES — $1K plan vs $25K active vs $100K hypothetical")
+    ws.cell(row=out_row, column=1).font = SECTION_FONT
+    ws.cell(row=out_row, column=1).fill = SECTION_FILL
+    ws.cell(row=out_row, column=1).alignment = CENTER
+    ws.row_dimensions[out_row].height = 32
+
+    out_headers = ["Metric", "$1K plan", "$25K plan (CURRENT)", "$100K plan", "Lift ($25K vs $1K)", "Notes"]
+    for c, h in enumerate(out_headers, start=1):
+        ws.cell(row=out_row + 1, column=c, value=h)
+    style_header_row(ws, out_row + 1, len(out_headers))
+
+    outcomes = [
+        ("Waitlist signups", "1.5-2.5K", "8K-15K", "25K-50K", "5-6×", "Linear scaling on paid channels"),
+        ("Cost per signup (blended)", "$0.40-0.67", "$1.67-3.13", "$2-4", "↑ (pay for scale)", "Higher CPL is normal at scale"),
+        ("IG followers gained", "0.5-1.5K", "5K-15K", "20K-50K", "10×", "Paid TikTok cross-pollinates"),
+        ("TikTok followers gained", "1K-3K", "8K-20K", "30K-75K", "6.7×", "Spark Ads + production shoot"),
+        ("Twitter followers gained", "200-500", "2K-5K", "8K-20K", "10×", "Founder story drop + Show HN"),
+        ("Press placements", "1 small", "3-5 mid", "5-10 + tier-1", "3-5×", "Press kit + paid hunter"),
+        ("Viral pieces (>100K views)", "0-1", "2-4", "4-8", "2-4×", "Production shoot designed for this"),
+        ("Brand recall (post-launch survey)", "<5%", "10-20%", "25-40%", "2-4×", "Compounding effect"),
+        ("Lifetime Pro conversions", "15-30", "80-300", "250-1.5K", "5-10×", "$30 launch promo, $150 regular"),
+    ]
+    for r_idx, row in enumerate(outcomes, start=out_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r_idx, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP if c == 6 else CENTER
+            # Highlight $25K column
+            if c == 3:
+                cell.font = Font(name="Calibri", bold=True, size=10, color=BRAND_BG)
+                cell.fill = PatternFill("solid", fgColor="E8F5E9")
+        ws.row_dimensions[r_idx].height = 26
+
+    # ── Risk callouts at bottom ──
+    risk_row = out_row + 2 + len(outcomes) + 3
+
+    ws.merge_cells(f"A{risk_row}:F{risk_row}")
+    ws.cell(row=risk_row, column=1, value="RISK CALLOUTS")
+    ws.cell(row=risk_row, column=1).font = SECTION_FONT
+    ws.cell(row=risk_row, column=1).fill = SECTION_FILL
+    ws.cell(row=risk_row, column=1).alignment = CENTER
+    ws.row_dimensions[risk_row].height = 32
+
+    risks = [
+        ("Meta CPL > $3 risk",
+         "If Day 7 CPL on cold > $3, kill cold campaign immediately. Redeploy budget to retargeting + influencer. Don't slow-drift."),
+        ("Mid-tier creator dud risk",
+         "$3K mid-tier post is binary — if audience doesn't convert, that's 12% of budget gone. Vet engagement rate (>2% required) before signing. Read 5 most recent posts to confirm they're not running competing betting promos."),
+        ("Production shoot weather/logistics",
+         "$1.5K street TikTok shoot can rain out. Block 2 backup dates. Or shift to studio if weather is bad."),
+        ("Gleam Hobby vs Pro at scale",
+         "If Viral Share entries explode past 1K participants, consider one-time $99 Pro upgrade. Decision point: Day 10. Total budget impact: $99 from contingency."),
+        ("Algorithm dependence",
+         "At $25K we're more exposed to platform algo changes mid-campaign. Diversification across Meta + TikTok + organic is the hedge."),
+    ]
+    for r, (label, txt) in enumerate(risks, start=risk_row + 1):
+        ws.cell(row=r, column=1, value=label).font = Font(name="Calibri", bold=True, size=11, color=BRAND_BG)
+        ws.merge_cells(f"B{r}:F{r}")
+        ws.cell(row=r, column=2, value=txt).font = BODY_FONT
+        ws.cell(row=r, column=2).alignment = WRAP
+        ws.row_dimensions[r].height = 38
+
+
 # ── README tab (first one) ───────────────────────────────────────────────
 def build_readme(wb):
     ws = wb.create_sheet("0 · README", 0)  # insert first
@@ -1316,6 +1622,7 @@ def build_readme(wb):
         ("9. Daily Strategy ⭐    — day-by-day execution plan May 14 → May 31 (THE plan)", "body"),
         ("10. Content Engine      — daily content blueprint + repurposing matrix + hashtag library + times", "body"),
         ("11. Aggressive Tactics  — 50 free moves ranked by ROI (CMO playbook, tier-coded)", "body"),
+        ("12. $25K Active Plan ⭐ — CURRENT BUDGET. Full allocation + cadence + outcomes. Open this with Tab 9.", "body"),
         ("", "body"),
         ("North Star", "header"),
         ("1,500 waitlist signups by May 31. Stretch target: 2,500.", "body"),
@@ -1355,6 +1662,7 @@ def main():
     build_daily_strategy(wb)
     build_content_engine(wb)
     build_aggressive_tactics(wb)
+    build_active_plan(wb)
     build_readme(wb)  # inserted at position 0
 
     out = Path(__file__).parent / "MASTER_TRACKER.xlsx"
