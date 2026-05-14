@@ -503,11 +503,19 @@ function welcomeEmailHtml({ name, previewText, referral }) {
         <h1 style="margin:0 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:38px;line-height:1.05;letter-spacing:-0.025em;color:#fff;">YOU'RE <span style="color:#d4ff3a;">IN</span>,<br/>${name}.</h1>
         <p style="margin:0 0 22px 0;font-size:15px;line-height:1.55;color:#b8bcc1;">Your first AI pick lands <strong style="color:#fff;">tomorrow at 9am ET</strong> — Pick1's highest-confidence call across 9 sports, delivered to your inbox. Free, daily, publicly logged. Plus 1 week of full access free when we launch end of May.</p>
         ${positionBlock}
-        <div style="background:#d4ff3a;color:#0a0b0d;border-radius:14px;padding:18px 20px;margin:18px 0 26px 0;">
+        <div style="background:#d4ff3a;color:#0a0b0d;border-radius:14px;padding:18px 20px;margin:18px 0 18px 0;">
           <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;opacity:0.7;">📨 Starting tomorrow</div>
           <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:24px;letter-spacing:-0.02em;margin-top:4px;">DAILY AI PICK · 9AM ET</div>
           <div style="font-size:12px;opacity:0.85;margin-top:2px;">Free · No card · Unsubscribe anytime</div>
         </div>
+        <!-- Launch sweepstakes CTA — bonus prize hook for every new signup.
+             Embedded directly in the welcome flow so it's the second thing
+             they see after "you're in". Free distribution at scale. -->
+        <a href="https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro?utm_source=resend&utm_medium=welcome_email&utm_campaign=sweeps_launch" style="display:block;text-decoration:none;background:#0a0b0d;border:1.5px solid #d4ff3a;border-radius:14px;padding:18px 20px;margin:0 0 26px 0;">
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;color:#d4ff3a;">🏆 Launch sweepstakes · ends May 31</div>
+          <div style="font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:-0.02em;color:#fff;margin-top:6px;line-height:1.2;">Win 2 <span style="color:#d4ff3a;">FIFA World Cup</span> tickets<br/>+ Lifetime Pick1 Pro</div>
+          <div style="font-size:12px;color:#b8bcc1;margin-top:6px;line-height:1.5;">$1,499 value · free to enter · drawn live May 31.<br/><span style="color:#d4ff3a;text-decoration:underline;">Enter the sweepstakes →</span></div>
+        </a>
         ${referralBlock}
         <h2 style="margin:28px 0 14px 0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:18px;letter-spacing:-0.01em;color:#fff;">WHAT HAPPENS NEXT.</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">

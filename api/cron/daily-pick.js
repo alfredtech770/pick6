@@ -343,6 +343,16 @@ function dailyEmailHtml({ pick, yesterdayPick, previewText }) {
         ` : ''}
       </td></tr>
 
+      <!-- Sweepstakes CTA — repeated in every daily-pick email until
+           May 31 draw. Every subscriber sees it daily. Free distribution. -->
+      <tr><td style="padding:18px 0 0 0;">
+        <a href="https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro?utm_source=resend&utm_medium=daily_pick&utm_campaign=sweeps_launch" style="display:block;text-decoration:none;background:#0a0b0d;border:1.5px solid #d4ff3a;border-radius:12px;padding:14px 18px;">
+          <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;color:#d4ff3a;">🏆 Sweepstakes · ends May 31</div>
+          <div style="font-weight:900;font-size:16px;letter-spacing:-0.01em;color:#fff;margin-top:4px;line-height:1.3;">Win 2 FIFA World Cup tickets + Lifetime Pro</div>
+          <div style="font-size:11px;color:#b8bcc1;margin-top:4px;">$1,499 value · free to enter · <span style="color:#d4ff3a;text-decoration:underline;">enter →</span></div>
+        </a>
+      </td></tr>
+
       <tr><td style="padding:18px 4px 0 4px;font-size:12px;color:#666b73;line-height:1.6;">
         Every pick — wins <strong style="color:#9095a0;">and</strong> misses — gets logged publicly. Pick1's app launches end of May. Waitlist members get <strong style="color:#d4ff3a;">1 week free</strong>.<br/><br/>
         <strong style="color:#9095a0;">Pick1</strong> · pick1.live
