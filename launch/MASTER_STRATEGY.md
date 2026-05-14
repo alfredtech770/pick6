@@ -320,9 +320,13 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
   - Substack: full 1,500-word essay
 - **Why it works:** Story compounds across platforms. Builds trust + humanizes the AI.
 
-### 🔥 Activation 6 — Gleam "World Cup Tickets" Sweepstakes (Day 5 launch, runs to launch)
+### 🔥 Activation 6 — Gleam "World Cup Tickets" Sweepstakes ✅ LIVE since May 14
+- **Public URL:** https://gleam.io/Ivb0j/pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets
+- **Embedded on pick1.live:** hero + final-cta sweeps-banner, above each signup form
+- **Live entries:** Mandatory waitlist signup (+10) + Instagram visit @pick1.live (+5)
+- **Live-edit additions planned:** Visit-a-Page for TikTok (@pick1app) + X (@PICK1sport), Viral Share (+10/ref), Question filter (+5)
 - **What:** Live sweepstakes on Gleam.io with the prize: **"2 group-stage 2026 FIFA World Cup tickets + Lifetime Pro"**
-- **Total prize value:** ~$500 (within contingency budget)
+- **Total prize value:** $1,499 (~$500 ticket budget + Lifetime Pro at $999 perceived value)
 - **🔒 MANDATORY gateway task — without this, ZERO entries count:**
   - **Join Pick1 waitlist** → unlocks the campaign + 10 base entries
 - **➕ BONUS entries (only counted once waitlist is verified):**

@@ -1195,6 +1195,55 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 .foot-links a { transition: color 0.15s; }
 .foot-links a:hover { color: var(--ink); }
 
+/* ─── World Cup sweepstakes banner — links out to gleam.io campaign.
+       Acid-green border + dark fill so it reads as the highest-value
+       CTA on the page without competing with the signup button. */
+.sweeps-banner {
+  display: block;
+  margin-bottom: 18px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, rgba(212,255,58,0.10), rgba(212,255,58,0.04));
+  border: 1.5px solid var(--accent);
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.sweeps-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -8px rgba(212,255,58,0.35);
+}
+.sweeps-banner .sb-eyebrow {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.sweeps-banner .sb-headline {
+  display: block;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.sweeps-banner .sb-headline em {
+  font-style: normal;
+  color: var(--accent);
+}
+.sweeps-banner .sb-cta {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
 /* ─── Waitlist counter pill — "1,248 already in" social proof.
        Populated client-side by /api/waitlist-count (replaces what a
        Telegram channel member count would have done). Sits right above
@@ -1759,6 +1808,21 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <p class="lead" data-reveal data-reveal-delay="3">Every morning at 9am ET, Pick1's AI delivers tomorrow's highest-confidence pick across 9 sports — confidence-scored, line-tracked, publicly logged. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
 
     <div class="waitlist-wrap" data-reveal data-reveal-delay="4">
+      <!-- ⚡ World Cup sweepstakes banner — drives waitlist signups to
+           Gleam where they get more entries by following social. The
+           Gleam campaign gates everything behind waitlist signup, so
+           every entrant becomes a real Pick1 waitlist member.
+           Campaign runs May 14 → May 31; embedded above the form so
+           visitors see the prize hook before the signup ask. -->
+      <a href="https://gleam.io/Ivb0j/pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets"
+         class="sweeps-banner"
+         target="_blank"
+         rel="noopener noreferrer">
+        <span class="sb-eyebrow">🏆 LAUNCH SWEEPSTAKES · ENDS MAY 31</span>
+        <span class="sb-headline">Win 2 <em>FIFA World Cup</em> tickets + Lifetime Pro</span>
+        <span class="sb-cta">Enter the sweepstakes →</span>
+      </a>
+
       <!-- Live waitlist counter — populated by /api/waitlist-count at
            page-load. Replaces what a Telegram member count would have
            done: shows new visitors "this is a real, populated list, not
@@ -2158,6 +2222,17 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   <h2 class="display" data-reveal>GET TOMORROW'S<br/><em>PICK FREE.</em></h2>
   <p class="lead" data-reveal data-reveal-delay="2">The AI's highest-confidence call across 9 sports, delivered to your inbox at 9am ET — starting tomorrow. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
   <div class="waitlist-wrap" data-reveal data-reveal-delay="3">
+    <!-- Sweepstakes banner (same one as hero). Final-cta section is the
+         last conversion attempt before footer — high-leverage spot. -->
+    <a href="https://gleam.io/Ivb0j/pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets"
+       class="sweeps-banner"
+       target="_blank"
+       rel="noopener noreferrer">
+      <span class="sb-eyebrow">🏆 LAUNCH SWEEPSTAKES · ENDS MAY 31</span>
+      <span class="sb-headline">Win 2 <em>FIFA World Cup</em> tickets + Lifetime Pro</span>
+      <span class="sb-cta">Enter the sweepstakes →</span>
+    </a>
+
     <!-- Same live counter as the hero. Both elements with [data-counter]
          get populated by the single fetch at page-load. -->
     <div class="waitlist-counter" data-counter hidden>
