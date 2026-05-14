@@ -321,7 +321,7 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
 - **Why it works:** Story compounds across platforms. Builds trust + humanizes the AI.
 
 ### 🔥 Activation 6 — Gleam "World Cup Tickets" Sweepstakes ✅ LIVE since May 14
-- **Public URL:** https://gleam.io/Ivb0j/pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets
+- **Public URL:** https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro
 - **Embedded on pick1.live:** hero + final-cta sweeps-banner, above each signup form
 - **Live entries:** Mandatory waitlist signup (+10) + Instagram visit @pick1.live (+5)
 - **Live-edit additions planned:** Visit-a-Page for TikTok (@pick1app) + X (@PICK1sport), Viral Share (+10/ref), Question filter (+5)
@@ -342,7 +342,7 @@ Target: **2,000+ waitlist total by launch night, 700+ app installs in first 24 h
 - **Winner announced:** June 1 via email + IG + Twitter
 - **Compliance:** "No purchase necessary, open to US/CA/MX residents 18+, void where prohibited" boilerplate (Gleam provides the template)
 - **Expected lift:** 500-1,500 incremental signups + 2-5x increase in IG+TikTok follower count
-- **Status:** ✅ LIVE since May 14. Optimization pass in flight (prize-first title, branded hero image, Viral Share entry, Visit-a-Page for TikTok/X) — see `launch/GLEAM_OPTIMIZATION.md` for the paste-ready copy.
+- **Status:** ✅ LIVE & CONVERSION-OPTIMIZED (May 14). Title rewritten prize-first ("Win 2 FIFA World Cup Tickets 🏆 + Lifetime Pick1 Pro"), description rewritten as 79-word prize-first pitch with $1,499 value + "Drawn live May 31" urgency. Hero image rendered (`assets/ad-creative/v2/gleam-hero.png`) but kept off Gleam itself (Free tier paywalls Feature Media + inline description images + Viral Share + Repeat Action Limit) — the image powers FB Page cover, IG bio, social shares, and Meta ad creative. Entry methods locked at 2 (waitlist + IG) because Visit-a-Page auto-injects Repeat Action Limit (Hobby-tier-only); TikTok + X discovery routed through the description copy + pick1.live banner. Referral compounding flows through our own position-jumping system on pick1.live (Activation 1), not Gleam's Pro-locked Viral Share.
 
 ### 🔥 Activation 7 — SparkLoop Newsletter Cross-Promo (Day 8 launch, ongoing)
 - **What:** Submit Pick1 to SparkLoop's network. Other newsletters (Morning Brew, The Hustle, sports/finance newsletters) recommend Pick1 in their welcome-email sequence. We pay $1-2 per signup that converts.

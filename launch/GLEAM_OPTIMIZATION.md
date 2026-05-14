@@ -1,11 +1,30 @@
-# Gleam campaign — conversion optimization checklist
+# Gleam campaign — conversion optimization (✅ DONE May 14)
 
-The campaign is live but uses default settings. Below is paste-ready copy
-to dramatically improve conversion. Each change is independently safe
-— apply in any order, hit "Update Competition" after each tab.
+**Final live URL:** https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro
+**Editor:** https://gleam.io/editor-next/competitions/Ivb0j-win-2-fifa-world-cup-tickets-lifetime-pick1-pro/edit
 
-**Live campaign:** https://gleam.io/Ivb0j/pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets
-**Editor:** https://gleam.io/editor-next/competitions/Ivb0j-pick1-launch-sweepstakes-win-2026-fifa-world-cup-tickets/edit
+**What shipped (Free tier):**
+- ✅ Title: prize-first ("Win 2 FIFA World Cup Tickets 🏆 + Lifetime Pick1 Pro") — URL slug auto-updated to match
+- ✅ Description: 79-word prize-first pitch with $1,499 value cue, "Free to enter", "Drawn live May 31, 11:59 PM ET"
+- ✅ Entry methods: 2 (waitlist + IG follow) — see paywall notes below
+
+**Free-tier paywall blockers (documented for future, but worked around):**
+- ❌ Feature Media (hero image upload) — Hobby+ only
+- ❌ Inline images in description — Hobby+ only (server-side validator blocks the save)
+- ❌ Custom CSS (brand colors) — Business+ only
+- ❌ Viral Share entry method — Pro+ only. Replaced by our own position-jumping referral system on pick1.live (Activation 1).
+- ❌ Visit-a-Page entries auto-inject "Repeat Action Limit" — Hobby+ only. Adding TikTok/X follow entries triggers this. Worked around by mentioning the socials in the description copy instead.
+
+**Where the hero image lives instead:** `assets/ad-creative/v2/gleam-hero.png` is wired into the pick1.live banner (above the signup form) + FB page cover + social-share image + Meta ad creative. The Gleam page itself is text-only — but visitors arriving via pick1.live or social ads see the branded asset before they land there.
+
+For paste-ready launch posts using the new URL, see `SWEEPSTAKES_LAUNCH_COPY.md`.
+
+---
+
+## Reference: the changes that were applied
+
+The original plan below is preserved for context. Items marked
+[Free-tier blocked] could not be applied without an upgrade.
 
 ---
 
