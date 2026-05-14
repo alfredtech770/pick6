@@ -22,6 +22,14 @@ everything we plan and measure during the 18-day pre-launch sprint:
                            user-posts vs. outreach vs. activations
                            launching, with daily + cumulative
                            signup targets. Start here every morning.
+ 10. Content Engine      — Daily content production blueprint:
+                           24-hour post schedule, repurposing matrix
+                           (1 piece → 6-8 outlets), hashtag library,
+                           time-of-day map per platform.
+ 11. Aggressive Tactics  — 50 free moves ranked by ROI. CMO playbook
+                           with tier-coded tactics (T1 = do all; T5
+                           = guerrilla picks). Read alongside
+                           launch/CMO_PLAYBOOK.md for the full memo.
 
 Re-run any time to regenerate from scratch:
     python3 launch/tracker/build_tracker.py
@@ -969,6 +977,312 @@ def build_daily_strategy(wb):
         ws.row_dimensions[r].height = 48
 
 
+# ── Tab 10: Content Engine ───────────────────────────────────────────────
+# Daily content production blueprint. Specifies what to post when on
+# which platform, with repurposing matrix and hashtag library. Built as
+# CMO would design it: aggressive content velocity + 6-8× repurposing
+# multiplier so each piece of original content shows up everywhere.
+def build_content_engine(wb):
+    ws = wb.create_sheet("10 · Content Engine")
+    ws.sheet_view.showGridLines = False
+
+    # Section banner
+    ws.merge_cells("A1:F1")
+    ws["A1"] = "CONTENT ENGINE — daily production blueprint (22-34 touchpoints/day)"
+    ws["A1"].font = SECTION_FONT; ws["A1"].fill = SECTION_FILL; ws["A1"].alignment = CENTER
+    ws.row_dimensions[1].height = 32
+
+    # Intro
+    ws.merge_cells("A2:F2")
+    ws["A2"] = ("CMO call: with $1K budget you can't out-spend, only out-volume + out-repurpose. "
+                "Current state: 2 TikToks/day. Target: 6 TikToks/day × 6-8x repurposing = 22-34 touchpoints/day. "
+                "Founder time: ~70-80 min/day. Add a $300-500 Upwork content editor for the 18 days "
+                "if 80 min/day is unsustainable.")
+    ws["A2"].font = SUBTLE_FONT; ws["A2"].alignment = WRAP
+    ws.row_dimensions[2].height = 44
+
+    # ── Daily content schedule (24-hour blueprint) ──
+    ws.merge_cells("A4:F4")
+    ws["A4"] = "DAILY CONTENT SCHEDULE (run this every day)"
+    ws["A4"].font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+    ws["A4"].fill = PatternFill("solid", fgColor="EFEFEF")
+    ws["A4"].alignment = LEFT
+    ws.row_dimensions[4].height = 22
+
+    headers = ["Time (ET)", "Platform", "Content type", "Effort", "Auto/Manual", "Notes"]
+    for c, h in enumerate(headers, start=1):
+        ws.cell(row=5, column=c, value=h)
+    style_header_row(ws, 5, len(headers))
+
+    schedule = [
+        ("6:00 AM", "TikTok", "🎯 Pick-of-the-day reveal (45-sec founder selfie)", "5 min", "Manual", "Hook: 'Wait for it...' or 'POV: tonight's lock'"),
+        ("7:00 AM", "Twitter cron", "Daily AI pick + confidence %", "0", "Auto", "Once dev creds wired in (Day 5)"),
+        ("7:05 AM", "Instagram Reel", "Cross-post the 6am TikTok", "30 sec", "Manual", "Same vertical 1080×1920 file"),
+        ("7:10 AM", "YouTube Short", "Cross-post the 6am TikTok", "30 sec", "Manual", "Same file. Free distribution."),
+        ("7:15 AM", "IG Story", "Sticker poll: 'over or under?'", "1 min", "Manual", "Engagement signal for the algo"),
+        ("8:00 AM", "Email cron", "Daily-pick email (with sweeps CTA)", "0", "Auto", "Already live in production"),
+        ("9:00 AM", "Twitter", "Reply-bomb 5 sports accounts with Pick1's probability", "10 min", "Manual", "★ Biggest free-reach lever you have. Pick top 5 from #NBA/#NFL TL"),
+        ("11:00 AM", "Reddit", "Value-add comment in r/sportsbook", "5 min", "Manual", "Never shill. Comment with insight; brand mentioned 1× max"),
+        ("12:00 PM", "TikTok", "📊 Yesterday's result reveal (30-sec receipts focus)", "5 min", "Manual", "Receipts > picks. Trust = follower retention"),
+        ("12:05 PM", "Instagram Reel", "Cross-post the 12pm TikTok", "30 sec", "Manual", ""),
+        ("12:10 PM", "YouTube Short", "Cross-post", "30 sec", "Manual", ""),
+        ("12:30 PM", "Twitter", "Yesterday's result thread (5 tweets)", "5 min", "Manual", "Lead with the miss if there was one. Trust play."),
+        ("1:00 PM", "Twitter", "Quote-tweet contrarian Vegas line", "2 min", "Manual", "Polite disagreement. Don't beef."),
+        ("2:00 PM", "FB Page", "Auto-cross-post from morning IG", "0", "Auto", "Use IG's Meta Business Suite cross-post toggle"),
+        ("3:00 PM (Tue/Wed/Thu)", "LinkedIn (founder)", "Long-form take from Noa", "10 min", "Manual", "3×/week max. Algo punishes weekend posts."),
+        ("4:00 PM", "Reddit", "1-2 more comments in r/nba / r/nfl / niche subs", "5 min", "Manual", ""),
+        ("5:00 PM", "IG Story", "Pre-game live tracking begins", "1 min", "Manual", "BTS / 'Pick1 about to be tested live'"),
+        ("6:00 PM", "TikTok", "🔮 Game-day prep OR tomorrow's sneak peek", "5 min", "Manual", "Save sneak peek hook for low-engagement days"),
+        ("6:05 PM", "Instagram Reel", "Cross-post", "30 sec", "Manual", ""),
+        ("7:00 PM", "Twitter", "Live game reactions during marquee match", "10 min", "Manual", "Real-time = algo priority. Don't miss."),
+        ("9:00 PM", "TikTok", "🔥 Live reaction to key moment (if it happens)", "5 min", "Manual", "Trigger: any game with >$100M wager handle"),
+        ("10:00 PM", "Twitter", "Night's results wrap", "3 min", "Manual", "Final tweet of the day = next day's setup"),
+        ("11:00 PM", "IG Story", "Tomorrow's preview teaser", "1 min", "Manual", "Keep loyal followers coming back tomorrow"),
+    ]
+
+    for r, row in enumerate(schedule, start=6):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP if c in (3, 6) else LEFT
+        # Color-code Auto vs Manual
+        auto_cell = ws.cell(row=r, column=5)
+        if row[4] == "Auto":
+            auto_cell.fill = PatternFill("solid", fgColor="C6EFCE")
+        ws.row_dimensions[r].height = 28
+
+    # ── Repurposing matrix ──
+    rep_row = len(schedule) + 8
+
+    ws.merge_cells(f"A{rep_row}:F{rep_row}")
+    ws.cell(row=rep_row, column=1, value="REPURPOSING MATRIX — one piece, 6-8 outlets")
+    ws.cell(row=rep_row, column=1).font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+    ws.cell(row=rep_row, column=1).fill = PatternFill("solid", fgColor="EFEFEF")
+    ws.row_dimensions[rep_row].height = 22
+
+    rep_headers = ["Source content", "→ Outlet 1", "→ Outlet 2", "→ Outlet 3", "→ Outlet 4", "→ Outlet 5+"]
+    for c, h in enumerate(rep_headers, start=1):
+        ws.cell(row=rep_row + 1, column=c, value=h)
+    style_header_row(ws, rep_row + 1, len(rep_headers))
+
+    repurposing = [
+        ("📹 1 TikTok (45 sec)", "IG Reel", "YouTube Short", "Twitter video", "FB Reel", "IG Story teaser + LinkedIn clip + quote-tweet"),
+        ("📊 1 IG Carousel (10 slides)", "Twitter thread (1 slide/tweet)", "LinkedIn carousel", "FB carousel", "IG Story sequence (4-5 stories)", "Substack newsletter + YT community post"),
+        ("📝 1 Twitter thread (20 tweets)", "Substack essay (consolidated)", "LinkedIn long-form", "IG carousel", "TikTok talking-head", "Email blast"),
+        ("📷 1 Branded image (lineup card)", "Twitter image post", "IG feed post", "IG Story", "FB post", "LinkedIn image + Reddit /r/sportsbook image"),
+        ("🎙️ 1 Twitter Space (60 min)", "Recap thread", "Clipped TikTok highlights", "Email recap", "Substack writeup", "Pinned on profile + boosted via X Premium"),
+    ]
+    for r, row in enumerate(repurposing, start=rep_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP
+        ws.row_dimensions[r].height = 36
+
+    # ── Hashtag library ──
+    hash_row = rep_row + 2 + len(repurposing) + 2
+
+    ws.merge_cells(f"A{hash_row}:F{hash_row}")
+    ws.cell(row=hash_row, column=1, value="HASHTAG LIBRARY — copy-paste per platform")
+    ws.cell(row=hash_row, column=1).font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+    ws.cell(row=hash_row, column=1).fill = PatternFill("solid", fgColor="EFEFEF")
+    ws.row_dimensions[hash_row].height = 22
+
+    hashtags = [
+        ("TikTok (3-5 per post)", "Wide reach", "#fyp #foryou #foryoupage #viral"),
+        ("", "Sports general", "#sportstok #nbatok #nfltok #sportsbetting #parlay"),
+        ("", "Sport-specific", "#nba #nfl #mlb #ufc #nhl #soccertok #worldcup #fifa"),
+        ("", "Niche bettor", "#prizepicks #draftkings #fanduel #underdogfantasy"),
+        ("", "AI angle", "#aitechnology #aitools #futuretech #aigeneration"),
+        ("", "Custom brand", "#pick1 #beatpick1 #aisports #aisportsbetting"),
+        ("Instagram (15-25 per post)", "Stack all above plus:", "#bettingtips #bettingexpert #picksdaily #sportspicks #freenba #freenfl #sportsanalytics #parlayoftheday"),
+        ("Twitter/X (max 2 per post!)", "Use ONLY sport-specific:", "#NBA #NFL #NHL #WorldCup (etc.). Topical hashtags don't help on X anymore."),
+        ("LinkedIn (3-5 per post)", "Professional angle", "#AI #MachineLearning #SportsTech #StartupLife #Founder"),
+        ("Reddit (no hashtags, but flair)", "—", "Use sub-specific post flair. Tag posts properly or get removed."),
+    ]
+    hash_headers = ["Platform", "Category", "Hashtags (copy-paste)"]
+    for c, h in enumerate(hash_headers, start=1):
+        ws.cell(row=hash_row + 1, column=c, value=h)
+    style_header_row(ws, hash_row + 1, len(hash_headers))
+
+    for r, row in enumerate(hashtags, start=hash_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = BODY_FONT if c < 3 else Font(name="Consolas", size=10)
+            cell.alignment = WRAP
+        ws.row_dimensions[r].height = 30
+
+    # ── Time-of-day map ──
+    tod_row = hash_row + 2 + len(hashtags) + 2
+
+    ws.merge_cells(f"A{tod_row}:F{tod_row}")
+    ws.cell(row=tod_row, column=1, value="TIME-OF-DAY MAP (US sports audience, all times ET)")
+    ws.cell(row=tod_row, column=1).font = Font(name="Calibri", bold=True, size=12, color=BRAND_BG)
+    ws.cell(row=tod_row, column=1).fill = PatternFill("solid", fgColor="EFEFEF")
+    ws.row_dimensions[tod_row].height = 22
+
+    tod = [
+        ("TikTok", "6-7am, 12-1pm, 6-8pm, 10-11pm", "Pre-coffee, lunch, post-work, pre-bed scrolls"),
+        ("IG Reels", "11am, 6pm", "IG's daily algo evaluation windows"),
+        ("IG Feed", "12pm, 7pm", "Lunch + dinner browse"),
+        ("IG Stories", "Any (always-on)", "Algo doesn't down-rank story timing"),
+        ("Twitter/X", "8-9am, 12pm, 5-6pm, 8-10pm", "Morning newsbite, lunch, commute, evening live-game"),
+        ("Facebook", "1pm, 8pm", "FB algo skews older audience"),
+        ("YouTube Shorts", "5-7pm, 9-10pm", "Evening watch session"),
+        ("LinkedIn", "7-9am Tue/Wed/Thu only", "Algo punishes weekend founder posts"),
+        ("Reddit", "8-11pm", "Peak browse hours for sports betting subs"),
+    ]
+    tod_headers = ["Platform", "Best post times", "Why"]
+    for c, h in enumerate(tod_headers, start=1):
+        ws.cell(row=tod_row + 1, column=c, value=h)
+    style_header_row(ws, tod_row + 1, len(tod_headers))
+
+    for r, row in enumerate(tod, start=tod_row + 2):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP
+        ws.row_dimensions[r].height = 22
+
+    autosize(ws, [22, 26, 50, 12, 14, 50])
+
+
+# ── Tab 11: Aggressive Tactics ───────────────────────────────────────────
+# 50 free aggressive plays ranked by ROI. The CMO playbook — what to
+# actually DO every day to maximize organic reach with $0 incremental.
+def build_aggressive_tactics(wb):
+    ws = wb.create_sheet("11 · Aggressive Tactics")
+    ws.sheet_view.showGridLines = False
+
+    # Section banner
+    ws.merge_cells("A1:F1")
+    ws["A1"] = "AGGRESSIVE TACTICS — 50 free moves ranked by ROI"
+    ws["A1"].font = SECTION_FONT; ws["A1"].fill = SECTION_FILL; ws["A1"].alignment = CENTER
+    ws.row_dimensions[1].height = 32
+
+    ws.merge_cells("A2:F2")
+    ws["A2"] = ("Every move below: $0 spend. Listed by ROI (effort vs reach). "
+                "Pick 10-15 that match your founder energy + audience. Execute daily. "
+                "Tier 1 is highest leverage — do all of those. Tier 5 is guerrilla — pick 2-3 that fit.")
+    ws["A2"].font = SUBTLE_FONT; ws["A2"].alignment = WRAP
+    ws.row_dimensions[2].height = 36
+
+    headers = ["#", "Tactic", "Tier", "Effort", "Expected reach", "How to execute"]
+    for c, h in enumerate(headers, start=1):
+        ws.cell(row=4, column=c, value=h)
+    style_header_row(ws, 4, len(headers))
+    ws.freeze_panes = "A5"
+
+    tactics = [
+        # ── TIER 1 — Highest leverage ──
+        (1, "Reply-bomb sports Twitter", "1", "10 min/day", "5K-50K imps/day", "Every morning, reply to top 5 #NBA/#NFL tweets with Pick1's pre-game probability."),
+        (2, "Trending sound jacking on TikTok", "1", "1 min/post", "10x algo boost", "Every TT uses a currently-trending sound. Check Tiktok's Creative Center daily."),
+        (3, "Tag athletes when relevant", "1", "30 sec/post", "100K-1M imps if athlete engages", "When Pick1 nails a player prop, tag the player. 1 like from athlete = millions of impressions."),
+        (4, "Tag sports media (Schefter, Woj, McAfee)", "1", "30 sec/post", "10K-1M imps", "When Pick1's prob matches a covered result, reply with screenshot tagging them."),
+        (5, "Quote-tweet contrarian Vegas takes", "1", "2 min/day", "5K-50K imps", "Polite disagreement = reach. When a tout posts a hot take, QT with Pick1's actual model."),
+        (6, "First-comment on big tweets", "1", "5 min/day", "5K-50K imps", "First reply under viral sports tweet often gets 10K+ impressions itself. Be fast."),
+        (7, "Twitter Spaces (host weekly)", "1", "60 min/wk", "30-100 live + recording reach", "Friday 8pm: 'Weekly Picks Review'. $0. Recurring audience."),
+        (8, "Streak content", "1", "1 min/day", "2K-10K imps/post", "Every Pick1 win extends the narrative. 'Pick1 is X-Y in the last Z days.' Update daily."),
+        (9, "Counter-bets to public consensus", "1", "5 min/post", "5K-30K imps", "Explicitly bet against the public. Document. Win or lose, content."),
+        (10, "Receipts-first content (own the misses)", "1", "5 min/loss", "Trust = follower retention", "Every wrong call gets its own owned-up post. 'We were wrong. Here's why.' Trust play."),
+        # ── TIER 2 — Set-and-forget high-value ──
+        (11, "Tweetdeck alerts on key sports words", "2", "30 min setup", "Be FIRST on breaking news", "Set up X Pro alerts on: Schefter, Woj, McAfee, ESPN, Bleacher Report."),
+        (12, "Reddit value-add commenting", "2", "10 min/day", "Karma + brand affinity", "Be in r/sportsbook daily. Comment value, mention Pick1 1× max per 10 comments."),
+        (13, "YouTube comment trading", "2", "10 min/day", "10K-50K imps/comment if pinned", "Top 10 sports YT channels — drop value-add comments daily."),
+        (14, "DM 20 sports newsletter operators", "2", "2 hrs once", "1K-10K signups per inclusion", "'Free Pick1 tool' feature in their daily. $0 deal."),
+        (15, "DM 10 small podcast hosts", "2", "2 hrs once", "1K-10K listeners each", "Sports betting podcasts (1K-10K listeners). Offer founder for 30-min interview."),
+        (16, "TikTok duet-bait videos", "2", "5 min/post", "10x reach via duets", "'I bet $X on tonight's pick' → people duet with theirs. Each duet = free distribution."),
+        (17, "TikTok 'wait for it' hooks", "2", "0 (built-in)", "2-3x algo boost", "Every TT starts with 'Wait for it...' or 'POV:'. Algo loves."),
+        (18, "Comment-baiting captions", "2", "0 (built-in)", "Engagement signal", "'Drop a 🏀 if you're betting Knicks tonight'. Engagement = algo lift."),
+        (19, "Engagement pod with 3-5 indie founders", "2", "5 min/day", "First-hour boost", "Informal group that likes each other's posts in first hour. Critical for X/IG algo."),
+        (20, "Algorithm-friendly post lengths", "2", "0 (built-in)", "Higher completion %", "Twitter: 70-100 chars. TikTok: 30-60 sec. IG Reel: 15-30 sec."),
+        # ── TIER 3 — Content formats that work ──
+        (21, "Confidence-card images", "3", "10 min/day", "Shareable as wallpaper", "Branded squares with tonight's confidence %. Native to share."),
+        (22, "Daily tracker screenshots", "3", "1 min/day", "Repeatable trust signal", "Every morning, post pick1.live/tracker showing the record."),
+        (23, "AI vs Vegas graphics", "3", "5 min/post", "Visual + repeatable", "Side-by-side: Vegas line vs Pick1 probability."),
+        (24, "Streak counters as graphics", "3", "2 min/day", "Daily content auto-generated", "Daily countdown of consecutive correct calls. Animatable too."),
+        (25, "'How Pick1 thinks' carousels", "3", "30 min/post (weekly)", "Educational + trust-building", "Walk through one pick's logic. IG carousel format."),
+        (26, "Pre-game vs post-game side-by-sides", "3", "5 min/post", "Receipts wall", "Pick1 said X, result was Y. Stack across the week."),
+        (27, "Player-prop callouts", "3", "5 min/post", "Athlete may engage", "Tag specific players when relevant."),
+        (28, "Sports-Twitter-bait takes", "3", "5 min/post", "Ratio'd by fans = free reach", "Sub-tweet popular bettor takes with model output. Designed to be ratio'd."),
+        (29, "Live game reactions", "3", "10 min/game", "Real-time algo priority", "React in real-time. TikTok + Twitter especially."),
+        (30, "End-of-night recap threads", "3", "5 min/night", "Trust + retention", "Every night, recap the day's calls in a Twitter thread."),
+        # ── TIER 4 — Community engagement ──
+        (31, "Reply to every DM within 1hr", "4", "Always-on", "Loyalty multiplier", "Loyalty multiplier. Sets retention pattern."),
+        (32, "Pin best community comments", "4", "1 min/day", "Reciprocity", "Make commenters feel seen. They post more."),
+        (33, "Weekly 'best community pick' feature", "4", "5 min/wk", "Reciprocity", "Spotlight a follower's pick on Pick1's account."),
+        (34, "Birthday DMs to top engagers", "4", "5 min/day", "Cheap loyalty", "Pulled from analytics. Personal touch."),
+        (35, "Friday AMA on X Spaces", "4", "30 min/wk", "30-100 live attendees", "Builds audience. $0."),
+        (36, "Discord crashing (other servers)", "4", "30 min/wk", "Targeted audience", "Be in betting Discords, add value, mention Pick1 occasionally."),
+        (37, "Telegram channel value-bombing", "4", "30 min/wk", "Niche but engaged", "Same in sports betting Telegram groups."),
+        (38, "Sports forum posts (Covers, SBR, BetPop)", "4", "30 min/wk", "Old-school but loyal", "One value-add post/week per forum."),
+        (39, "Reddit AMA in r/sportsbook (Day 16-18)", "4", "60 min once", "5K-50K signups", "Schedule one for late campaign. Pre-coordinate with mods."),
+        (40, "Twitter Circle/Close Friends list", "4", "Always-on", "Loyalty hack", "Give 100 most engaged an exclusive list. Loyalty signal."),
+        # ── TIER 5 — Guerrilla moves ──
+        (41, "Live-tweet from sportsbook reply sections", "5", "10 min/day", "Targeted", "Be everywhere a sportsbook tweets. Reply with Pick1's model output."),
+        (42, "Athlete birthday tweets", "5", "5 min/day", "Sometimes athlete replies", "Tag athletes on birthdays with their Pick1 stats. Sometimes go viral."),
+        (43, "Sports anniversary tweets", "5", "5 min/wk", "Niche viral potential", "'X years ago today' with Pick1's retroactive probability."),
+        (44, "Riding viral threads", "5", "Reactive", "Free if you hit it", "When sports thread goes viral, drop into replies with Pick1 data."),
+        (45, "'What does the model say' reply template", "5", "30 min setup", "Builds anticipation", "Saved reply that fires when someone asks about a game."),
+        (46, "Custom Pick1-win GIFs in reply", "5", "1 hr design", "Memorable replies", "Drop them in Twitter replies when relevant."),
+        (47, "Submit custom emojis to communities", "5", "30 min total", "Brand affinity", "'Pick1 win' / 'Pick1 loss' emojis to relevant Discords/Slacks."),
+        (48, "Pre-made meme stockpile", "5", "2 hrs once", "Cheap virality", "5-10 memes ready to fire when sports media has bad take."),
+        (49, "Reaction reels to viral betting fails", "5", "5 min/reactive", "Trust contrast", "When a tout fails publicly, react with Pick1's actual call."),
+        (50, "'This account uses Pick1' badge program", "5", "1 hr setup", "Tiny but additive", "Give 100 micro-creators a Pick1 verification badge for bio."),
+    ]
+
+    for r, row in enumerate(tactics, start=5):
+        for c, v in enumerate(row, start=1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = BODY_FONT
+            cell.alignment = WRAP if c == 6 else CENTER if c in (1, 3, 4) else LEFT
+        # Tier color coding
+        tier_cell = ws.cell(row=r, column=3)
+        tier = str(row[2])
+        if tier == "1":
+            tier_cell.fill = PatternFill("solid", fgColor="C6EFCE")  # green - do all
+        elif tier == "2":
+            tier_cell.fill = PatternFill("solid", fgColor="DDEBF7")  # blue - high value
+        elif tier == "3":
+            tier_cell.fill = PatternFill("solid", fgColor="FFEB9C")  # yellow - formats
+        elif tier == "4":
+            tier_cell.fill = PatternFill("solid", fgColor="FFF3E0")  # orange - community
+        elif tier == "5":
+            tier_cell.fill = PatternFill("solid", fgColor="FCE4EC")  # pink - guerrilla
+        ws.row_dimensions[r].height = 32
+
+    autosize(ws, [5, 38, 7, 14, 26, 70])
+
+    # ── CMO call-out at the bottom ──
+    cmo_row = len(tactics) + 7
+
+    ws.merge_cells(f"A{cmo_row}:F{cmo_row}")
+    ws.cell(row=cmo_row, column=1, value="CMO FINAL CALL — if you can only pick 5")
+    ws.cell(row=cmo_row, column=1).font = SECTION_FONT
+    ws.cell(row=cmo_row, column=1).fill = SECTION_FILL
+    ws.cell(row=cmo_row, column=1).alignment = CENTER
+    ws.row_dimensions[cmo_row].height = 32
+
+    cmo_picks = [
+        ("1. Triple TikTok output (2 → 6 per day)",
+         "Single biggest gap. Each extra TT = $0 cost, fresh FYP shot. Cap at 6 to avoid throttle."),
+        ("2. Reply-bomb sports Twitter every morning",
+         "10 min, free, biggest raw-reach lever you have. Sets daily algorithmic momentum."),
+        ("3. Trade Lifetime Pro for 30+ micro-influencer shoutouts",
+         "Not 20 — 30+. Volume strategy. Each in-kind trade = $0, ~$500 of bought equivalent."),
+        ("4. Daily mini-sweeps stacked on Gleam (Mon-Sun)",
+         "$75/week, 50K-500K additional impressions. Fresh hook for each day's content."),
+        ("5. Weekly Twitter Space on Friday 8pm ET",
+         "$0, recurring 30-100 live attendees who compound into loyal followers."),
+    ]
+    for r, (label, txt) in enumerate(cmo_picks, start=cmo_row + 1):
+        ws.cell(row=r, column=1, value=label).font = Font(name="Calibri", bold=True, size=11, color=BRAND_BG)
+        ws.merge_cells(f"B{r}:F{r}")
+        ws.cell(row=r, column=2, value=txt).font = BODY_FONT
+        ws.cell(row=r, column=2).alignment = WRAP
+        ws.row_dimensions[r].height = 38
+
+
 # ── README tab (first one) ───────────────────────────────────────────────
 def build_readme(wb):
     ws = wb.create_sheet("0 · README", 0)  # insert first
@@ -1000,6 +1314,8 @@ def build_readme(wb):
         ("7. Pick Performance      — daily pick record (the receipts wall)", "body"),
         ("8. $100K Scenario        — what marketing spend would look like at $1K vs $25K vs $100K", "body"),
         ("9. Daily Strategy ⭐    — day-by-day execution plan May 14 → May 31 (THE plan)", "body"),
+        ("10. Content Engine      — daily content blueprint + repurposing matrix + hashtag library + times", "body"),
+        ("11. Aggressive Tactics  — 50 free moves ranked by ROI (CMO playbook, tier-coded)", "body"),
         ("", "body"),
         ("North Star", "header"),
         ("1,500 waitlist signups by May 31. Stretch target: 2,500.", "body"),
@@ -1037,6 +1353,8 @@ def main():
     build_pick_performance(wb)
     build_scenario_budget(wb)
     build_daily_strategy(wb)
+    build_content_engine(wb)
+    build_aggressive_tactics(wb)
     build_readme(wb)  # inserted at position 0
 
     out = Path(__file__).parent / "MASTER_TRACKER.xlsx"
