@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<!-- AI vs Vegas card — repeatable format. Shows Vegas consensus vs Pick1's
+     model probability. Designed for the "contrarian take" content type.
+     1080×1080 for IG feed. -->
+<title>AI vs Vegas card</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1080px;background:#0a0b0d;color:#fff;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.frame{width:1080px;height:1080px;padding:70px 70px;display:flex;flex-direction:column;justify-content:space-between}
+.header{display:flex;justify-content:space-between;align-items:center}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:0.26em;color:#d4ff3a;text-transform:uppercase;font-weight:700}
+.eyebrow::before{content:'●';margin-right:12px;font-size:14px;vertical-align:middle}
+.matchup{font-family:'Archivo',sans-serif;font-weight:800;font-size:26px;color:#9095a0;letter-spacing:-0.01em}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:36px;flex:1}
+.col{padding:36px 32px;border-radius:18px;display:flex;flex-direction:column;justify-content:space-between}
+.col.vegas{border:1px solid #1a1d22;background:#111317}
+.col.pick1{border:2px solid #d4ff3a;background:rgba(212,255,58,0.06)}
+.col-label{font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:0.22em;text-transform:uppercase;font-weight:700;margin-bottom:24px}
+.col.vegas .col-label{color:#9095a0}
+.col.pick1 .col-label{color:#d4ff3a}
+.col-number{font-family:'Anton',sans-serif;font-size:200px;letter-spacing:-0.04em;line-height:0.9}
+.col.vegas .col-number{color:#666b73}
+.col.pick1 .col-number{color:#d4ff3a}
+.col-sub{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#9095a0;margin-top:14px}
+.gap{margin-top:24px;text-align:center;border-top:1px solid #1a1d22;padding-top:24px}
+.gap-label{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:0.22em;color:#9095a0;text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.gap-value{font-family:'Anton',sans-serif;font-size:90px;letter-spacing:-0.025em;color:#d4ff3a;line-height:1}
+.gap-takeaway{font-family:'Archivo',sans-serif;font-size:20px;color:#b8bcc1;line-height:1.4;margin-top:14px;max-width:840px;margin-left:auto;margin-right:auto;font-weight:600}
+.footer{display:flex;justify-content:space-between;align-items:flex-end}
+.logo{font-family:'Archivo',sans-serif;font-weight:900;font-size:38px;letter-spacing:-0.02em;color:#fff}
+.logo .one{background:#d4ff3a;color:#0a0b0d;padding:2px 12px;border-radius:9px;margin-left:3px}
+.url{font-family:'JetBrains Mono',monospace;font-size:16px;color:#9095a0;letter-spacing:0.12em;text-transform:uppercase;font-weight:700}
+</style></head>
+<body>
+<div class="frame">
+  <div>
+    <div class="header">
+      <div class="eyebrow">AI VS VEGAS · TONIGHT</div>
+      <div class="matchup">DEN @ MIN · OVER 224.5</div>
+    </div>
+    <div class="compare-grid">
+      <div class="col vegas">
+        <div>
+          <div class="col-label">VEGAS</div>
+          <div class="col-number">52<span style="font-size:120px;">%</span></div>
+        </div>
+        <div class="col-sub">CONSENSUS<br/>IMPLIED</div>
+      </div>
+      <div class="col pick1">
+        <div>
+          <div class="col-label">PICK1</div>
+          <div class="col-number">81<span style="font-size:120px;">%</span></div>
+        </div>
+        <div class="col-sub">AI MODEL<br/>LOCKED PRE-GAME</div>
+      </div>
+    </div>
+    <div class="gap">
+      <div class="gap-label">EDGE</div>
+      <div class="gap-value">+29 pts</div>
+      <div class="gap-takeaway">Vegas thinks this is a coin flip. Pick1's model disagrees — strongly. We'll log the result tomorrow either way.</div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="logo">PICK<span class="one">1</span></div>
+    <div class="url">PICK1.LIVE/TRACKER</div>
+  </div>
+</div>
+</body></html>
