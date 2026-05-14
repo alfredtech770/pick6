@@ -2,21 +2,26 @@
 """
 Pick1 — Master Tracker generator.
 
-Produces `MASTER_TRACKER.xlsx` next to this script. Eight tabs covering
-everything we measure during the 18-day pre-launch sprint, plus a
-$100K scenario projection:
+Produces `MASTER_TRACKER.xlsx` next to this script. Nine tabs covering
+everything we plan and measure during the 18-day pre-launch sprint:
 
   1. KPI Dashboard       — top-level numbers, day-by-day
   2. Content Calendar    — what's getting posted where + perf
   3. Ad Performance      — Meta + TikTok Spark spend / CPL / conversions
   4. Channel ROI         — which channel is winning, % of total
+                           (42 channels tracked)
   5. Activation Pipeline — the 22 viral activations + their state
-                           (incl. web3 quests, Discord, Founder Pass)
+                           (web3 quests, Founder Pass, etc.)
   6. Influencer Outreach — 20-DM micro-influencer trade program
   7. Pick Performance    — daily pick record (the receipts wall data)
   8. $100K Scenario      — what the marketing spend would look like
                            with 100x the budget (street TikToks,
                            macro influencers, PR firm, etc.)
+  9. Daily Strategy      — ⭐ THE operational tab. One row per day
+                           from May 14 → May 31. Auto-cron vs.
+                           user-posts vs. outreach vs. activations
+                           launching, with daily + cumulative
+                           signup targets. Start here every morning.
 
 Re-run any time to regenerate from scratch:
     python3 launch/tracker/build_tracker.py
@@ -364,9 +369,9 @@ def build_activations(wb):
         (15, "TaskOn quest (APAC reach)", "Day 3 (May 15)", "Planned",
          "Noa",
          "3M+ users, APAC-dominant. Adds geographic spread + raw count. Free. Expected: 3-30K participants → 600-6K signups. Lower US conversion but counts."),
-        (16, "Pick1 Discord server", "Day 2 (May 14)", "Planned",
-         "Noa (setup) + Claude (welcome bot)",
-         "Custom Discord with role-gated #daily-pick channel (15-min early access). Carl-bot + Mee6 + custom Pick1 bot (Day 14 build). Brand-safety mod rules: zero crypto/NFA talk. Expected 3-15K members in 30 days."),
+        (16, "[DROPPED] Pick1 Discord server", "—", "Cancelled",
+         "—",
+         "Cancelled May 14 — same maintenance burden as Telegram (which was dropped Day 1). Functions replaced by: (a) email 15 min before public post for 'early access' feel, (b) Twitter replies + IG comments for community, (c) Founder Pass for member-only status. Net signup impact ≈ 0 because the same users are still reachable via the other 21 activations."),
         (17, "Pick1 Founder Pass (digital collectible)", "Day 4 (May 16)", "Planned",
          "Claude (PNG generator) + Noa (creative approval)",
          "First 1,000 waitlist signups get a numbered Pick1 Founder Pass PNG (optionally minted free on Base L2 for crypto users; ~$10 total gas). Scarcity → 30-50% conversion lift on the signup form. Sent via Resend with unique serial."),
@@ -405,6 +410,9 @@ def build_activations(wb):
     ws.conditional_formatting.add("D3:D30",
         CellIsRule(operator="equal", formula=['"Blocked"'],
                    fill=PatternFill("solid", fgColor="FFC7CE")))
+    ws.conditional_formatting.add("D3:D30",
+        CellIsRule(operator="equal", formula=['"Cancelled"'],
+                   fill=PatternFill("solid", fgColor="E0E0E0")))
 
     autosize(ws, [5, 36, 22, 11, 28, 65])
 
@@ -733,6 +741,234 @@ def build_scenario_budget(wb):
         ws.row_dimensions[r].height = 52
 
 
+# ── Tab 9: Daily Strategy ────────────────────────────────────────────────
+# The single most important operational tab. One row per day from today
+# (May 14, Day 2) through launch (May 31, Day 19). For each day: theme,
+# what's auto-running (Claude's cron + built-ins), what the user has to
+# post (paste-ready, per platform), outreach actions, activations
+# launching, daily signup target, and cumulative target. Color-coded by
+# campaign phase (foundation / amplify / final push).
+def build_daily_strategy(wb):
+    ws = wb.create_sheet("9 · Daily Strategy")
+    ws.sheet_view.showGridLines = False
+
+    # Section banner
+    ws.merge_cells("A1:I1")
+    ws["A1"] = "DAILY STRATEGY — 18-day execution plan (May 14 → May 31)"
+    ws["A1"].font = SECTION_FONT; ws["A1"].fill = SECTION_FILL; ws["A1"].alignment = CENTER
+    ws.row_dimensions[1].height = 32
+
+    # Intro
+    ws.merge_cells("A2:I2")
+    ws["A2"] = ("THE source-of-truth daily plan. Goal: maximize waitlist signups + social followers. "
+                "Auto column = Claude's cron + autonomous infra. You column = paste-ready posts you ship. "
+                "Outreach = personal asks / DMs. Activation column = what launches or runs that day. "
+                "Cumulative target = where the waitlist needs to be by EOD.")
+    ws["A2"].font = SUBTLE_FONT; ws["A2"].alignment = WRAP
+    ws.row_dimensions[2].height = 44
+
+    # Headers
+    headers = ["Date", "Day", "Focus", "Auto (Claude)",
+               "You — posts to ship", "You — outreach / setup",
+               "Activations live/launching", "Daily target", "Cumulative"]
+    for c, h in enumerate(headers, start=1):
+        ws.cell(row=4, column=c, value=h)
+    style_header_row(ws, 4, len(headers))
+    ws.freeze_panes = "C5"  # freeze first 2 cols + header rows
+
+    # Phase color fills
+    PHASE_FOUNDATION = PatternFill("solid", fgColor="E3F2FD")  # light blue
+    PHASE_AMPLIFY    = PatternFill("solid", fgColor="E8F5E9")  # light green
+    PHASE_FINAL      = PatternFill("solid", fgColor="FFF3E0")  # light orange
+    PHASE_LAUNCH     = PatternFill("solid", fgColor="FFE0B2")  # darker orange
+
+    # daily rows: (date, day#, focus, auto, posts, outreach, activations, target, cum)
+    days = [
+        # ── WEEK 1: FOUNDATION (Day 2-7, May 14-19) ──
+        ("May 14", 2, "🚀 SWEEPS LAUNCH NIGHT",
+         "• Sweeps CTA live in welcome + daily-pick emails\n• pick1.live banner updated with new URL",
+         "• X: sweeps announcement (SWEEPSTAKES_LAUNCH_COPY.md §1)\n• IG: feed post + update bio link (§2)\n• FB Page: post + pin (§4)\n• Email: blast to existing waitlist (§5)\n• LinkedIn: founder post (DISTRIBUTION_QUEUE.md)\n• Reddit r/SideProject (DISTRIBUTION_QUEUE.md)",
+         "• Launch Meta Campaign 1 ($50/day, 3 PNGs)\n• Create Zealy + Galxe + Layer3 + TaskOn accounts (~20 min)\n• Send Twitter dev app creds (4 OAuth values)",
+         "✅ Gleam LIVE (#6)\n✅ Email CTAs LIVE (#9)\n✅ Distribution queue drafted (#10)\nLaunching: Sweeps announcement everywhere",
+         150, 250),
+        ("May 15", 3, "🌐 WEB3 QUEST LAUNCH",
+         "• Build Founder Pass PNG generator\n• Ship referral leaderboard page on pick1.live\n• Configure Zealy + Galxe + Layer3 + TaskOn quests (after Noa creates accounts)",
+         "• X: 'thread on how Pick1 calibrates' (organic)\n• IG: carousel post (last 3 days picks)\n• Reddit r/giveaways post (DISTRIBUTION_QUEUE.md)\n• Reddit r/contests post\n• Indie Hackers milestone post",
+         "• Crypto Twitter outreach: 5 accounts (5-50K followers) — $50-100 each or Lifetime Pro\n• Reach out to first 3 micro-influencers",
+         "Launching: Zealy (#12), Galxe (#13), Layer3 (#14), TaskOn (#15) quests\nLaunching: Founder Pass (#17) — first batch",
+         200, 450),
+        ("May 16", 4, "🎬 CONTENT BLITZ",
+         "• Send Founder Pass PNG to all existing waitlist via Resend\n• Render 2 new ad creative variations for A/B test",
+         "• TikTok: founder explainer video (30 sec)\n• IG Reel: same content, vertical crop\n• X: quote-tweet yesterday's sweeps with thread\n• FB: share Founder Pass announcement",
+         "• Crypto Twitter: 5 more accounts\n• DM 3 micro-influencers",
+         "✅ Founder Pass live (#17)\nWeb3 quests trickling in (#12-15)",
+         200, 650),
+        ("May 17", 5, "🎯 TARGETED COMMUNITY SEEDING",
+         "• Daily-tweet cron live (after Twitter dev creds)\n• Mid-week dashboard email to existing list",
+         "• TikTok: man-on-the-street style pick reveal\n• IG Story: poll 'who's tonight's winner?'\n• X: quote ratio-bet against a bad take",
+         "• Polymarket Discord: founder lurks/comments\n• Kalshi Discord: same\n• Overtime Markets: same\n• DM 3 more micro-influencers",
+         "Launching: Prediction-market seeding (#18)\nRunning: Web3 quests, sweeps, ads",
+         200, 850),
+        ("May 18", 6, "📱 TIKTOK CHALLENGE LAUNCH",
+         "• Daily pick auto-tweet\n• Auto sweeps reminder in daily-pick email (already live, ongoing)",
+         "• TikTok: launch #BeatPick1 challenge with trending sound\n• IG: same video reposted as Reel\n• X: launch tweet for #BeatPick1\n• Respond to every TikTok duet under 50 likes",
+         "• Crypto Twitter: 5 more accounts (total 15)\n• Polymarket Discord: post 7-day audit",
+         "Launching: TikTok #BeatPick1 (#20)\nRunning: All quests, sweeps, ads, IG Story takeover #1 starts",
+         250, 1100),
+        ("May 19", 7, "📨 INFLUENCER OUTREACH DAY",
+         "• Mid-campaign sweeps reminder email blast (auto, all subscribers)\n• Build Daily Lineup Card generator",
+         "• Daily pick + tweet\n• IG Story: behind the scenes of how Pick1 picks\n• TikTok: respond to #BeatPick1 duets in a compilation video\n• Reddit r/free post",
+         "• ★ DM all 20 micro-influencers from INFLUENCER_OUTREACH.md\n• Personalized first line is non-negotiable\n• IG Story takeover #2 launches",
+         "Launching: Influencer program (#4) full DM blast\nLaunching: IG Story takeovers (#21) — day 1",
+         300, 1400),
+        # ── WEEK 2: AMPLIFY (Day 8-14, May 20-26) ──
+        ("May 20", 8, "📰 NEWSLETTER CROSS-PROMO",
+         "• Submit to SparkLoop ($200 cap) — 24-72hr approval\n• Public Accountability Bet page goes live",
+         "• Daily pick + tweet\n• TikTok: 'AI bet vs human bet' format\n• IG: today's pick as branded card",
+         "• IG Story takeover #3\n• Follow up with non-responding influencers (1 ask only, then drop)",
+         "Launching: SparkLoop (#7)\nLaunching: Public Accountability Bet (#2)\nRunning: All quests, sweeps, influencer takeovers",
+         300, 1700),
+        ("May 21", 9, "🎨 CONTENT WEEKEND",
+         "• Saturday — sports content peaks. Auto-send 'weekend slate' email to existing list",
+         "• TikTok: weekend best-of compilation\n• IG Story: live game commentary as picks play out\n• X: thread on weekend sports betting biggest opportunities",
+         "• IG Story takeover #4\n• Crypto Twitter posts going live (10-20 retweets accumulating)",
+         "Running: All quests, ads, sweeps, content cadence",
+         300, 2000),
+        ("May 22", 10, "🏆 WEEK 2 LAUNCH STACK",
+         "• Day-10 budget reallocation: kill ads >$3 CPL, double winners\n• Launch KingSumo viral giveaway (free tier, 1K cap)\n• Daily Lineup Card live in morning email",
+         "• TikTok: 'AI got X right last week' receipts video\n• IG: carousel of last week's hits\n• X: thread of the week's wins + a miss (transparency)",
+         "• IG Story takeover #5\n• 7-day check-in with first responding influencers",
+         "Launching: KingSumo viral giveaway (#11)\nLaunching: Daily Lineup Card (#22)",
+         400, 2400),
+        ("May 23", 11, "🔁 RETARGETING WAVE",
+         "• Bump Meta retargeting budget to $20/day (anyone who visited but didn't sign up)\n• Re-engagement email to 7-day-cold subscribers",
+         "• Daily pick + tweet\n• IG: today's lineup card\n• TikTok: 'POV: you bet on Pick1' format",
+         "• IG Story takeover #6\n• Quote-tweet last week's pick with the result",
+         "Running: KingSumo + Gleam in parallel + all quests + IG takeovers",
+         350, 2750),
+        ("May 24", 12, "📊 RECEIPTS WEEKEND",
+         "• Auto-send 'two-week receipts' email — every pick we've made + result",
+         "• TikTok: 'I posted every pick before kickoff — here's the result' format\n• IG: 2-week receipts carousel\n• X: thread on calibration so far",
+         "• IG Story takeover #7\n• Reddit r/sportsbook brief comment-engagement (not the big post yet)",
+         "Running: All. Content density peaks for the weekend.",
+         350, 3100),
+        ("May 25", 13, "🎤 PRE-FOUNDER-STORY HYPE",
+         "• Pre-warm email subscribers: 'tomorrow we tell you why Pick1 exists'",
+         "• X: cryptic tease tweet\n• IG Story: BTS shot of the founder writing\n• TikTok: '24 hours until I tell you the real story'",
+         "• IG Story takeover #8\n• Send press list a heads-up (1-line email): 'founder essay drops tomorrow'",
+         "Running: All quests + sweeps + KingSumo. Building anticipation.",
+         300, 3400),
+        ("May 26", 14, "📖 FOUNDER STORY DROP - DAY 1",
+         "• Auto-email blast: full founder essay to existing list\n• Auto-pin essay on pick1.live homepage",
+         "• X: long-form thread (1,500 words, 25 tweets)\n• Substack/Medium: full 2,000-word essay\n• TikTok: 60-sec founder-to-camera version\n• IG carousel: essay highlights",
+         "• DM essay link to 10 sports journalists with personal note\n• IG Story takeover #9",
+         "Launching: Founder Story Drop (#5)\nBig content wave — set engagement alerts",
+         600, 4000),
+        # ── WEEK 3: FINAL PUSH (Day 15-19, May 27-31) ──
+        ("May 27", 15, "🔄 FOUNDER STORY DROP - DAY 2 (AMPLIFY)",
+         "• Auto-boost: pin best comments + quote-tweet best responses",
+         "• X: respond to every reply on the thread (algo signal)\n• TikTok: 'reply to the founder story' video\n• IG: respond to DMs + Story replies",
+         "• Push top-performing piece to paid amplification ($200 TikTok Spark Ads if Reel passed 50K)\n• IG Story takeover #10 (final)",
+         "Boost mode — riding the founder story wave",
+         500, 4500),
+        ("May 28", 16, "🥊 BEAT THE AI CHALLENGE LAUNCH",
+         "• Auto-launch /beat-the-ai page (Twitter hashtag tracker + leaderboard)",
+         "• X: launch #BeatPick1 hashtag campaign\n• TikTok: founder challenge video\n• IG: explainer Reel",
+         "• Twitter ratio-bet content drop (designed to be quote-dunked)\n• Reddit r/sportsbook: long-form analysis post (DISTRIBUTION_QUEUE.md style)",
+         "Launching: Beat the AI Challenge (#3)\nReddit r/sportsbook post (heaviest non-paid activation)",
+         500, 5000),
+        ("May 29", 17, "📺 SHOW HN PREP + SOCIAL PROOF",
+         "• Pre-stage Show HN draft + screenshots\n• Auto-collect best testimonials from existing users for a 'wall of love' page",
+         "• Sports betting forum posts: covers.com, sportsbookreview, betpop\n• TikTok: 'wall of love' compilation\n• IG: testimonials carousel",
+         "• Cross-promote with 1-2 prediction-market accounts for AMA",
+         "Building social proof for HN + launch day",
+         400, 5400),
+        ("May 30", 18, "💥 SHOW HN DAY + DAILY DROP STARTS",
+         "• 8:00 AM ET: Post Show HN (DISTRIBUTION_QUEUE.md draft)\n• Auto-respond to comments via founder, not bot\n• Daily Drop #1 on Twitter (cron, $25 prize)\n• Auto-blast 'last 24 hours' sweeps reminder to all signups",
+         "• X: Pin HN link, thread it\n• TikTok: 'Pick1 is on the front page of HN' format if it hits\n• IG: launch-week countdown content",
+         "• Pre-warm: schedule winner-draw livestream announcement\n• Send press kit to anyone covering HN",
+         "Launching: Show HN, Daily Drop (#3 sub-mechanic), Final reminder blast",
+         600, 6000),
+        ("May 31", 19, "🏁 LAUNCH DAY + WINNER DRAW",
+         "• Auto: final 6hr / 3hr / 1hr countdown emails\n• Auto: winner-draw stream landing page goes live\n• Auto: post-draw winner announcement email\n• Auto: 'app launches Monday' transition email",
+         "• X: 'sweeps closing in 6 hours' urgency posts every 2 hours\n• IG Story: live countdown\n• TikTok: live draw if possible\n• FB Live: draw event 11:59 PM ET",
+         "• Press: 'winner announced live' moment for screenshots\n• Daily Drop #2 + Daily Drop #3 (final 2 prizes)",
+         "All activations close. Draw happens at 23:59 ET.",
+         800, 6800),
+    ]
+
+    for r_idx, row in enumerate(days, start=5):
+        date, day_n, focus, auto, posts, outreach, acts, target, cum = row
+        # Phase color: Week 1 = foundation, Week 2 = amplify, Week 3 = final push, Day 19 = launch
+        if day_n == 19:
+            phase = PHASE_LAUNCH
+        elif day_n >= 15:
+            phase = PHASE_FINAL
+        elif day_n >= 8:
+            phase = PHASE_AMPLIFY
+        else:
+            phase = PHASE_FOUNDATION
+
+        ws.cell(row=r_idx, column=1, value=date).font = Font(name="Calibri", bold=True, size=10)
+        ws.cell(row=r_idx, column=2, value=day_n).font = Font(name="Calibri", bold=True, size=11)
+        ws.cell(row=r_idx, column=3, value=focus).font = Font(name="Calibri", bold=True, size=10)
+        ws.cell(row=r_idx, column=4, value=auto).font = BODY_FONT
+        ws.cell(row=r_idx, column=5, value=posts).font = BODY_FONT
+        ws.cell(row=r_idx, column=6, value=outreach).font = BODY_FONT
+        ws.cell(row=r_idx, column=7, value=acts).font = BODY_FONT
+        ws.cell(row=r_idx, column=8, value=target).number_format = "#,##0"
+        ws.cell(row=r_idx, column=9, value=cum).number_format = "#,##0"
+
+        # Apply phase fill to focus cell
+        ws.cell(row=r_idx, column=3).fill = phase
+
+        # Wrap text everywhere relevant
+        for c in (3, 4, 5, 6, 7):
+            ws.cell(row=r_idx, column=c).alignment = WRAP
+        for c in (1, 2, 8, 9):
+            ws.cell(row=r_idx, column=c).alignment = CENTER
+
+        # Row height — taller for content-heavy days
+        ws.row_dimensions[r_idx].height = 130
+
+    autosize(ws, [11, 5, 22, 38, 42, 36, 38, 11, 12])
+
+    # ── Strategy notes section ──
+    notes_row = len(days) + 7
+
+    ws.merge_cells(f"A{notes_row}:I{notes_row}")
+    ws.cell(row=notes_row, column=1, value="HOW TO READ THIS TAB")
+    ws.cell(row=notes_row, column=1).font = SECTION_FONT
+    ws.cell(row=notes_row, column=1).fill = SECTION_FILL
+    ws.cell(row=notes_row, column=1).alignment = CENTER
+    ws.row_dimensions[notes_row].height = 32
+
+    notes = [
+        ("Phase colors",
+         "🔵 Light blue = Week 1 Foundation (build the funnel, push launch). 🟢 Light green = Week 2 Amplify (compound through cross-promo + influencers). 🟠 Light orange = Week 3 Final Push (founder story → HN → launch). Each phase has a different rhythm — Week 1 ships hard, Week 2 nurtures, Week 3 hypes."),
+        ("Daily rhythm (every day)",
+         "✓ Morning (9am ET): daily pick auto-sends to email + tweet (cron). ✓ Mid-morning: you post the day's TikTok + IG content. ✓ Afternoon: respond to comments on yesterday's posts. ✓ Evening: 1-3 outreach DMs OR amplify a hot piece of content. ✓ Night: check tracker, update KPI Dashboard."),
+        ("If Meta CPL > $3",
+         "Day 10 reallocation rule (May 22): kill the worst ad, double the budget on the winner. Don't slowly drift — be ruthless. The Day 10 decision determines whether weeks 2-3 succeed."),
+        ("If a TikTok hits 50K+ views organically",
+         "Spend the $150 TikTok Spark Ads budget on it. Don't try to predict which one — let the algorithm tell you. Boost decision should be within 6 hours of crossing the threshold."),
+        ("If the founder story drop bombs",
+         "Don't double down. Move budget to whatever channel IS working (probably Meta retargeting + the winning TikTok). The story drop is a swing — has to be allowed to miss."),
+        ("If Show HN flops",
+         "Don't post again. Show HN gets one shot — post twice and you get downvote-bombed. Focus on Reddit r/sportsbook + the draw-day moment instead."),
+        ("Cumulative targets",
+         "Daily targets are conservative. Hitting them all = 6,800 signups by EOD May 31. Stretch (2x daily) = 13,600. Baseline goal is 1,500-2,500; everything above that is bonus from the web3 + influencer layers."),
+        ("Track every day",
+         "Tab 1 (KPI Dashboard) holds the metrics. This tab is the PLAN; tab 1 is the SCOREBOARD. Update tab 1 every night before bed (~3 min)."),
+    ]
+    for r, (label, txt) in enumerate(notes, start=notes_row + 1):
+        ws.cell(row=r, column=1, value=label).font = Font(name="Calibri", bold=True, size=11, color=BRAND_BG)
+        ws.merge_cells(f"B{r}:I{r}")
+        ws.cell(row=r, column=2, value=txt).font = BODY_FONT
+        ws.cell(row=r, column=2).alignment = WRAP
+        ws.row_dimensions[r].height = 48
+
+
 # ── README tab (first one) ───────────────────────────────────────────────
 def build_readme(wb):
     ws = wb.create_sheet("0 · README", 0)  # insert first
@@ -751,15 +987,19 @@ def build_readme(wb):
         ("Update cadence: every night before bed. Takes ~3 min.", "body"),
         ("Sundays: full audit + reallocation decisions for the week ahead.", "body"),
         ("", "body"),
-        ("The 8 tabs", "header"),
-        ("1. KPI Dashboard         — top-level daily numbers (signups, CPL, etc.)", "body"),
+        ("⭐ Start here every day", "header"),
+        ("Tab 9 — Daily Strategy — has the day-by-day execution plan for May 14 → May 31. Auto-cron vs. you-post vs. outreach vs. activations, with daily + cumulative signup targets. Open this tab every morning.", "body"),
+        ("", "body"),
+        ("The 9 tabs", "header"),
+        ("1. KPI Dashboard         — top-level daily numbers (signups, CPL, etc.) [your SCOREBOARD]", "body"),
         ("2. Content Calendar      — every post planned + posted, with perf", "body"),
         ("3. Ad Performance        — Meta + TikTok Spark per-day per-ad", "body"),
-        ("4. Channel ROI           — which channel is winning, % of total (40+ channels tracked)", "body"),
-        ("5. Activations           — the 22 viral activations + state (incl. web3 quests, Discord, Founder Pass)", "body"),
+        ("4. Channel ROI           — which channel is winning, % of total (42 channels tracked)", "body"),
+        ("5. Activations           — the 22 viral activations + state (web3 quests, Founder Pass, etc.)", "body"),
         ("6. Influencer Outreach   — the 20-DM micro-trade program", "body"),
         ("7. Pick Performance      — daily pick record (the receipts wall)", "body"),
         ("8. $100K Scenario        — what marketing spend would look like at $1K vs $25K vs $100K", "body"),
+        ("9. Daily Strategy ⭐    — day-by-day execution plan May 14 → May 31 (THE plan)", "body"),
         ("", "body"),
         ("North Star", "header"),
         ("1,500 waitlist signups by May 31. Stretch target: 2,500.", "body"),
@@ -796,6 +1036,7 @@ def main():
     build_influencer_outreach(wb)
     build_pick_performance(wb)
     build_scenario_budget(wb)
+    build_daily_strategy(wb)
     build_readme(wb)  # inserted at position 0
 
     out = Path(__file__).parent / "MASTER_TRACKER.xlsx"
