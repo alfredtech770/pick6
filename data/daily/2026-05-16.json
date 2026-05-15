@@ -1,0 +1,72 @@
+{
+  "date_label": "MAY 16",
+  "pick": {
+    "matchup": "BOS @ MIA",
+    "line": "BOS -3.5",
+    "sport": "NBA",
+    "confidence": 76,
+    "vegas_implied": 58,
+    "tip_time": "7:30 PM ET",
+    "edge_label": "+18 pts",
+    "edge_takeaway": "Boston as a road favorite is mispriced after their road wins last week. Pick1 sees stronger edge than Vegas."
+  },
+  "yesterday": {
+    "pick": "DEN OVER 224.5",
+    "confidence": 81,
+    "verdict": "win",
+    "verdict_label": "✓ WIN",
+    "result_score": "118—108",
+    "result_detail": "COMBINED 226 — COVERED"
+  },
+  "streak": {
+    "window_days": 14,
+    "wins": 10,
+    "losses": 3,
+    "pending": 2,
+    "win_rate": 77,
+    "avg_confidence": 76.8,
+    "clv": 3.2,
+    "clv_label": "+3.2%"
+  },
+  "games": [
+    {
+      "time": "8:00P",
+      "matchup": "DEN @ MIN",
+      "line": "over 224.5",
+      "confidence": 81,
+      "is_pick": true
+    },
+    {
+      "time": "7:00P",
+      "matchup": "BOS @ MIA",
+      "line": "BOS -3.5",
+      "confidence": 67,
+      "is_pick": false
+    },
+    {
+      "time": "7:30P",
+      "matchup": "PHI @ NYK",
+      "line": "over 218",
+      "confidence": 62,
+      "is_pick": false
+    },
+    {
+      "time": "10:00P",
+      "matchup": "LAL @ GSW",
+      "line": "GSW -2.5",
+      "confidence": 58,
+      "is_pick": false
+    },
+    {
+      "time": "10:30P",
+      "matchup": "DAL @ LAC",
+      "line": "over 222",
+      "confidence": 54,
+      "is_pick": false
+    }
+  ],
+  "sweeps": {
+    "days_left": 15,
+    "url": "https://gleam.io/Ivb0j/win-2-fifa-world-cup-tickets-lifetime-pick1-pro"
+  }
+}
