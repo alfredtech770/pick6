@@ -401,7 +401,7 @@ struct OBWelcomeScreen: View {
                             Text("PICK")
                                 .font(.custom("BarlowCondensed-Black", size: 26))
                                 .foregroundColor(.p1Foreground)
-                            Text("6")
+                            Text("1")
                                 .font(.custom("BarlowCondensed-Black", size: 26))
                                 .foregroundColor(.p1Lime)
                         }

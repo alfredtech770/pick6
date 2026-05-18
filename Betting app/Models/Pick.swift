@@ -100,15 +100,53 @@ struct Pick: Identifiable, Codable {
         if let kickoff = liveScore?.startTime, kickoff < now {
             return .awaitingResult
         }
-        let dayStart = Calendar.current.startOfDay(for: now)
+
+        // Day boundary is computed in America/New_York (the pipeline's
+        // timezone — game_date is an ET calendar date). Using
+        // Calendar.current here meant a Pacific-time user near
+        // midnight ET saw the awaiting/upcoming flip 3h off.
+        let etCal = Self.easternCalendar
+        let dayStart = etCal.startOfDay(for: now)
         if let gd = gameDateValue, gd < dayStart {
             return .awaitingResult
+        }
+
+        // Same-day staleness guard. A pick whose game is TODAY (ET),
+        // still pending, with NO live_scores row at all (very common
+        // while the score feed is degraded — see pipeline), would
+        // otherwise fall through to `.upcoming` and render a bare
+        // "VS" badge for a game that kicked off hours ago. There's no
+        // start_time on the Pick itself, so we use a conservative
+        // wall-clock heuristic: by ~11pm ET essentially every
+        // same-day fixture across every league we cover has finished.
+        // Past that hour, a still-ungraded today pick is "awaiting",
+        // not "upcoming". This is deliberately late so a genuine
+        // primetime game (8pm ET kickoff) still reads as upcoming
+        // until it's realistically over.
+        if liveScore == nil,
+           let gd = gameDateValue,
+           etCal.isDate(gd, inSameDayAs: dayStart) {
+            let hourET = etCal.component(.hour, from: now)
+            // 23:00–01:59 ET → the slate is done; ungraded == awaiting.
+            if hourET >= 23 || hourET < 2 {
+                return .awaitingResult
+            }
         }
 
         // Pending + future kickoff (or kickoff unknown but date is
         // today/future) → genuinely upcoming.
         return .upcoming
     }
+
+    /// Calendar pinned to America/New_York. The pipeline writes
+    /// game_date as an ET calendar date, so every day-boundary
+    /// comparison in renderState must use the same zone or a
+    /// West-Coast user sees the wrong day's slate near midnight ET.
+    private static let easternCalendar: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        return c
+    }()
 }
 
 // MARK: - Pick render state

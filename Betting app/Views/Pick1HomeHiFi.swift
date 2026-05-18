@@ -64,6 +64,11 @@ struct Pick1HomeHiFi: View {
     @StateObject private var vm = PicksViewModel()
     @EnvironmentObject private var subs: SubscriptionManager
     @Environment(AuthManager.self) private var auth
+    // Drives the foreground-refresh: when the user returns to the app
+    // we re-pull the slate and rebind realtime if the ET day rolled
+    // over. Without this, an app left open overnight shows a frozen
+    // yesterday feed and never advances to the new day's games.
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -171,6 +176,16 @@ struct Pick1HomeHiFi: View {
         }
         .preferredColorScheme(.dark)
         .task { await vm.startLiveSession() }
+        // Re-pull the slate + rebind realtime whenever the app comes
+        // back to the foreground. Catches: scores that ticked while
+        // backgrounded, games that finished, and (critically) the ET
+        // midnight rollover that would otherwise leave the realtime
+        // filter bound to yesterday's date forever.
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await vm.refreshForForeground() }
+            }
+        }
         .sheet(item: $detailPick) { pick in
             MatchDetailView(pick: pick,
                             liveScore: liveScore(for: pick),

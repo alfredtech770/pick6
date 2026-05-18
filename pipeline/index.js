@@ -733,6 +733,146 @@ async function gradePicks() {
   return graded;
 }
 
+/// Research-mode grading. The score feed (sportsdata.io) requires a
+/// paid subscription; when it's lapsed/403, NO live_scores rows are
+/// ever written, so gradePicks() above finds nothing to grade and
+/// every pick sits at `pending` forever — games never go live, never
+/// flip to W/L. This is the fallback: for pending picks whose game
+/// day has arrived or passed and which have no usable live_scores
+/// row, ask Claude (web_search) for the confirmed FINAL score keyed
+/// off the pick's own teams + date, then grade directly AND write a
+/// synthetic live_scores row so the iOS app renders the final score.
+///
+/// Strictly budget-guarded: PER_TICK_CAP per hourly tick + the shared
+/// daily web_search ceiling. The prompt REQUIRES a confirmed final
+/// score (returns null if the game is in progress / hasn't started /
+/// can't be verified), so we never grade an unfinished game.
+async function gradePicksViaResearch() {
+  const PER_TICK_CAP = 5;
+  const today = todayISO();
+
+  const { data: pending, error: e1 } = await supabase
+    .from('picks')
+    .select('id, game_id, pick, home_team, away_team, sport, league, game_date')
+    .eq('result', 'pending')
+    .lte('game_date', today)            // game day arrived or passed
+    .order('game_date', { ascending: true })
+    .limit(50);
+  if (e1) { err('Research-grade pending fetch failed:', e1.message); return 0; }
+  if (!pending?.length) return 0;
+
+  // Skip any pick that already has a final-scored live_scores row —
+  // gradePicks() (which ran just before us) owns those.
+  const gameIds = [...new Set(pending.map((p) => p.game_id).filter(Boolean))];
+  let scored = new Set();
+  if (gameIds.length) {
+    const { data: rows } = await supabase
+      .from('live_scores')
+      .select('game_id, home_score, away_score, status')
+      .in('game_id', gameIds);
+    for (const r of rows || []) {
+      if (FINAL_STATUSES.has(r.status)
+          && r.home_score != null && r.away_score != null) {
+        scored.add(r.game_id);
+      }
+    }
+  }
+
+  const todo = pending
+    .filter((p) => p.game_id && !scored.has(p.game_id))
+    .slice(0, PER_TICK_CAP);
+  if (!todo.length) return 0;
+
+  if (!checkWebSearchBudget(todo.length)) {
+    log(`💸 Skipping research-grade: daily web_search budget (${WEB_SEARCH_DAILY_LIMIT}) reached.`);
+    return 0;
+  }
+
+  log(`🔎 Research-grading ${todo.length} pending pick(s) via web_search… (budget used: ${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT})`);
+
+  let graded = 0;
+  for (const pick of todo) {
+    const userPrompt = [
+      `Did the ${pick.league} game between ${pick.away_team} (away) and ${pick.home_team} (home) on ${pick.game_date} FINISH? If so, what was the FINAL score?`,
+      `Use web_search to verify against a reliable source (ESPN, official league site, etc.).`,
+      `Reply with ONLY a JSON object: {"final": <bool>, "home_score": <int|null>, "away_score": <int|null>}.`,
+      `Set "final": false (and null scores) if the game is still in progress, has not started, was postponed/cancelled, or you cannot confirm a finished result. Only set "final": true when you have a confirmed FINAL score from a real source.`,
+    ].join('\n');
+
+    try {
+      const stream = anthropic.messages.stream({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 4000,
+        thinking: { type: 'adaptive' },
+        output_config: {
+          effort: 'high',
+          format: { type: 'json_schema', schema: {
+            type: 'object',
+            properties: {
+              final: { type: 'boolean' },
+              home_score: { type: ['integer', 'null'] },
+              away_score: { type: ['integer', 'null'] },
+            },
+            required: ['final', 'home_score', 'away_score'],
+            additionalProperties: false,
+          } },
+        },
+        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
+        messages: [{ role: 'user', content: userPrompt }],
+      });
+      const final = await stream.finalMessage();
+      const text = final.content.find((b) => b.type === 'text')?.text;
+      if (!text) continue;
+      const parsed = JSON.parse(text);
+      if (!parsed.final
+          || parsed.home_score == null
+          || parsed.away_score == null) {
+        continue;   // not finished / unverified — retry next tick
+      }
+
+      const matchesHome = teamsMatch(pick.pick, pick.home_team);
+      const matchesAway = teamsMatch(pick.pick, pick.away_team);
+      if (!matchesHome && !matchesAway) continue;
+
+      const homeWon = parsed.home_score > parsed.away_score;
+      const won = matchesHome === homeWon;
+
+      // 1. Grade the pick.
+      const { error: e3 } = await supabase
+        .from('picks')
+        .update({
+          result: won ? 'win' : 'loss',
+          home_score: parsed.home_score,
+          away_score: parsed.away_score,
+        })
+        .eq('id', pick.id);
+      if (e3) { err(`Research-grade update failed for ${pick.id}:`, e3.message); continue; }
+
+      // 2. Write a synthetic live_scores row so the iOS app shows the
+      //    final score + reads the game as done (renderState already
+      //    short-circuits on the graded result, but the score row
+      //    drives the numeric display on every card surface).
+      await supabase.from('live_scores').upsert({
+        game_id: pick.game_id,
+        sport: pick.sport,
+        home_team: pick.home_team,
+        away_team: pick.away_team,
+        home_score: parsed.home_score,
+        away_score: parsed.away_score,
+        status: 'Final',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'game_id' });
+
+      log(`${won ? '✅ WIN' : '❌ LOSS'} (research): ${pick.pick} (${parsed.away_score}-${parsed.home_score})`);
+      graded++;
+    } catch (e) {
+      err(`Research-grade failed for pick ${pick.id}:`, e.message);
+    }
+  }
+  if (graded) log(`Research-graded ${graded}/${todo.length} pick(s).`);
+  return graded;
+}
+
 // ════════════════════════════════════════════════════════════════
 // PERFORMANCE SNAPSHOTS
 // ════════════════════════════════════════════════════════════════
@@ -870,6 +1010,11 @@ async function gradeAndBackfillTick() {
   try {
     await backfillMissingScores();
     await gradePicks();
+    // Fallback for the sportsdata.io-down case: anything gradePicks()
+    // couldn't settle (no live_scores row at all) gets a web_search
+    // final-score lookup. Budget-guarded; no-ops cheaply when there's
+    // nothing pending past its game day.
+    await gradePicksViaResearch();
   } catch (e) {
     err('Grade tick crashed:', e.message);
   } finally {

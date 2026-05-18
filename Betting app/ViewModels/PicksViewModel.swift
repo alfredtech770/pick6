@@ -527,6 +527,10 @@ class PicksViewModel: ObservableObject {
 
         await channel.subscribe()
         picksChannel = channel
+        // Remember which ET day this channel's filter is bound to so
+        // refreshForForeground() can detect a midnight rollover and
+        // rebind.
+        subscribedDay = today
     }
 
     func subscribeToLiveScores() async {
@@ -576,6 +580,10 @@ class PicksViewModel: ObservableObject {
             await s.unsubscribe()
             scoresChannel = nil
         }
+        // Clear the bound-day marker so the next subscribe records the
+        // fresh day and refreshForForeground()'s rollover guard stays
+        // accurate.
+        subscribedDay = nil
     }
 
     deinit {
@@ -631,11 +639,47 @@ class PicksViewModel: ObservableObject {
 
     // MARK: - Lifecycle
 
+    /// The ET date string the picks realtime channel is currently
+    /// filtered on. Realtime Postgres filters are baked at subscribe
+    /// time (`game_date=eq.<this>`), so we remember which day we bound
+    /// to and rebuild the channel when the ET day rolls over. Without
+    /// this, an app left open past midnight ET keeps listening for
+    /// yesterday's date and never receives the new slate.
+    private var subscribedDay: String?
+
     /// Single entry point for views: fetches today/yesterday/history and
     /// subscribes to realtime updates.
     func startLiveSession() async {
         await loadAll()
         await subscribeToPickUpdates()
         await subscribeToLiveScores()
+    }
+
+    /// Call when the app returns to the foreground (scenePhase →
+    /// .active). Two things can have gone stale while we were away:
+    ///
+    ///   1. The data itself — scores ticked, games finished, the
+    ///      5am cron wrote a fresh slate. A plain `loadAll()` re-pulls
+    ///      today/yesterday/history.
+    ///
+    ///   2. The realtime picks channel's `game_date` filter — if the
+    ///      ET day rolled over while backgrounded, the channel is
+    ///      still bound to the OLD date and will never deliver the
+    ///      new day's inserts. We detect the day change and rebuild
+    ///      the channel (the `picksChannel != nil` guard in
+    ///      subscribeToPickUpdates means a plain re-call is a no-op,
+    ///      so we must tear down first).
+    func refreshForForeground() async {
+        let currentDay = Self.dateString(daysAgo: 0)
+        let dayRolled = (subscribedDay != nil && subscribedDay != currentDay)
+
+        await loadAll()
+
+        if dayRolled {
+            // Rebind realtime to the new day.
+            await stopLiveSession()
+            await subscribeToPickUpdates()
+            await subscribeToLiveScores()
+        }
     }
 }
