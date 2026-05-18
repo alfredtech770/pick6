@@ -143,9 +143,27 @@ struct AuthView: View {
                             await authManager.signInWithApple(idToken: idToken, nonce: appleNonce)
                         }
                     case .failure(let error):
-                        if let authError = error as? ASAuthorizationError,
-                           authError.code == .canceled { return }
-                        authManager.error = error.localizedDescription
+                        guard let authError = error as? ASAuthorizationError else {
+                            authManager.error = "Apple Sign In failed. Please try again."
+                            return
+                        }
+                        switch authError.code {
+                        case .canceled:
+                            // User dismissed the sheet — not an error.
+                            return
+                        case .unknown:
+                            // Code 1000. On a real device this almost
+                            // always means the device isn't signed into
+                            // an Apple Account (Settings → Apple Account),
+                            // or Apple's auth service was unreachable.
+                            authManager.error = "Couldn't reach Sign in with Apple. Make sure you're signed into an Apple Account in iOS Settings, then try again — or continue with email below."
+                        case .notInteractive:
+                            authManager.error = "Sign in with Apple needs to open. Try again, or use email below."
+                        case .failed, .invalidResponse, .notHandled:
+                            authManager.error = "Sign in with Apple failed. Try again, or continue with email below."
+                        @unknown default:
+                            authManager.error = "Sign in with Apple is unavailable right now. Continue with email below."
+                        }
                     }
                 }
                 .signInWithAppleButtonStyle(.white)
