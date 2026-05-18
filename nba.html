@@ -4,99 +4,183 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0b0d" />
-
-<title>AI NBA predictions — Pick1 forecasts every game with confidence scores</title>
-<meta name="description" content="AI-powered NBA predictions for every game — confidence-scored picks on spreads, totals, and player props. Trained on every NBA game since 2018, recalibrated nightly on closing-line value. Like Kalshi or Polymarket, but built for basketball." />
+<title>AI NBA predictions — Pick1</title>
+<meta name="description" content="AI-powered NBA predictions for every game with confidence scores. Tonight's slate, yesterday's results, and live standings." />
 <link rel="canonical" href="https://pick1.live/nba" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
-
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pick1.live/nba" />
 <meta property="og:title" content="AI NBA predictions — Pick1" />
-<meta property="og:description" content="AI-powered NBA predictions with confidence scores. Trained on every NBA game since 2018." />
+<meta property="og:description" content="AI-powered NBA predictions for every game with confidence scores. Tonight's slate, yesterday's results, and live standings." />
 <meta property="og:image" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:site_name" content="Pick1" />
-
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="AI NBA predictions — Pick1" />
-<meta name="twitter:description" content="AI-powered NBA predictions with confidence scores. Every game, every night." />
+<meta name="twitter:description" content="AI-powered NBA predictions for every game with confidence scores. Tonight's slate, yesterday's results, and live standings." />
 <meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
-
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebPage",
-      "@id": "https://pick1.live/nba",
-      "name": "AI NBA Predictions",
-      "url": "https://pick1.live/nba",
-      "description": "AI-powered NBA predictions for every game with confidence scores, live tracking, and a public win/loss ledger.",
-      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
-      "about": [
-        { "@type": "Thing", "name": "NBA" },
-        { "@type": "Thing", "name": "Basketball predictions" },
-        { "@type": "Thing", "name": "AI sports prediction" }
-      ]
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Does Pick1 cover every NBA game?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every regular season and playoff game, including international preseason. The AI evaluates every matchup on the slate and surfaces picks where it sees genuine edge against the closing line." }
-        },
-        {
-          "@type": "Question",
-          "name": "What kind of NBA picks does the AI make?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Spreads, totals (over/under), moneylines, and select player props (points, rebounds, assists). The model is trained on every NBA game since 2018 and recalibrated nightly on closing-line value." }
-        },
-        {
-          "@type": "Question",
-          "name": "How accurate are Pick1's NBA predictions?",
-          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling NBA hit rate is in the 70%+ range on the model's high-confidence picks (75%+ confidence band). Average closing-line value across all NBA picks is +3.6%. Live ledger is published in the app — every pick, win or loss." }
-        }
-      ]
-    }
-  ]
-}
-</script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css" />
-
-<script defer src="/_vercel/insights/script.js"></script>
+<link rel="stylesheet" href="/assets/sport-hub.css" />
 </head>
 <body>
-
-<header class="nav">
-  <a class="logo" href="/">PICK<span class="six">1</span></a>
-  <nav class="nav-links">
-    <a href="/about">About</a>
-    <a href="/methodology" class="hide-mobile">Method</a>
-    <a href="/blog">Blog</a>
-  </nav>
-  <a class="cta-pill" href="/#download">Join Waitlist</a>
-</header>
-
-<main class="page">
-  <header class="page-header">
-    <p class="eyebrow">NBA · Basketball</p>
-    <h1 class="display">AI NBA <em>PREDICTIONS.</em></h1>
-    <p class="lead" style="margin-top:24px;">Every NBA game, every night, with a calibrated probability score from 0–100% and a live win-probability bar that updates in real time. Trained on every NBA game since 2018, recalibrated nightly on closing-line value.</p>
-  </header>
-
-  <div class="stat-row">
-    <div class="stat"><div class="num">+3.6%</div><div class="lbl">Avg CLV (NBA)</div></div>
-    <div class="stat"><div class="num">73%</div><div class="lbl">Hit rate, high-conf picks</div></div>
-    <div class="stat"><div class="num">~1,300</div><div class="lbl">Games / season</div></div>
+<div class="stage"><div class="phone"><div class="screen">
+  <div class="statusbar"><span>9:41</span><div class="notch"></div><div class="icons">
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none"><path d="M1 7l2 2.5 2-3 2 1 2-4 2 2 2-2.5 2 3 2-4" stroke="currentColor" stroke-width="1.2"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M7.5 1.5c-2.5 0-4.5 1-6 2.5M7.5 4.5c-1.5 0-3 .5-4 1.5M7.5 7.5c-.5 0-1 .2-1.5.5" stroke="currentColor" stroke-width="1.2"/><circle cx="7.5" cy="9.5" r="0.8" fill="currentColor"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="21" height="10" rx="2" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><rect x="22.5" y="4" width="1.5" height="3" rx="0.5" fill="currentColor"/></svg>
+    </div></div>
+  <div class="scroll">
+    <div class="topnav"><a class="back" href="/" aria-label="Back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div class="crumb">HOME · <b>BASKETBALL</b></div><div style="width:38px"></div></div>
+    <div class="hero" style="--sport-glow: rgba(231,90,40,0.18)"><h1 class="big">BASKETBALL</h1>
+      <div class="sub"><span class="live-dot"></span><span>Regular Season · Night 104</span><span class="dot"></span><span>12 GAMES TONIGHT · AI 68% YESTERDAY</span></div></div>
+    <div class="pick-hero">
+      <div class="ph-top"><span class="ph-lbl">★ Top AI Pick · Today</span><span class="ph-pill"><span class="dot"></span> -110</span></div>
+      <div class="ph-body">
+        <h2>NUGGETS +2.5<small>HEAT VS NUGGETS</small></h2>
+        <div class="ph-conf"><svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" stroke="rgba(0,0,0,0.15)" stroke-width="5" fill="none"/>
+          <circle cx="36" cy="36" r="30" stroke="var(--accent-ink)" stroke-width="5" fill="none" stroke-dasharray="188.50" stroke-dashoffset="41.47" stroke-linecap="round"/>
+        </svg><div class="n">78<small>AI CONF</small></div></div>
+      </div>
+      <div class="ph-meta"><span class="time">LIVE · Q3 · 4:22 · ATL</span></div></div>
+    <div class="league-rail"><div class="league-chip active"><span class="sw" style="background:#1d428a"></span><span>NBA</span><span class="count">12</span></div><div class="league-chip"><span class="sw" style="background:#552583"></span><span>G-League</span><span class="count">4</span></div><div class="league-chip"><span class="sw" style="background:#ff6600"></span><span>NCAAB</span><span class="count">8</span></div><div class="league-chip"><span class="sw" style="background:#cc0000"></span><span>EuroLeague</span><span class="count">6</span></div></div>
+    <div class="sec-head"><h3>TODAY · LIVE & UPCOMING</h3><div class="meta"><span class="live-dot"></span>4 Games</div></div>
+    <div class="games"><div class="gcard">
+      <div class="gcard-top"><div class="left"><span class="live"><span class="pulse"></span> LIVE · Q3 · 4:22</span><span>EAST · ATL</span></div><div class="ai-pill hot"><span class="k">AI</span>78%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-MIA-98002e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#98002e" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-MIA-98002e)"/>
+    </svg><span class="mono">MIA</span></div><div class="tm-info"><div class="tm-name">HEAT</div><div class="tm-sub">22-14</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="loss-side">88</span><span class="sep">–</span><span class="win-side">91</span></div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-DEN-0e2240" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#0e2240" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-DEN-0e2240)"/>
+    </svg><span class="mono">DEN</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">NUGGETS</div><div class="tm-sub">25-11</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>NUGGETS</b> +2.5</div><div class="odds">-110</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>EAST · BOS</span></div><div class="ai-pill hot"><span class="k">AI</span>72%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BOS-007a33" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#007a33" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BOS-007a33)"/>
+    </svg><span class="mono">BOS</span></div><div class="tm-info"><div class="tm-name">CELTICS</div><div class="tm-sub">28-7</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">19:30</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-LAL-552583" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#552583" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-LAL-552583)"/>
+    </svg><span class="mono">LAL</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">LAKERS</div><div class="tm-sub">18-18</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>CELTICS</b> -5.5</div><div class="odds">-108</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>WEST · GSW</span></div><div class="ai-pill"><span class="k">AI</span>61%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-PHX-1d1160" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#1d1160" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-PHX-1d1160)"/>
+    </svg><span class="mono">PHX</span></div><div class="tm-info"><div class="tm-name">SUNS</div><div class="tm-sub">19-17</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">21:00</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-GSW-1d428a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#1d428a" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-GSW-1d428a)"/>
+    </svg><span class="mono">GSW</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">WARRIORS</div><div class="tm-sub">21-15</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>OVER 228.5</b></div><div class="odds">-105</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>WEST · LAC</span></div><div class="ai-pill"><span class="k">AI</span>69%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-LAC-c8102e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#c8102e" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-LAC-c8102e)"/>
+    </svg><span class="mono">LAC</span></div><div class="tm-info"><div class="tm-name">CLIPPERS</div><div class="tm-sub">23-13</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">21:30</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-CHI-ce1141" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#ce1141" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-CHI-ce1141)"/>
+    </svg><span class="mono">CHI</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">BULLS</div><div class="tm-sub">14-21</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>CLIPPERS</b> -7.5</div><div class="odds">-110</div></div></div></div>
+    
+        <div class="sec-head"><h3>YESTERDAY</h3><div class="meta">AI 70% · 7-3</div></div>
+        <div class="yday-sum">
+      <div class="yday-tile win"><div class="k">Record</div><div class="v">7-3</div></div>
+      <div class="yday-tile rate"><div class="k">Hit Rate</div><div class="v">70<small>%</small></div></div>
+      <div class="yday-tile"><div class="k">Top Bet</div><div class="v" style="font-size:18px;color:var(--accent)">+$248</div></div></div>
+        <div class="games"><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>EAST · YESTERDAY · FINAL</span></div><div class="badge-result w" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> AI WON</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-NYK-006bb6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#006bb6" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-NYK-006bb6)"/>
+    </svg><span class="mono">NYK</span></div><div class="tm-info"><div class="tm-name">KNICKS</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="win-side">118</span><span class="sep">–</span><span class="loss-side">112</span></div></div>
+        <div class="team-mini right is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BOS-007a33" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#007a33" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BOS-007a33)"/>
+    </svg><span class="mono">BOS</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">CELTICS</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>KNICKS ML</b> · +145</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>WEST · YESTERDAY · FINAL</span></div><div class="badge-result l" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span> AI LOST</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-HOU-c9082a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#c9082a" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-HOU-c9082a)"/>
+    </svg><span class="mono">HOU</span></div><div class="tm-info"><div class="tm-name">ROCKETS</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="loss-side">102</span><span class="sep">–</span><span class="win-side">110</span></div></div>
+        <div class="team-mini right is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-MEM-002b5c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#002b5c" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-MEM-002b5c)"/>
+    </svg><span class="mono">MEM</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">GRIZZLIES</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>ROCKETS -3.5</b> · -110</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>EAST · YESTERDAY · FINAL</span></div><div class="badge-result w" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> AI WON</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-MIA-98002e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#98002e" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-MIA-98002e)"/>
+    </svg><span class="mono">MIA</span></div><div class="tm-info"><div class="tm-name">HEAT</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="win-side">109</span><span class="sep">–</span><span class="loss-side">98</span></div></div>
+        <div class="team-mini right is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BKN-061922" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#061922" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BKN-061922)"/>
+    </svg><span class="mono">BKN</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">NETS</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>OVER 215.5</b> · -108</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>WEST · YESTERDAY · FINAL</span></div><div class="badge-result p" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span> PUSH</div></div>
+      <div class="gcard-body">
+        <div class="team-mini "><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-UTA-fdb927" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#fdb927" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-UTA-fdb927)"/>
+    </svg><span class="mono">UTA</span></div><div class="tm-info"><div class="tm-name">JAZZ</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="">104</span><span class="sep">–</span><span class="">104</span></div></div>
+        <div class="team-mini right "><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-PHX-e56020" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#e56020" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-PHX-e56020)"/>
+    </svg><span class="mono">PHX</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">SUNS</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>JAZZ +4.5</b> · -110</div></div></div></div>
+    <div class="sec-head"><h3>STANDINGS</h3><div class="meta">TOP 5</div></div>
+    <div class="standings"><div class="std-head"><span class="r-num">#</span><span class="r-n">TEAM</span><span class="r-w">W</span><span class="r-l">L</span><span class="r-pct">PCT</span></div><div class="std-row top"><span class="pos">1</span><span class="team-n"><span class="tag" style="background:#007a33"></span>BOSTON</span><span class="w">28</span><span class="l">7</span><span class="pct">.800</span></div><div class="std-row top"><span class="pos">2</span><span class="team-n"><span class="tag" style="background:#0e2240"></span>DENVER</span><span class="w">25</span><span class="l">11</span><span class="pct">.694</span></div><div class="std-row"><span class="pos">3</span><span class="team-n"><span class="tag" style="background:#007ac1"></span>OKC</span><span class="w">24</span><span class="l">11</span><span class="pct">.686</span></div><div class="std-row"><span class="pos">4</span><span class="team-n"><span class="tag" style="background:#00471b"></span>MILWAUKEE</span><span class="w">23</span><span class="l">12</span><span class="pct">.657</span></div><div class="std-row"><span class="pos">5</span><span class="team-n"><span class="tag" style="background:#98002e"></span>MIAMI</span><span class="w">22</span><span class="l">14</span><span class="pct">.611</span></div></div>
   </div>
+<<<<<<< Updated upstream
 
   <h2>What the AI <em>predicts</em></h2>
 
@@ -186,5 +270,28 @@
     <a href="mailto:hi@pick1.live">Contact</a>
   </div>
 </footer>
+=======
+  <nav class="navbar">
+      <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10 L12 3 L21 10 V21 H14 V14 H10 V21 H3 Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Home</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 L14.5 9 L21 9.5 L16 14 L17.5 20.5 L12 17 L6.5 20.5 L8 14 L3 9.5 L9.5 9 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="lbl">Picks</span></div>
+      <div class="nav-item live-pill"><span class="pulse"></span><span class="live-n">1</span><span class="lbl">Live</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20 C5 16 8 14 12 14 C16 14 19 16 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="lbl">Profile</span></div>
+    </nav>
+</div></div></div>
+<script>
+  document.querySelectorAll('.league-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.league-chip').forEach(o => o.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(o => o.classList.remove('active'));
+      n.classList.add('active');
+    });
+  });
+</script>
+>>>>>>> Stashed changes
 </body>
 </html>

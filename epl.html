@@ -4,90 +4,183 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0b0d" />
-
-<title>AI Premier League predictions — Pick1 forecasts every EPL match</title>
-<meta name="description" content="AI-powered Premier League predictions for every match — confidence-scored picks on match results, totals, BTTS, and player props. Trained on every EPL match since 2018, recalibrated nightly on closing-line value." />
+<title>AI Soccer predictions — Pick1</title>
+<meta name="description" content="AI-powered Premier League and Champions League predictions with confidence scores. Today's matches, yesterday's results, and the league table." />
 <link rel="canonical" href="https://pick1.live/epl" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
-
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pick1.live/epl" />
-<meta property="og:title" content="AI Premier League predictions — Pick1" />
-<meta property="og:description" content="AI-powered EPL predictions with confidence scores. Every match, every gameweek." />
+<meta property="og:title" content="AI Soccer predictions — Pick1" />
+<meta property="og:description" content="AI-powered Premier League and Champions League predictions with confidence scores. Today's matches, yesterday's results, and the league table." />
 <meta property="og:image" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:site_name" content="Pick1" />
-
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="AI EPL predictions — Pick1" />
-<meta name="twitter:description" content="AI-powered Premier League predictions with confidence scores. Every match, every gameweek." />
+<meta name="twitter:title" content="AI Soccer predictions — Pick1" />
+<meta name="twitter:description" content="AI-powered Premier League and Champions League predictions with confidence scores. Today's matches, yesterday's results, and the league table." />
 <meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
-
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebPage",
-      "@id": "https://pick1.live/epl",
-      "name": "AI Premier League Predictions",
-      "url": "https://pick1.live/epl",
-      "description": "AI-powered EPL predictions for every match with confidence scores, live tracking, and a public win/loss ledger.",
-      "isPartOf": { "@type": "WebSite", "name": "Pick1", "url": "https://pick1.live/" },
-      "about": [
-        { "@type": "Thing", "name": "English Premier League" },
-        { "@type": "Thing", "name": "Soccer predictions" },
-        { "@type": "Thing", "name": "AI sports prediction" }
-      ]
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        { "@type": "Question", "name": "Does Pick1 cover every Premier League match?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every regular-season match across all 380 fixtures, plus FA Cup, League Cup, and European competition (Champions League, Europa League) for English clubs." } },
-        { "@type": "Question", "name": "How accurate are Pick1's EPL predictions?",
-          "acceptedAnswer": { "@type": "Answer", "text": "30-day rolling EPL hit rate is in the 65–70% range on high-confidence picks. Average closing-line value across all EPL picks is +3.4%. Live ledger is published in the app — every pick, win or loss." } },
-        { "@type": "Question", "name": "Does the AI predict BTTS and over/under?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Both Teams to Score (BTTS) and over/under markets are core outputs. The model produces calibrated probabilities for each across every match." } }
-      ]
-    }
-  ]
-}
-</script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css" />
-
-<script defer src="/_vercel/insights/script.js"></script>
+<link rel="stylesheet" href="/assets/sport-hub.css" />
 </head>
 <body>
-
-<header class="nav">
-  <a class="logo" href="/">PICK<span class="six">1</span></a>
-  <nav class="nav-links">
-    <a href="/about">About</a>
-    <a href="/methodology" class="hide-mobile">Method</a>
-    <a href="/blog">Blog</a>
-  </nav>
-  <a class="cta-pill" href="/#download">Join Waitlist</a>
-</header>
-
-<main class="page">
-  <header class="page-header">
-    <p class="eyebrow">EPL · Premier League</p>
-    <h1 class="display">AI PREMIER LEAGUE <em>PREDICTIONS.</em></h1>
-    <p class="lead" style="margin-top:24px;">Every Premier League match with calibrated probabilities for match result (1X2), totals, both-teams-to-score, and corner/card markets. Plus FA Cup, League Cup, Champions League, and Europa League fixtures for English clubs.</p>
-  </header>
-
-  <div class="stat-row">
-    <div class="stat"><div class="num">+3.4%</div><div class="lbl">Avg CLV (EPL)</div></div>
-    <div class="stat"><div class="num">68%</div><div class="lbl">Hit rate, high-conf picks</div></div>
-    <div class="stat"><div class="num">380+</div><div class="lbl">Matches / season</div></div>
+<div class="stage"><div class="phone"><div class="screen">
+  <div class="statusbar"><span>9:41</span><div class="notch"></div><div class="icons">
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none"><path d="M1 7l2 2.5 2-3 2 1 2-4 2 2 2-2.5 2 3 2-4" stroke="currentColor" stroke-width="1.2"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M7.5 1.5c-2.5 0-4.5 1-6 2.5M7.5 4.5c-1.5 0-3 .5-4 1.5M7.5 7.5c-.5 0-1 .2-1.5.5" stroke="currentColor" stroke-width="1.2"/><circle cx="7.5" cy="9.5" r="0.8" fill="currentColor"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="21" height="10" rx="2" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><rect x="22.5" y="4" width="1.5" height="3" rx="0.5" fill="currentColor"/></svg>
+    </div></div>
+  <div class="scroll">
+    <div class="topnav"><a class="back" href="/" aria-label="Back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div class="crumb">HOME · <b>SOCCER</b></div><div style="width:38px"></div></div>
+    <div class="hero" style="--sport-glow: rgba(212,255,58,0.15)"><h1 class="big">SOCCER</h1>
+      <div class="sub"><span>Premier League · Matchday 34</span><span class="dot"></span><span>7 MATCHES TODAY · AI 64% YESTERDAY</span></div></div>
+    <div class="pick-hero">
+      <div class="ph-top"><span class="ph-lbl">★ Top AI Pick · Today</span><span class="ph-pill"><span class="dot"></span> -140</span></div>
+      <div class="ph-body">
+        <h2>BOTH TO SCORE<small>LIVERPOOL VS SPURS</small></h2>
+        <div class="ph-conf"><svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" stroke="rgba(0,0,0,0.15)" stroke-width="5" fill="none"/>
+          <circle cx="36" cy="36" r="30" stroke="var(--accent-ink)" stroke-width="5" fill="none" stroke-dasharray="188.50" stroke-dashoffset="49.01" stroke-linecap="round"/>
+        </svg><div class="n">74<small>AI CONF</small></div></div>
+      </div>
+      <div class="ph-meta"><span class="time">20:00 · ANFIELD</span></div></div>
+    <div class="league-rail"><div class="league-chip active"><span class="sw" style="background:#3d195b"></span><span>Premier League</span><span class="count">7</span></div><div class="league-chip"><span class="sw" style="background:#ff4b44"></span><span>La Liga</span><span class="count">5</span></div><div class="league-chip"><span class="sw" style="background:#d20515"></span><span>Bundesliga</span><span class="count">6</span></div><div class="league-chip"><span class="sw" style="background:#008fd7"></span><span>Serie A</span><span class="count">4</span></div><div class="league-chip"><span class="sw" style="background:#0e1e5b"></span><span>Champions Lg</span><span class="count">2</span></div><div class="league-chip"><span class="sw" style="background:#001d39"></span><span>MLS</span><span class="count">3</span></div></div>
+    <div class="sec-head"><h3>TODAY</h3><div class="meta">4 Games</div></div>
+    <div class="games"><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>MD 34 · EMIRATES</span></div><div class="ai-pill hot"><span class="k">AI</span>67%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-ARS-ef0107" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#ef0107" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-ARS-ef0107)"/>
+    </svg><span class="mono">ARS</span></div><div class="tm-info"><div class="tm-name">ARSENAL</div><div class="tm-sub">W-W-D-W-W</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">15:00</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-CHE-034694" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#034694" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-CHE-034694)"/>
+    </svg><span class="mono">CHE</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">CHELSEA</div><div class="tm-sub">D-L-W-D-L</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>ARSENAL WIN</b></div><div class="odds">-165</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>MD 34 · ETIHAD</span></div><div class="ai-pill hot"><span class="k">AI</span>71%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-MCI-6cabdd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#6cabdd" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-MCI-6cabdd)"/>
+    </svg><span class="mono">MCI</span></div><div class="tm-info"><div class="tm-name">MAN CITY</div><div class="tm-sub">W-W-W-D-W</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">17:30</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-NEW-241f20" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#241f20" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-NEW-241f20)"/>
+    </svg><span class="mono">NEW</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">NEWCASTLE</div><div class="tm-sub">W-D-L-W-W</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>MAN CITY -1.5</b></div><div class="odds">-120</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>MD 34 · ANFIELD</span></div><div class="ai-pill hot"><span class="k">AI</span>74%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-LIV-c8102e" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#c8102e" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-LIV-c8102e)"/>
+    </svg><span class="mono">LIV</span></div><div class="tm-info"><div class="tm-name">LIVERPOOL</div><div class="tm-sub">W-W-W-W-D</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">20:00</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-TOT-132257" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#132257" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-TOT-132257)"/>
+    </svg><span class="mono">TOT</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">SPURS</div><div class="tm-sub">L-W-D-W-L</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>BOTH TO SCORE</b></div><div class="odds">-140</div></div></div><div class="gcard">
+      <div class="gcard-top"><div class="left"><span>MD 34 · OLD TRAFFORD</span></div><div class="ai-pill"><span class="k">AI</span>58%</div></div>
+      <div class="gcard-body">
+        <div class="team-mini"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-MUN-da291c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#da291c" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-MUN-da291c)"/>
+    </svg><span class="mono">MUN</span></div><div class="tm-info"><div class="tm-name">MAN UTD</div><div class="tm-sub">L-W-L-D-W</div></div></div>
+        <div class="center-col"><div class="vs-txt">VS</div><div class="time-txt">14:00</div></div>
+        <div class="team-mini right"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-EVE-274488" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#274488" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-EVE-274488)"/>
+    </svg><span class="mono">EVE</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">EVERTON</div><div class="tm-sub">D-L-L-W-D</div></div></div>
+      </div>
+      <div class="gcard-pick"><div class="pk"><span class="ai">AI</span><b>UNDER 2.5</b></div><div class="odds">+105</div></div></div></div>
+    
+        <div class="sec-head"><h3>YESTERDAY</h3><div class="meta">AI 60% · 3-2</div></div>
+        <div class="yday-sum">
+      <div class="yday-tile win"><div class="k">Record</div><div class="v">3-2</div></div>
+      <div class="yday-tile rate"><div class="k">Hit Rate</div><div class="v">60<small>%</small></div></div>
+      <div class="yday-tile"><div class="k">Top Bet</div><div class="v" style="font-size:18px;color:var(--accent)">+$120</div></div></div>
+        <div class="games"><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>LA LIGA · YESTERDAY · FINAL</span></div><div class="badge-result w" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> AI WON</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BAR-004d98" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#004d98" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BAR-004d98)"/>
+    </svg><span class="mono">BAR</span></div><div class="tm-info"><div class="tm-name">BARCELONA</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="win-side">2</span><span class="sep">–</span><span class="loss-side">1</span></div></div>
+        <div class="team-mini right is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-RMA-ffffff" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#ffffff" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-RMA-ffffff)"/>
+    </svg><span class="mono">RMA</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">REAL MADRID</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>BARCELONA WIN</b> · +110</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>BUNDESLIGA · YESTERDAY · FINAL</span></div><div class="badge-result w" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> AI WON</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BAY-d20515" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#d20515" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BAY-d20515)"/>
+    </svg><span class="mono">BAY</span></div><div class="tm-info"><div class="tm-name">BAYERN</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="win-side">3</span><span class="sep">–</span><span class="loss-side">0</span></div></div>
+        <div class="team-mini right is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-DOR-fde100" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#fde100" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-DOR-fde100)"/>
+    </svg><span class="mono">DOR</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">DORTMUND</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>BAYERN -2.5</b> · +125</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>SERIE A · YESTERDAY · FINAL</span></div><div class="badge-result l" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span> AI LOST</div></div>
+      <div class="gcard-body">
+        <div class="team-mini is-loser"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-JUV-1c1c1c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#1c1c1c" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-JUV-1c1c1c)"/>
+    </svg><span class="mono">JUV</span></div><div class="tm-info"><div class="tm-name">JUVENTUS</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="loss-side">1</span><span class="sep">–</span><span class="win-side">2</span></div></div>
+        <div class="team-mini right is-winner"><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-INT-010e80" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#010e80" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-INT-010e80)"/>
+    </svg><span class="mono">INT</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">INTER</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>JUVE WIN</b> · +180</div></div></div><div class="gcard past">
+      <div class="gcard-top"><div class="left"><span>EPL · YESTERDAY · FINAL</span></div><div class="badge-result w" style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> AI WON</div></div>
+      <div class="gcard-body">
+        <div class="team-mini "><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-WHU-1b458f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#1b458f" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-WHU-1b458f)"/>
+    </svg><span class="mono">WHU</span></div><div class="tm-info"><div class="tm-name">WEST HAM</div></div></div>
+        <div class="center-col"><div class="score-big"><span class="">2</span><span class="sep">–</span><span class="">2</span></div></div>
+        <div class="team-mini right "><div class="crest"><svg class="crest-shield" viewBox="0 0 52 58" preserveAspectRatio="none">
+      <defs><linearGradient id="cs-BHA-6cabdd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.22)"/><stop offset="40%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="#6cabdd" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+      <path d="M 26 2 L 49 8 L 49 32 Q 49 48 26 56 Q 3 48 3 32 L 3 8 Z" fill="url(#cs-BHA-6cabdd)"/>
+    </svg><span class="mono">BHA</span></div><div class="tm-info" style="text-align:right"><div class="tm-name">BRIGHTON</div></div></div>
+      </div>
+      <div class="result-strip"><div class="pick-txt"><span class="ai">AI PICK</span><b>OVER 2.5</b> · -108</div></div></div></div>
+    <div class="sec-head"><h3>STANDINGS</h3><div class="meta">TOP 5</div></div>
+    <div class="standings"><div class="std-head"><span class="r-num">#</span><span class="r-n">TEAM</span><span class="r-w">W</span><span class="r-l">L</span><span class="r-pct">PCT</span></div><div class="std-row top"><span class="pos">1</span><span class="team-n"><span class="tag" style="background:#6cabdd"></span>MAN CITY</span><span class="w">24</span><span class="l">4</span><span class="pct">77PT</span></div><div class="std-row top"><span class="pos">2</span><span class="team-n"><span class="tag" style="background:#ef0107"></span>ARSENAL</span><span class="w">22</span><span class="l">5</span><span class="pct">73PT</span></div><div class="std-row"><span class="pos">3</span><span class="team-n"><span class="tag" style="background:#c8102e"></span>LIVERPOOL</span><span class="w">21</span><span class="l">4</span><span class="pct">72PT</span></div><div class="std-row"><span class="pos">4</span><span class="team-n"><span class="tag" style="background:#132257"></span>TOTTENHAM</span><span class="w">17</span><span class="l">8</span><span class="pct">60PT</span></div><div class="std-row"><span class="pos">5</span><span class="team-n"><span class="tag" style="background:#670e36"></span>ASTON VILLA</span><span class="w">16</span><span class="l">9</span><span class="pct">57PT</span></div></div>
   </div>
+<<<<<<< Updated upstream
 
   <h2>What the AI <em>predicts</em></h2>
 
@@ -174,5 +267,28 @@
     <a href="mailto:hi@pick1.live">Contact</a>
   </div>
 </footer>
+=======
+  <nav class="navbar">
+      <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10 L12 3 L21 10 V21 H14 V14 H10 V21 H3 Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Home</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 L14.5 9 L21 9.5 L16 14 L17.5 20.5 L12 17 L6.5 20.5 L8 14 L3 9.5 L9.5 9 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="lbl">Picks</span></div>
+      
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20 C5 16 8 14 12 14 C16 14 19 16 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="lbl">Profile</span></div>
+    </nav>
+</div></div></div>
+<script>
+  document.querySelectorAll('.league-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.league-chip').forEach(o => o.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(o => o.classList.remove('active'));
+      n.classList.add('active');
+    });
+  });
+</script>
+>>>>>>> Stashed changes
 </body>
 </html>
