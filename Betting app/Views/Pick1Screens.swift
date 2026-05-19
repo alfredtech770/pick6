@@ -1671,10 +1671,20 @@ struct SportHubView: View {
                         .padding(.bottom, 18)
 
                     // ── PICK HERO (top AI pick of the day) ───────────
+                    // Same featured-frame component as the home screen
+                    // (HeroCard, embedded mode) so the design — dark
+                    // surface, animated acid border, two-line headline,
+                    // lime confidence ring, crest pair — is identical
+                    // across Home and every sport page.
                     if let top = topPick {
-                        SmallPickHero(pick: top, onTap: { onTapPick(top) })
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 14)
+                        Button { onTapPick(top) } label: {
+                            HeroCard(pick: top,
+                                     isLive: liveScore(for: top)?.isLive == true,
+                                     embedded: true)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 14)
                     }
 
                     // ── LEAGUE RAIL (horizontal pill row of leagues) ─
@@ -1897,9 +1907,18 @@ struct SportHubView: View {
 
     private func leagueChip(_ l: LeagueChip) -> some View {
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(l.swatch)
-                .frame(width: 10, height: 10)
+            // League symbol — a sport SF Symbol on the league's brand
+            // swatch. Replaces the plain colored square so each league
+            // reads at a glance (basketball/football/etc.) instead of
+            // being just a color the user has to decode.
+            Image(systemName: leagueSymbol(l.id))
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 18, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(l.swatch)
+                )
             Text(l.name)
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(1.6)
@@ -1916,6 +1935,46 @@ struct SportHubView: View {
         .overlay(Capsule().stroke(l.active ? Color(hex: "#F5F3EE")
                                             : Color(hex: "#22252B"),
                                   lineWidth: 1))
+    }
+
+    /// SF Symbol for a league id. Falls back to the parent sport's
+    /// symbol so sister leagues (G-League, NCAAF, KHL…) still read
+    /// correctly, and a generic glyph for anything unmapped.
+    private func leagueSymbol(_ leagueId: String) -> String {
+        switch leagueId {
+        case "nba", "gleague", "ncaab", "euroleague":
+            return "basketball.fill"
+        case "nfl", "ncaaf", "cfl", "xfl":
+            return "football.fill"
+        case "epl", "laliga", "bundesliga", "seriea", "ucl", "mls":
+            return "soccerball"
+        case "mlb", "npb", "kbo":
+            return "baseball.fill"
+        case "nhl", "khl", "ahl", "ncaa":
+            return "hockey.puck.fill"
+        case "ipl", "bbl", "t20i", "test":
+            return "figure.cricket"
+        case "atp", "wta", "slam":
+            return "tennis.racket"
+        case "f1":
+            return "car.fill"
+        case "combat", "ufc":
+            return "figure.boxing"
+        default:
+            // Fall back to the active sport's symbol.
+            switch sport {
+            case "basketball": return "basketball.fill"
+            case "football":   return "football.fill"
+            case "soccer":     return "soccerball"
+            case "baseball":   return "baseball.fill"
+            case "hockey":     return "hockey.puck.fill"
+            case "cricket":    return "figure.cricket"
+            case "tennis":     return "tennis.racket"
+            case "f1":         return "car.fill"
+            case "combat":     return "figure.boxing"
+            default:           return "sportscourt.fill"
+            }
+        }
     }
 
     // ════════════════════════════════════════════════════════════

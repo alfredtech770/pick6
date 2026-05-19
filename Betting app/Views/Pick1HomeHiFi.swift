@@ -423,6 +423,13 @@ struct HomeHiFiContent: View {
 struct HeroCard: View {
     let pick: Pick?
     let isLive: Bool
+    /// `false` (home screen): renders the Pick1 logo + HeroPill top bar
+    /// and a 56pt status-bar inset (the card bleeds under the status bar
+    /// on Home). `true` (sport-hub / embedded): no top bar, normal top
+    /// padding — the host screen already has its own TopNavBar. Same
+    /// surface, same AcidBorder, same lime confidence ring either way,
+    /// so the featured frame is visually identical everywhere.
+    var embedded: Bool = false
 
     static var empty: HeroCard { HeroCard(pick: nil, isLive: false) }
 
@@ -458,12 +465,14 @@ struct HeroCard: View {
             .allowsHitTesting(false)
 
             VStack(alignment: .leading, spacing: 22) {
-                heroTopBar
+                if !embedded { heroTopBar }
                 heroBody
             }
             .padding(.horizontal, 22)
-            .padding(.top, 56)        // status-bar inset
-            .padding(.bottom, 32)
+            // Home bleeds under the status bar (56pt inset); embedded
+            // sits below a TopNavBar so it just needs normal padding.
+            .padding(.top, embedded ? 22 : 56)
+            .padding(.bottom, embedded ? 22 : 32)
 
             // Animated acid-green border — a conic gradient stroked
             // around the card's perimeter, rotating slowly. The
@@ -557,7 +566,11 @@ struct HeroCard: View {
                 // OTHER" in white. Reads "ADESANYA / over VOLKANOVSKI"
                 // at a glance: the lime line is the call, the white
                 // line is the opponent.
-                VStack(alignment: .leading, spacing: pick == nil ? -28 : -7) {
+                // Consistent line spacing whether or not there's a pick.
+                // Previously the empty "NO PICKS / YET" state used -28
+                // (cramped) vs -7 for a real pick, so the featured frame
+                // jumped between layouts. One value everywhere.
+                VStack(alignment: .leading, spacing: -7) {
                     ForEach(Array(headlineLines.enumerated()), id: \.offset) { idx, line in
                         Text(line)
                             .font(.anton(50))
