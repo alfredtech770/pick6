@@ -1907,18 +1907,16 @@ struct SportHubView: View {
 
     private func leagueChip(_ l: LeagueChip) -> some View {
         HStack(spacing: 8) {
-            // League symbol — a sport SF Symbol on the league's brand
-            // swatch. Replaces the plain colored square so each league
-            // reads at a glance (basketball/football/etc.) instead of
-            // being just a color the user has to decode.
-            Image(systemName: leagueSymbol(l.id))
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 18, height: 18)
-                .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(l.swatch)
-                )
+            // Real league crest (Champions League, Bundesliga, La
+            // Liga, NBA, NFL …) hot-linked from ESPN's league-logo
+            // CDN. Leagues ESPN doesn't serve (NCAAF, CFL, tennis
+            // tours, F1) fall back to the sport SF Symbol on the
+            // league's brand swatch — so every league still has a
+            // distinct visual identity, never a bare colored square.
+            LeagueLogo(leagueId: l.id,
+                       fallbackSymbol: leagueSymbol(l.id),
+                       swatch: l.swatch,
+                       size: 18)
             Text(l.name)
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(1.6)

@@ -55,6 +55,106 @@ struct TeamLogo: View {
 }
 
 // ════════════════════════════════════════════════════════════════
+// MARK: - LeagueLogo — real league crest for sport-hub league chips
+// ════════════════════════════════════════════════════════════════
+
+/// Renders a league's real crest (UEFA Champions League, Bundesliga,
+/// La Liga, NBA, NFL …) hot-linked from ESPN's public league-logo CDN —
+/// the same approach `TeamLogo` already uses for team crests. Leagues
+/// ESPN doesn't serve a logo for (NCAAF, CFL, the tennis tours, F1)
+/// fall back to a clean branded tile: a white sport SF Symbol on the
+/// league's brand-color swatch.
+///
+/// All endpoints were curl-probed (HTTP 200) before mapping; see
+/// `LeagueLogoLookup.url(_:)`.
+struct LeagueLogo: View {
+    let leagueId: String
+    /// SF Symbol used when there's no ESPN logo for this league.
+    let fallbackSymbol: String
+    /// Brand color for the fallback tile background.
+    let swatch: Color
+    var size: CGFloat = 18
+
+    var body: some View {
+        if let url = LeagueLogoLookup.url(leagueId) {
+            AsyncImage(url: url,
+                       transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
+                switch phase {
+                case .success(let image):
+                    // League marks are designed for a light ground, so
+                    // sit them on a small white tile regardless of the
+                    // chip's active/inactive state.
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(2)
+                        .frame(width: size, height: size)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(Color.white)
+                        )
+                case .empty, .failure:
+                    fallbackTile
+                @unknown default:
+                    fallbackTile
+                }
+            }
+            .frame(width: size, height: size)
+        } else {
+            fallbackTile
+        }
+    }
+
+    private var fallbackTile: some View {
+        Image(systemName: fallbackSymbol)
+            .font(.system(size: size * 0.5, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: size, height: size)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(swatch)
+            )
+    }
+}
+
+/// Maps a Pick1 league id → an ESPN CDN league-logo URL. Endpoints
+/// confirmed live (HTTP 200) by curl probe:
+///   • Soccer  https://a.espncdn.com/i/leaguelogos/soccer/500/{espnId}.png
+///   • US      https://a.espncdn.com/i/teamlogos/leagues/500/{slug}.png
+///   • Cricket https://a.espncdn.com/i/leaguelogos/cricket/500/{espnId}.png
+/// Anything not mapped returns nil → LeagueLogo draws the branded
+/// SF-symbol fallback tile instead.
+enum LeagueLogoLookup {
+    static func url(_ leagueId: String) -> URL? {
+        let path: String?
+        switch leagueId {
+        // ── Soccer (ESPN numeric competition IDs) ──
+        case "ucl":        path = "leaguelogos/soccer/500/2"
+        case "epl":        path = "leaguelogos/soccer/500/23"
+        case "laliga":     path = "leaguelogos/soccer/500/15"
+        case "bundesliga": path = "leaguelogos/soccer/500/10"
+        case "seriea":     path = "leaguelogos/soccer/500/12"
+        case "mls":        path = "leaguelogos/soccer/500/19"
+        // ── US major leagues ──
+        case "nba":        path = "teamlogos/leagues/500/nba"
+        case "nfl":        path = "teamlogos/leagues/500/nfl"
+        case "mlb":        path = "teamlogos/leagues/500/mlb"
+        case "nhl":        path = "teamlogos/leagues/500/nhl"
+        case "xfl":        path = "teamlogos/leagues/500/xfl"
+        case "ufc":        path = "teamlogos/leagues/500/ufc"
+        // ── Cricket ──
+        case "ipl":        path = "leaguelogos/cricket/500/8048"
+        // No ESPN logo: gleague, ncaab, euroleague, ncaaf, cfl,
+        // npb, kbo, khl, ahl, ncaa, bbl, t20i, test, atp, wta,
+        // slam, f1 → branded fallback tile.
+        default:           path = nil
+        }
+        guard let path else { return nil }
+        return URL(string: "https://a.espncdn.com/i/\(path).png")
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
 // MARK: - AthleteHeadshot — circular face for individual sports
 // ════════════════════════════════════════════════════════════════
 
