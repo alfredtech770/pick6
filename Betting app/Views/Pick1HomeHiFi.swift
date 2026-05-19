@@ -247,6 +247,9 @@ struct HomeHiFiContent: View {
     let onTapSport: (String) -> Void
     let onUnlock: () -> Void
 
+    /// Drives the FIFA World Cup hub presentation (full-screen cover).
+    @State private var showWorldCup = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -275,6 +278,14 @@ struct HomeHiFiContent: View {
                          record: vm.recentRecord(),
                          mood: vm.accuracyMood,
                          last10: vm.last10Results)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
+                // FIFA World Cup banner — sits between the stats row
+                // and the sport filter, exactly per the design
+                // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
+                // the full World Cup hub.
+                FIFAWorldCupBanner(onTap: { showWorldCup = true })
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -378,6 +389,9 @@ struct HomeHiFiContent: View {
         .refreshable {
             await vm.loadAll()
             Haptics.success()
+        }
+        .fullScreenCover(isPresented: $showWorldCup) {
+            FIFAWorldCupHubView(onClose: { showWorldCup = false })
         }
     }
 
