@@ -2759,7 +2759,7 @@ struct ProfileView: View {
         } else if let f = auth.firstName?.lowercased() {
             handle = "@" + f
         } else {
-            handle = "@pick6fan"
+            handle = "@pick1fan"
         }
         return "\(handle) · Member since 2026"
     }
@@ -4416,7 +4416,7 @@ struct LegalSheet: View {
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            Text("Couldn't load \(doc.title.lowercased()). Visit pick6.app/legal for the latest version.")
+                            Text("Couldn't load \(doc.title.lowercased()). Visit pick1.live/legal for the latest version.")
                                 .font(.archivo(13, weight: .medium))
                                 .foregroundColor(Color(hex: "#6E6F75"))
                         }
@@ -5135,7 +5135,7 @@ struct BookmakerSheet: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("Pick1 surfaces AI predictions for entertainment. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick1 — wagers are settled by the sportsbook, not by us.")
+                Text("Pick1 surfaces AI predictions for entertainment — statistical estimates, not guarantees. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick1; any bet is at your own risk and we are not responsible for losses.")
                     .font(.archivo(11, weight: .regular))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .fixedSize(horizontal: false, vertical: true)

@@ -14,6 +14,13 @@ import Supabase
 import AuthenticationServices
 import CryptoKit
 
+extension Notification.Name {
+    /// Posted by AuthManager when the user signs out or deletes their
+    /// account, so per-user in-memory stores (e.g. FavoritesStore) can
+    /// wipe themselves and not leak data to the next user on the device.
+    static let pick1UserDidSignOut = Notification.Name("pick1UserDidSignOut")
+}
+
 /// Distinguishes "no session" (normal: user is logged out) from "we
 /// couldn't reach the server" (transient: don't bounce the user back to
 /// welcome — show a retry banner). Used by the splash flow to decide
@@ -311,8 +318,13 @@ final class AuthManager {
         d.set(false, forKey: "hasFinishedOnboarding")
         d.set("",    forKey: "selectedSports")
         d.removeObject(forKey: "selectedPlan")
-        d.removeObject(forKey: "pick1.favorites")
+        d.removeObject(forKey: "pick1.favoriteMatchIds.v1")
         d.removeObject(forKey: "pick1.ageVerified")
+
+        // Tell FavoritesStore (and any other per-user in-memory store) to
+        // wipe itself — removing the key above only clears the persisted
+        // copy, not the live @Published set held in memory this session.
+        NotificationCenter.default.post(name: .pick1UserDidSignOut, object: nil)
     }
 
     // MARK: - Account Deletion (App Store guideline 5.1.1(v))

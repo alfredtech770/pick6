@@ -23,7 +23,7 @@ struct AuthView: View {
         // with a stub email so it can be screenshotted in isolation.
         let preview = UserDefaults.standard.string(forKey: "PreviewStep") ?? ""
         if preview == "otp" {
-            _email = State(initialValue: "you@pick6.app")
+            _email = State(initialValue: "you@pick1.live")
             _otpSent = State(initialValue: true)
         } else {
             _email = State(initialValue: "")

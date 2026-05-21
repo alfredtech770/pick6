@@ -6,10 +6,12 @@
 // to show every pick the user has favorited, regardless of whether it
 // has graded yet.
 //
-// Persistence: UserDefaults (per-device, synced via iCloud if the user
-// has Settings → Apple ID → iCloud → Keychain). Good enough for a
-// prototype; trivially swappable for a Supabase `user_favorites` table
-// later (just replace the UserDefaults read/write inside the setter).
+// Persistence: device-local UserDefaults (NOT iCloud-synced — that would
+// need NSUbiquitousKeyValueStore). Per-user isolation on a shared device
+// is handled by clearing this store on sign-out / account deletion: we
+// observe `.pick1UserDidSignOut` (posted by AuthManager) and wipe both the
+// in-memory set and the persisted key, so the next user starts clean.
+// Trivially swappable for a Supabase `user_favorites` table later.
 
 import Foundation
 import Combine
@@ -21,12 +23,19 @@ final class FavoritesStore: ObservableObject {
     /// auto-persist to UserDefaults.
     @Published private(set) var ids: Set<UUID> = []
 
-    private let key = "pick6.favoriteMatchIds.v1"
+    private let key = "pick1.favoriteMatchIds.v1"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         load()
+        // Wipe favorites whenever a user signs out / deletes their account
+        // so a different user on the same device never inherits them.
+        NotificationCenter.default.addObserver(
+            forName: .pick1UserDidSignOut, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.clear() }
+        }
     }
 
     /// True iff `id` is in the favorites set.

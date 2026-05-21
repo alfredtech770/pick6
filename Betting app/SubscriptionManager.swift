@@ -6,16 +6,16 @@
 //   • Pro   → sees every pick across every sport
 //
 // You'll need to create these products in App Store Connect under a single
-// subscription group (e.g. "Pick1 Pro"):
+// subscription group (e.g. "Pick1 Pro"). The IDs MUST match `productIds`
+// below EXACTLY or the paywall shows no products:
 //
-//   Product ID                          Type                   Price
-//   com.alfredtech770.pick6.pro.weekly  Auto-Renewable Weekly  $14.99
-//   com.alfredtech770.pick6.pro.monthly Auto-Renewable Monthly $39.99
+//   Product ID                  Type                   Price
+//   com.pick1.app.pro.weekly    Auto-Renewable Weekly  $14.99
+//   com.pick1.app.pro.monthly   Auto-Renewable Monthly $39.99
 //
 // Add a 7-day free trial as an "Introductory Offer" on the weekly product.
 //
-// Set the bundle identifier on the Xcode target to match
-// (com.alfredtech770.pick6 or whatever you registered).
+// The Xcode target's bundle identifier is com.pick1.app (matches the IDs).
 //
 // For TestFlight + App Store, this works against the live StoreKit
 // servers automatically — no extra config beyond App Store Connect.
@@ -128,7 +128,11 @@ final class SubscriptionManager: ObservableObject {
             }
         } catch {
             // No products is the same as no entitlement — Free tier is fine.
+            // Debug-only log: avoid writing to the device's unified log in
+            // Release (minor info disclosure + noise).
+            #if DEBUG
             print("Pick1 SubscriptionManager: loadProducts failed: \(error)")
+            #endif
         }
     }
 

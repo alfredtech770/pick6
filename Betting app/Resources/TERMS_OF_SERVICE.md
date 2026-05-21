@@ -2,7 +2,7 @@
 
 **Effective date: April 30, 2026**
 
-These Terms of Service ("Terms") govern your access to and use of the Pick1 mobile application and related services (the "Service") provided by Pick1 ("we", "us", "our").
+These Terms of Service ("Terms") govern your access to and use of the Pick1 mobile application and related services (the "Service") provided by L70 Labs ("L70 Labs", "we", "us", "our"), the operator of Pick1.
 
 By creating a Pick1 account or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
 
@@ -12,9 +12,11 @@ By creating a Pick1 account or otherwise using the Service, you agree to be boun
 
 Pick1 is an entertainment and informational service that uses artificial intelligence to generate sports predictions for major leagues including NBA, NFL, NHL, MLB, EPL, UFC, F1, and IPL Cricket.
 
-**Pick1 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" and similar in-app actions add a recommendation to your tracked-picks list inside Pick1 only — they do not interact with any third-party platform. Pick1 does not facilitate, accept, or process wagers of any kind, and we do not integrate with any sportsbook, betting service, or financial-transaction platform beyond the Pick1 Pro subscription, which Apple processes directly through StoreKit.
+**Pick1 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" action adds a recommendation to your personal tracked-picks list inside Pick1. **Pick1 is not a sportsbook, bookmaker, or gambling operator.** Pick1 does not accept, hold, place, settle, or process bets or wagers of any kind, and never handles wagered funds. The only payment Pick1 collects is the Pick1 Pro subscription, which Apple processes directly through StoreKit.
 
-**Pick1 is not financial or investment advice.** AI predictions are statistical estimates with documented uncertainty. Past performance does not predict future results. Use Pick1 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
+Pick1 may provide **optional links to third-party sportsbooks** for your convenience. Those platforms are owned and operated entirely by independent third parties. Pick1 does not control, endorse, partner with, or receive any wager, stake, or payout through them, and we are not responsible for their content, odds, availability, legality in your jurisdiction, or any transaction you make with them. Whether you use such a platform — and whether doing so is legal where you are — is solely your responsibility.
+
+**Pick1 is not financial, investment, or betting advice.** AI predictions are **statistical estimates only**, with documented uncertainty — not statements of fact, not guarantees, and not a promise of any outcome, winning, or profit. Past performance does not predict future results. Use Pick1 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
 
 ---
 
@@ -34,7 +36,7 @@ To use most features of Pick1 you create an account. You agree:
 
 - To provide accurate, current information (currently just an email)
 - To keep your account credentials confidential
-- To notify us immediately at `support@pick1.app` if you suspect unauthorized access
+- To notify us immediately at `support@pick1.live` if you suspect unauthorized access
 - That you are responsible for all activity that occurs under your account
 
 We may suspend or terminate accounts that violate these Terms (see Section 11).
@@ -113,7 +115,18 @@ We reserve the right to investigate and take legal action against anyone who, in
 By using Pick1 you acknowledge that:
 
 - You are not relying on Pick1 recommendations as the sole basis for any sports-related decision
-- Pick1 is not liable for losses arising from decisions you make based on AI predictions
+- Pick1 makes **no guarantee of accuracy, winnings, or profit**, and no prediction should be understood as a promise of any result
+- Pick1 (and L70 Labs) is **not liable for any loss of any kind** — including financial loss, gambling or betting losses, lost stakes, or lost profits — arising from decisions you make based on, or in reliance on, Pick1 content
+
+### 6.1 Assumption of risk and gambling losses
+
+**If you choose to place any bet, wager, or stake based on Pick1 content, you do so entirely at your own risk and on your own judgment.** You assume full and sole responsibility for the outcome.
+
+To the maximum extent permitted by law, **L70 Labs and Pick1 are not responsible or liable for any gambling, betting, or wagering losses, debts, or damages of any kind** that you or anyone else may incur in connection with the Service, whether or not such activity was informed by a Pick1 prediction. Sports outcomes are inherently uncertain and can be affected by factors no model can foresee; **you can and may lose money.**
+
+### 6.2 Gamble responsibly
+
+Gambling may be illegal where you live, and carries real financial risk. You are solely responsible for knowing and complying with the laws of your jurisdiction and for ensuring you meet the legal age to gamble there. Only ever risk what you can afford to lose. If you or someone you know may have a gambling problem, help is available in the U.S. at **1-800-GAMBLER** (1-800-426-2537) or **ncpgambling.org**.
 
 ---
 
@@ -121,7 +134,7 @@ By using Pick1 you acknowledge that:
 
 ### 7.1 Our content
 
-Pick1, the Pick1 logo, the AI predictions generated by the Service, and all other content, design elements, and software comprising the Service are owned by Pick1 and protected by U.S. and international copyright, trademark, and other intellectual property laws.
+Pick1, the Pick1 logo, the AI predictions generated by the Service, and all other content, design elements, and software comprising the Service are owned by L70 Labs and protected by U.S. and international copyright, trademark, and other intellectual property laws.
 
 ### 7.2 Your license
 
@@ -165,28 +178,37 @@ We do not warrant that:
 
 ---
 
-## 10. Limitation of liability
+## 10. Limitation of liability and indemnification
 
-TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL PICK6, ITS AFFILIATES, OFFICERS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES INCLUDING (WITHOUT LIMITATION) LOST PROFITS, LOST REVENUE, OR DATA LOSS ARISING FROM:
+### 10.1 Limitation of liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL L70 LABS OR PICK1, OR THEIR AFFILIATES, OFFICERS, EMPLOYEES, OR AGENTS, BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOST PROFITS, LOST REVENUE, LOST STAKES, GAMBLING OR BETTING LOSSES, OR DATA LOSS, ARISING FROM:
 
 - Your use of or inability to use the Service
-- Any AI prediction's accuracy or your reliance on it
-- Decisions you make based on Pick1 content
+- Any AI prediction's accuracy, completeness, or your reliance on it
+- Decisions you make based on Pick1 content, including any bet, wager, or stake
+- Any gambling, betting, or wagering activity, or losses, whether or not informed by Pick1
 - Unauthorized access to your account
-- Any third-party content or services accessed through Pick1
+- Any third-party content, sportsbook, or services linked to or accessed through Pick1
 
-OUR TOTAL LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THE SERVICE IS LIMITED TO THE GREATER OF:
+This applies regardless of the legal theory (contract, tort, negligence, strict liability, or otherwise) and even if we were advised of the possibility of such damages.
 
-(A) THE AMOUNT YOU PAID PICK6 IN THE 12 MONTHS BEFORE THE CLAIM, OR  
+OUR TOTAL AGGREGATE LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THE SERVICE IS LIMITED TO THE GREATER OF:
+
+(A) THE AMOUNT YOU PAID L70 LABS FOR PICK1 IN THE 12 MONTHS BEFORE THE CLAIM, OR  
 (B) ONE HUNDRED U.S. DOLLARS ($100).
 
 Some jurisdictions do not allow the exclusion of certain warranties or the limitation of consequential damages, so some of the above may not apply to you.
+
+### 10.2 Indemnification
+
+You agree to indemnify, defend, and hold harmless L70 Labs and Pick1, and their affiliates, officers, employees, and agents, from and against any claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: (a) your use of the Service; (b) any bet, wager, stake, or financial or sports-related decision you make in connection with Pick1 content; (c) your violation of these Terms; or (d) your violation of any law or the rights of any third party.
 
 ---
 
 ## 11. Termination
 
-You may terminate your account at any time by tapping **Profile → Settings → Delete Account** in the app, or by emailing `support@pick1.app`. Your account will be deleted within 30 days of the request.
+You may terminate your account at any time by tapping **Profile → Settings → Delete Account** in the app, or by emailing `support@pick1.live`. Your account will be deleted within 30 days of the request.
 
 We may suspend or terminate your access if we determine, in our sole discretion, that:
 
@@ -194,7 +216,7 @@ We may suspend or terminate your access if we determine, in our sole discretion,
 - Continued service would expose us to legal risk
 - We are required to do so by law
 
-Upon termination, your license to use the Service ends immediately. Sections that by their nature should survive termination (e.g. Sections 9, 10, 12) will survive.
+Upon termination, your license to use the Service ends immediately. Sections that by their nature should survive termination (e.g. Sections 6, 9, 10, 12) will survive.
 
 ---
 
@@ -206,7 +228,7 @@ These Terms are governed by the laws of the State of Delaware, USA, without rega
 
 ### 12.2 Informal resolution
 
-Before filing a claim, you agree to try to resolve the dispute informally by emailing `support@pick1.app`. We'll acknowledge within 5 business days and respond substantively within 30 days.
+Before filing a claim, you agree to try to resolve the dispute informally by emailing `support@pick1.live`. We'll acknowledge within 5 business days and respond substantively within 30 days.
 
 ### 12.3 Arbitration
 
@@ -228,11 +250,15 @@ We may update these Terms from time to time. Material changes will be communicat
 ## 14. Contact
 
 ```
-Pick1
-support@pick1.app
+Pick1 — a product of L70 Labs
+support@pick1.live
 ```
 
 For legal notices specifically, prefix the subject with `[Legal Notice]`.
+
+---
+
+© 2026 L70 Labs. All rights reserved. Pick1 is a trademark of L70 Labs.
 
 ---
 

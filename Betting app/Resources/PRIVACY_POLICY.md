@@ -2,7 +2,7 @@
 
 **Effective date: April 30, 2026**
 
-This Privacy Policy describes how Pick1 ("we", "us", "our") collects, uses, and shares information when you use the Pick1 mobile application (the "Service").
+This Privacy Policy describes how L70 Labs ("we", "us", "our"), the operator of Pick1, collects, uses, and shares information when you use the Pick1 mobile application (the "Service").
 
 By using Pick1, you agree to the collection and use of information in accordance with this policy.
 
@@ -94,9 +94,9 @@ We may share information if compelled by valid legal process (subpoena, court or
 
 You have the right to:
 
-- **Access** the data we hold about you. Email `privacy@pick1.app` and we'll send you a JSON export within 30 days.
+- **Access** the data we hold about you. Email `privacy@pick1.live` and we'll send you a JSON export within 30 days.
 - **Correct** inaccurate data. You can update most fields directly in the app's Profile screen, or email us if a field isn't editable.
-- **Delete** your account and associated data. In the app: Profile → Settings → Delete Account. Or email `privacy@pick1.app`. We complete deletion within 30 days.
+- **Delete** your account and associated data. In the app: Profile → Settings → Delete Account. Or email `privacy@pick1.live`. We complete deletion within 30 days.
 - **Port** your data. Use the "Access" right above to receive a JSON export.
 - **Opt out** of marketing communications (Pick1 sends none, so this right is moot — but here on principle).
 
@@ -108,7 +108,7 @@ If you're an EEA, UK, or California resident you also have the right to lodge a 
 
 Pick1 is not intended for users under **13 years of age** (or such higher age as required in your jurisdiction by COPPA, GDPR-K, or local law). We do not knowingly collect data from children. Pick1 is rated 12+ on the App Store as a sports analysis and content app — comparable to ESPN, The Athletic, or FiveThirtyEight.
 
-If you believe a child has created a Pick1 account, contact `privacy@pick1.app` and we will delete the account within 7 days.
+If you believe a child has created a Pick1 account, contact `privacy@pick1.live` and we will delete the account within 7 days.
 
 ---
 
@@ -142,8 +142,8 @@ We may update this policy periodically. When we do we'll bump the "Effective dat
 Questions, requests, complaints:
 
 ```
-Pick1 Privacy
-support@pick1.app
+Pick1 Privacy — a product of L70 Labs
+privacy@pick1.live
 ```
 
 For GDPR / California requests specifically, prefix the subject with `[Privacy Request]`.
@@ -151,3 +151,5 @@ For GDPR / California requests specifically, prefix the subject with `[Privacy R
 ---
 
 This policy is intentionally short and human-readable. We reviewed every word — there's no boilerplate buried in here that contradicts the plain English above. If anything seems off, email us.
+
+© 2026 L70 Labs. All rights reserved.
