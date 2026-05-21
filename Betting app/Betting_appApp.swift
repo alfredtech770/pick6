@@ -27,6 +27,9 @@ struct Betting_appApp: App {
 
     init() {
         registerCustomFonts()
+        // Enlarge the shared URL cache so team/athlete/league logos
+        // persist and render instantly (no placeholder-badge flash).
+        LogoPrefetch.bootCache()
     }
 
     var body: some Scene {

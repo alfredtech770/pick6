@@ -642,3 +642,60 @@ private let nhlAbbrevs: [String: String] = [
     "vancouver canucks": "van",  "canucks": "van",      "van": "van",
     "vegas golden knights": "vgk","golden knights": "vgk","vgk": "vgk", "veg": "vgk",
 ]
+
+// ════════════════════════════════════════════════════════════════
+// MARK: - LogoPrefetch — warm the cache so crests/headshots/league
+//        logos render instantly instead of flashing the placeholder
+// ════════════════════════════════════════════════════════════════
+
+/// `TeamLogo`/`AthleteHeadshot`/`LeagueLogo` use `AsyncImage`, which
+/// shows a placeholder (colored crest / profile circle / fallback tile)
+/// while the network image loads — that's the "placeholder badge" flash
+/// the user sees. Prefetching the URLs into `URLCache.shared` before the
+/// cards appear means AsyncImage finds them already cached and paints
+/// the real logo on first render.
+///
+/// Call `LogoPrefetch.warm(picks:scores:)` after a slate loads, and
+/// `LogoPrefetch.bootCache()` once at app launch to give the cache
+/// enough room.
+enum LogoPrefetch {
+
+    /// Bump the shared URL cache so dozens of small logo PNGs persist
+    /// across launches (ESPN logos are tiny — a few KB each).
+    static func bootCache() {
+        URLCache.shared = URLCache(
+            memoryCapacity: 32 * 1024 * 1024,   // 32 MB RAM
+            diskCapacity: 128 * 1024 * 1024     // 128 MB disk
+        )
+    }
+
+    /// Fire-and-forget GETs for every logo URL referenced by the given
+    /// picks (team crests or athlete headshots) and their leagues, so
+    /// they land in URLCache.shared before the views ask for them.
+    static func warm(picks: [Pick]) {
+        var urls = Set<URL>()
+        for p in picks {
+            if AthleteHeadshot.isIndividual(sport: p.sport) {
+                if let u = AthleteHeadshotLookup.url(sport: p.sport, name: p.homeTeam) { urls.insert(u) }
+                if let u = AthleteHeadshotLookup.url(sport: p.sport, name: p.awayTeam) { urls.insert(u) }
+            } else {
+                if let u = TeamLogoLookup.url(sport: p.sport, team: p.homeTeam) { urls.insert(u) }
+                if let u = TeamLogoLookup.url(sport: p.sport, team: p.awayTeam) { urls.insert(u) }
+            }
+        }
+        warm(urls: urls)
+    }
+
+    /// Prefetch a set of arbitrary logo URLs (used by the World Cup hub
+    /// for any async crests, and internally by `warm(picks:)`).
+    static func warm(urls: Set<URL>) {
+        guard !urls.isEmpty else { return }
+        for url in urls {
+            // URLSession.shared shares URLCache.shared with AsyncImage,
+            // so this populates the exact cache AsyncImage reads from.
+            var req = URLRequest(url: url)
+            req.cachePolicy = .returnCacheDataElseLoad
+            URLSession.shared.dataTask(with: req).resume()
+        }
+    }
+}

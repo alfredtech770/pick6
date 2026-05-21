@@ -417,6 +417,10 @@ class PicksViewModel: ObservableObject {
         self.historyPicks    = h
         self.liveScores      = s
         isLoading = false
+        // Warm the logo cache for the slate the user is about to see so
+        // team crests / athlete headshots paint instantly instead of
+        // flashing the placeholder badge.
+        LogoPrefetch.warm(picks: t + y)
     }
 
     private func fetchPicks(forDate dateString: String) async -> [Pick] {

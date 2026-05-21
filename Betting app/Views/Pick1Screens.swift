@@ -232,7 +232,12 @@ struct MatchDetailView: View {
     /// ODDS · H2H. The `lineups` slot is sport-aware via `tabLabel(_:)`
     /// so it reads GRID for racing, FIGHTERS for MMA, ROSTERS for tennis
     /// or cricket, and LINEUPS otherwise.
-    enum Tab: String, CaseIterable { case summary, lineups, odds, h2h }
+    // Tabs reduced to the two backed by REAL data: the AI's actual
+    // analysis (reasoning + key factor + confidence, from the pick)
+    // and odds. The old LINEUPS / H2H tabs were hardcoded placeholder
+    // rosters and fake past-game results — removed rather than ship
+    // fabricated content in a sports app.
+    enum Tab: String, CaseIterable { case summary, odds }
     @State private var tab: Tab = .summary
     @State private var showBookmakers: Bool = false
     @State private var showAgeGate: Bool = false
@@ -251,19 +256,10 @@ struct MatchDetailView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     private var starred: Bool { favorites.contains(pick.id) }
 
-    /// Sport-aware label for each tab.
     private func tabLabel(_ t: Tab) -> String {
         switch t {
-        case .summary: return "SUMMARY"
+        case .summary: return "AI ANALYSIS"
         case .odds:    return "ODDS"
-        case .h2h:     return "H2H"
-        case .lineups:
-            switch pick.sport {
-            case "f1":      return "GRID"
-            case "combat":  return "FIGHTERS"
-            case "tennis", "cricket": return "ROSTERS"
-            default:        return "LINEUPS"
-            }
         }
     }
 
@@ -274,18 +270,26 @@ struct MatchDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     detailTopNav
+                    // scoreHeader is the live element — it's already
+                    // state-aware: real score + period while live/final,
+                    // "VS · kickoff time" before the game starts. No
+                    // fabricated stat tiles (the old statIconRow showed
+                    // fake per-stat splits for every game, even upcoming
+                    // ones — removed).
                     scoreHeader
-                    statIconRow
                     pickHeroCard
                         .padding(.horizontal, 16)
                         .padding(.bottom, 14)
                     tabsRow
                     Group {
                         switch tab {
-                        case .summary: summaryPanel
-                        case .lineups: lineupsPanel
-                        case .odds:    oddsPanel
-                        case .h2h:     h2hPanel
+                        case .summary:
+                            VStack(spacing: 14) {
+                                summaryPanel
+                                matchupPanel
+                            }
+                        case .odds:
+                            oddsPanel
                         }
                     }
                     .padding(.horizontal, 16)
@@ -409,6 +413,33 @@ struct MatchDetailView: View {
     private var state: PickRenderState {
         pick.renderState(liveScore: liveScore)
     }
+
+    /// Per-sport accent color so each sport's detail page reads
+    /// distinctly instead of every page being the same lime. Mirrors
+    /// the SportHub's `glowColor` palette: NBA orange, NHL blue, UFC
+    /// red, F1 ferrari-red, cricket saffron, NFL purple, MLB
+    /// red-orange, soccer lime. Applied to the dominant accent
+    /// surfaces (pick hero card, tab pills, active stat tile, score
+    /// header pill + winner highlight).
+    private var sportAccent: Color {
+        switch pick.sport {
+        case "basketball": return Color(hex: "#E75A28")   // orange
+        case "soccer":     return Color(hex: "#D4FF3A")   // lime
+        case "football":   return Color(hex: "#785AF0")   // purple
+        case "baseball":   return Color(hex: "#FF5A36")   // red-orange
+        case "hockey":     return Color(hex: "#5B8CFF")   // blue
+        case "combat":     return Color(hex: "#FF3C28")   // red
+        case "f1":         return Color(hex: "#E10600")   // ferrari red
+        case "tennis":     return Color(hex: "#C6FF3A")   // electric yellow-green
+        case "cricket":    return Color(hex: "#FFD93D")   // saffron
+        default:           return Color(hex: "#D4FF3A")
+        }
+    }
+
+    /// Dark ink that reads well on top of `sportAccent` (all the
+    /// accents are bright enough that near-black text/icons sit on
+    /// them cleanly, matching the original lime-on-ink treatment).
+    private var sportAccentInk: Color { Color(hex: "#0A0B0D") }
 
     private var scheduledOrLiveLabel: String {
         switch state {
@@ -647,27 +678,27 @@ struct MatchDetailView: View {
         VStack(spacing: 4) {
             Image(systemName: tile.icon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                .foregroundColor(active ? sportAccent : Color(hex: "#B9B7B0"))
                 .frame(width: 34, height: 34)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(active
-                              ? Color(hex: "#D4FF3A").opacity(0.1)
+                              ? sportAccent.opacity(0.1)
                               : Color(hex: "#101114"))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .stroke(active
-                                        ? Color(hex: "#D4FF3A").opacity(0.3)
+                                        ? sportAccent.opacity(0.3)
                                         : Color(hex: "#22252B"), lineWidth: 1)
                         )
                 )
             Text(tile.label)
                 .font(.archivoNarrow(9, weight: .bold))
                 .tracking(1.6)
-                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                .foregroundColor(active ? sportAccent : Color(hex: "#B9B7B0"))
             Text(tile.value)
                 .font(.mono(10, weight: .bold))
-                .foregroundColor(active ? Color(hex: "#D4FF3A") : Color(hex: "#F5F3EE"))
+                .foregroundColor(active ? sportAccent : Color(hex: "#F5F3EE"))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
@@ -688,18 +719,18 @@ struct MatchDetailView: View {
                 Text(pickKicker)
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.4)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(sportAccent)
                 Spacer()
                 Text("\(Int(pick.probability))% CONF")
                     .font(.mono(11, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(sportAccent)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(
-                        Capsule().fill(Color(hex: "#D4FF3A").opacity(0.10))
+                        Capsule().fill(sportAccent.opacity(0.10))
                     )
                     .overlay(
-                        Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.30), lineWidth: 1)
+                        Capsule().stroke(sportAccent.opacity(0.30), lineWidth: 1)
                     )
             }
             .padding(.bottom, 10)
@@ -722,7 +753,7 @@ struct MatchDetailView: View {
                     Text(pickTitleTail)
                         .font(.anton(40))
                         .tracking(-0.4)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(sportAccent)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -745,13 +776,13 @@ struct MatchDetailView: View {
 
                 ZStack {
                     Circle()
-                        .fill(Color(hex: "#D4FF3A"))
+                        .fill(sportAccent)
                         .frame(width: 36, height: 36)
-                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.45),
+                        .shadow(color: sportAccent.opacity(0.45),
                                 radius: 6, x: 0, y: 0)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(sportAccentInk)
                 }
 
                 VStack(alignment: .trailing, spacing: 2) {
@@ -763,12 +794,12 @@ struct MatchDetailView: View {
                         Text("$\(possibleWinDollars)")
                             .font(.anton(38))
                             .tracking(-0.4)
-                            .foregroundColor(Color(hex: "#D4FF3A"))
-                            .shadow(color: Color(hex: "#D4FF3A").opacity(0.35),
+                            .foregroundColor(sportAccent)
+                            .shadow(color: sportAccent.opacity(0.35),
                                     radius: 8, x: 0, y: 0)
                         Text(".\(possibleWinCents)")
                             .font(.mono(16, weight: .bold))
-                            .foregroundColor(Color(hex: "#D4FF3A").opacity(0.65))
+                            .foregroundColor(sportAccent.opacity(0.65))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -776,10 +807,10 @@ struct MatchDetailView: View {
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(hex: "#D4FF3A").opacity(0.06))
+                    .fill(sportAccent.opacity(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1)
+                            .stroke(sportAccent.opacity(0.22), lineWidth: 1)
                     )
             )
             .padding(.top, 16)
@@ -829,7 +860,7 @@ struct MatchDetailView: View {
                 .overlay(alignment: .topTrailing) {
                     Circle()
                         .fill(RadialGradient(
-                            colors: [Color(hex: "#D4FF3A").opacity(0.22), .clear],
+                            colors: [sportAccent.opacity(0.22), .clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: 90
@@ -895,70 +926,33 @@ struct MatchDetailView: View {
     /// Three stat columns rendered below the win block. The labels
     /// vary by sport so each detail page reads natively (PACE for
     /// basketball, xG for soccer, REACH for combat, etc.).
+    /// Three hero-card columns — all REAL, derived from the pick:
+    /// implied odds (from probability), confidence tier, and the live/
+    /// kickoff status. Replaces the old per-sport fabricated stats
+    /// (PACE / xG / REACH / WEATHER…) which had no data source.
     private var pickHeroStats: [PickHeroStat] {
         let oddsStr = String(format: "%.2f", decimalOdds)
-        switch pick.sport {
-        case "basketball":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "PACE", value: "104", suffix: ".3"),
-                .init(label: "EDGE", value: "AWAY", suffix: " +6"),
-            ]
-        case "soccer":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "xG NOW", value: "2.3", suffix: " vs 1.1"),
-                .init(label: "MOMENTUM", value: "HOME", suffix: " +12"),
-            ]
-        case "football":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "O/U", value: "51.5", suffix: nil),
-                .init(label: "WEATHER", value: "COLD", suffix: " 28°"),
-            ]
-        case "baseball":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "PITCHERS", value: "TIRED", suffix: nil),
-                .init(label: "WIND", value: "OUT", suffix: " 14MPH"),
-            ]
-        case "hockey":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "SOG", value: "32", suffix: " vs 28"),
-                .init(label: "GOALIE", value: "HOT", suffix: " .932"),
-            ]
-        case "combat":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "STYLE", value: "STRIKER", suffix: nil),
-                .init(label: "EDGE", value: "POWER", suffix: " +8"),
-            ]
-        case "f1":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "GRID", value: "P1", suffix: nil),
-                .init(label: "TYRE", value: "MEDIUM", suffix: nil),
-            ]
-        case "tennis":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "SURFACE", value: "GRASS", suffix: nil),
-                .init(label: "1ST SRV", value: "68%", suffix: nil),
-            ]
-        case "cricket":
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "RR", value: "9.8", suffix: "/9.0"),
-                .init(label: "PITCH", value: "FLAT", suffix: nil),
-            ]
-        default:
-            return [
-                .init(label: "ODDS", value: oddsStr, suffix: "x"),
-                .init(label: "EDGE", value: "—", suffix: nil),
-                .init(label: "TIPOFF", value: tipoffText, suffix: nil),
-            ]
+        let statusLabel: String
+        let statusValue: String
+        switch state {
+        case .live:
+            statusLabel = "STATUS"
+            statusValue = tipoffText            // "Q3" / "LIVE"
+        case .won, .lost:
+            statusLabel = "RESULT"
+            statusValue = state == .won ? "WON" : "LOST"
+        case .awaitingResult:
+            statusLabel = "STATUS"
+            statusValue = "FINAL"
+        case .upcoming:
+            statusLabel = "TIP-OFF"
+            statusValue = tipoffText            // scheduled time
         }
+        return [
+            .init(label: "IMPLIED ODDS", value: oddsStr, suffix: "x"),
+            .init(label: "CONFIDENCE",   value: "\(Int(pick.probability))", suffix: "%"),
+            .init(label: statusLabel,    value: statusValue, suffix: nil),
+        ]
     }
 
     private func pickStatCol(label: String, value: String, twoLine: Bool = false) -> some View {
@@ -1009,10 +1003,10 @@ struct MatchDetailView: View {
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(tab == t ? Color(hex: "#D4FF3A") : Color(hex: "#101114"))
+                                .fill(tab == t ? sportAccent : Color(hex: "#101114"))
                         )
                         .overlay(
-                            Capsule().stroke(tab == t ? Color(hex: "#D4FF3A") : Color(hex: "#22252B"), lineWidth: 1)
+                            Capsule().stroke(tab == t ? sportAccent : Color(hex: "#22252B"), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
@@ -1024,23 +1018,131 @@ struct MatchDetailView: View {
     }
 
     @ViewBuilder
+    /// AI ANALYSIS — the real, model-generated reasoning behind the
+    /// pick (from pick.reasoning), plus the key factor and confidence.
+    /// This is the app's actual product, and it's genuine data — unlike
+    /// the old "MATCH STATS" bars, which were hardcoded placeholders.
     private var summaryPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("MATCH STATS")
+            // Key factor chip (the short tagline, e.g. "Cole 2.34 ERA vs LAD")
+            if let factor = pick.keyFactor, !factor.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(sportAccent)
+                    Text(factor.uppercased())
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(1.6)
+                        .foregroundColor(sportAccent)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(sportAccent.opacity(0.10)))
+                .overlay(Capsule().stroke(sportAccent.opacity(0.30), lineWidth: 1))
+                .padding(.bottom, 14)
+            }
+
+            Text("WHY THE AI LIKES THIS")
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.4)
                 .foregroundColor(Color(hex: "#6E6F75"))
-                .padding(.bottom, 12)
-            ForEach(summaryStats, id: \.label) { row in
-                StatBarRow(label: row.label,
-                           homeText: row.homeText,
-                           awayText: row.awayText,
-                           homePct: row.homePct)
-                    .padding(.bottom, 10)
+                .padding(.bottom, 10)
+
+            Text(pick.reasoning.isEmpty
+                 ? "The model surfaced this pick from its daily run across the slate. Detailed reasoning will appear here once generated."
+                 : pick.reasoning)
+                .font(.archivo(14, weight: .regular))
+                .foregroundColor(Color(hex: "#E7E4DC"))
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 16)
+
+            // Confidence row — real probability + tier.
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("AI CONFIDENCE")
+                        .font(.archivoNarrow(9, weight: .bold))
+                        .tracking(2.0)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                    Text("\(Int(pick.probability))%  ·  \(confidenceTierLabel)")
+                        .font(.anton(18))
+                        .foregroundColor(sportAccent)
+                }
+                Spacer()
+            }
+            .padding(.top, 4)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                    .padding(.top, -10)
             }
         }
         .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
+    }
+
+    /// MATCHUP — real, web-search-backed supporting facts the AI
+    /// pipeline generated for this pick (recent form, head-to-head,
+    /// key injury, a decisive stat). Only rendered when the pick
+    /// actually carries facts, so older picks — or a degraded pipeline
+    /// run — simply omit the card rather than showing an empty shell or
+    /// fabricated rows.
+    @ViewBuilder
+    private var matchupPanel: some View {
+        if let facts = pick.matchupFacts, !facts.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.bar.doc.horizontal")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(sportAccent)
+                    Text("MATCHUP")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                .padding(.bottom, 12)
+
+                ForEach(Array(facts.enumerated()), id: \.offset) { idx, fact in
+                    HStack(alignment: .top, spacing: 12) {
+                        Text(fact.label.uppercased())
+                            .font(.archivoNarrow(11, weight: .bold))
+                            .tracking(0.6)
+                            .foregroundColor(Color(hex: "#9A9B9F"))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(fact.value)
+                            .font(.archivo(13, weight: .semibold))
+                            .foregroundColor(Color(hex: "#F5F3EE"))
+                            .multilineTextAlignment(.trailing)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .padding(.vertical, 9)
+                    .overlay(alignment: .top) {
+                        if idx > 0 {
+                            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                        }
+                    }
+                }
+
+                Text("AI-COMPILED · VERIFIED VIA WEB SEARCH")
+                    .font(.archivoNarrow(8, weight: .bold))
+                    .tracking(1.6)
+                    .foregroundColor(Color(hex: "#4A4B50"))
+                    .padding(.top, 12)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBackground)
+        }
+    }
+
+    /// Human label for the pick's confidence tier.
+    private var confidenceTierLabel: String {
+        switch pick.confidenceTier {
+        case .high:   return "HIGH CONVICTION"
+        case .medium: return "SOLID EDGE"
+        case .low:    return "LEAN"
+        }
     }
 
     private var summaryStats: [StatRow] {
@@ -1574,6 +1676,9 @@ struct StatBarRow: View {
     let homeText: String
     let awayText: String
     let homePct: Double
+    /// Home-side bar fill. Defaults to lime so any other caller is
+    /// unaffected; the match-detail Summary passes the sport accent.
+    var accent: Color = Color(hex: "#D4FF3A")
 
     var body: some View {
         VStack(spacing: 6) {
@@ -1598,7 +1703,7 @@ struct StatBarRow: View {
                     Capsule().fill(Color(hex: "#16181C"))
                         .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
                     HStack(spacing: 0) {
-                        Capsule().fill(Color(hex: "#D4FF3A"))
+                        Capsule().fill(accent)
                             .frame(width: homeWidth)
                         Capsule().fill(Color(hex: "#F5F3EE").opacity(0.85))
                     }
@@ -1798,6 +1903,7 @@ struct SportHubView: View {
         case "hockey":     return "REGULAR SEASON · TONIGHT"
         case "combat":     return "FIGHT NIGHT"
         case "f1":         return "RACE WEEK"
+        case "tennis":     return "TOUR · MATCHDAY"
         case "cricket":    return "IPL · MATCHDAY"
         default:           return "TODAY"
         }
@@ -1896,6 +2002,14 @@ struct SportHubView: View {
                 LeagueChip(id: "wta",  name: "WTA Tour",   count: 4,            swatch: Color(hex: "#e6007e")),
                 LeagueChip(id: "slam", name: "Grand Slam", count: 2,            swatch: Color(hex: "#ffd700")),
             ]
+        case "combat":
+            // Use the "ufc" id so the chip pulls ESPN's real UFC crest;
+            // LeagueLogoLookup has no entry under "combat".
+            return [LeagueChip(id: "ufc",
+                               name: leagueLabel,
+                               count: primaryCount,
+                               swatch: glowColor,
+                               active: true)]
         default:
             return [LeagueChip(id: sport,
                                name: leagueLabel,
@@ -2216,6 +2330,7 @@ struct SportHubView: View {
         case "hockey":     return Color(hex: "#5B8CFF")    // blue
         case "combat":     return Color(hex: "#FF3C28")    // red
         case "f1":         return Color(hex: "#E10600")    // ferrari red
+        case "tennis":     return Color(hex: "#C6FF3A")    // yellow-green (matches detail accent)
         case "cricket":    return Color(hex: "#FFD93D")    // saffron
         default:           return Color(hex: "#D4FF3A")
         }
@@ -3818,7 +3933,7 @@ struct LiveView: View {
             ?? Pick(id: UUID(), createdAt: nil, sport: "basketball", league: "NBA",
                     gameDate: "", gameId: nil, homeTeam: "", awayTeam: "",
                     pick: "", probability: 0, confidence: "*", reasoning: "",
-                    keyFactor: nil, result: "pending",
+                    keyFactor: nil, matchupFacts: nil, result: "pending",
                     homeScore: nil, awayScore: nil)
     }
 

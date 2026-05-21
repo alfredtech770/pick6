@@ -88,23 +88,22 @@ struct FIFAWorldCupBanner: View {
                         .foregroundColor(WC.accentInk)
                 }
                 .frame(width: 38, height: 38)
-                .shadow(color: WC.accent.opacity(0.5), radius: 12, x: 0, y: 8)
+                .shadow(color: WC.accent.opacity(0.25), radius: 6, x: 0, y: 4)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(bannerBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            // Animated gold championship border — single-hue spotlight,
+            // same motion as the home HeroCard's AcidBorder.
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(WC.gold, lineWidth: 1)
+                WCGoldBorder(shape: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                             lineWidth: 1.5, period: 8)
+                    .allowsHitTesting(false)
             )
-            .overlay(alignment: .bottom) {
-                // .wc-banner::after — red→gold→blue 2pt base stripe
-                LinearGradient(colors: [WC.red, WC.gold, WC.blue],
-                               startPoint: .leading, endPoint: .trailing)
-                    .frame(height: 2)
-            }
-            .shadow(color: WC.blue.opacity(0.45), radius: 18, x: 0, y: 14)
+            // Blue World Cup glow + a neutral drop shadow for depth.
+            .shadow(color: WC.blue.opacity(0.5), radius: 18, x: 0, y: 12)
+            .shadow(color: .black.opacity(0.35), radius: 7, x: 0, y: 5)
             .pressableScale(0.99)
         }
         .buttonStyle(.plain)
@@ -116,11 +115,13 @@ struct FIFAWorldCupBanner: View {
                 colors: [WC.blue, WC.navy, WC.deep],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
-            // .wc-banner::before — radial gold glow, top-right
+            // Subtle gold sheen, top-right — softened from the
+            // original 0.35 so it reads as a refined highlight, not
+            // a blown-out glow.
             RadialGradient(
-                colors: [WC.gold.opacity(0.35), .clear],
+                colors: [WC.gold.opacity(0.18), .clear],
                 center: UnitPoint(x: 0.92, y: 0.12),
-                startRadius: 0, endRadius: 130
+                startRadius: 0, endRadius: 120
             )
             .allowsHitTesting(false)
         }
@@ -144,7 +145,11 @@ struct WCTrophy: View {
 struct FIFAWorldCupHubView: View {
     let onClose: () -> Void
 
-    @State private var selectedDay: Int = 1   // "TODAY · 11" is index 1
+    /// Tapping a match (featured or a slate row) opens the standard
+    /// MatchDetailView with a Pick synthesized from the static FIFA
+    /// showcase data. FavoritesStore is injected at the app root and
+    /// propagates through this sheet.
+    @State private var detailPick: Pick?
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -161,14 +166,20 @@ struct FIFAWorldCupHubView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 18)
 
-                    dayRail
-                        .padding(.bottom, 16)
-
                     sectionHead(title: "OPENING", accent: "MATCH",
                                 metaLive: true, meta: "8:00 PM ET")
-                    featuredMatch
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
+                    Button {
+                        Haptics.tap()
+                        detailPick = fifaPick(home: "USA", away: "Mexico",
+                                              pick: "USA TO WIN · O 2.5 GOALS",
+                                              prob: 84,
+                                              keyFactor: "GROUP A · SOFI STADIUM")
+                    } label: {
+                        featuredMatch.pressableScale(0.985)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
 
                     sectionHead(title: "TODAY'S", accent: "SLATE",
                                 metaLive: false, meta: "11 MORE")
@@ -182,15 +193,45 @@ struct FIFAWorldCupHubView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 18)
 
-                    Color.clear.frame(height: 110)   // clears bottom CTA
+                    Color.clear.frame(height: 32)
                 }
             }
-
-            bottomCTA
-                .padding(.horizontal, 16)
-                .padding(.bottom, 18)
         }
         .preferredColorScheme(.dark)
+        .sheet(item: $detailPick) { pick in
+            MatchDetailView(pick: pick,
+                            liveScore: nil,
+                            onClose: { detailPick = nil })
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    /// Build a Pick from static FIFA showcase data so the match cards
+    /// can reuse the app's standard MatchDetailView.
+    private func fifaPick(home: String, away: String, pick: String,
+                          prob: Double, keyFactor: String) -> Pick {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "America/New_York")
+        return Pick(
+            id: UUID(),
+            createdAt: Date(),
+            sport: "soccer",
+            league: "FIFA",
+            gameDate: f.string(from: Date()),
+            gameId: nil,
+            homeTeam: home,
+            awayTeam: away,
+            pick: pick,
+            probability: prob,
+            confidence: prob >= 80 ? "high" : (prob >= 65 ? "medium" : "low"),
+            reasoning: "AI projection for the FIFA World Cup 2026 group stage.",
+            keyFactor: keyFactor,
+            matchupFacts: nil,
+            result: "pending",
+            homeScore: nil,
+            awayScore: nil
+        )
     }
 
     // ── Top nav ─────────────────────────────────────────────────
@@ -267,7 +308,7 @@ struct FIFAWorldCupHubView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.vertical, 6)
 
-            Text("GROUP STAGE · MATCHDAY 1 OF 3 · LIVE")
+            Text("GROUP STAGE · NEXT 24 HOURS · LIVE")
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.0)
                 .foregroundColor(.white.opacity(0.85))
@@ -286,23 +327,22 @@ struct FIFAWorldCupHubView: View {
             ZStack {
                 LinearGradient(colors: [WC.blue, WC.navy, WC.deep],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [WC.gold.opacity(0.35), .clear],
+                RadialGradient(colors: [WC.gold.opacity(0.18), .clear],
                                center: UnitPoint(x: 0.95, y: 0.05),
-                               startRadius: 0, endRadius: 180)
+                               startRadius: 0, endRadius: 170)
                     .allowsHitTesting(false)
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        // Animated gold championship border (matches home HeroCard motion).
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(WC.gold.opacity(0.4), lineWidth: 1)
+            WCGoldBorder(shape: RoundedRectangle(cornerRadius: 18, style: .continuous),
+                         lineWidth: 2, period: 8)
+                .allowsHitTesting(false)
         )
-        .overlay(alignment: .bottom) {
-            LinearGradient(colors: [WC.red, WC.gold, WC.blue],
-                           startPoint: .leading, endPoint: .trailing)
-                .frame(height: 3)
-        }
-        .shadow(color: WC.blue.opacity(0.5), radius: 24, x: 0, y: 20)
+        // Blue World Cup glow + neutral depth shadow.
+        .shadow(color: WC.blue.opacity(0.55), radius: 26, x: 0, y: 18)
+        .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 6)
     }
 
     private func heroStat(_ v: String, _ l: String) -> some View {
@@ -317,59 +357,6 @@ struct FIFAWorldCupHubView: View {
         .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.3)))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(WC.gold.opacity(0.3), lineWidth: 1))
-    }
-
-    // ── Day rail ────────────────────────────────────────────────
-    private struct DayItem { let d: String; let n: String; let cnt: String }
-    private let days: [DayItem] = [
-        .init(d: "FRI", n: "10", cnt: "3 done"),
-        .init(d: "TODAY", n: "11", cnt: "12 live"),
-        .init(d: "SAT", n: "12", cnt: "8 games"),
-        .init(d: "SUN", n: "13", cnt: "12 games"),
-        .init(d: "MON", n: "14", cnt: "10 games"),
-        .init(d: "TUE", n: "15", cnt: "8 games"),
-    ]
-
-    private var dayRail: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(Array(days.enumerated()), id: \.offset) { i, day in
-                    let active = i == selectedDay
-                    Button {
-                        Haptics.selection()
-                        withAnimation(Pick1Springs.snappy) { selectedDay = i }
-                    } label: {
-                        VStack(spacing: 2) {
-                            Text(day.d)
-                                .font(.mono(9, weight: .heavy))
-                                .tracking(1.4)
-                                .foregroundColor(active ? WC.accentInk : WC.mute)
-                            Text(day.n)
-                                .font(.anton(18))
-                                .foregroundColor(active ? WC.accentInk : WC.ink)
-                            Text(day.cnt.uppercased())
-                                .font(.mono(8, weight: .heavy))
-                                .foregroundColor(active ? WC.accentInk : WC.mute)
-                        }
-                        .frame(minWidth: 56)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(active ? WC.accent : WC.panel)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(active ? WC.accent : WC.line, lineWidth: 1)
-                        )
-                        .shadow(color: active ? WC.accent.opacity(0.45) : .clear,
-                                radius: active ? 10 : 0, x: 0, y: 6)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-        }
     }
 
     // ── Section head ────────────────────────────────────────────
@@ -499,55 +486,66 @@ struct FIFAWorldCupHubView: View {
     private var matchesList: some View {
         VStack(spacing: 8) {
             ForEach(Array(matches.enumerated()), id: \.offset) { _, m in
-                HStack(spacing: 12) {
-                    VStack(spacing: 2) {
-                        Text(m.time).font(.mono(11, weight: .heavy))
-                            .foregroundColor(WC.ink)
-                            .multilineTextAlignment(.center)
-                        Text(m.group).font(.archivoNarrow(8, weight: .bold))
-                            .tracking(1.6).foregroundColor(WC.mute)
-                    }
-                    .frame(width: 52)
-                    .overlay(alignment: .trailing) {
-                        Rectangle().fill(WC.line).frame(width: 1)
-                    }
-                    .padding(.trailing, 4)
-
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack(spacing: 8) {
-                            WCFlag(code: m.favCode).frame(width: 28, height: 20)
-                                .clipShape(RoundedRectangle(cornerRadius: 2))
-                            Text(m.fav).font(.archivo(12, weight: .bold))
-                                .foregroundColor(WC.accent)
-                        }
-                        HStack(spacing: 8) {
-                            WCFlag(code: m.dogCode).frame(width: 28, height: 20)
-                                .clipShape(RoundedRectangle(cornerRadius: 2))
-                            Text(m.dog).font(.archivo(12, weight: .bold))
+                Button {
+                    Haptics.tap()
+                    let prob = Double(m.conf.replacingOccurrences(of: "%", with: "")) ?? 0
+                    detailPick = fifaPick(home: m.fav, away: m.dog,
+                                          pick: m.pick, prob: prob,
+                                          keyFactor: m.group)
+                } label: {
+                    HStack(spacing: 12) {
+                        VStack(spacing: 2) {
+                            Text(m.time).font(.mono(11, weight: .heavy))
                                 .foregroundColor(WC.ink)
+                                .multilineTextAlignment(.center)
+                            Text(m.group).font(.archivoNarrow(8, weight: .bold))
+                                .tracking(1.6).foregroundColor(WC.mute)
+                        }
+                        .frame(width: 52)
+                        .overlay(alignment: .trailing) {
+                            Rectangle().fill(WC.line).frame(width: 1)
+                        }
+                        .padding(.trailing, 4)
+
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack(spacing: 8) {
+                                WCFlag(code: m.favCode).frame(width: 28, height: 20)
+                                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                                Text(m.fav).font(.archivo(12, weight: .bold))
+                                    .foregroundColor(WC.accent)
+                            }
+                            HStack(spacing: 8) {
+                                WCFlag(code: m.dogCode).frame(width: 28, height: 20)
+                                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                                Text(m.dog).font(.archivo(12, weight: .bold))
+                                    .foregroundColor(WC.ink)
+                            }
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 3) {
+                            Text(m.conf)
+                                .font(.mono(11, weight: .heavy))
+                                .foregroundColor(m.risk ? Color(hex: "#FF8A90") : WC.accent)
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(m.risk ? WC.red.opacity(0.15) : WC.accent.opacity(0.12))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(m.risk ? WC.red.opacity(0.4) : WC.accent.opacity(0.3), lineWidth: 1)
+                                )
+                            Text(m.pick).font(.archivoNarrow(8, weight: .bold))
+                                .tracking(1.6).foregroundColor(WC.mute)
                         }
                     }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 3) {
-                        Text(m.conf)
-                            .font(.mono(11, weight: .heavy))
-                            .foregroundColor(m.risk ? Color(hex: "#FF8A90") : WC.accent)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(m.risk ? WC.red.opacity(0.15) : WC.accent.opacity(0.12))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(m.risk ? WC.red.opacity(0.4) : WC.accent.opacity(0.3), lineWidth: 1)
-                            )
-                        Text(m.pick).font(.archivoNarrow(8, weight: .bold))
-                            .tracking(1.6).foregroundColor(WC.mute)
-                    }
+                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(WC.panel))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(WC.line, lineWidth: 1))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                    .pressableScale(0.985)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(WC.panel))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(WC.line, lineWidth: 1))
+                .buttonStyle(.plain)
             }
         }
     }
@@ -619,28 +617,44 @@ struct FIFAWorldCupHubView: View {
         }
     }
 
-    // ── Bottom CTA ──────────────────────────────────────────────
-    private var bottomCTA: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("FOLLOW EVERY CALL")
-                    .font(.archivoNarrow(8, weight: .bold))
-                    .tracking(2.0).foregroundColor(WC.accentInk.opacity(0.7))
-                Text("104 MATCHES · FREE")
-                    .font(.anton(16)).foregroundColor(WC.accentInk).tracking(0.4)
+}
+
+// MARK: - Animated championship border
+
+/// Same rotating-conic mechanism as the home screen's AcidBorder, but a
+/// single-hue GOLD spotlight — a dim gold rim with one bright sweep
+/// drifting around the edge. Reads as premium / championship trophy,
+/// not a multicolor rainbow. Used to ring the FIFA banner + hero.
+struct WCGoldBorder<S: Shape>: View {
+    let shape: S
+    var lineWidth: CGFloat = 2
+    var period: Double = 8.0   // seconds per full revolution
+
+    @State private var angle: Double = 0
+
+    var body: some View {
+        shape
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: WC.gold.opacity(0.30), location: 0.00),
+                        .init(color: WC.gold.opacity(0.30), location: 0.40),
+                        .init(color: WC.goldBright,         location: 0.50),
+                        .init(color: WC.gold.opacity(0.30), location: 0.60),
+                        .init(color: WC.gold.opacity(0.30), location: 1.00),
+                    ]),
+                    center: .center,
+                    angle: .degrees(angle)
+                ),
+                lineWidth: lineWidth
+            )
+            .shadow(color: WC.gold.opacity(0.30), radius: 3, x: 0, y: 0)
+            .onAppear {
+                withAnimation(.linear(duration: period)
+                                .repeatForever(autoreverses: false)) {
+                    angle = 360
+                }
             }
-            Spacer()
-            HStack(spacing: 4) {
-                Text("JOIN").font(.archivoNarrow(9, weight: .bold))
-                    .tracking(2.0).foregroundColor(WC.accentInk)
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundColor(WC.accentInk)
-            }
-        }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(WC.accent))
-        .shadow(color: WC.accent.opacity(0.4), radius: 14, x: 0, y: 8)
     }
 }
 

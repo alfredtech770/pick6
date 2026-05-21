@@ -22,6 +22,11 @@ struct Pick: Identifiable, Codable {
     let confidence: String
     let reasoning: String
     let keyFactor: String?        // short tagline ("Cole 2.34 ERA vs LAD")
+    /// Phase 2: real, web-search-backed supporting facts from the AI
+    /// pipeline (recent form, head-to-head, key injury, decisive stat).
+    /// Renders as the MATCHUP card on the detail page. Optional + decoded
+    /// leniently so older picks (or any decode hiccup) just omit the card.
+    let matchupFacts: [MatchupFact]?
     let result: String // "pending", "win", "loss"
     let homeScore: Int?
     let awayScore: Int?
@@ -36,6 +41,7 @@ struct Pick: Identifiable, Codable {
         case awayTeam = "away_team"
         case pick, probability, confidence, reasoning
         case keyFactor = "key_factor"
+        case matchupFacts = "matchup_facts"
         case result
         case homeScore = "home_score"
         case awayScore = "away_score"
@@ -147,6 +153,48 @@ struct Pick: Identifiable, Codable {
         c.timeZone = TimeZone(identifier: "America/New_York") ?? .current
         return c
     }()
+}
+
+// MARK: - Matchup fact
+
+/// One real, web-search-backed supporting fact for a pick — a labeled
+/// value the AI pipeline generates (e.g. "Recent form" → "W-W-L-W-D").
+/// Rendered in the detail page's MATCHUP card.
+struct MatchupFact: Codable, Identifiable, Hashable {
+    let label: String
+    let value: String
+    var id: String { label + value }
+}
+
+// MARK: - Lenient decoding
+
+/// Custom decoder kept in an extension (not the struct body) so the
+/// synthesized memberwise initializer is preserved — `fifaPick()` and a
+/// couple of fallback picks build `Pick` directly. The only behavioral
+/// change vs. the synthesized decoder: `matchup_facts` decodes
+/// leniently, so a malformed/absent value drops the MATCHUP card for
+/// that pick instead of failing the whole decode.
+extension Pick {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+        sport = try c.decode(String.self, forKey: .sport)
+        league = try c.decode(String.self, forKey: .league)
+        gameDate = try c.decode(String.self, forKey: .gameDate)
+        gameId = try c.decodeIfPresent(String.self, forKey: .gameId)
+        homeTeam = try c.decode(String.self, forKey: .homeTeam)
+        awayTeam = try c.decode(String.self, forKey: .awayTeam)
+        pick = try c.decode(String.self, forKey: .pick)
+        probability = try c.decode(Double.self, forKey: .probability)
+        confidence = try c.decode(String.self, forKey: .confidence)
+        reasoning = try c.decode(String.self, forKey: .reasoning)
+        keyFactor = try c.decodeIfPresent(String.self, forKey: .keyFactor)
+        matchupFacts = (try? c.decodeIfPresent([MatchupFact].self, forKey: .matchupFacts)) ?? nil
+        result = try c.decode(String.self, forKey: .result)
+        homeScore = try c.decodeIfPresent(Int.self, forKey: .homeScore)
+        awayScore = try c.decodeIfPresent(Int.self, forKey: .awayScore)
+    }
 }
 
 // MARK: - Pick render state

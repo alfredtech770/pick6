@@ -561,7 +561,7 @@ struct HeroCard: View {
         HStack(alignment: .center) {
             Pick1Logo()
             Spacer()
-            HeroPill()
+            HeroPill(isLive: isLive)
         }
     }
 
@@ -770,13 +770,21 @@ struct Pick1Logo: View {
 }
 
 struct HeroPill: View {
+    /// Only show the red "LIVE" treatment when the featured game is
+    /// actually in progress. Otherwise this is just the AI badge — we
+    /// never claim "LIVE" for an upcoming or finished game.
+    var isLive: Bool = false
+
+    @State private var pulse = false
+
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(Color(hex: "#D4FF3A"))
+                .fill(isLive ? Color(hex: "#FF3B30") : Color(hex: "#D4FF3A"))
                 .frame(width: 6, height: 6)
-                .shadow(color: Color(hex: "#D4FF3A").opacity(0.6), radius: 3)
-            Text("AI · LIVE")
+                .shadow(color: (isLive ? Color(hex: "#FF3B30") : Color(hex: "#D4FF3A")).opacity(0.6), radius: 3)
+                .opacity(isLive ? (pulse ? 0.35 : 1.0) : 1.0)
+            Text(isLive ? "LIVE" : "AI POWERED")
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2)
                 .foregroundColor(.white)
@@ -788,6 +796,12 @@ struct HeroPill: View {
             Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
         .clipShape(Capsule())
+        .onAppear {
+            guard isLive else { return }
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
     }
 }
 

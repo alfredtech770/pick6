@@ -346,6 +346,7 @@ Hard rules:
 - Confidence: "***" for 75%+, "**" for 65–74%, "*" for 55–64%.
 - Reasoning: 2–3 punchy sentences explaining WHY.
 - Key factor: the single biggest reason in 6–10 words.
+- Matchup facts: 3–5 short {label, value} pairs of REAL, current supporting data (recent form, head-to-head, key injury, a decisive stat) verified via web_search. These power the in-app MATCHUP card, so they must be factual and specific — NEVER invented. Omit any fact you can't confirm rather than guessing; tailor labels to the sport.
 
 For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
 For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
@@ -372,8 +373,22 @@ const PICK_SCHEMA = {
           confidence: { type: 'string', enum: ['***', '**', '*'] },
           reasoning: { type: 'string' },
           key_factor: { type: 'string' },
+          matchup_facts: {
+            type: 'array',
+            description:
+              'REQUIRED. 3-5 short, REAL, current supporting facts for this matchup, verified via web_search — never invented. Each is a {label, value} pair shown on the detail page MATCHUP card. Tailor to the sport: e.g. team sports → "Recent form" (last 5 W/L), "Head-to-head" (recent meetings), "Key injury", "Home/away split", a decisive team stat; combat → "Reach", "Recent form", "Finish rate", "Layoff"; F1 → "Grid/qualifying", "Track record", "Recent results"; tennis → "Surface form", "H2H", "Ranking gap". Keep value under ~40 chars. If you cannot confirm a fact via web_search, omit it rather than guess.',
+            items: {
+              type: 'object',
+              properties: {
+                label: { type: 'string', description: 'Short fact label, e.g. "Recent form", "Head-to-head", "Key injury".' },
+                value: { type: 'string', description: 'The concise factual value, e.g. "W-W-L-W-D", "LAL won 3 of last 5".' },
+              },
+              required: ['label', 'value'],
+              additionalProperties: false,
+            },
+          },
         },
-        required: ['game_id', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor'],
+        required: ['game_id', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts'],
         additionalProperties: false,
       },
     },
@@ -540,6 +555,10 @@ async function savePicks(league, picks) {
     confidence: p.confidence,
     reasoning: p.reasoning,
     key_factor: p.key_factor,
+    // Phase 2: real, web-search-backed supporting facts → MATCHUP card.
+    // Default to [] so a model that omits the field never nulls the
+    // NOT NULL column.
+    matchup_facts: Array.isArray(p.matchup_facts) ? p.matchup_facts : [],
     result: 'pending',
   }));
 
