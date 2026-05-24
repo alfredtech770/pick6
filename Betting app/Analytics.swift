@@ -17,6 +17,7 @@ import Foundation
 import UIKit
 import PostHog
 import FBSDKCoreKit
+import AppTrackingTransparency
 
 // MARK: - App-launch hook for the Meta SDK
 // SwiftUI has no AppDelegate by default; this adaptor gives the Meta SDK the
@@ -29,6 +30,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Settings.shared.displayName = "Pick1"
         ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
         return true
+    }
+
+    // App Tracking Transparency — prompt once, then tell the Meta SDK whether
+    // advertiser tracking is allowed (sharpens iOS ad attribution when granted).
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+            Settings.shared.isAdvertiserTrackingEnabled =
+                (ATTrackingManager.trackingAuthorizationStatus == .authorized)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            ATTrackingManager.requestTrackingAuthorization { status in
+                Settings.shared.isAdvertiserTrackingEnabled = (status == .authorized)
+            }
+        }
     }
 }
 
