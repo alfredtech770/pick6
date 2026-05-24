@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		AA0E99192F76DB0D0098E4C5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA7812A12F5F8400009C4993 /* Supabase */; };
+		AAA198C22FC39D8200D9D024 /* FacebookAEM in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C12FC39D8200D9D024 /* FacebookAEM */; };
+		AAA198C42FC39D8200D9D024 /* FacebookBasics in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C32FC39D8200D9D024 /* FacebookBasics */; };
+		AAA198C62FC39D8200D9D024 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C52FC39D8200D9D024 /* FacebookCore */; };
+		AAA198C82FC39D8200D9D024 /* FacebookGamingServices in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C72FC39D8200D9D024 /* FacebookGamingServices */; };
+		AAA198CA2FC39D8200D9D024 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C92FC39D8200D9D024 /* FacebookLogin */; };
+		AAA198CC2FC39D8200D9D024 /* FacebookShare in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198CB2FC39D8200D9D024 /* FacebookShare */; };
 		AAC7634E2FC3862100208B2D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = AAC7634D2FC3862100208B2D /* PostHog */; };
 /* End PBXBuildFile section */
 
@@ -28,7 +34,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAA198C22FC39D8200D9D024 /* FacebookAEM in Frameworks */,
+				AAA198C62FC39D8200D9D024 /* FacebookCore in Frameworks */,
+				AAA198CC2FC39D8200D9D024 /* FacebookShare in Frameworks */,
+				AAA198C42FC39D8200D9D024 /* FacebookBasics in Frameworks */,
+				AAA198C82FC39D8200D9D024 /* FacebookGamingServices in Frameworks */,
 				AA0E99192F76DB0D0098E4C5 /* Supabase in Frameworks */,
+				AAA198CA2FC39D8200D9D024 /* FacebookLogin in Frameworks */,
 				AAC7634E2FC3862100208B2D /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -74,6 +86,12 @@
 			packageProductDependencies = (
 				AA7812A12F5F8400009C4993 /* Supabase */,
 				AAC7634D2FC3862100208B2D /* PostHog */,
+				AAA198C12FC39D8200D9D024 /* FacebookAEM */,
+				AAA198C32FC39D8200D9D024 /* FacebookBasics */,
+				AAA198C52FC39D8200D9D024 /* FacebookCore */,
+				AAA198C72FC39D8200D9D024 /* FacebookGamingServices */,
+				AAA198C92FC39D8200D9D024 /* FacebookLogin */,
+				AAA198CB2FC39D8200D9D024 /* FacebookShare */,
 			);
 			productName = "Betting app";
 			productReference = AA7812922F5F83C3009C4993 /* Betting app.app */;
@@ -106,6 +124,7 @@
 			packageReferences = (
 				AA7812A02F5F8400009C4993 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				AAC7634C2FC3862100208B2D /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA7812932F5F83C3009C4993 /* Products */;
@@ -381,6 +400,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		AAC7634C2FC3862100208B2D /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PostHog/posthog-ios";
@@ -396,6 +423,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA7812A02F5F8400009C4993 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		AAA198C12FC39D8200D9D024 /* FacebookAEM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookAEM;
+		};
+		AAA198C32FC39D8200D9D024 /* FacebookBasics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookBasics;
+		};
+		AAA198C52FC39D8200D9D024 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
+		AAA198C72FC39D8200D9D024 /* FacebookGamingServices */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookGamingServices;
+		};
+		AAA198C92FC39D8200D9D024 /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
+		};
+		AAA198CB2FC39D8200D9D024 /* FacebookShare */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAA198C02FC39D8200D9D024 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookShare;
 		};
 		AAC7634D2FC3862100208B2D /* PostHog */ = {
 			isa = XCSwiftPackageProductDependency;

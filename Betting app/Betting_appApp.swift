@@ -10,6 +10,9 @@ import CoreText
 
 @main
 struct Betting_appApp: App {
+    // Meta SDK needs an app-launch hook (SwiftUI has none by default).
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     // Set once the user finishes the post-OTP onboarding flow
     // (PickSports → Notifications → Success). Until then, returning users
     // who close the app mid-flow resume from PickSports.
