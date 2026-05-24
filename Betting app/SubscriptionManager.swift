@@ -13,7 +13,8 @@
 //   com.pick1.app.pro.weekly    Auto-Renewable Weekly  $14.99
 //   com.pick1.app.pro.monthly   Auto-Renewable Monthly $39.99
 //
-// Add a 7-day free trial as an "Introductory Offer" on the weekly product.
+// A 7-day free trial is configured as an "Introductory Offer" on the
+// MONTHLY product only (the weekly product has no introductory offer).
 //
 // The Xcode target's bundle identifier is com.pick1.app (matches the IDs).
 //
@@ -152,6 +153,14 @@ final class SubscriptionManager: ObservableObject {
                 let transaction = try Self.checkVerified(verification)
                 await transaction.finish()
                 await refreshEntitlements()
+                Analytics.subscribed(
+                    amount: NSDecimalNumber(decimal: product.price).doubleValue,
+                    currency: product.priceFormatStyle.currencyCode,
+                    productId: product.id
+                )
+                if product.subscription?.introductoryOffer != nil {
+                    Analytics.trialStarted(productId: product.id)
+                }
 
             case .userCancelled:
                 // User dismissed the sheet — not an error to surface.

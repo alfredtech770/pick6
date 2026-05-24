@@ -30,6 +30,8 @@ struct Betting_appApp: App {
         // Enlarge the shared URL cache so team/athlete/league logos
         // persist and render instantly (no placeholder-badge flash).
         LogoPrefetch.bootCache()
+        // Product analytics (PostHog) — funnel + retention.
+        Analytics.bootstrap()
     }
 
     var body: some Scene {
@@ -44,6 +46,7 @@ struct Betting_appApp: App {
                     Pick1AuthFlow(authManager: authManager) { sports in
                         selectedSports = sports.sorted().joined(separator: ",")
                         hasFinishedOnboarding = true
+                        Analytics.onboardingCompleted()
                     }
                 } else {
                     Pick1HomeHiFi()

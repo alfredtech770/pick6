@@ -170,6 +170,7 @@ final class AuthManager {
     }
 
     private func loadProfile(userId: UUID) async {
+        Analytics.identify(userId.uuidString)
         do {
             let row: ProfileRow = try await SupabaseManager.client
                 .from("profiles")

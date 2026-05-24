@@ -185,6 +185,7 @@ struct OBPaywallScreen: View {
         }
         .padding(.horizontal, 18)
         .onAppear {
+            Analytics.paywallViewed()
             // Reset on each presentation so the delay always plays.
             skipUnlocked = false
             DispatchQueue.main.asyncAfter(deadline: .now() + skipDelay) {
@@ -621,7 +622,7 @@ struct OBPaywallScreen: View {
                         ProgressView()
                             .tint(.p1LimeInk)
                     } else {
-                        Text(loc.t(.paywall_cta_trial))
+                        Text(loc.t(plan == .monthly ? .paywall_cta_trial : .paywall_cta_subscribe))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)

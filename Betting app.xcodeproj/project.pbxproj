@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA0E99192F76DB0D0098E4C5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA7812A12F5F8400009C4993 /* Supabase */; };
+		AAC7634E2FC3862100208B2D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = AAC7634D2FC3862100208B2D /* PostHog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0E99192F76DB0D0098E4C5 /* Supabase in Frameworks */,
+				AAC7634E2FC3862100208B2D /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = "Betting app";
 			packageProductDependencies = (
 				AA7812A12F5F8400009C4993 /* Supabase */,
+				AAC7634D2FC3862100208B2D /* PostHog */,
 			);
 			productName = "Betting app";
 			productReference = AA7812922F5F83C3009C4993 /* Betting app.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AA7812A02F5F8400009C4993 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				AAC7634C2FC3862100208B2D /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA7812932F5F83C3009C4993 /* Products */;
@@ -256,7 +260,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Betting app/Betting app.entitlements";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = S33MH59G79;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -305,7 +309,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Betting app/Betting app.entitlements";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = S33MH59G79;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -377,6 +381,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		AAC7634C2FC3862100208B2D /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.58.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -384,6 +396,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA7812A02F5F8400009C4993 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		AAC7634D2FC3862100208B2D /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAC7634C2FC3862100208B2D /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
