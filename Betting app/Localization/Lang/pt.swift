@@ -102,11 +102,12 @@ enum PortugueseStrings {
         .paywall_compare_meta:           "O QUE RECEBES",
         .paywall_faq_title:              "DÚVIDAS?",
         .paywall_faq_meta:               "FAQ",
-        .paywall_fineprint_weekly:       "7 dias de avaliação gratuita, depois $14.99/semana. A subscrição renova-se automaticamente, salvo se for cancelada pelo menos 24h antes do fim do período. Os pagamentos são processados através do teu Apple ID.",
+        .paywall_fineprint_weekly:       "$14.99/semana. A subscrição renova-se automaticamente, salvo se for cancelada pelo menos 24h antes do fim do período. Os pagamentos são processados através do teu Apple ID.",
         .paywall_fineprint_monthly:      "7 dias de avaliação gratuita, depois $39.99/mês. A subscrição renova-se automaticamente, salvo se for cancelada pelo menos 24h antes do fim do período. Os pagamentos são processados através do teu Apple ID.",
-        .paywall_then_weekly:            "Depois $14.99/semana · Cancela quando quiseres",
+        .paywall_then_weekly:            "$14.99/semana · Cancela quando quiseres",
         .paywall_then_monthly:           "Depois $39.99/mês · Cancela quando quiseres",
         .paywall_cta_trial:              "Começar Avaliação Gratuita de 7 Dias",
+        .paywall_cta_subscribe:          "Subscrever agora",
         .paywall_restore:                "Restaurar Compras",
         .paywall_terms:                  "Termos de Serviço",
         .paywall_privacy:                "Política de Privacidade",
@@ -125,17 +126,13 @@ enum PortugueseStrings {
         .card_home_team:                 "CASA",
         .card_away_team:                 "FORA",
         .card_pick_label:                "IA",
-        .card_lock_in:                   "FIXAR PICK IA",
         .card_save_pick:                 "Guardar pick",
         .card_saved_toast:               "GUARDADO · {n}% CONFIANÇA IA",
 
-        // Bookmaker / age gate
-        .bookmaker_sheet_title:          "FAZ O TEU PICK",
-        .bookmaker_disclaimer:           "A Pick1 apresenta prognósticos de IA para entretenimento. Não fazemos, aceitamos nem processamos apostas.",
-        .bookmaker_gambler_hotline:      "Se tu ou alguém que conheces tem problemas com o jogo, liga para 1-800-GAMBLER.",
-        .age_gate_title:                 "APENAS 21+",
-        .age_gate_message:               "A Pick1 apresenta prognósticos desportivos de IA para entretenimento. As integrações com casas de apostas exigem que tenhas 21 anos ou mais. Ao continuar, confirmas que cumpres a idade legal para apostar na tua jurisdição.\n\nSe tu ou alguém que conheces tem problemas com o jogo, liga para 1-800-GAMBLER.",
-        .age_gate_confirm:               "Tenho 21 anos ou mais",
+        // Age gate
+        .age_gate_title:                 "APENAS 18+",
+        .age_gate_message:               "A Pick1 apresenta prognósticos desportivos de IA para entretenimento — estimativas estatísticas, não garantias. Ao continuar, confirmas que tens 18 anos ou mais.",
+        .age_gate_confirm:               "Tenho 18 anos ou mais",
 
         // Wins
         .wins_tab_title:                 "VITÓRIAS",

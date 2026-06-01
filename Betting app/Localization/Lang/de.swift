@@ -102,11 +102,12 @@ enum GermanStrings {
         .paywall_compare_meta:           "DEINE VORTEILE",
         .paywall_faq_title:              "FRAGEN?",
         .paywall_faq_meta:               "FAQ",
-        .paywall_fineprint_weekly:       "7 Tage kostenlos testen, danach $14.99/Woche. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird. Zahlungen erfolgen über deine Apple-ID.",
+        .paywall_fineprint_weekly:       "$14.99/Woche. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird. Zahlungen erfolgen über deine Apple-ID.",
         .paywall_fineprint_monthly:      "7 Tage kostenlos testen, danach $39.99/Monat. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird. Zahlungen erfolgen über deine Apple-ID.",
-        .paywall_then_weekly:            "Danach $14.99/Woche · Jederzeit kündbar",
+        .paywall_then_weekly:            "$14.99/Woche · Jederzeit kündbar",
         .paywall_then_monthly:           "Danach $39.99/Monat · Jederzeit kündbar",
         .paywall_cta_trial:              "7 Tage gratis starten",
+        .paywall_cta_subscribe:          "Jetzt abonnieren",
         .paywall_restore:                "Käufe wiederherstellen",
         .paywall_terms:                  "Nutzungsbedingungen",
         .paywall_privacy:                "Datenschutzrichtlinie",
@@ -125,17 +126,13 @@ enum GermanStrings {
         .card_home_team:                 "HEIM",
         .card_away_team:                 "AUSWÄRTS",
         .card_pick_label:                "KI",
-        .card_lock_in:                   "KI-TIPP SICHERN",
         .card_save_pick:                 "Tipp speichern",
         .card_saved_toast:               "GESPEICHERT · {n}% KI-KONFIDENZ",
 
-        // Bookmaker / age gate
-        .bookmaker_sheet_title:          "TIPP ABGEBEN",
-        .bookmaker_disclaimer:           "Pick1 zeigt KI-Prognosen zur Unterhaltung. Wir nehmen, vermitteln oder verarbeiten keine Wetten.",
-        .bookmaker_gambler_hotline:      "Wenn du oder jemand, den du kennst, ein Glücksspielproblem hat, rufe 1-800-GAMBLER an.",
-        .age_gate_title:                 "NUR AB 21",
-        .age_gate_message:               "Pick1 zeigt KI-Sportprognosen zur Unterhaltung. Sportwetten-Integrationen setzen ein Mindestalter von 21 Jahren voraus. Mit dem Fortfahren bestätigst du, dass du das gesetzliche Mindestalter für Glücksspiel in deinem Land erfüllst.\n\nWenn du oder jemand, den du kennst, ein Glücksspielproblem hat, rufe 1-800-GAMBLER an.",
-        .age_gate_confirm:               "Ich bin 21 oder älter",
+        // Age gate
+        .age_gate_title:                 "NUR AB 18",
+        .age_gate_message:               "Pick1 zeigt KI-Sportprognosen zur Unterhaltung — statistische Schätzungen, keine Garantien. Mit dem Fortfahren bestätigst du, dass du 18 oder älter bist.",
+        .age_gate_confirm:               "Ich bin 18 oder älter",
 
         // Wins
         .wins_tab_title:                 "SIEGE",

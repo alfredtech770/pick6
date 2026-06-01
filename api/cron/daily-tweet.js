@@ -28,12 +28,23 @@
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
-  // Cron auth — same Bearer scheme as the daily-pick send.
+  // Cron auth — same hardened Bearer scheme as daily-pick.js.
+  // No env-based bypass: all invocations (incl. local testing) must
+  // present the CRON_SECRET. timingSafeEqual avoids trivial timing oracles.
   const expected = process.env.CRON_SECRET;
+  if (!expected) {
+    return res.status(500).json({ error: 'cron_secret_not_configured' });
+  }
   const auth = req.headers.authorization || '';
-  const isCronRequest = expected && auth === `Bearer ${expected}`;
-  const isLocal = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'development';
-  if (!isCronRequest && !isLocal) {
+  const provided = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const ok = (() => {
+    if (!provided || provided.length !== expected.length) return false;
+    try {
+      const { timingSafeEqual } = require('crypto');
+      return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    } catch { return provided === expected; }
+  })();
+  if (!ok) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 

@@ -247,7 +247,7 @@ struct HomeHiFiContent: View {
     let onTapSport: (String) -> Void
     let onUnlock: () -> Void
 
-    /// Drives the FIFA World Cup hub presentation (full-screen cover).
+    /// Drives the World Cup hub presentation (full-screen cover).
     @State private var showWorldCup = false
 
     var body: some View {
@@ -281,11 +281,11 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                // FIFA World Cup banner — sits between the stats row
+                // World Cup banner — sits between the stats row
                 // and the sport filter, exactly per the design
                 // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
                 // the full World Cup hub.
-                FIFAWorldCupBanner(onTap: { showWorldCup = true })
+                WorldCupBanner(onTap: { showWorldCup = true })
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -391,7 +391,7 @@ struct HomeHiFiContent: View {
             Haptics.success()
         }
         .fullScreenCover(isPresented: $showWorldCup) {
-            FIFAWorldCupHubView(onClose: { showWorldCup = false })
+            WorldCupHubView(onClose: { showWorldCup = false })
         }
     }
 

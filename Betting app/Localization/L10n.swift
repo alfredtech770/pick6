@@ -142,6 +142,7 @@ enum L10nKey: String, CaseIterable {
     case paywall_then_weekly               // "Then $14.99/week · Cancel anytime"
     case paywall_then_monthly
     case paywall_cta_trial
+    case paywall_cta_subscribe             // weekly (no trial) CTA
     case paywall_restore
     case paywall_terms
     case paywall_privacy
@@ -160,15 +161,11 @@ enum L10nKey: String, CaseIterable {
     case card_home_team
     case card_away_team
     case card_pick_label                   // "AI" caps prefix
-    case card_lock_in
     case card_save_pick                    // CTA on detail
     case card_saved_toast                  // "SAVED · {n}% AI CONFIDENCE"
 
-    // ─── Bookmaker / age gate ─────────────────────────────────────
-    case bookmaker_sheet_title
-    case bookmaker_disclaimer
-    case bookmaker_gambler_hotline
-    case age_gate_title                    // "21+ ONLY"
+    // ─── Age gate ─────────────────────────────────────────────────
+    case age_gate_title                    // "18+ ONLY"
     case age_gate_message
     case age_gate_confirm
 

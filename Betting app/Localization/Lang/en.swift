@@ -103,11 +103,12 @@ enum EnglishStrings {
         .paywall_compare_meta:           "WHAT YOU GET",
         .paywall_faq_title:              "QUESTIONS?",
         .paywall_faq_meta:               "FAQ",
-        .paywall_fineprint_weekly:       "7-day free trial, then $14.99/week. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.",
+        .paywall_fineprint_weekly:       "$14.99/week. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.",
         .paywall_fineprint_monthly:      "7-day free trial, then $39.99/month. Subscription auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.",
-        .paywall_then_weekly:            "Then $14.99/week · Cancel anytime",
+        .paywall_then_weekly:            "$14.99/week · Cancel anytime",
         .paywall_then_monthly:           "Then $39.99/month · Cancel anytime",
         .paywall_cta_trial:              "Start 7-Day Free Trial",
+        .paywall_cta_subscribe:          "Subscribe Now",
         .paywall_restore:                "Restore Purchases",
         .paywall_terms:                  "Terms of Service",
         .paywall_privacy:                "Privacy Policy",
@@ -126,17 +127,13 @@ enum EnglishStrings {
         .card_home_team:                 "HOME",
         .card_away_team:                 "AWAY",
         .card_pick_label:                "AI",
-        .card_lock_in:                   "LOCK IN AI PICK",
         .card_save_pick:                 "Save pick",
         .card_saved_toast:               "SAVED · {n}% AI CONFIDENCE",
 
-        // Bookmaker / age gate
-        .bookmaker_sheet_title:          "PLACE YOUR PICK",
-        .bookmaker_disclaimer:           "Pick1 surfaces AI predictions for entertainment. We do not place, accept, or process wagers.",
-        .bookmaker_gambler_hotline:      "If you or someone you know has a gambling problem, call 1-800-GAMBLER.",
-        .age_gate_title:                 "21+ ONLY",
-        .age_gate_message:               "Pick1 surfaces AI sports predictions for entertainment. Sportsbook integrations require you to be 21 or older. By continuing you confirm you meet the legal gambling age in your jurisdiction.\n\nIf you or someone you know has a gambling problem, call 1-800-GAMBLER.",
-        .age_gate_confirm:               "I'm 21 or older",
+        // Age gate
+        .age_gate_title:                 "18+ ONLY",
+        .age_gate_message:               "Pick1 surfaces AI sports predictions for entertainment — statistical estimates, not guarantees. By continuing you confirm you are 18 or older.",
+        .age_gate_confirm:               "I'm 18 or older",
 
         // Wins
         .wins_tab_title:                 "WINS",

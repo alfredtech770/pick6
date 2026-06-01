@@ -1,19 +1,19 @@
-// Pick1FIFAWorldCup.swift
+// Pick1WorldCup.swift
 //
-// FIFA World Cup 2026 surface, ported pixel-faithfully from the Claude
+// World Cup 2026 surface, ported pixel-faithfully from the Claude
 // Design handoff (`Pick6 Home HiFi.html` → .wc-banner, and
-// `FIFA World Cup In-App.html` → the full hub screen).
+// `World Cup In-App.html` → the full hub screen).
 //
 // Two public views:
-//   • FIFAWorldCupBanner — the gold-bordered navy banner that sits on
+//   • WorldCupBanner — the gold-bordered navy banner that sits on
 //     the Home feed between the stats row and the sport filter. Tapping
 //     it opens the hub.
-//   • FIFAWorldCupHubView — the full in-app World Cup hub (hero,
+//   • WorldCupHubView — the full in-app World Cup hub (hero,
 //     day rail, featured opening match, today's slate, group standings,
 //     bottom CTA).
 //
 // The hub content is static showcase data matching the design exactly
-// — there is no live FIFA data pipeline; the design is a fixed mock.
+// — there is no live World Cup data pipeline; the design is a fixed mock.
 
 import SwiftUI
 
@@ -46,7 +46,7 @@ enum WC {
 /// gradient, gold hairline border, gold radial glow top-right, a
 /// red→gold→blue 2pt base stripe, trophy + 3-line copy + lime
 /// circular chevron CTA.
-struct FIFAWorldCupBanner: View {
+struct WorldCupBanner: View {
     let onTap: () -> Void
 
     var body: some View {
@@ -57,7 +57,7 @@ struct FIFAWorldCupBanner: View {
                     .foregroundColor(WC.gold)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("FIFA · WORLD CUP 2026")
+                    Text("WORLD CUP 2026")
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2.5)
                         .foregroundColor(WC.gold)
@@ -130,7 +130,7 @@ struct FIFAWorldCupBanner: View {
 
 // MARK: - Trophy mark (from the design's inline SVG path, redrawn)
 
-/// FIFA-style trophy glyph. The design uses one SVG path; SF Symbols'
+/// Trophy glyph. The design uses one SVG path; SF Symbols'
 /// `trophy.fill` reads the same at this scale and stays crisp.
 struct WCTrophy: View {
     var body: some View {
@@ -140,13 +140,13 @@ struct WCTrophy: View {
     }
 }
 
-// MARK: - In-App Hub  (FIFA World Cup In-App.html)
+// MARK: - In-App Hub  (World Cup In-App.html)
 
-struct FIFAWorldCupHubView: View {
+struct WorldCupHubView: View {
     let onClose: () -> Void
 
     /// Tapping a match (featured or a slate row) opens the standard
-    /// MatchDetailView with a Pick synthesized from the static FIFA
+    /// MatchDetailView with a Pick synthesized from the static
     /// showcase data. FavoritesStore is injected at the app root and
     /// propagates through this sheet.
     @State private var detailPick: Pick?
@@ -170,10 +170,10 @@ struct FIFAWorldCupHubView: View {
                                 metaLive: true, meta: "8:00 PM ET")
                     Button {
                         Haptics.tap()
-                        detailPick = fifaPick(home: "USA", away: "Mexico",
-                                              pick: "USA TO WIN · O 2.5 GOALS",
-                                              prob: 84,
-                                              keyFactor: "GROUP A · SOFI STADIUM")
+                        detailPick = wcPick(home: "USA", away: "Mexico",
+                                            pick: "USA TO WIN · O 2.5 GOALS",
+                                            prob: 84,
+                                            keyFactor: "GROUP A · SOFI STADIUM")
                     } label: {
                         featuredMatch.pressableScale(0.985)
                     }
@@ -206,10 +206,10 @@ struct FIFAWorldCupHubView: View {
         }
     }
 
-    /// Build a Pick from static FIFA showcase data so the match cards
+    /// Build a Pick from static showcase data so the match cards
     /// can reuse the app's standard MatchDetailView.
-    private func fifaPick(home: String, away: String, pick: String,
-                          prob: Double, keyFactor: String) -> Pick {
+    private func wcPick(home: String, away: String, pick: String,
+                        prob: Double, keyFactor: String) -> Pick {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.timeZone = TimeZone(identifier: "America/New_York")
@@ -217,7 +217,7 @@ struct FIFAWorldCupHubView: View {
             id: UUID(),
             createdAt: Date(),
             sport: "soccer",
-            league: "FIFA",
+            league: "WC",
             gameDate: f.string(from: Date()),
             gameId: nil,
             homeTeam: home,
@@ -225,7 +225,7 @@ struct FIFAWorldCupHubView: View {
             pick: pick,
             probability: prob,
             confidence: prob >= 80 ? "high" : (prob >= 65 ? "medium" : "low"),
-            reasoning: "AI projection for the FIFA World Cup 2026 group stage.",
+            reasoning: "AI projection for the World Cup 2026 group stage.",
             keyFactor: keyFactor,
             matchupFacts: nil,
             result: "pending",
@@ -252,7 +252,7 @@ struct FIFAWorldCupHubView: View {
 
             HStack(spacing: 8) {
                 WCTrophy().frame(width: 10, height: 13).foregroundColor(WC.gold)
-                Text("FIFA WORLD CUP 2026")
+                Text("WORLD CUP 2026")
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(WC.gold)
@@ -283,7 +283,7 @@ struct FIFAWorldCupHubView: View {
                 HStack(spacing: 8) {
                     WCTrophy().frame(width: 22, height: 28).foregroundColor(WC.gold)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("FIFA · WORLD CUP")
+                        Text("WORLD CUP")
                             .font(.anton(8))
                             .tracking(2.6)
                             .foregroundColor(WC.gold)
@@ -406,9 +406,9 @@ struct FIFAWorldCupHubView: View {
             .padding(.bottom, 12)
 
             HStack(alignment: .center, spacing: 10) {
-                featTeam("US", "USA", "FIFA #13 · HOST")
+                featTeam("US", "USA", "RANK #13 · HOST")
                 Text("VS").font(.anton(22)).foregroundColor(WC.gold)
-                featTeam("MX", "MEXICO", "FIFA #15 · HOST")
+                featTeam("MX", "MEXICO", "RANK #15 · HOST")
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 14)
@@ -489,9 +489,9 @@ struct FIFAWorldCupHubView: View {
                 Button {
                     Haptics.tap()
                     let prob = Double(m.conf.replacingOccurrences(of: "%", with: "")) ?? 0
-                    detailPick = fifaPick(home: m.fav, away: m.dog,
-                                          pick: m.pick, prob: prob,
-                                          keyFactor: m.group)
+                    detailPick = wcPick(home: m.fav, away: m.dog,
+                                        pick: m.pick, prob: prob,
+                                        keyFactor: m.group)
                 } label: {
                     HStack(spacing: 12) {
                         VStack(spacing: 2) {
@@ -624,7 +624,7 @@ struct FIFAWorldCupHubView: View {
 /// Same rotating-conic mechanism as the home screen's AcidBorder, but a
 /// single-hue GOLD spotlight — a dim gold rim with one bright sweep
 /// drifting around the edge. Reads as premium / championship trophy,
-/// not a multicolor rainbow. Used to ring the FIFA banner + hero.
+/// not a multicolor rainbow. Used to ring the World Cup banner + hero.
 struct WCGoldBorder<S: Shape>: View {
     let shape: S
     var lineWidth: CGFloat = 2

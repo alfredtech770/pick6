@@ -102,11 +102,12 @@ enum SpanishStrings {
         .paywall_compare_meta:           "QUÉ INCLUYE",
         .paywall_faq_title:              "¿DUDAS?",
         .paywall_faq_meta:               "FAQ",
-        .paywall_fineprint_weekly:       "Prueba gratuita de 7 días, después $14.99/semana. La suscripción se renueva automáticamente salvo que se cancele al menos 24 h antes del fin del periodo. Los pagos se procesan a través de tu ID de Apple.",
+        .paywall_fineprint_weekly:       "$14.99/semana. La suscripción se renueva automáticamente salvo que se cancele al menos 24 h antes del fin del periodo. Los pagos se procesan a través de tu ID de Apple.",
         .paywall_fineprint_monthly:      "Prueba gratuita de 7 días, después $39.99/mes. La suscripción se renueva automáticamente salvo que se cancele al menos 24 h antes del fin del periodo. Los pagos se procesan a través de tu ID de Apple.",
-        .paywall_then_weekly:            "Después $14.99/semana · Cancela cuando quieras",
+        .paywall_then_weekly:            "$14.99/semana · Cancela cuando quieras",
         .paywall_then_monthly:           "Después $39.99/mes · Cancela cuando quieras",
         .paywall_cta_trial:              "Empezar prueba gratis de 7 días",
+        .paywall_cta_subscribe:          "Suscríbete ahora",
         .paywall_restore:                "Restaurar compras",
         .paywall_terms:                  "Términos del servicio",
         .paywall_privacy:                "Política de privacidad",
@@ -125,17 +126,13 @@ enum SpanishStrings {
         .card_home_team:                 "LOCAL",
         .card_away_team:                 "VISITANTE",
         .card_pick_label:                "IA",
-        .card_lock_in:                   "FIJAR PICK IA",
         .card_save_pick:                 "Guardar pick",
         .card_saved_toast:               "GUARDADO · {n}% CONFIANZA IA",
 
-        // Bookmaker / age gate
-        .bookmaker_sheet_title:          "HAZ TU PICK",
-        .bookmaker_disclaimer:           "Pick1 muestra predicciones de IA con fines de entretenimiento. No realizamos, aceptamos ni procesamos apuestas.",
-        .bookmaker_gambler_hotline:      "Si tú o alguien que conoces tiene un problema con el juego, llama al 1-800-GAMBLER.",
-        .age_gate_title:                 "SOLO +21",
-        .age_gate_message:               "Pick1 muestra predicciones deportivas con IA con fines de entretenimiento. Las integraciones con casas de apuestas requieren tener 21 años o más. Al continuar confirmas que cumples la edad legal para apostar en tu jurisdicción.\n\nSi tú o alguien que conoces tiene un problema con el juego, llama al 1-800-GAMBLER.",
-        .age_gate_confirm:               "Tengo 21 años o más",
+        // Age gate
+        .age_gate_title:                 "SOLO +18",
+        .age_gate_message:               "Pick1 muestra predicciones deportivas con IA con fines de entretenimiento — estimaciones estadísticas, no garantías. Al continuar confirmas que tienes 18 años o más.",
+        .age_gate_confirm:               "Tengo 18 años o más",
 
         // Wins
         .wins_tab_title:                 "VICTORIAS",

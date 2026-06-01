@@ -55,6 +55,39 @@ final class SubscriptionManager: ObservableObject {
     /// Last error from a purchase attempt, surfaced to the UI.
     @Published var lastError: String?
 
+    // MARK: - Product load state
+    //
+    // Background: App Review rejected build 6 with "the SUBSCRIBE NOW button
+    // was unresponsive." Root cause was that `loadProducts()` failed
+    // silently — products stayed empty, the user tapped Subscribe, and
+    // `triggerPurchase` early-returned with only a tiny error label below
+    // the button. To a reviewer that reads as a dead button.
+    //
+    // The paywall now drives its CTA off `productsLoadState`:
+    //   .idle       → never attempted (shouldn't happen post-bootstrap)
+    //   .loading    → request in flight, CTA shows a spinner + "LOADING…"
+    //   .loaded     → ready, CTA shows normal Subscribe/Trial copy
+    //   .failed     → CTA flips to "TAP TO RETRY" and re-runs loadProducts
+    //
+    // The state is published, so SwiftUI re-renders the CTA the instant
+    // a load completes or fails. Combined with `lastLoadError` (a
+    // human-readable string for the UI), this means the user always
+    // sees motion when they tap — no more "looks unresponsive."
+
+    enum ProductsLoadState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case failed
+    }
+
+    @Published private(set) var productsLoadState: ProductsLoadState = .idle
+
+    /// Human-readable description of the most recent load failure, if any.
+    /// Drives the small caption under the CTA so users see *why* a retry
+    /// is being offered, not just an unexplained "RETRY" button.
+    @Published private(set) var lastLoadError: String?
+
     // MARK: - Product IDs
 
     /// All Pick1 Pro product identifiers, in display order.
@@ -118,8 +151,17 @@ final class SubscriptionManager: ObservableObject {
     // MARK: - Loading products
 
     /// Fetches the configured products from the App Store.
-    /// Safe to call multiple times — silently no-ops on transient errors.
+    /// Safe to call multiple times — drives the published `productsLoadState`
+    /// so the paywall can render a spinner / retry button based on the
+    /// real status of the request (instead of silently appearing dead).
     func loadProducts() async {
+        // Only flip to .loading if we're not already mid-flight, so a
+        // concurrent caller doesn't bounce the UI between states.
+        if productsLoadState != .loading {
+            productsLoadState = .loading
+        }
+        lastLoadError = nil
+
         do {
             let fetched = try await Product.products(for: Self.productIds)
             // Sort weekly → monthly for stable display.
@@ -127,14 +169,31 @@ final class SubscriptionManager: ObservableObject {
                 Self.productIds.firstIndex(of: lhs.id) ?? 0 <
                 Self.productIds.firstIndex(of: rhs.id) ?? 0
             }
+
+            // Apple returns an empty array (not an error) when the IDs
+            // exist locally but aren't approved/available on the App
+            // Store yet — e.g. "Developer Action Needed" or "Waiting
+            // for Review" subscriptions. Treat that as a failure so the
+            // paywall offers a retry instead of a dead CTA.
+            if fetched.isEmpty {
+                self.productsLoadState = .failed
+                self.lastLoadError = "Subscriptions aren't available right now. Tap retry, or check your connection."
+            } else {
+                self.productsLoadState = .loaded
+            }
         } catch {
-            // No products is the same as no entitlement — Free tier is fine.
-            // Debug-only log: avoid writing to the device's unified log in
-            // Release (minor info disclosure + noise).
+            self.productsLoadState = .failed
+            self.lastLoadError = "Couldn't reach the App Store. Tap retry, or check your connection."
             #if DEBUG
             print("Pick1 SubscriptionManager: loadProducts failed: \(error)")
             #endif
         }
+    }
+
+    /// Convenience for the paywall retry button — same as `loadProducts()`,
+    /// but named for intent at the call site.
+    func reloadProducts() async {
+        await loadProducts()
     }
 
     // MARK: - Purchase

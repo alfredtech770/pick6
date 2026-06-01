@@ -611,6 +611,32 @@ struct OBPaywallScreen: View {
 
     // MARK: - Sticky CTA
 
+    /// What the SUBSCRIBE NOW button should display + do right now.
+    /// Driven off SubscriptionManager.productsLoadState so the button
+    /// can never look "active" while products haven't loaded — that was
+    /// the exact bug that got build 6 rejected ("unresponsive button").
+    private enum CTAMode {
+        case purchasing       // mid-purchase — spinner, disabled
+        case loadingProducts  // products still being fetched — spinner + LOADING label
+        case retry            // load failed or returned nothing — "TAP TO RETRY"
+        case ready            // products loaded, can purchase
+    }
+
+    private var ctaMode: CTAMode {
+        if subs.purchasing { return .purchasing }
+        switch subs.productsLoadState {
+        case .idle, .loading:
+            return .loadingProducts
+        case .failed:
+            return .retry
+        case .loaded:
+            // Edge case: products loaded but none matches the selected
+            // plan keyword. Still a retry path (re-fetching is the only
+            // user-facing remedy).
+            return selectedProduct == nil ? .retry : .ready
+        }
+    }
+
     private var stickyBar: some View {
         VStack(spacing: 8) {
             Button {
@@ -618,10 +644,24 @@ struct OBPaywallScreen: View {
                 triggerPurchase()
             } label: {
                 Group {
-                    if subs.purchasing {
-                        ProgressView()
-                            .tint(.p1LimeInk)
-                    } else {
+                    switch ctaMode {
+                    case .purchasing, .loadingProducts:
+                        HStack(spacing: 10) {
+                            ProgressView().tint(.p1LimeInk)
+                            if ctaMode == .loadingProducts {
+                                Text("LOADING…")
+                                    .font(.custom("BarlowCondensed-Black", size: 15))
+                                    .kerning(2.6)
+                                    .foregroundColor(.p1LimeInk)
+                            }
+                        }
+                    case .retry:
+                        Text("TAP TO RETRY")
+                            .font(.custom("BarlowCondensed-Black", size: 15))
+                            .kerning(2.6)
+                            .textCase(.uppercase)
+                            .foregroundColor(.p1LimeInk)
+                    case .ready:
                         Text(loc.t(plan == .monthly ? .paywall_cta_trial : .paywall_cta_subscribe))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
@@ -631,26 +671,19 @@ struct OBPaywallScreen: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Color.p1Lime)
+                .background(Color.p1Lime.opacity(ctaMode == .loadingProducts ? 0.55 : 1.0))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .pressableScale(0.97)
             }
             .buttonStyle(.plain)
-            .disabled(subs.purchasing)
+            // Only fully-disabled while a purchase is in flight or
+            // products are still loading. The .retry state is *intentionally*
+            // tappable — that's the recovery path the reviewer needed.
+            .disabled(ctaMode == .purchasing || ctaMode == .loadingProducts)
             // Success haptic the moment Apple confirms the purchase.
             .sensoryFeedback(.success, trigger: subs.isPro)
 
-            if let err = subs.lastError {
-                Text(err)
-                    .font(.system(size: 11))
-                    .foregroundColor(.p1Hot)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            } else {
-                Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.p1Mute)
-            }
+            captionUnderCTA
         }
         .padding(.horizontal, 22)
         .padding(.top, 14)
@@ -669,6 +702,41 @@ struct OBPaywallScreen: View {
             // The instant Apple confirms the purchase, dismiss the paywall.
             if nowPro { onSubscribe(plan.rawValue) }
         }
+        .task {
+            // Belt-and-suspenders: bootstrap() should have already loaded
+            // products at launch, but if the user navigated here before
+            // that finished — or if it failed — kick off a fresh attempt
+            // so the CTA isn't stuck in .loading or .failed at first paint.
+            if subs.productsLoadState == .idle
+                || (subs.productsLoadState == .failed && subs.products.isEmpty) {
+                await subs.loadProducts()
+            }
+        }
+    }
+
+    /// Caption below the CTA. Priorities, top → bottom:
+    ///   1. A purchase error (most actionable feedback)
+    ///   2. The load-error from `subs.lastLoadError` (explains the retry)
+    ///   3. Default "then $X/period" pricing copy
+    @ViewBuilder
+    private var captionUnderCTA: some View {
+        if let err = subs.lastError {
+            Text(err)
+                .font(.system(size: 11))
+                .foregroundColor(.p1Hot)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+        } else if ctaMode == .retry, let loadErr = subs.lastLoadError {
+            Text(loadErr)
+                .font(.system(size: 11))
+                .foregroundColor(.p1Hot)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+        } else {
+            Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(.p1Mute)
+        }
     }
 
     private var selectedProduct: Product? {
@@ -679,11 +747,30 @@ struct OBPaywallScreen: View {
     }
 
     private func triggerPurchase() {
-        guard let product = selectedProduct else {
-            subs.lastError = "Couldn't find that product. Make sure App Store Connect has \(SubscriptionManager.productIds.joined(separator: ", ")) configured."
+        switch ctaMode {
+        case .purchasing, .loadingProducts:
+            // Defensive — the button is disabled in these states, but
+            // belt-and-suspenders in case a stale tap sneaks through.
             return
+
+        case .retry:
+            // Clear any stale purchase error so the user sees fresh
+            // load-state feedback, then re-attempt the product load.
+            subs.lastError = nil
+            Task { await subs.reloadProducts() }
+            return
+
+        case .ready:
+            guard let product = selectedProduct else {
+                // selectedProduct can only be nil here in a race where
+                // the plan toggle changed mid-tap and the matching
+                // product hasn't been re-resolved. Trigger a reload
+                // rather than dead-end the user.
+                Task { await subs.reloadProducts() }
+                return
+            }
+            Task { await subs.purchase(product) }
         }
-        Task { await subs.purchase(product) }
     }
 }
 

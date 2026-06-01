@@ -74,6 +74,48 @@ function checkWebSearchBudget(expectedUses = 1) {
   return true;
 }
 
+// Daily Claude token-cost ceiling. Trips the breaker before runaway prompts
+// can burn the budget. Counts ACTUAL post-call token spend at Opus 4.7 rates
+// ($5/M input, $25/M output, $1.25/M cache_read, $6.25/M cache_write).
+const CLAUDE_DAILY_COST_LIMIT_USD = Number(process.env.CLAUDE_DAILY_COST_LIMIT_USD || 25);
+let claudeCostUsd = 0;
+let claudeCostDate = new Date().toISOString().slice(0, 10);
+
+function trackClaudeCost(usage) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== claudeCostDate) { claudeCostDate = today; claudeCostUsd = 0; }
+  const inputCost = (usage.input_tokens || 0) / 1_000_000 * 5;
+  const outputCost = (usage.output_tokens || 0) / 1_000_000 * 25;
+  const cacheReadCost = (usage.cache_read_input_tokens || 0) / 1_000_000 * 1.25;
+  const cacheWriteCost = (usage.cache_creation_input_tokens || 0) / 1_000_000 * 6.25;
+  const total = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+  claudeCostUsd += total;
+  return { spent: claudeCostUsd, callCost: total };
+}
+
+function claudeBudgetExceeded() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== claudeCostDate) return false;  // new day — reset on next track
+  return claudeCostUsd >= CLAUDE_DAILY_COST_LIMIT_USD;
+}
+
+// Resend-based alert wrapper. Used by runPipeline so any pipeline crash
+// emails admin within seconds — silent failure was the prior failure mode.
+async function sendAlert(subject, body) {
+  const key = process.env.RESEND_API_KEY;
+  const to  = process.env.ALERT_EMAIL || 'ethan@milam.app';
+  const from = process.env.RESEND_FROM || 'Pick1 Alerts <admin@pick1.live>';
+  if (!key) { err('Cannot send alert — RESEND_API_KEY not set'); return; }
+  try {
+    await axios.post('https://api.resend.com/emails',
+      { from, to: [to], subject: `[Pick1 Pipeline] ${subject}`, text: body },
+      { headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, timeout: 10000 });
+    log(`📧 Alert sent: ${subject}`);
+  } catch (e) {
+    err('Alert send failed:', e.message);
+  }
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY,
@@ -439,6 +481,11 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const cfg = LEAGUES[league];
   const useResearch = cfg.promptMode === 'research' || forceResearch;
 
+  if (claudeBudgetExceeded()) {
+    log(`🛑 Skipping ${league} pick gen: daily Claude cost ceiling ($${CLAUDE_DAILY_COST_LIMIT_USD}) reached. Spent $${claudeCostUsd.toFixed(2)} today.`);
+    return [];
+  }
+
   // Budget check — research mode + forceResearch both fan out web_search
   // calls. Reserve a generous slice (10 searches) per league pick run,
   // and bail if we can't afford it. Pure feed-mode pick runs still hit
@@ -484,6 +531,8 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
 
   const u = final.usage;
   log(`Claude ${league} usage: in=${u.input_tokens} out=${u.output_tokens} cache_read=${u.cache_read_input_tokens || 0} cache_write=${u.cache_creation_input_tokens || 0}`);
+  const { spent, callCost } = trackClaudeCost(u);
+  log(`💰 Claude cost this call: $${callCost.toFixed(3)} | today: $${spent.toFixed(2)}/${CLAUDE_DAILY_COST_LIMIT_USD}`);
 
   const text = final.content.find((b) => b.type === 'text')?.text;
   if (!text) {
@@ -608,83 +657,22 @@ async function upsertLiveScores(league, games) {
 
 const FINAL_STATUSES = new Set(['Final', 'F', 'FT', 'closed', 'Final OT', 'Final SO', 'F/OT', 'F/SO']);
 
-/// Looks for live_scores rows whose status indicates the game is over
-/// but where home_score / away_score are NULL — sportsdata.io sometimes
-/// flips a game to "Final" before populating the score. We use Claude
-/// web_search to fill the missing scores so gradePicks() can run.
+/// AI-free score audit. Previously used Claude web_search to fill in
+/// missing final scores at ~$0.05-$0.15/game — a runaway cost vector.
+/// Now we rely exclusively on sportsdata.io's live polling: if a final
+/// score never lands in live_scores, the pick stays ungraded. That's
+/// acceptable: missing one day's grades is cheaper than a $50 blowout.
 async function backfillMissingScores() {
-  // Hard ceiling: 5 games per tick. Each backfill is ~$0.05-$0.15 in
-  // Claude web_search; 5 × hourly × 24 hours = 120 calls/day worst-case
-  // (~$6-18). 20/tick (the old value) was ~$24-72/day worst-case which
-  // was the source of the original cost incident.
-  const PER_TICK_CAP = 5;
   const finalsArr = [...FINAL_STATUSES];
   const { data: missing, error } = await supabase
     .from('live_scores')
-    .select('game_id, league, home_team, away_team, start_time, status')
+    .select('game_id')
     .in('status', finalsArr)
-    .or('home_score.is.null,away_score.is.null')
-    .limit(PER_TICK_CAP);
+    .or('home_score.is.null,away_score.is.null');
   if (error) { err('Backfill scan failed:', error.message); return 0; }
-  if (!missing?.length) return 0;
-
-  // Daily budget gate. If we're out, skip the burst entirely — the
-  // games will retry next tick (or tomorrow); we'd rather have a
-  // 12-hour data delay than a $50 cost blowout.
-  if (!checkWebSearchBudget(missing.length)) {
-    log(`💸 Skipping backfill: daily web_search budget (${WEB_SEARCH_DAILY_LIMIT}) reached.`);
-    return 0;
-  }
-
-  log(`🔁 Backfilling ${missing.length} final game(s) with missing scores via web_search… (budget used: ${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT})`);
-
-  let filled = 0;
-  for (const row of missing) {
-    const dateStr = (row.start_time || '').slice(0, 10) || todayISO();
-    const userPrompt = [
-      `What was the FINAL score of the ${row.league} game between ${row.away_team} (away) and ${row.home_team} (home) on ${dateStr}?`,
-      `Use web_search to verify. Reply with ONLY a JSON object of the form {"home_score": <int>, "away_score": <int>}.`,
-      `If you cannot confirm the final score (game postponed, didn't happen, or no source), reply {"home_score": null, "away_score": null}.`,
-    ].join('\n');
-
-    try {
-      const stream = anthropic.messages.stream({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 4000,
-        thinking: { type: 'adaptive' },
-        output_config: {
-          effort: 'high',
-          format: { type: 'json_schema', schema: {
-            type: 'object',
-            properties: {
-              home_score: { type: ['integer', 'null'] },
-              away_score: { type: ['integer', 'null'] },
-            },
-            required: ['home_score', 'away_score'],
-            additionalProperties: false,
-          } },
-        },
-        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
-        messages: [{ role: 'user', content: userPrompt }],
-      });
-      const final = await stream.finalMessage();
-      const text = final.content.find((b) => b.type === 'text')?.text;
-      if (!text) continue;
-      const parsed = JSON.parse(text);
-      if (parsed.home_score == null || parsed.away_score == null) continue;
-      const { error: e } = await supabase
-        .from('live_scores')
-        .update({ home_score: parsed.home_score, away_score: parsed.away_score })
-        .eq('game_id', row.game_id);
-      if (e) { err(`Score backfill update failed for ${row.game_id}:`, e.message); continue; }
-      log(`📊 Backfilled ${row.away_team} ${parsed.away_score} – ${parsed.home_score} ${row.home_team} (${row.league})`);
-      filled++;
-    } catch (e) {
-      err(`Score backfill failed for ${row.game_id}:`, e.message);
-    }
-  }
-  if (filled) log(`Backfilled ${filled}/${missing.length} game(s).`);
-  return filled;
+  const n = missing?.length || 0;
+  if (n) log(`ℹ️ ${n} final-status game(s) missing scores — waiting on sportsdata.io to repopulate (no Claude backfill).`);
+  return 0;
 }
 
 /// Lenient string match used when comparing pick text to team text.
@@ -752,145 +740,10 @@ async function gradePicks() {
   return graded;
 }
 
-/// Research-mode grading. The score feed (sportsdata.io) requires a
-/// paid subscription; when it's lapsed/403, NO live_scores rows are
-/// ever written, so gradePicks() above finds nothing to grade and
-/// every pick sits at `pending` forever — games never go live, never
-/// flip to W/L. This is the fallback: for pending picks whose game
-/// day has arrived or passed and which have no usable live_scores
-/// row, ask Claude (web_search) for the confirmed FINAL score keyed
-/// off the pick's own teams + date, then grade directly AND write a
-/// synthetic live_scores row so the iOS app renders the final score.
-///
-/// Strictly budget-guarded: PER_TICK_CAP per hourly tick + the shared
-/// daily web_search ceiling. The prompt REQUIRES a confirmed final
-/// score (returns null if the game is in progress / hasn't started /
-/// can't be verified), so we never grade an unfinished game.
-async function gradePicksViaResearch() {
-  const PER_TICK_CAP = 5;
-  const today = todayISO();
-
-  const { data: pending, error: e1 } = await supabase
-    .from('picks')
-    .select('id, game_id, pick, home_team, away_team, sport, league, game_date')
-    .eq('result', 'pending')
-    .lte('game_date', today)            // game day arrived or passed
-    .order('game_date', { ascending: true })
-    .limit(50);
-  if (e1) { err('Research-grade pending fetch failed:', e1.message); return 0; }
-  if (!pending?.length) return 0;
-
-  // Skip any pick that already has a final-scored live_scores row —
-  // gradePicks() (which ran just before us) owns those.
-  const gameIds = [...new Set(pending.map((p) => p.game_id).filter(Boolean))];
-  let scored = new Set();
-  if (gameIds.length) {
-    const { data: rows } = await supabase
-      .from('live_scores')
-      .select('game_id, home_score, away_score, status')
-      .in('game_id', gameIds);
-    for (const r of rows || []) {
-      if (FINAL_STATUSES.has(r.status)
-          && r.home_score != null && r.away_score != null) {
-        scored.add(r.game_id);
-      }
-    }
-  }
-
-  const todo = pending
-    .filter((p) => p.game_id && !scored.has(p.game_id))
-    .slice(0, PER_TICK_CAP);
-  if (!todo.length) return 0;
-
-  if (!checkWebSearchBudget(todo.length)) {
-    log(`💸 Skipping research-grade: daily web_search budget (${WEB_SEARCH_DAILY_LIMIT}) reached.`);
-    return 0;
-  }
-
-  log(`🔎 Research-grading ${todo.length} pending pick(s) via web_search… (budget used: ${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT})`);
-
-  let graded = 0;
-  for (const pick of todo) {
-    const userPrompt = [
-      `Did the ${pick.league} game between ${pick.away_team} (away) and ${pick.home_team} (home) on ${pick.game_date} FINISH? If so, what was the FINAL score?`,
-      `Use web_search to verify against a reliable source (ESPN, official league site, etc.).`,
-      `Reply with ONLY a JSON object: {"final": <bool>, "home_score": <int|null>, "away_score": <int|null>}.`,
-      `Set "final": false (and null scores) if the game is still in progress, has not started, was postponed/cancelled, or you cannot confirm a finished result. Only set "final": true when you have a confirmed FINAL score from a real source.`,
-    ].join('\n');
-
-    try {
-      const stream = anthropic.messages.stream({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 4000,
-        thinking: { type: 'adaptive' },
-        output_config: {
-          effort: 'high',
-          format: { type: 'json_schema', schema: {
-            type: 'object',
-            properties: {
-              final: { type: 'boolean' },
-              home_score: { type: ['integer', 'null'] },
-              away_score: { type: ['integer', 'null'] },
-            },
-            required: ['final', 'home_score', 'away_score'],
-            additionalProperties: false,
-          } },
-        },
-        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
-        messages: [{ role: 'user', content: userPrompt }],
-      });
-      const final = await stream.finalMessage();
-      const text = final.content.find((b) => b.type === 'text')?.text;
-      if (!text) continue;
-      const parsed = JSON.parse(text);
-      if (!parsed.final
-          || parsed.home_score == null
-          || parsed.away_score == null) {
-        continue;   // not finished / unverified — retry next tick
-      }
-
-      const matchesHome = teamsMatch(pick.pick, pick.home_team);
-      const matchesAway = teamsMatch(pick.pick, pick.away_team);
-      if (!matchesHome && !matchesAway) continue;
-
-      const homeWon = parsed.home_score > parsed.away_score;
-      const won = matchesHome === homeWon;
-
-      // 1. Grade the pick.
-      const { error: e3 } = await supabase
-        .from('picks')
-        .update({
-          result: won ? 'win' : 'loss',
-          home_score: parsed.home_score,
-          away_score: parsed.away_score,
-        })
-        .eq('id', pick.id);
-      if (e3) { err(`Research-grade update failed for ${pick.id}:`, e3.message); continue; }
-
-      // 2. Write a synthetic live_scores row so the iOS app shows the
-      //    final score + reads the game as done (renderState already
-      //    short-circuits on the graded result, but the score row
-      //    drives the numeric display on every card surface).
-      await supabase.from('live_scores').upsert({
-        game_id: pick.game_id,
-        sport: pick.sport,
-        home_team: pick.home_team,
-        away_team: pick.away_team,
-        home_score: parsed.home_score,
-        away_score: parsed.away_score,
-        status: 'Final',
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'game_id' });
-
-      log(`${won ? '✅ WIN' : '❌ LOSS'} (research): ${pick.pick} (${parsed.away_score}-${parsed.home_score})`);
-      graded++;
-    } catch (e) {
-      err(`Research-grade failed for pick ${pick.id}:`, e.message);
-    }
-  }
-  if (graded) log(`Research-graded ${graded}/${todo.length} pick(s).`);
-  return graded;
-}
+// gradePicksViaResearch was removed: it used Claude web_search to grade
+// pending picks lacking a live_scores row. That hourly Claude burst was
+// a runaway cost vector. Grading now happens exclusively from sportsdata.io
+// final scores via gradePicks() — picks without a final score stay pending.
 
 // ════════════════════════════════════════════════════════════════
 // PERFORMANCE SNAPSHOTS
@@ -930,7 +783,13 @@ async function runPipeline() {
   if (pipelineRunning) { log('Pipeline already running — skipping this tick.'); return; }
   pipelineRunning = true;
   log('▶ Pipeline run starting');
+  const startedAt = new Date();
   try {
+    // Grade yesterday's settled games FIRST so today's pick generation
+    // sees the freshest performance stats. AI-free — uses whatever
+    // sportsdata.io live polling has dropped into live_scores overnight.
+    await gradePicks();
+
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       // 1. Pull events from primary source.
       const raw = cfg.fetcher ? await cfg.fetcher() : [];
@@ -979,10 +838,13 @@ async function runPipeline() {
       await savePicks(league, picks);
     }
 
-    await backfillMissingScores();
+    // Second grade pass: catches anything sportsdata.io flipped to Final
+    // while the per-league loop was running.
     await gradePicks();
   } catch (e) {
     err('Pipeline crashed:', e.stack || e.message);
+    await sendAlert('Pipeline run FAILED',
+      `Started: ${startedAt.toISOString()}\nFailed at: ${new Date().toISOString()}\nError: ${e.message}\n\nStack:\n${e.stack}`);
   } finally {
     pipelineRunning = false;
     log('■ Pipeline run complete');
@@ -995,18 +857,41 @@ async function runPipeline() {
 
 let liveLoopRunning = false;
 
+// Cache of leagues with games scheduled today — refreshed at the top of
+// every hour to skip empty leagues entirely. Cuts sportsdata.io API
+// volume by ~50-70% on typical days when only 2-3 of 6 leagues are active.
+let leaguesWithGamesToday = null;
+let leaguesCacheDate = null;
+
+async function refreshActiveLeaguesCache() {
+  const today = todayISO();
+  if (leaguesCacheDate === today && leaguesWithGamesToday !== null) return leaguesWithGamesToday;
+  const active = new Set();
+  for (const [league, cfg] of Object.entries(LEAGUES)) {
+    if (cfg.promptMode === 'research' || !cfg.fetcher) continue;
+    try {
+      const raw = await cfg.fetcher();
+      if (raw?.length) active.add(league);
+    } catch {}
+  }
+  leaguesWithGamesToday = active;
+  leaguesCacheDate = today;
+  log(`Active leagues today (${today}): ${[...active].join(', ') || 'none'}`);
+  return active;
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
   try {
-    // ── live_scores refresh ONLY ── this runs every minute. We
+    // ── live_scores refresh ONLY ── this runs every 5 minutes. We
     // deliberately do NOT call backfillMissingScores or gradePicks
-    // here — those use Claude with web_search and at ~$0.05-0.15
-    // per game can burn through $25/day in a couple of hours. They
-    // moved to the hourly gradeAndBackfillTick below.
+    // here — score grading runs hourly via gradeAndBackfillTick.
+    const active = await refreshActiveLeaguesCache();
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       if (cfg.promptMode === 'research') continue;
       if (!cfg.fetcher) continue;
+      if (!active.has(league)) continue;  // skip leagues with no games today
       const raw = await cfg.fetcher();
       if (raw.length) await upsertLiveScores(league, raw);
     }
@@ -1017,23 +902,15 @@ async function liveTick() {
   }
 }
 
-/// Hourly Claude-using companion to liveTick. Backfills any final-
-/// status rows still missing scores via Claude web_search, then
-/// grades any settled picks. One burst per hour caps spend at
-/// roughly $1-2/hour worst case (when there's a lot to grade) and
-/// $0/hour most of the time.
+/// Hourly grading tick — AI-free. Just runs gradePicks() against the
+/// live_scores rows that sportsdata.io polling has populated. Cheap,
+/// deterministic, no Claude in the loop.
 let gradeLoopRunning = false;
 async function gradeAndBackfillTick() {
   if (gradeLoopRunning) return;
   gradeLoopRunning = true;
   try {
-    await backfillMissingScores();
     await gradePicks();
-    // Fallback for the sportsdata.io-down case: anything gradePicks()
-    // couldn't settle (no live_scores row at all) gets a web_search
-    // final-score lookup. Budget-guarded; no-ops cheaply when there's
-    // nothing pending past its game day.
-    await gradePicksViaResearch();
   } catch (e) {
     err('Grade tick crashed:', e.message);
   } finally {
@@ -1042,12 +919,53 @@ async function gradeAndBackfillTick() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// HEALTHCHECK HTTP ENDPOINT
+// ════════════════════════════════════════════════════════════════
+// Exposes GET /healthz on PORT (Railway auto-detects). Returns 200 if a
+// pick was created in the last 36 hours (allowing a generous slack for
+// weekend gaps or single missed runs), 503 otherwise. Wire UptimeRobot
+// (free) → email alert on 503 to catch silent pipeline death within minutes.
+const http = require('http');
+const HEALTHZ_PORT = Number(process.env.PORT || 3000);
+
+http.createServer(async (req, res) => {
+  if (req.url !== '/healthz' && req.url !== '/') {
+    res.writeHead(404); res.end('not found'); return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('picks')
+      .select('created_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const latest = data?.[0]?.created_at ? new Date(data[0].created_at) : null;
+    const ageHours = latest ? (Date.now() - latest.getTime()) / 3_600_000 : Infinity;
+    const ok = ageHours < 36;
+    res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok,
+      latest_pick_at: latest?.toISOString() || null,
+      age_hours: ageHours === Infinity ? null : +ageHours.toFixed(2),
+      claude_cost_today_usd: +claudeCostUsd.toFixed(2),
+      web_search_uses_today: webSearchUses,
+    }));
+  } catch (e) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: e.message }));
+  }
+}).listen(HEALTHZ_PORT, () => {
+  log(`🩺 Healthcheck listening on :${HEALTHZ_PORT}/healthz`);
+});
+
+// ════════════════════════════════════════════════════════════════
 // SCHEDULES
 // ════════════════════════════════════════════════════════════════
 
-// Live-score refresh — every minute during the game window. Calls
-// sportsdata.io only; no Claude spend.
-cron.schedule('* * * * *', () => {
+// Live-score refresh — every 5 minutes during the game window. Calls
+// sportsdata.io only; no Claude spend. Active-league cache means we
+// skip leagues with no games today entirely.
+cron.schedule('*/5 * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
     10,
@@ -1056,9 +974,8 @@ cron.schedule('* * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-// Grade + backfill — once per HOUR during the game window. Bursts
-// of Claude web_search to settle any Final-status games. Per-hour
-// cap on Anthropic spend (~$0.50-2/hr worst case, $0 most hours).
+// Grade — once per HOUR during the game window. AI-free: just diffs
+// pending picks against the sportsdata.io live_scores table.
 cron.schedule('0 * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
@@ -1067,9 +984,8 @@ cron.schedule('0 * * * *', () => {
   if (hour >= 10 || hour <= 1) gradeAndBackfillTick();
 }, { timezone: TZ });
 
-// Pick generation — once daily at 5am ET. Earliest kick-off-time
-// slot that still gives meaningful lead on every league. See
-// detailed schedule reasoning in CHANGELOG / commit 88c9a0f.
+// Pick generation — once daily at 5am ET. The ONLY Claude entry point.
+// Grades yesterday, then generates today's picks across all leagues.
 cron.schedule('0 5 * * *', runPipeline, { timezone: TZ });
 
 // Daily performance snapshot at midnight ET (after final games grade).
@@ -1083,15 +999,17 @@ cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 // (push a commit at 4:59am ET to get a fresh pipeline at 5am).
 
 log('⚡ Pick1 AI pipeline online');
-log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, max effort)`);
+log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, high effort)`);
 log(`   Sports:   ${Object.values(LEAGUES).map((c) => c.sport).join(', ')}`);
 log(`   Leagues:  ${Object.keys(LEAGUES).join(', ')}`);
 log(`   Timezone: ${TZ}`);
-log('   Live scores:  every 60s during game hours (sportsdata.io, no Claude spend)');
-log('   Grade+backfill: hourly during game hours (Claude web_search burst)');
-log('   AI picks:     5am ET (once daily — covers EU morning + US lead time)');
-log('   Boot pipeline: DISABLED (removed to stop per-deploy Anthropic burn)');
-log('   Snapshot:    midnight ET');
+log('   Live scores:    every 5min during game hours (sportsdata.io, AI-free, skips empty leagues)');
+log('   Grade:          hourly during game hours (sportsdata.io diff, AI-free)');
+log('   AI picks:       5am ET ONCE DAILY (the ONLY Claude entry point)');
+log(`   Cost ceiling:   $${CLAUDE_DAILY_COST_LIMIT_USD}/day Claude hard cap (breaker trips on overshoot)`);
+log('   Boot pipeline:  DISABLED (removed to stop per-deploy Anthropic burn)');
+log('   Snapshot:       midnight ET');
+log('   Healthcheck:    GET /healthz returns 200 if last pick < 36h old');
 
 // ─── Boot-time Supabase diagnostic (safe — no secrets logged) ──
 (async () => {

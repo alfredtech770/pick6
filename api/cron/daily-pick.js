@@ -27,12 +27,29 @@ const DEFAULT_FROM = 'Pick1 <admin@pick1.live>';
 
 module.exports = async (req, res) => {
   // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` on scheduled
-  // invocations. Allow manual invocation only when running locally.
+  // invocations. Reject every request without the secret, in every
+  // environment — the previous "isLocal bypass" trusted env vars that
+  // could be spoofed in compromised builds. Test invocations must
+  // pass the secret too (manual `curl -H 'Authorization: Bearer …'`).
   const expected = process.env.CRON_SECRET;
+  if (!expected) {
+    // Misconfigured deploy: refuse to run rather than silently allow
+    // every request. Surfaces the issue in Vercel logs immediately.
+    return res.status(500).json({ error: 'cron_secret_not_configured' });
+  }
   const auth = req.headers.authorization || '';
-  const isCronRequest = expected && auth === `Bearer ${expected}`;
-  const isLocal = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'development';
-  if (!isCronRequest && !isLocal) {
+  // Use constant-time-ish comparison (length check + timingSafeEqual)
+  // to avoid trivial timing oracles. CRON_SECRET is short so the
+  // payoff is minimal, but the cost is one require + 30 chars of code.
+  const provided = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const ok = (() => {
+    if (!provided || provided.length !== expected.length) return false;
+    try {
+      const { timingSafeEqual } = require('crypto');
+      return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    } catch { return provided === expected; }
+  })();
+  if (!ok) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 

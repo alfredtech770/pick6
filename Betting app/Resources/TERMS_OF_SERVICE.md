@@ -12,11 +12,9 @@ By creating a Pick1 account or otherwise using the Service, you agree to be boun
 
 Pick1 is an entertainment and informational service that uses artificial intelligence to generate sports predictions for major leagues including NBA, NFL, NHL, MLB, EPL, UFC, F1, and IPL Cricket.
 
-**Pick1 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" action adds a recommendation to your personal tracked-picks list inside Pick1. **Pick1 is not a sportsbook, bookmaker, or gambling operator.** Pick1 does not accept, hold, place, settle, or process bets or wagers of any kind, and never handles wagered funds. The only payment Pick1 collects is the Pick1 Pro subscription, which Apple processes directly through StoreKit.
+**Pick1 is a sports content and analysis service**, comparable to ESPN, The Athletic, or FiveThirtyEight. The "save pick" action adds an AI recommendation to your personal tracked-picks list inside Pick1, purely for entertainment and tracking purposes. The only payment Pick1 collects is the Pick1 Pro subscription, which Apple processes directly through StoreKit.
 
-Pick1 may provide **optional links to third-party sportsbooks** for your convenience. Those platforms are owned and operated entirely by independent third parties. Pick1 does not control, endorse, partner with, or receive any wager, stake, or payout through them, and we are not responsible for their content, odds, availability, legality in your jurisdiction, or any transaction you make with them. Whether you use such a platform — and whether doing so is legal where you are — is solely your responsibility.
-
-**Pick1 is not financial, investment, or betting advice.** AI predictions are **statistical estimates only**, with documented uncertainty — not statements of fact, not guarantees, and not a promise of any outcome, winning, or profit. Past performance does not predict future results. Use Pick1 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
+**Pick1 is informational and entertainment content only — not financial, investment, or other advice.** AI predictions are **statistical estimates only**, with documented uncertainty — not statements of fact, not guarantees, and not a promise of any outcome or profit. Past performance does not predict future results. Use Pick1 picks for entertainment and as one of many inputs to your own decision-making — never as a guaranteed outcome.
 
 ---
 
@@ -52,12 +50,12 @@ Pick1 offers two tiers:
 | Tier | Price | What you get |
 |---|---|---|
 | **Free** | $0 | One AI pick per sport per day (the highest-confidence pick of the day) |
-| **Pro Weekly** | $14.99/week with 7-day free trial for new subscribers | Every AI pick across all 8 sports, full reasoning, live tracking |
-| **Pro Monthly** | $39.99/month | Same as Pro Weekly, billed monthly |
+| **Pro Weekly** | $14.99/week | Every AI pick across all 8 sports, full reasoning, live tracking |
+| **Pro Monthly** | $39.99/month with 7-day free trial for new subscribers | Same as Pro Weekly, billed monthly |
 
 ### 4.2 Free trial
 
-The 7-day free trial applies to **new subscribers** of the Weekly product only. The trial begins when you tap "Start 7-Day Free Trial". At the end of the 7th day, your subscription auto-renews at $14.99/week unless you cancel at least 24 hours before the trial ends.
+The 7-day free trial applies to **new subscribers** of the Monthly product only. The trial begins when you tap "Start 7-Day Free Trial". At the end of the 7th day, your subscription auto-renews at $39.99/month unless you cancel at least 24 hours before the trial ends.
 
 If you have previously subscribed to or trialed any Pick1 Pro product, you are not eligible for another free trial.
 
@@ -116,17 +114,13 @@ By using Pick1 you acknowledge that:
 
 - You are not relying on Pick1 recommendations as the sole basis for any sports-related decision
 - Pick1 makes **no guarantee of accuracy, winnings, or profit**, and no prediction should be understood as a promise of any result
-- Pick1 (and L70 Labs) is **not liable for any loss of any kind** — including financial loss, gambling or betting losses, lost stakes, or lost profits — arising from decisions you make based on, or in reliance on, Pick1 content
+- Pick1 (and L70 Labs) is **not liable for any loss of any kind** — including financial loss or lost profits — arising from decisions you make based on, or in reliance on, Pick1 content
 
-### 6.1 Assumption of risk and gambling losses
+### 6.1 Assumption of risk
 
-**If you choose to place any bet, wager, or stake based on Pick1 content, you do so entirely at your own risk and on your own judgment.** You assume full and sole responsibility for the outcome.
+**Any decision you make based on Pick1 content is made entirely at your own risk and on your own judgment.** You assume full and sole responsibility for the outcome.
 
-To the maximum extent permitted by law, **L70 Labs and Pick1 are not responsible or liable for any gambling, betting, or wagering losses, debts, or damages of any kind** that you or anyone else may incur in connection with the Service, whether or not such activity was informed by a Pick1 prediction. Sports outcomes are inherently uncertain and can be affected by factors no model can foresee; **you can and may lose money.**
-
-### 6.2 Gamble responsibly
-
-Gambling may be illegal where you live, and carries real financial risk. You are solely responsible for knowing and complying with the laws of your jurisdiction and for ensuring you meet the legal age to gamble there. Only ever risk what you can afford to lose. If you or someone you know may have a gambling problem, help is available in the U.S. at **1-800-GAMBLER** (1-800-426-2537) or **ncpgambling.org**.
+Sports outcomes are inherently uncertain and can be affected by factors no model can foresee. AI predictions are statistical estimates with documented uncertainty — never guarantees. To the maximum extent permitted by law, **L70 Labs and Pick1 are not responsible or liable for any losses, debts, or damages of any kind** that you or anyone else may incur in connection with decisions made based on Pick1 content.
 
 ---
 
@@ -182,14 +176,13 @@ We do not warrant that:
 
 ### 10.1 Limitation of liability
 
-TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL L70 LABS OR PICK1, OR THEIR AFFILIATES, OFFICERS, EMPLOYEES, OR AGENTS, BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOST PROFITS, LOST REVENUE, LOST STAKES, GAMBLING OR BETTING LOSSES, OR DATA LOSS, ARISING FROM:
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL L70 LABS OR PICK1, OR THEIR AFFILIATES, OFFICERS, EMPLOYEES, OR AGENTS, BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOST PROFITS, LOST REVENUE, OR DATA LOSS, ARISING FROM:
 
 - Your use of or inability to use the Service
 - Any AI prediction's accuracy, completeness, or your reliance on it
-- Decisions you make based on Pick1 content, including any bet, wager, or stake
-- Any gambling, betting, or wagering activity, or losses, whether or not informed by Pick1
+- Decisions you make based on Pick1 content
 - Unauthorized access to your account
-- Any third-party content, sportsbook, or services linked to or accessed through Pick1
+- Any third-party content or services referenced by Pick1
 
 This applies regardless of the legal theory (contract, tort, negligence, strict liability, or otherwise) and even if we were advised of the possibility of such damages.
 
@@ -202,7 +195,7 @@ Some jurisdictions do not allow the exclusion of certain warranties or the limit
 
 ### 10.2 Indemnification
 
-You agree to indemnify, defend, and hold harmless L70 Labs and Pick1, and their affiliates, officers, employees, and agents, from and against any claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: (a) your use of the Service; (b) any bet, wager, stake, or financial or sports-related decision you make in connection with Pick1 content; (c) your violation of these Terms; or (d) your violation of any law or the rights of any third party.
+You agree to indemnify, defend, and hold harmless L70 Labs and Pick1, and their affiliates, officers, employees, and agents, from and against any claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: (a) your use of the Service; (b) any decision you make in connection with Pick1 content; (c) your violation of these Terms; or (d) your violation of any law or the rights of any third party.
 
 ---
 

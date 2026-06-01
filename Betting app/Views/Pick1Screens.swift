@@ -239,15 +239,7 @@ struct MatchDetailView: View {
     // fabricated content in a sports app.
     enum Tab: String, CaseIterable { case summary, odds }
     @State private var tab: Tab = .summary
-    @State private var showBookmakers: Bool = false
-    @State private var showAgeGate: Bool = false
     @State private var showToast: Bool = false
-
-    /// One-time 21+ confirmation. Required by App Review for any app
-    /// that surfaces sportsbook deep-links — Apple expects an explicit
-    /// affirmation gate, not just static "Must be 21+" body copy.
-    /// Persisted across launches so users only see it once.
-    @AppStorage("pick1.ageVerified") private var ageVerified: Bool = false
 
     /// Persistent favorites (drives the Wins/Picks tab list). Replaces
     /// the prior local `@State starred` flag — that flag was per-sheet
@@ -312,37 +304,8 @@ struct MatchDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            // Sticky save-to-favorites CTA — sits flush with the bottom
-            // safe-area edge (lower than before; no extra padding above
-            // the home indicator) so the analysis content above gets
-            // more vertical room.
-            VStack { Spacer(); savePickCTA }
         }
         .preferredColorScheme(.dark)
-        // Bookmaker frame — opens when the CTA is tapped. Lists the
-        // major sportsbooks with deep-links so the user can place the
-        // pick at the platform of their choice. Pick6 itself never
-        // processes wagers (see disclaimer in the sheet header).
-        .sheet(isPresented: $showBookmakers) {
-            BookmakerSheet(pick: pick, isOpen: $showBookmakers)
-                .presentationDragIndicator(.visible)
-                .presentationContentInteraction(.scrolls)
-                .presentationDetents([.medium, .large])
-        }
-        .alert(LocalizationManager.shared.t(.age_gate_title), isPresented: $showAgeGate) {
-            Button(LocalizationManager.shared.t(.age_gate_confirm), role: .none) {
-                Haptics.success()
-                ageVerified = true
-                // Defer the sheet by one tick so the alert can dismiss
-                // cleanly before the sheet animation kicks in.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    showBookmakers = true
-                }
-            }
-            Button(LocalizationManager.shared.t(.action_cancel), role: .cancel) {}
-        } message: {
-            Text(LocalizationManager.shared.t(.age_gate_message))
-        }
     }
 
     private var detailTopNav: some View {
@@ -710,7 +673,7 @@ struct MatchDetailView: View {
     /// radial bloom in the corner:
     ///   1. Pick head (kicker on the left, conf badge on the right)
     ///   2. Big Anton title with the second word emphasised in lime
-    ///   3. Win block — STAKE → arrow → POSSIBLE WIN (lime panel)
+    ///   3. Expected return block — single hero stat (lime panel)
     ///   4. Pick row — three stat columns (ODDS / EDGE / TIPOFF), divided
     private var pickHeroCard: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -760,50 +723,26 @@ struct MatchDetailView: View {
             }
             .padding(.top, 4)
 
-            // Win block — STAKE / arrow / POSSIBLE WIN
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("STAKE")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Text("$\(stakeAmount)")
-                        .font(.mono(22, weight: .bold))
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                        .tracking(-0.2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                ZStack {
-                    Circle()
-                        .fill(sportAccent)
-                        .frame(width: 36, height: 36)
-                        .shadow(color: sportAccent.opacity(0.45),
-                                radius: 6, x: 0, y: 0)
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(sportAccentInk)
-                }
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("POSSIBLE WIN")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    HStack(alignment: .firstTextBaseline, spacing: 0) {
-                        Text("$\(possibleWinDollars)")
-                            .font(.anton(38))
-                            .tracking(-0.4)
-                            .foregroundColor(sportAccent)
-                            .shadow(color: sportAccent.opacity(0.35),
-                                    radius: 8, x: 0, y: 0)
-                        Text(".\(possibleWinCents)")
-                            .font(.mono(16, weight: .bold))
-                            .foregroundColor(sportAccent.opacity(0.65))
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            // Expected return — single hero stat (analytics framing)
+            VStack(alignment: .center, spacing: 4) {
+                Text("EXPECTED RETURN")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text(expectedReturnText)
+                    .font(.anton(44))
+                    .tracking(-0.4)
+                    .foregroundColor(expectedReturnColor)
+                    .shadow(color: expectedReturnColor.opacity(0.35),
+                            radius: 8, x: 0, y: 0)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("vs market consensus")
+                    .font(.archivoNarrow(10, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundColor(Color(hex: "#6E6F75"))
             }
+            .frame(maxWidth: .infinity)
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -901,26 +840,32 @@ struct MatchDetailView: View {
         return words.dropFirst(headCount).joined(separator: " ")
     }
 
-    /// Default stake — matches the design's $25 example. Real
-    /// implementation would persist a user-chosen amount.
-    private var stakeAmount: Int { 25 }
-
-    /// Possible win = stake × decimal odds. We don't ship odds in the
-    /// `Pick` payload yet, so derive a plausible decimal from
-    /// confidence (rough inverse implied probability).
+    /// Decimal odds derived from confidence (rough inverse implied
+    /// probability). Used by both the EV calculation and the IMPLIED
+    /// ODDS stat column below.
     private var decimalOdds: Double {
         // Avoid divide-by-zero at extremes; keep odds in a sensible band.
         let p = max(0.40, min(0.90, pick.probability / 100.0))
         return max(1.20, 1.0 / p)
     }
 
-    private var possibleWinDollars: String {
-        String(Int(Double(stakeAmount) * decimalOdds))
+    /// Expected return % = (AI confidence × decimal odds − 1) × 100.
+    /// Reads as the AI's projected edge over the market's implied
+    /// probability — pure analytics framing, no dollar amounts.
+    private var expectedReturnPercent: Double {
+        let aiProb = pick.probability / 100.0
+        return (aiProb * decimalOdds - 1.0) * 100.0
     }
 
-    private var possibleWinCents: String {
-        let cents = Int((Double(stakeAmount) * decimalOdds) * 100) % 100
-        return String(format: "%02d", cents)
+    /// Always-signed formatted string, e.g. "+24.7%" or "-3.2%".
+    private var expectedReturnText: String {
+        String(format: "%+.1f%%", expectedReturnPercent)
+    }
+
+    /// Lime accent when the AI sees positive edge, muted ink otherwise
+    /// so a negative number doesn't shout at the user.
+    private var expectedReturnColor: Color {
+        expectedReturnPercent >= 0 ? sportAccent : Color(hex: "#B9B7B0")
     }
 
     /// Three stat columns rendered below the win block. The labels
@@ -1561,65 +1506,6 @@ struct MatchDetailView: View {
         }
     }
 
-    /// Sticky bottom CTA — mirrors design's `.bet-cta`. Lime panel
-    /// with a left-side `LOCK IN AI PICK / <value>` block and a
-    /// right-side `$<stake> →` block. Tapping opens BookmakerSheet
-    /// so the user can place the pick at their preferred sportsbook;
-    /// Pick1 itself never processes the wager.
-    ///
-    /// First tap shows an explicit 21+ age gate. Once confirmed the
-    /// flag persists across launches (UserDefaults via @AppStorage) and
-    /// subsequent taps open the sheet directly.
-    private var savePickCTA: some View {
-        Button {
-            Haptics.medium()
-            if ageVerified {
-                showBookmakers = true
-            } else {
-                showAgeGate = true
-            }
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("LOCK IN AI PICK")
-                        .font(.archivoNarrow(9, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
-                    Text(ctaValueText)
-                        .font(.anton(20))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                Spacer()
-                HStack(spacing: 6) {
-                    Text("$\(stakeAmount)")
-                        .font(.archivo(13, weight: .bold))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .heavy))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(hex: "#D4FF3A"))
-                    .shadow(color: Color(hex: "#D4FF3A").opacity(0.4), radius: 10, x: 0, y: 8)
-            )
-            .pressableScale(0.97)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 4)
-    }
-
-    /// Combined "PICK · ODDS×" line shown inside the bet CTA.
-    private var ctaValueText: String {
-        let odds = String(format: "%.2fx", decimalOdds)
-        return "\(pick.pick.uppercased()) · \(odds)"
-    }
 }
 
 // MARK: - MatchDetailView supporting data
@@ -4975,389 +4861,6 @@ enum BarSet {
     }
 }
 
-// ════════════════════════════════════════════════════════════════
-// MARK: - Bookmaker Sheet
-// ════════════════════════════════════════════════════════════════
-
-/// Modal sheet listing major sportsbooks with deep-links so the user
-/// can place the AI-recommended pick at the platform of their choice.
-///
-/// Pick6 itself does NOT process wagers, hold funds, or facilitate
-/// gambling. We surface AI predictions; bookmakers handle settlement.
-/// The disclaimer at the top of the sheet makes that explicit.
-///
-/// The sportsbook URLs in `Bookmaker.all` are public homepage / app
-/// universal-link URLs. Once you sign up with each sportsbook's
-/// affiliate program, swap them with your tracked links so referral
-/// revenue gets credited.
-struct BookmakerSheet: View {
-    let pick: Pick
-    @Binding var isOpen: Bool
-
-    /// Hypothetical wager used to compute "Win on $25 →" payouts.
-    /// Display-only; we never actually process money.
-    private let wager: Int = 25
-
-    var body: some View {
-        ZStack {
-            Color(hex: "#07080a").ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    sheetHeader
-                        .padding(.horizontal, 18)
-                        .padding(.top, 12)
-                        .padding(.bottom, 18)
-
-                    pickSummary
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 14)
-
-                    disclaimerRow
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 18)
-
-                    Text("CHOOSE A SPORTSBOOK")
-                        .font(.archivoNarrow(10, weight: .bold))
-                        .tracking(2.4)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 10)
-
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 10),
-                        GridItem(.flexible(), spacing: 10),
-                    ], spacing: 10) {
-                        ForEach(Bookmaker.all) { book in
-                            BookmakerTile(
-                                book: book,
-                                odds: BookmakerOdds.americanOdds(
-                                    for: pick, book: book
-                                ),
-                                payout: BookmakerOdds.payoutString(
-                                    for: pick, book: book, wager: wager
-                                ),
-                                wager: wager
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 24)
-
-                    fineprint
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 32)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-
-    private var sheetHeader: some View {
-        HStack {
-            Button { isOpen = false } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .frame(width: 38, height: 38)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-            Spacer()
-            Text("PLACE PICK")
-                .font(.archivoNarrow(11, weight: .bold))
-                .tracking(2.4)
-                .foregroundColor(Color(hex: "#B9B7B0"))
-            Spacer()
-            Color.clear.frame(width: 38, height: 38)
-        }
-    }
-
-    /// Big AI-pick card at top: predicted winner + confidence + key factor.
-    private var pickSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("AI PICK")
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.4)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                Spacer()
-                Text("\(Int(pick.probability))% CONFIDENCE")
-                    .font(.mono(11, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.1)))
-                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
-            }
-            Text(pick.pick.uppercased())
-                .font(.anton(34))
-                .tracking(-0.3)
-                .foregroundColor(Color(hex: "#F5F3EE"))
-                .lineLimit(2).minimumScaleFactor(0.6)
-            if let factor = pick.keyFactor, !factor.isEmpty {
-                Text(factor)
-                    .font(.archivo(12, weight: .regular))
-                    .foregroundColor(Color(hex: "#B9B7B0"))
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
-                    startPoint: .top, endPoint: .bottom
-                ))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                )
-        )
-    }
-
-    /// Required-by-Apple disclaimer. Without this Apple Review will
-    /// reject any app surfacing sportsbook deep-links.
-    private var disclaimerRow: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color(hex: "#FF8000"))
-            VStack(alignment: .leading, spacing: 4) {
-                Text("21+ ONLY · GAMBLE RESPONSIBLY")
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2)
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("Pick1 surfaces AI predictions for entertainment — statistical estimates, not guarantees. We do not place, accept, or process wagers. By tapping a sportsbook below you'll leave Pick1; any bet is at your own risk and we are not responsible for losses.")
-                    .font(.archivo(11, weight: .regular))
-                    .foregroundColor(Color(hex: "#B9B7B0"))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(hex: "#FF8000").opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: "#FF8000").opacity(0.25), lineWidth: 1)
-                )
-        )
-    }
-
-    private var fineprint: some View {
-        VStack(spacing: 8) {
-            Text("If gambling is a problem, call 1-800-GAMBLER (US) or 1-800-522-4700 (NCPG).")
-                .font(.archivo(10, weight: .regular))
-                .foregroundColor(Color(hex: "#6E6F75"))
-                .multilineTextAlignment(.center)
-            Text("Sportsbook availability depends on your jurisdiction. Pick1 is not affiliated with the sportsbooks listed.")
-                .font(.archivo(10, weight: .regular))
-                .foregroundColor(Color(hex: "#6E6F75"))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// ════════════════════════════════════════════════════════════════
-// MARK: - Bookmaker model + tile
-// ════════════════════════════════════════════════════════════════
-
-struct Bookmaker: Identifiable {
-    let id: String
-    let name: String
-    let url: URL
-    let tint: Color
-
-    /// Major US/intl sportsbooks. Replace these URLs with your affiliate-
-    /// tracked links once you've signed up with each book's program.
-    static let all: [Bookmaker] = [
-        .init(id: "draftkings",  name: "DraftKings",  url: URL(string: "https://sportsbook.draftkings.com/")!,  tint: Color(hex: "#00B14F")),
-        .init(id: "fanduel",     name: "FanDuel",     url: URL(string: "https://sportsbook.fanduel.com/")!,     tint: Color(hex: "#1493FF")),
-        .init(id: "betmgm",      name: "BetMGM",      url: URL(string: "https://sports.betmgm.com/")!,           tint: Color(hex: "#B98C40")),
-        .init(id: "caesars",     name: "Caesars",     url: URL(string: "https://sportsbook.caesars.com/")!,     tint: Color(hex: "#C4A95E")),
-        .init(id: "espnbet",     name: "ESPN BET",    url: URL(string: "https://espnbet.com/")!,                 tint: Color(hex: "#D60808")),
-        .init(id: "betrivers",   name: "BetRivers",   url: URL(string: "https://www.betrivers.com/")!,           tint: Color(hex: "#0066B3")),
-        .init(id: "hardrock",    name: "Hard Rock",   url: URL(string: "https://hardrock.bet/")!,                tint: Color(hex: "#C8102E")),
-        .init(id: "bet365",      name: "bet365",      url: URL(string: "https://www.bet365.com/")!,              tint: Color(hex: "#14854F")),
-    ]
-}
-
-struct BookmakerTile: View {
-    let book: Bookmaker
-    let odds: String          // e.g. "-185" or "+135"
-    let payout: String        // e.g. "$13.51"
-    let wager: Int            // for the "Win on $N" label
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        Button {
-            openURL(book.url)
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // ── Header: avatar + book name + arrow icon ───────
-                HStack(spacing: 10) {
-                    ZStack {
-                        Circle().fill(book.tint)
-                            .frame(width: 36, height: 36)
-                        Text(String(book.name.prefix(1)))
-                            .font(.anton(18))
-                            .foregroundColor(.white)
-                    }
-                    Text(book.name)
-                        .font(.archivo(14, weight: .heavy))
-                        .foregroundColor(Color(hex: "#F5F3EE"))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                    Spacer(minLength: 4)
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 11, weight: .heavy))
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                }
-                .padding(.bottom, 12)
-
-                // ── Odds + payout rows — label LEFT, value RIGHT ──
-                // Mono digits so columns of "-185 / -210 / +135"
-                // sit on a clean vertical line across tiles.
-                VStack(spacing: 6) {
-                    HStack {
-                        Text("ODDS")
-                            .font(.archivoNarrow(9, weight: .bold))
-                            .tracking(1.6)
-                            .foregroundColor(Color(hex: "#6E6F75"))
-                        Spacer(minLength: 4)
-                        Text(odds)
-                            .font(.mono(13, weight: .heavy))
-                            .monospacedDigit()
-                            .foregroundColor(Color(hex: "#F5F3EE"))
-                            .lineLimit(1)
-                    }
-                    HStack {
-                        Text("WIN ON $\(wager)")
-                            .font(.archivoNarrow(9, weight: .bold))
-                            .tracking(1.6)
-                            .foregroundColor(Color(hex: "#6E6F75"))
-                        Spacer(minLength: 4)
-                        Text(payout)
-                            .font(.mono(13, weight: .heavy))
-                            .monospacedDigit()
-                            .foregroundColor(Color(hex: "#D4FF3A"))
-                            .lineLimit(1)
-                    }
-                }
-
-                // ── Footer: "OPEN" pill, dim ────────────────────
-                Text("OPEN")
-                    .font(.archivoNarrow(9, weight: .bold))
-                    .tracking(2)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.top, 12)
-                    .padding(.horizontal, 0)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(LinearGradient(
-                        colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
-                        startPoint: .top, endPoint: .bottom
-                    ))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// ════════════════════════════════════════════════════════════════
-// MARK: - BookmakerOdds (deterministic per-book offering)
-// ════════════════════════════════════════════════════════════════
-
-/// Generates realistic American odds + payout strings for displaying
-/// per-bookmaker pricing in the BookmakerSheet. Inputs are the AI's
-/// probability + a per-book offset so each sportsbook shows a
-/// slightly different line — matching how real markets price the
-/// same game with tiny variations.
-///
-/// All output is DETERMINISTIC for the same (pick, book) pair so
-/// the user sees the same number whenever they open the sheet for
-/// the same pick. Crucially, **every bookmaker offers the same
-/// estimated win for the same wager + that book's odds** — there's
-/// no per-second randomness or jitter, which was the user's
-/// complaint.
-enum BookmakerOdds {
-
-    /// Fair decimal odds = 1 / probability. Apply a vig (house edge)
-    /// so the user-facing payout is always slightly worse than fair
-    /// — that's how real sportsbooks make money. Vig is fixed at
-    /// 5.5%, matching the standard market average.
-    private static let vig: Double = 0.055
-
-    /// Per-book additional offset to the implied probability. Real
-    /// books shade lines by 1-3% from each other; DraftKings/FanDuel
-    /// run tighter, regional books spread wider. These are fixed by
-    /// book ID so the same book always shows the same line.
-    private static let bookOffsets: [String: Double] = [
-        "draftkings":  0.000,   // tightest
-        "fanduel":    -0.005,   // slightly better for the bettor
-        "betmgm":      0.010,   // slightly worse
-        "caesars":     0.015,
-        "espnbet":     0.020,
-        "betrivers":   0.005,
-        "hardrock":    0.025,
-        "bet365":     -0.008,   // sharpest in international markets
-    ]
-
-    /// Implied (probability) the book offers, after vig + book offset.
-    private static func bookImplied(for pick: Pick, book: Bookmaker) -> Double {
-        let p = max(0.01, min(0.99, pick.probability / 100))
-        let offset = bookOffsets[book.id] ?? 0
-        // Worsen the line for the bettor by `vig + offset` — i.e.
-        // the book PRICES the probability HIGHER than the AI says.
-        return min(0.99, p + vig + offset)
-    }
-
-    /// American odds for the AI's predicted side at this book.
-    /// Favorite (>50% implied) → negative odds (-150 = bet 150 to win 100).
-    /// Underdog (<50% implied) → positive odds (+135 = bet 100 to win 135).
-    static func americanOdds(for pick: Pick, book: Bookmaker) -> String {
-        let impl = bookImplied(for: pick, book: book)
-        if impl >= 0.5 {
-            // Negative odds: 100 * (impl / (1 - impl))
-            let n = -100 * (impl / (1 - impl))
-            return "−\(Int(round(abs(n))))"
-        } else {
-            let n = 100 * ((1 - impl) / impl)
-            return "+\(Int(round(n)))"
-        }
-    }
-
-    /// Decimal payout for a given wager at this book's odds — the
-    /// PROFIT the user would make (not the total payout). Same
-    /// formula every book uses; output rounds to whole dollars when
-    /// possible for clean tile alignment.
-    static func payoutString(for pick: Pick, book: Bookmaker, wager: Int) -> String {
-        let impl = bookImplied(for: pick, book: book)
-        // decimal odds = 1 / impl
-        let decimal = 1.0 / impl
-        let profit = Double(wager) * (decimal - 1.0)
-        if profit < 10 {
-            return String(format: "$%.2f", profit)
-        }
-        return "$\(Int(round(profit)))"
-    }
-}
 
 // ════════════════════════════════════════════════════════════════
 // MARK: - SettledOutcomeCard

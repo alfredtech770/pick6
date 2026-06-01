@@ -102,11 +102,12 @@ enum ItalianStrings {
         .paywall_compare_meta:           "COSA OTTIENI",
         .paywall_faq_title:              "DOMANDE?",
         .paywall_faq_meta:               "FAQ",
-        .paywall_fineprint_weekly:       "7 giorni di prova gratuita, poi $14.99/settimana. L'abbonamento si rinnova automaticamente salvo annullamento almeno 24h prima della fine del periodo. I pagamenti vengono elaborati tramite il tuo ID Apple.",
+        .paywall_fineprint_weekly:       "$14.99/settimana. L'abbonamento si rinnova automaticamente salvo annullamento almeno 24h prima della fine del periodo. I pagamenti vengono elaborati tramite il tuo ID Apple.",
         .paywall_fineprint_monthly:      "7 giorni di prova gratuita, poi $39.99/mese. L'abbonamento si rinnova automaticamente salvo annullamento almeno 24h prima della fine del periodo. I pagamenti vengono elaborati tramite il tuo ID Apple.",
-        .paywall_then_weekly:            "Poi $14.99/settimana · Annulla in qualsiasi momento",
+        .paywall_then_weekly:            "$14.99/settimana · Annulla in qualsiasi momento",
         .paywall_then_monthly:           "Poi $39.99/mese · Annulla in qualsiasi momento",
         .paywall_cta_trial:              "Inizia 7 giorni di prova gratuita",
+        .paywall_cta_subscribe:          "Abbonati ora",
         .paywall_restore:                "Ripristina acquisti",
         .paywall_terms:                  "Termini di Servizio",
         .paywall_privacy:                "Informativa sulla Privacy",
@@ -125,17 +126,13 @@ enum ItalianStrings {
         .card_home_team:                 "CASA",
         .card_away_team:                 "TRASFERTA",
         .card_pick_label:                "IA",
-        .card_lock_in:                   "BLOCCA PICK IA",
         .card_save_pick:                 "Salva pronostico",
         .card_saved_toast:               "SALVATO · {n}% FIDUCIA IA",
 
-        // Bookmaker / age gate
-        .bookmaker_sheet_title:          "PIAZZA IL TUO PRONOSTICO",
-        .bookmaker_disclaimer:           "Pick1 mostra pronostici IA a scopo di intrattenimento. Non piazziamo, accettiamo o elaboriamo scommesse.",
-        .bookmaker_gambler_hotline:      "Se tu o qualcuno che conosci ha problemi di gioco d'azzardo, chiama 1-800-GAMBLER.",
-        .age_gate_title:                 "SOLO 21+",
-        .age_gate_message:               "Pick1 mostra pronostici sportivi IA a scopo di intrattenimento. Le integrazioni con i bookmaker richiedono che tu abbia almeno 21 anni. Continuando confermi di avere l'età legale per il gioco d'azzardo nella tua giurisdizione.\n\nSe tu o qualcuno che conosci ha problemi di gioco d'azzardo, chiama 1-800-GAMBLER.",
-        .age_gate_confirm:               "Ho 21 anni o più",
+        // Age gate
+        .age_gate_title:                 "SOLO 18+",
+        .age_gate_message:               "Pick1 mostra pronostici sportivi IA a scopo di intrattenimento — stime statistiche, non garanzie. Continuando confermi di avere 18 anni o più.",
+        .age_gate_confirm:               "Ho 18 anni o più",
 
         // Wins
         .wins_tab_title:                 "VITTORIE",
