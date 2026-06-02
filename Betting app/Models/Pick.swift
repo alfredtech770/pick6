@@ -169,7 +169,7 @@ struct MatchupFact: Codable, Identifiable, Hashable {
 // MARK: - Lenient decoding
 
 /// Custom decoder kept in an extension (not the struct body) so the
-/// synthesized memberwise initializer is preserved — `wcPick()` and a
+/// synthesized memberwise initializer is preserved — `sfPick()` and a
 /// couple of fallback picks build `Pick` directly. The only behavioral
 /// change vs. the synthesized decoder: `matchup_facts` decodes
 /// leniently, so a malformed/absent value drops the MATCHUP card for

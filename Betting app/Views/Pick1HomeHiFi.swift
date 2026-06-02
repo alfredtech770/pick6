@@ -247,8 +247,8 @@ struct HomeHiFiContent: View {
     let onTapSport: (String) -> Void
     let onUnlock: () -> Void
 
-    /// Drives the World Cup hub presentation (full-screen cover).
-    @State private var showWorldCup = false
+    /// Drives the Summer Football hub presentation (full-screen cover).
+    @State private var showSummerFootball = false
 
     var body: some View {
         ScrollView {
@@ -281,11 +281,11 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                // World Cup banner — sits between the stats row
+                // Summer Football banner — sits between the stats row
                 // and the sport filter, exactly per the design
                 // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
-                // the full World Cup hub.
-                WorldCupBanner(onTap: { showWorldCup = true })
+                // the full Summer Football hub.
+                SummerFootballBanner(onTap: { showSummerFootball = true })
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -390,8 +390,8 @@ struct HomeHiFiContent: View {
             await vm.loadAll()
             Haptics.success()
         }
-        .fullScreenCover(isPresented: $showWorldCup) {
-            WorldCupHubView(onClose: { showWorldCup = false })
+        .fullScreenCover(isPresented: $showSummerFootball) {
+            SummerFootballHubView(onClose: { showSummerFootball = false })
         }
     }
 

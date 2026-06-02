@@ -686,7 +686,7 @@ enum LogoPrefetch {
         warm(urls: urls)
     }
 
-    /// Prefetch a set of arbitrary logo URLs (used by the World Cup hub
+    /// Prefetch a set of arbitrary logo URLs (used by the Summer Football hub
     /// for any async crests, and internally by `warm(picks:)`).
     static func warm(urls: Set<URL>) {
         guard !urls.isEmpty else { return }
