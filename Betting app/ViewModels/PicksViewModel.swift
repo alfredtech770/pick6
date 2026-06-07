@@ -139,28 +139,25 @@ class PicksViewModel: ObservableObject {
         return filteredTodayPicks.filter { !visibleIds.contains($0.id) }
     }
 
-    // MARK: - Refund guarantee
+    // MARK: - Lock of the Day
     //
-    // One pick per day carries a "Refund Guarantee": the single
-    // highest-confidence pick of the day, and only when it clears the
-    // 85% probability floor. The qualifying card shows a REFUND
-    // GUARANTEE ribbon; if the AI's call is graded a loss, the ribbon
-    // flips to REFUNDED. This is a presentational marketing treatment —
-    // Pick1 has no wagering or wallet, so any honored refund/credit is
-    // handled out-of-band (App Store subscription credit, etc.).
+    // One pick per day is highlighted as the "Lock of the Day": the
+    // single highest-confidence pick, and only when it clears the 85%
+    // probability floor. The qualifying card shows a LOCK OF THE DAY
+    // ribbon; once graded it reads LOCK HIT / LOCK MISSED. This is a
+    // pure confidence highlight — no wager, money, or refund framing.
 
-    /// Minimum AI probability for a pick to qualify for the daily
-    /// refund guarantee.
-    static let refundGuaranteeThreshold: Double = 85
+    /// Minimum AI probability for a pick to qualify as the daily Lock.
+    static let lockConfidenceThreshold: Double = 85
 
-    /// The id of today's refund-guarantee pick, or `nil` when no pick
+    /// The id of today's Lock-of-the-Day pick, or `nil` when no pick
     /// clears the 85% floor. Computed over the *full* day's slate
-    /// (`effectiveTodayPicks`, every sport) so the guarantee is
-    /// genuinely "one game a day" regardless of which sport chip is
-    /// active — the same card stays flagged as the user filters.
-    var refundGuaranteePickID: UUID? {
+    /// (`effectiveTodayPicks`, every sport) so it's genuinely "one game
+    /// a day" regardless of which sport chip is active — the same card
+    /// stays flagged as the user filters.
+    var lockOfDayPickID: UUID? {
         effectiveTodayPicks
-            .filter { $0.probability >= Self.refundGuaranteeThreshold }
+            .filter { $0.probability >= Self.lockConfidenceThreshold }
             .max(by: { $0.probability < $1.probability })?
             .id
     }

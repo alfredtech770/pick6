@@ -348,7 +348,7 @@ struct HomeHiFiContent: View {
                                 GameCard(pick: pick,
                                          isLive: isLive(pick),
                                          score: liveScore(for: pick),
-                                         isRefundGuarantee: pick.id == vm.refundGuaranteePickID)
+                                         isLockOfDay: pick.id == vm.lockOfDayPickID)
                                     .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
@@ -1475,11 +1475,11 @@ struct GameCard: View {
     let isLive: Bool
     let score: LiveScore?
 
-    /// True when this card is the day's single Refund Guarantee pick
+    /// True when this card is the day's single Lock-of-the-Day pick
     /// (highest-confidence pick ≥85%). Drives the top ribbon, which
-    /// flips to "REFUNDED" once the pick is graded a loss. Defaults to
-    /// false so other call sites / previews render unchanged.
-    var isRefundGuarantee: Bool = false
+    /// reads "LOCK HIT" / "LOCK MISSED" once graded. Defaults to false
+    /// so other call sites / previews render unchanged.
+    var isLockOfDay: Bool = false
 
     /// Authoritative card state — same helper every other surface uses.
     /// Replaces the old `isLive` Bool for badge / topline decisions so
@@ -1515,10 +1515,10 @@ struct GameCard: View {
     // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
     private var teamCardBody: some View {
         VStack(spacing: 0) {
-            // Refund-guarantee ribbon — only on the day's single ≥85%
-            // top pick. Flips to "REFUNDED" once graded a loss.
-            if isRefundGuarantee {
-                RefundGuaranteeBadge(refunded: pick.isLoss)
+            // Lock-of-the-Day ribbon — only on the day's single ≥85%
+            // top pick. Reads HIT / MISSED once graded.
+            if isLockOfDay {
+                LockOfDayBadge(won: pick.isWin, lost: pick.isLoss)
             }
 
             // Top row — switches on the authoritative renderState so
@@ -1574,9 +1574,9 @@ struct GameCard: View {
     // ─── EVENT LAYOUT (F1, MMA) ─────────────────────────────────
     private var eventCardBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Refund-guarantee ribbon — see teamCardBody.
-            if isRefundGuarantee {
-                RefundGuaranteeBadge(refunded: pick.isLoss)
+            // Lock-of-the-Day ribbon — see teamCardBody.
+            if isLockOfDay {
+                LockOfDayBadge(won: pick.isWin, lost: pick.isLoss)
             }
 
             // Tag + AI pill — for live/awaiting/final states swap the
@@ -1787,32 +1787,50 @@ struct GameCard: View {
     }
 }
 
-/// Daily "Refund Guarantee" ribbon shown on the single highest-confidence
-/// (≥85%) pick of the day. While the game is upcoming/live/awaiting it
-/// reads "REFUND GUARANTEE · IF IT LOSES"; once the pick is graded a loss
-/// it flips to a settled green "REFUNDED" treatment. Purely presentational
-/// — Pick1 has no wagering, so an honored refund is handled out-of-band.
-struct RefundGuaranteeBadge: View {
-    /// True once the guaranteed pick has been graded a loss.
-    let refunded: Bool
+/// Daily "Lock of the Day" ribbon shown on the single highest-confidence
+/// (≥85%) pick of the day. A pure confidence highlight — no wager, money,
+/// or refund framing. Reads "LOCK OF THE DAY · AI TOP PICK" while pending,
+/// then "LOCK HIT" (green) or "LOCK MISSED" (muted) once the pick is graded.
+struct LockOfDayBadge: View {
+    let won: Bool
+    let lost: Bool
+
+    private enum Phase { case pending, hit, missed }
+    private var phase: Phase { won ? .hit : (lost ? .missed : .pending) }
 
     private var accent: Color {
-        // Lime while live (matches the card's pick accent); shifts to
-        // green once refunded to read as "money back".
-        refunded ? Color(hex: "#22C55E") : Color(hex: "#D4FF3A")
+        switch phase {
+        case .pending: return Color(hex: "#D4FF3A")   // lime
+        case .hit:     return Color(hex: "#22C55E")   // green
+        case .missed:  return Color(hex: "#6E6F75")   // muted
+        }
+    }
+    private var icon: String {
+        switch phase {
+        case .pending: return "lock.fill"
+        case .hit:     return "checkmark.seal.fill"
+        case .missed:  return "xmark.seal.fill"
+        }
+    }
+    private var label: String {
+        switch phase {
+        case .pending: return "LOCK OF THE DAY"
+        case .hit:     return "LOCK HIT"
+        case .missed:  return "LOCK MISSED"
+        }
     }
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: refunded ? "checkmark.seal.fill" : "shield.lefthalf.filled")
+            Image(systemName: icon)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(accent)
-            Text(refunded ? "REFUNDED" : "REFUND GUARANTEE")
+            Text(label)
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2)
                 .foregroundColor(accent)
-            if !refunded {
-                Text("· IF IT LOSES")
+            if phase == .pending {
+                Text("· AI TOP PICK")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.4)
                     .foregroundColor(accent.opacity(0.65))
