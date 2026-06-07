@@ -345,7 +345,10 @@ struct HomeHiFiContent: View {
                                 Haptics.tap()
                                 onTapPick(pick)
                             } label: {
-                                GameCard(pick: pick, isLive: isLive(pick), score: liveScore(for: pick))
+                                GameCard(pick: pick,
+                                         isLive: isLive(pick),
+                                         score: liveScore(for: pick),
+                                         isRefundGuarantee: pick.id == vm.refundGuaranteePickID)
                                     .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
@@ -1472,6 +1475,12 @@ struct GameCard: View {
     let isLive: Bool
     let score: LiveScore?
 
+    /// True when this card is the day's single Refund Guarantee pick
+    /// (highest-confidence pick ≥85%). Drives the top ribbon, which
+    /// flips to "REFUNDED" once the pick is graded a loss. Defaults to
+    /// false so other call sites / previews render unchanged.
+    var isRefundGuarantee: Bool = false
+
     /// Authoritative card state — same helper every other surface uses.
     /// Replaces the old `isLive` Bool for badge / topline decisions so
     /// past-pending picks render with an "AWAITING" treatment instead
@@ -1506,6 +1515,12 @@ struct GameCard: View {
     // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
     private var teamCardBody: some View {
         VStack(spacing: 0) {
+            // Refund-guarantee ribbon — only on the day's single ≥85%
+            // top pick. Flips to "REFUNDED" once graded a loss.
+            if isRefundGuarantee {
+                RefundGuaranteeBadge(refunded: pick.isLoss)
+            }
+
             // Top row — switches on the authoritative renderState so
             // past-pending picks no longer say "TONIGHT" with a stale
             // kickoff. Four buckets:
@@ -1559,6 +1574,11 @@ struct GameCard: View {
     // ─── EVENT LAYOUT (F1, MMA) ─────────────────────────────────
     private var eventCardBody: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Refund-guarantee ribbon — see teamCardBody.
+            if isRefundGuarantee {
+                RefundGuaranteeBadge(refunded: pick.isLoss)
+            }
+
             // Tag + AI pill — for live/awaiting/final states swap the
             // race-day tag for the same shared badge the team card uses,
             // so an F1 weekend that's already underway reads "LIVE · L42"
@@ -1764,6 +1784,53 @@ struct GameCard: View {
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#B9B7B0"))
         }
+    }
+}
+
+/// Daily "Refund Guarantee" ribbon shown on the single highest-confidence
+/// (≥85%) pick of the day. While the game is upcoming/live/awaiting it
+/// reads "REFUND GUARANTEE · IF IT LOSES"; once the pick is graded a loss
+/// it flips to a settled green "REFUNDED" treatment. Purely presentational
+/// — Pick1 has no wagering, so an honored refund is handled out-of-band.
+struct RefundGuaranteeBadge: View {
+    /// True once the guaranteed pick has been graded a loss.
+    let refunded: Bool
+
+    private var accent: Color {
+        // Lime while live (matches the card's pick accent); shifts to
+        // green once refunded to read as "money back".
+        refunded ? Color(hex: "#22C55E") : Color(hex: "#D4FF3A")
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: refunded ? "checkmark.seal.fill" : "shield.lefthalf.filled")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(accent)
+            Text(refunded ? "REFUNDED" : "REFUND GUARANTEE")
+                .font(.archivoNarrow(10, weight: .bold))
+                .tracking(2)
+                .foregroundColor(accent)
+            if !refunded {
+                Text("· IF IT LOSES")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundColor(accent.opacity(0.65))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(accent.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(accent.opacity(0.35), lineWidth: 1)
+        )
+        .padding(.bottom, 12)
     }
 }
 

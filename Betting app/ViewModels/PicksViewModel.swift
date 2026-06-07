@@ -139,6 +139,32 @@ class PicksViewModel: ObservableObject {
         return filteredTodayPicks.filter { !visibleIds.contains($0.id) }
     }
 
+    // MARK: - Refund guarantee
+    //
+    // One pick per day carries a "Refund Guarantee": the single
+    // highest-confidence pick of the day, and only when it clears the
+    // 85% probability floor. The qualifying card shows a REFUND
+    // GUARANTEE ribbon; if the AI's call is graded a loss, the ribbon
+    // flips to REFUNDED. This is a presentational marketing treatment —
+    // Pick1 has no wagering or wallet, so any honored refund/credit is
+    // handled out-of-band (App Store subscription credit, etc.).
+
+    /// Minimum AI probability for a pick to qualify for the daily
+    /// refund guarantee.
+    static let refundGuaranteeThreshold: Double = 85
+
+    /// The id of today's refund-guarantee pick, or `nil` when no pick
+    /// clears the 85% floor. Computed over the *full* day's slate
+    /// (`effectiveTodayPicks`, every sport) so the guarantee is
+    /// genuinely "one game a day" regardless of which sport chip is
+    /// active — the same card stays flagged as the user filters.
+    var refundGuaranteePickID: UUID? {
+        effectiveTodayPicks
+            .filter { $0.probability >= Self.refundGuaranteeThreshold }
+            .max(by: { $0.probability < $1.probability })?
+            .id
+    }
+
     // MARK: - Stats (over the rolling 30-day history)
 
     /// Settled = W or L (not pending). All-time win rate over the window.
