@@ -997,6 +997,14 @@ cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 // that compounded to >$25 in two days. Cron is the only entry
 // point now; manual triggering happens via the deploy schedule
 // (push a commit at 4:59am ET to get a fresh pipeline at 5am).
+//
+// Exception: RUN_ON_BOOT=1 forces ONE pipeline run at startup, for
+// manually backfilling a day after an outage. Unset the variable
+// right after (with skip-deploys) or every restart will burn a run.
+if (process.env.RUN_ON_BOOT === '1') {
+  log('🔁 RUN_ON_BOOT=1 — running pipeline once at boot (backfill)');
+  runPipeline().catch((e) => err('Boot pipeline run failed:', e.message));
+}
 
 log('⚡ Pick1 AI pipeline online');
 log(`   Model:    ${ANTHROPIC_MODEL} (adaptive thinking, high effort)`);

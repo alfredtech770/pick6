@@ -4,10 +4,6 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "node index.js"
-healthcheckPath = "/healthz"
-healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
-
-[deploy.numReplicas]
-production = 1
+numReplicas = 1
