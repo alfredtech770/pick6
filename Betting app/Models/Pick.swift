@@ -30,6 +30,13 @@ struct Pick: Identifiable, Codable {
     let result: String // "pending", "win", "loss"
     let homeScore: Int?
     let awayScore: Int?
+    /// Real decimal odds for the picked outcome from an actual market
+    /// (Polymarket or a major sportsbook), captured by the pipeline at
+    /// generation time. Nil when no market quote was found — the
+    /// detail page then falls back to confidence-implied odds.
+    let marketOdds: Double?
+    /// Where marketOdds came from ("Polymarket", "DraftKings", …).
+    let oddsSource: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -45,6 +52,8 @@ struct Pick: Identifiable, Codable {
         case result
         case homeScore = "home_score"
         case awayScore = "away_score"
+        case marketOdds = "market_odds"
+        case oddsSource = "odds_source"
     }
 
     // Confidence tier helper
@@ -211,6 +220,10 @@ extension Pick {
         result = try c.decode(String.self, forKey: .result)
         homeScore = try c.decodeIfPresent(Int.self, forKey: .homeScore)
         awayScore = try c.decodeIfPresent(Int.self, forKey: .awayScore)
+        // Lenient like matchup_facts: rows predating the market-odds
+        // migration (or junk values) just fall back to implied odds.
+        marketOdds = (try? c.decodeIfPresent(Double.self, forKey: .marketOdds)) ?? nil
+        oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
     }
 }
 

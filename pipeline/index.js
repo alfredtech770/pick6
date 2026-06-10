@@ -425,6 +425,14 @@ const PICK_SCHEMA = {
             type: 'string',
             description: 'The calendar date the match is actually played, in US Eastern Time, formatted YYYY-MM-DD. For a normal daily slate this is today\'s date; for leagues whose prompt covers future fixtures (e.g. tournament previews) use each match\'s real date.',
           },
+          market_odds: {
+            type: ['number', 'null'],
+            description: 'REAL current decimal odds for the PICKED outcome, found via web_search on Polymarket or a major sportsbook (DraftKings, FanDuel, bet365…). E.g. a -150 favorite is 1.67; Polymarket 60c is 1.0/0.60 ≈ 1.67. Must come from an actual market quote — null if you cannot find one. Never derive it from your own probability.',
+          },
+          odds_source: {
+            type: ['string', 'null'],
+            description: 'Name of the market the odds came from, e.g. "Polymarket", "DraftKings". Null when market_odds is null.',
+          },
           home_team: { type: 'string' },
           away_team: { type: 'string' },
           pick: { type: 'string', description: 'The team/fighter/driver picked. For team sports must equal home_team or away_team. For F1, the driver name.' },
@@ -450,7 +458,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source'],
         additionalProperties: false,
       },
     },
@@ -494,6 +502,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       ...header,
       `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
       'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
+      'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
       ...(excludeMatchups.length
         ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
         : []),
@@ -508,6 +517,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     '',
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
     'Set game_date on every pick to the REAL calendar date (US Eastern Time) the event is played — for future events (e.g. an upcoming Grand Prix) use the event\'s date from the feed above, formatted YYYY-MM-DD.',
+    'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
   ].join('\n');
 }
 
@@ -665,6 +675,13 @@ async function savePicks(league, picks) {
     // Default to [] so a model that omits the field never nulls the
     // NOT NULL column.
     matchup_facts: Array.isArray(p.matchup_facts) ? p.matchup_facts : [],
+    // Real market odds for the picked outcome (Polymarket / books),
+    // sanity-banded: decimal odds outside 1.01–25 are junk quotes.
+    market_odds: (typeof p.market_odds === 'number'
+      && p.market_odds >= 1.01 && p.market_odds <= 25)
+      ? p.market_odds : null,
+    odds_source: (typeof p.odds_source === 'string' && p.odds_source.trim())
+      ? p.odds_source.trim() : null,
     result: 'pending',
   }));
 

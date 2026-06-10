@@ -840,18 +840,26 @@ struct MatchDetailView: View {
         return words.dropFirst(headCount).joined(separator: " ")
     }
 
-    /// Decimal odds derived from confidence (rough inverse implied
-    /// probability). Used by both the EV calculation and the IMPLIED
-    /// ODDS stat column below.
+    /// Decimal odds for the EV calculation and the odds stat column.
+    /// REAL market odds (Polymarket / sportsbook, captured by the
+    /// pipeline at generation time) when available; otherwise falls
+    /// back to odds implied by the AI's own confidence — which makes
+    /// expected return read ~0 by construction, so the market quote
+    /// is what gives this number its meaning.
     private var decimalOdds: Double {
-        // Avoid divide-by-zero at extremes; keep odds in a sensible band.
+        if let market = pick.marketOdds, market > 1.0 { return market }
+        // Fallback: avoid divide-by-zero at extremes; sensible band.
         let p = max(0.40, min(0.90, pick.probability / 100.0))
         return max(1.20, 1.0 / p)
     }
 
+    /// True when decimalOdds is a real market quote.
+    private var hasMarketOdds: Bool { (pick.marketOdds ?? 0) > 1.0 }
+
     /// Expected return % = (AI confidence × decimal odds − 1) × 100.
-    /// Reads as the AI's projected edge over the market's implied
-    /// probability — pure analytics framing, no dollar amounts.
+    /// With real market odds this is the AI's genuine projected edge
+    /// over the market price; with the implied fallback it reads as
+    /// "fairly priced" — pure analytics framing, no dollar amounts.
     private var expectedReturnPercent: Double {
         let aiProb = pick.probability / 100.0
         return (aiProb * decimalOdds - 1.0) * 100.0
@@ -893,10 +901,16 @@ struct MatchDetailView: View {
             statusLabel = "TIP-OFF"
             statusValue = tipoffText            // scheduled time
         }
+        // Label the odds column honestly: a real market quote shows its
+        // source ("DRAFTKINGS" / "POLYMARKET"); the confidence-derived
+        // fallback keeps the old IMPLIED ODDS label.
+        let oddsLabel = hasMarketOdds
+            ? (pick.oddsSource?.uppercased() ?? "MARKET ODDS")
+            : "IMPLIED ODDS"
         return [
-            .init(label: "IMPLIED ODDS", value: oddsStr, suffix: "x"),
-            .init(label: "CONFIDENCE",   value: "\(Int(pick.probability))", suffix: "%"),
-            .init(label: statusLabel,    value: statusValue, suffix: nil),
+            .init(label: oddsLabel,    value: oddsStr, suffix: "x"),
+            .init(label: "CONFIDENCE", value: "\(Int(pick.probability))", suffix: "%"),
+            .init(label: statusLabel,  value: statusValue, suffix: nil),
         ]
     }
 
@@ -3820,7 +3834,8 @@ struct LiveView: View {
                     gameDate: "", gameId: nil, homeTeam: "", awayTeam: "",
                     pick: "", probability: 0, confidence: "*", reasoning: "",
                     keyFactor: nil, matchupFacts: nil, result: "pending",
-                    homeScore: nil, awayScore: nil)
+                    homeScore: nil, awayScore: nil,
+                    marketOdds: nil, oddsSource: nil)
     }
 
     /// Status-pill 3-state classifier:
