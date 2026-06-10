@@ -144,7 +144,11 @@ function err(...a) { console.error(`[${new Date().toISOString()}] ERROR`, ...a);
 // ════════════════════════════════════════════════════════════════
 
 // sportsdata.io — used for the four major US team leagues + soccer + MMA.
+// With no SPORTSDATA_KEY set the integration is disabled: every fetcher
+// returns empty, pick generation falls through to Claude research mode,
+// and the live-score / grading ticks become no-ops instead of 403 spam.
 async function sdFetch(path) {
+  if (!process.env.SPORTSDATA_KEY) return [];
   try {
     const res = await axios.get(`https://api.sportsdata.io/v3/${path}`, {
       headers: { 'Ocp-Apim-Subscription-Key': process.env.SPORTSDATA_KEY },
