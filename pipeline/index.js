@@ -304,6 +304,16 @@ const LEAGUES = {
     sport: 'cricket', promptMode: 'research', fetcher: null,
     notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
   },
+
+  // 2026 World Cup — branded "Summer Football" in the app (App Review
+  // 5.2.1 IP caution; never surface FIFA marks in user-visible strings).
+  // Research mode covers today's AND tomorrow's fixtures (ET) so the
+  // Summer Football hub always previews the next slate a day ahead.
+  // game_date carries each match's REAL ET date, not the run date.
+  WC: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'International national-team summer tournament 2026, hosted in North America (group stage June, knockouts through mid-July). Use web_search to confirm fixtures. Pick is the match result (team to win, or draw when genuinely strongest).',
+  },
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -409,6 +419,10 @@ const PICK_SCHEMA = {
         type: 'object',
         properties: {
           game_id: { type: 'string' },
+          game_date: {
+            type: 'string',
+            description: 'The calendar date the match is actually played, in US Eastern Time, formatted YYYY-MM-DD. For a normal daily slate this is today\'s date; for leagues whose prompt covers future fixtures (e.g. tournament previews) use each match\'s real date.',
+          },
           home_team: { type: 'string' },
           away_team: { type: 'string' },
           pick: { type: 'string', description: 'The team/fighter/driver picked. For team sports must equal home_team or away_team. For F1, the driver name.' },
@@ -434,7 +448,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts'],
         additionalProperties: false,
       },
     },
@@ -464,12 +478,17 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       : league === 'MLB' ? 'MLB games'
       : league === 'EPL' ? 'EPL fixtures'
       : league === 'UFC' ? 'UFC fights'
+      : league === 'WC' ? '2026 World Cup tournament matches'
       : `${league} matches`;
+    // Tournament leagues preview a day ahead so the in-app hub always
+    // shows the next slate before it kicks off.
+    const window = league === 'WC' ? "today's and tomorrow's" : "today's";
     return [
       ...header,
-      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}, then return a pick for EVERY matchup you can confirm on today's slate — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled today.`,
+      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${window} ${sportPlural}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
+      'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
       ...(excludeMatchups.length
-        ? [`Already covered today — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
+        ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
         : []),
       'For each pick, populate game_id with a stable identifier you derive from the date and matchup',
       `(e.g. "${league.toLowerCase()}-${todayISO()}-${'home-vs-away'}"), and home_team/away_team with the team or player names exactly as they appear in the source. Do NOT invent matchups — if you can\'t confirm a matchup via web_search, skip it.`,
@@ -512,11 +531,13 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   // already covered today, or a re-run would duplicate/overwrite them.
   let excludeMatchups = [];
   if (useResearch) {
+    // gte (not eq): tournament leagues carry future-dated picks; a
+    // re-run must not regenerate tomorrow's already-covered fixtures.
     const { data: existing } = await supabase
       .from('picks')
       .select('home_team,away_team')
       .eq('league', league)
-      .eq('game_date', todayISO());
+      .gte('game_date', todayISO());
     excludeMatchups = (existing || []).map((p) => `${p.away_team} @ ${p.home_team}`);
   }
   const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch, excludeMatchups);
@@ -610,12 +631,20 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
 async function savePicks(league, picks) {
   if (!picks.length) return;
   const sport = LEAGUES[league].sport;
-  const game_date = todayISO();
+  const fallbackDate = todayISO();
+  // The model reports each match's real ET date (tournament previews
+  // can cover tomorrow's fixtures). Trust it only when well-formed and
+  // today-or-future; anything else falls back to the run date.
+  const pickDate = (p) =>
+    (typeof p.game_date === 'string'
+      && /^\d{4}-\d{2}-\d{2}$/.test(p.game_date)
+      && p.game_date >= fallbackDate)
+      ? p.game_date : fallbackDate;
 
   const rows = picks.map((p) => ({
     sport,
     league,
-    game_date,
+    game_date: pickDate(p),
     game_id: p.game_id,
     home_team: p.home_team,
     away_team: p.away_team,

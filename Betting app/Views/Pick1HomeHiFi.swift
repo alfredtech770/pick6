@@ -394,7 +394,7 @@ struct HomeHiFiContent: View {
             Haptics.success()
         }
         .fullScreenCover(isPresented: $showSummerFootball) {
-            SummerFootballHubView(onClose: { showSummerFootball = false })
+            SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false })
         }
     }
 
@@ -2540,14 +2540,14 @@ struct LockedPickCard: View {
 struct EmptyTodayState: View {
     var body: some View {
         VStack(spacing: 14) {
-            Image(systemName: "clock.fill")
+            Image(systemName: "calendar.badge.exclamationmark")
                 .font(.system(size: 38))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("PICKS GENERATING")
+            Text("NO GAMES FOR TODAY")
                 .font(.archivoNarrow(13, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("New picks drop 3× daily — 5am, 12pm, 7pm ET")
+            Text("New picks drop daily by 5:00 AM ET")
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)

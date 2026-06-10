@@ -143,13 +143,34 @@ struct WCTrophy: View {
 // MARK: - In-App Hub  (Summer Football In-App.html)
 
 struct SummerFootballHubView: View {
+    @ObservedObject var vm: PicksViewModel
     let onClose: () -> Void
 
     /// Tapping a match (featured or a slate row) opens the standard
-    /// MatchDetailView with a Pick synthesized from the static
-    /// showcase data. FavoritesStore is injected at the app root and
-    /// propagates through this sheet.
+    /// MatchDetailView with the real AI pick. FavoritesStore is
+    /// injected at the app root and propagates through this sheet.
     @State private var detailPick: Pick?
+
+    /// Real tournament picks (league "WC"), pending only, today or
+    /// later (ET), ordered soonest-first then by confidence. The
+    /// pipeline previews a day ahead, so the next slate is in
+    /// `historyPicks` (its since-query has no upper date bound) the
+    /// evening before kickoff. As matches grade they drop out and the
+    /// next fixtures take their place.
+    private var upcomingMatches: [Pick] {
+        var seen = Set<UUID>()
+        let all = (vm.todayPicks + vm.historyPicks).filter { seen.insert($0.id).inserted }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        let dayStart = cal.startOfDay(for: Date())
+        return all
+            .filter { $0.league == "WC" && $0.isPending
+                      && ($0.gameDateValue ?? .distantPast) >= dayStart }
+            .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
+    }
+
+    private var featured: Pick? { upcomingMatches.first }
+    private var slate: [Pick] { Array(upcomingMatches.dropFirst().prefix(11)) }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -166,26 +187,33 @@ struct SummerFootballHubView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 18)
 
-                    sectionHead(title: "OPENING", accent: "MATCH",
-                                metaLive: true, meta: "8:00 PM ET")
-                    Button {
-                        Haptics.tap()
-                        detailPick = sfPick(home: "USA", away: "Mexico",
-                                            pick: "USA TO WIN · O 2.5 GOALS",
-                                            prob: 84,
-                                            keyFactor: "GROUP A · SOFI STADIUM")
-                    } label: {
-                        featuredMatch.pressableScale(0.985)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-
-                    sectionHead(title: "TODAY'S", accent: "SLATE",
-                                metaLive: false, meta: "11 MORE")
-                    matchesList
+                    if let feat = featured {
+                        sectionHead(title: "NEXT", accent: "MATCH",
+                                    metaLive: true, meta: dayLabel(feat))
+                        Button {
+                            Haptics.tap()
+                            detailPick = feat
+                        } label: {
+                            featuredMatch(feat).pressableScale(0.985)
+                        }
+                        .buttonStyle(.plain)
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 12)
+                    }
+
+                    if !slate.isEmpty {
+                        sectionHead(title: "UPCOMING", accent: "MATCHES",
+                                    metaLive: false, meta: "\(slate.count) MORE")
+                        matchesList
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
+                    }
+
+                    if upcomingMatches.isEmpty {
+                        emptySlate
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
+                    }
 
                     sectionHead(title: "GROUP", accent: "STANDINGS",
                                 metaLive: false, meta: "AI PROJECTED")
@@ -206,32 +234,37 @@ struct SummerFootballHubView: View {
         }
     }
 
-    /// Build a Pick from static showcase data so the match cards
-    /// can reuse the app's standard MatchDetailView.
-    private func sfPick(home: String, away: String, pick: String,
-                        prob: Double, keyFactor: String) -> Pick {
+    /// "TODAY" / "TOMORROW" / "JUN 14" label for a pick's match day.
+    private func dayLabel(_ pick: Pick) -> String {
+        guard let date = pick.gameDateValue else { return "UPCOMING" }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        if cal.isDateInToday(date) { return "TODAY" }
+        if cal.isDateInTomorrow(date) { return "TOMORROW" }
         let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone(identifier: "America/New_York")
-        return Pick(
-            id: UUID(),
-            createdAt: Date(),
-            sport: "soccer",
-            league: "WC",
-            gameDate: f.string(from: Date()),
-            gameId: nil,
-            homeTeam: home,
-            awayTeam: away,
-            pick: pick,
-            probability: prob,
-            confidence: prob >= 80 ? "high" : (prob >= 65 ? "medium" : "low"),
-            reasoning: "AI projection for the Summer Football 2026 group stage.",
-            keyFactor: keyFactor,
-            matchupFacts: nil,
-            result: "pending",
-            homeScore: nil,
-            awayScore: nil
-        )
+        f.dateFormat = "MMM d"
+        return f.string(from: date).uppercased()
+    }
+
+    /// Shown between tournament days, when every fetched fixture has
+    /// been played and graded but the next slate hasn't dropped yet.
+    private var emptySlate: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "hourglass")
+                .font(.system(size: 26))
+                .foregroundColor(WC.gold)
+            Text("NEXT FIXTURES DROP SOON")
+                .font(.archivoNarrow(12, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(WC.ink)
+            Text("Match predictions land by 5:00 AM ET on game day")
+                .font(.archivo(11, weight: .regular))
+                .foregroundColor(WC.mute)
+        }
+        .padding(.vertical, 28)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 12).fill(WC.panel))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(WC.line, lineWidth: 1))
     }
 
     // ── Top nav ─────────────────────────────────────────────────
@@ -384,31 +417,34 @@ struct SummerFootballHubView: View {
         .padding(.bottom, 12)
     }
 
-    // ── Featured opening match ──────────────────────────────────
-    private var featuredMatch: some View {
+    // ── Featured next match ─────────────────────────────────────
+    private func featuredMatch(_ pick: Pick) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 9)).foregroundColor(WC.gold)
-                    Text("GROUP A · SOFI STADIUM")
+                    Text((pick.keyFactor ?? "GROUP STAGE").uppercased())
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2.0).foregroundColor(WC.gold)
+                        .lineLimit(1)
                 }
                 Spacer()
-                Text("★★★ TOP LOCK")
-                    .font(.archivoNarrow(8, weight: .bold))
-                    .tracking(2.0)
-                    .foregroundColor(WC.navy)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(WC.gold))
+                if pick.probability >= 80 {
+                    Text("★★★ TOP LOCK")
+                        .font(.archivoNarrow(8, weight: .bold))
+                        .tracking(2.0)
+                        .foregroundColor(WC.navy)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(WC.gold))
+                }
             }
             .padding(.bottom, 12)
 
             HStack(alignment: .center, spacing: 10) {
-                featTeam("US", "USA", "RANK #13 · HOST")
+                featTeam(flagCode(pick.homeTeam), pick.homeTeam.uppercased(), "HOME")
                 Text("VS").font(.anton(22)).foregroundColor(WC.gold)
-                featTeam("MX", "MEXICO", "RANK #15 · HOST")
+                featTeam(flagCode(pick.awayTeam), pick.awayTeam.uppercased(), "AWAY")
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 14)
@@ -418,12 +454,14 @@ struct SummerFootballHubView: View {
                     Text("▸ AI PREDICTION")
                         .font(.archivoNarrow(8, weight: .bold))
                         .tracking(2.0).foregroundColor(WC.gold)
-                    Text("USA TO WIN · O 2.5 GOALS")
+                    Text(pick.pick.uppercased())
                         .font(.anton(16)).foregroundColor(.white)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 0) {
-                    (Text("84").font(.anton(26))
+                    (Text("\(Int(pick.probability.rounded()))").font(.anton(26))
                      + Text("%").font(.anton(13)))
                         .foregroundColor(WC.gold)
                     Text("CONFIDENCE")
@@ -465,43 +503,55 @@ struct SummerFootballHubView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // ── Today's slate ───────────────────────────────────────────
-    private struct MatchRow {
-        let time: String; let group: String
-        let fav: String; let dog: String
-        let favCode: String; let dogCode: String
-        let conf: String; let pick: String; let risk: Bool
+    // ── Upcoming slate (real picks) ─────────────────────────────
+
+    /// Map a country name to the closest WCFlag code; unknown teams
+    /// fall through to WCFlag's neutral placeholder.
+    private func flagCode(_ country: String) -> String {
+        let map: [String: String] = [
+            "USA": "US", "UNITED STATES": "US", "MEXICO": "MX",
+            "COLOMBIA": "CO", "UGANDA": "UG", "ENGLAND": "EN",
+            "JAPAN": "JP", "BRAZIL": "BR", "GHANA": "GH",
+            "FRANCE": "FR", "SPAIN": "ES", "CANADA": "CA",
+            "NETHERLANDS": "NL", "PORTUGAL": "PT", "GERMANY": "DE",
+            "ARGENTINA": "AR", "ITALY": "IT", "ICELAND": "IS",
+            "SOUTH AFRICA": "ZA", "SOUTH KOREA": "KR",
+            "KOREA REPUBLIC": "KR", "CZECHIA": "CZ", "CZECH REPUBLIC": "CZ",
+        ]
+        return map[country.uppercased().trimmingCharacters(in: .whitespaces)] ?? "??"
     }
-    private let matches: [MatchRow] = [
-        .init(time: "5:00\nPM ET", group: "GROUP A", fav: "COLOMBIA", dog: "UGANDA",
-              favCode: "CO", dogCode: "UG", conf: "87%", pick: "COL −2.5", risk: false),
-        .init(time: "2:00\nPM ET", group: "GROUP B", fav: "ENGLAND", dog: "JAPAN",
-              favCode: "EN", dogCode: "JP", conf: "72%", pick: "ENG ML", risk: false),
-        .init(time: "11:00\nAM ET", group: "GROUP C", fav: "BRAZIL", dog: "GHANA",
-              favCode: "BR", dogCode: "GH", conf: "79%", pick: "BRA −1.5", risk: false),
-        .init(time: "12:00\nPM ET", group: "GROUP D", fav: "FRANCE", dog: "SPAIN",
-              favCode: "FR", dogCode: "ES", conf: "58%", pick: "DRAW · U2.5", risk: true),
-    ]
+
+    /// Which side the AI picked, for highlighting that row. Matches
+    /// the pick text against the team names (same heuristic ScoreView
+    /// uses); returns nil for draw/total picks so neither highlights.
+    private func pickedTeam(_ p: Pick) -> String? {
+        let pickLC = p.pick.lowercased()
+        if pickLC.contains(p.homeTeam.lowercased()) { return p.homeTeam }
+        if pickLC.contains(p.awayTeam.lowercased()) { return p.awayTeam }
+        return nil
+    }
 
     private var matchesList: some View {
         VStack(spacing: 8) {
-            ForEach(Array(matches.enumerated()), id: \.offset) { _, m in
+            ForEach(slate, id: \.id) { p in
                 Button {
                     Haptics.tap()
-                    let prob = Double(m.conf.replacingOccurrences(of: "%", with: "")) ?? 0
-                    detailPick = sfPick(home: m.fav, away: m.dog,
-                                        pick: m.pick, prob: prob,
-                                        keyFactor: m.group)
+                    detailPick = p
                 } label: {
                     HStack(spacing: 12) {
                         VStack(spacing: 2) {
-                            Text(m.time).font(.mono(11, weight: .heavy))
+                            Text(dayLabel(p)).font(.mono(10, weight: .heavy))
                                 .foregroundColor(WC.ink)
                                 .multilineTextAlignment(.center)
-                            Text(m.group).font(.archivoNarrow(8, weight: .bold))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.7)
+                            Text((p.keyFactor ?? "").uppercased().components(separatedBy: "·").first ?? "")
+                                .font(.archivoNarrow(8, weight: .bold))
                                 .tracking(1.6).foregroundColor(WC.mute)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
-                        .frame(width: 52)
+                        .frame(width: 56)
                         .overlay(alignment: .trailing) {
                             Rectangle().fill(WC.line).frame(width: 1)
                         }
@@ -509,34 +559,40 @@ struct SummerFootballHubView: View {
 
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(spacing: 8) {
-                                WCFlag(code: m.favCode).frame(width: 28, height: 20)
+                                WCFlag(code: flagCode(p.homeTeam)).frame(width: 28, height: 20)
                                     .clipShape(RoundedRectangle(cornerRadius: 2))
-                                Text(m.fav).font(.archivo(12, weight: .bold))
-                                    .foregroundColor(WC.accent)
+                                Text(p.homeTeam.uppercased()).font(.archivo(12, weight: .bold))
+                                    .foregroundColor(pickedTeam(p) == p.homeTeam ? WC.accent : WC.ink)
+                                    .lineLimit(1)
                             }
                             HStack(spacing: 8) {
-                                WCFlag(code: m.dogCode).frame(width: 28, height: 20)
+                                WCFlag(code: flagCode(p.awayTeam)).frame(width: 28, height: 20)
                                     .clipShape(RoundedRectangle(cornerRadius: 2))
-                                Text(m.dog).font(.archivo(12, weight: .bold))
-                                    .foregroundColor(WC.ink)
+                                Text(p.awayTeam.uppercased()).font(.archivo(12, weight: .bold))
+                                    .foregroundColor(pickedTeam(p) == p.awayTeam ? WC.accent : WC.ink)
+                                    .lineLimit(1)
                             }
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 3) {
-                            Text(m.conf)
+                            let risk = p.probability < 65
+                            Text("\(Int(p.probability.rounded()))%")
                                 .font(.mono(11, weight: .heavy))
-                                .foregroundColor(m.risk ? Color(hex: "#FF8A90") : WC.accent)
+                                .foregroundColor(risk ? Color(hex: "#FF8A90") : WC.accent)
                                 .padding(.horizontal, 8).padding(.vertical, 3)
                                 .background(
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(m.risk ? WC.red.opacity(0.15) : WC.accent.opacity(0.12))
+                                        .fill(risk ? WC.red.opacity(0.15) : WC.accent.opacity(0.12))
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 4)
-                                        .stroke(m.risk ? WC.red.opacity(0.4) : WC.accent.opacity(0.3), lineWidth: 1)
+                                        .stroke(risk ? WC.red.opacity(0.4) : WC.accent.opacity(0.3), lineWidth: 1)
                                 )
-                            Text(m.pick).font(.archivoNarrow(8, weight: .bold))
+                            Text(p.pick.uppercased()).font(.archivoNarrow(8, weight: .bold))
                                 .tracking(1.6).foregroundColor(WC.mute)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(maxWidth: 110, alignment: .trailing)
                         }
                     }
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -752,6 +808,30 @@ struct WCFlag: View {
             case "IS":
                 VStack(spacing: 0) {
                     Color(hex: "#EF2B2D"); Color(hex: "#0072CE"); Color.white
+                }
+            case "ZA":
+                VStack(spacing: 0) {
+                    Color(hex: "#E03C31")
+                    Color.white.frame(height: h * 0.12)
+                    Color(hex: "#007749")
+                    Color.white.frame(height: h * 0.12)
+                    Color(hex: "#001489")
+                }
+            case "KR":
+                ZStack {
+                    Color.white
+                    VStack(spacing: 0) {
+                        Color(hex: "#CD2E3A"); Color(hex: "#0047A0")
+                    }
+                    .frame(width: h * 0.55, height: h * 0.55)
+                    .clipShape(Circle())
+                }
+            case "CZ":
+                ZStack(alignment: .leading) {
+                    VStack(spacing: 0) { Color.white; Color(hex: "#D7141A") }
+                    Diamond().fill(Color(hex: "#11457E"))
+                        .frame(width: w * 0.55, height: h)
+                        .offset(x: -w * 0.28)
                 }
             default:
                 Color(hex: "#2A2A2E")
