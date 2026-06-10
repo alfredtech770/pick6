@@ -443,7 +443,7 @@ const PICK_SCHEMA = {
   additionalProperties: false,
 };
 
-function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) {
+function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, excludeMatchups = []) {
   const cfg = LEAGUES[league];
   const useResearch = cfg.promptMode === 'research' || forceResearch;
   const header = [
@@ -467,7 +467,10 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false) 
       : `${league} matches`;
     return [
       ...header,
-      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}, then return picks for the best matchups (probability ≥55%). Aim for at least 1 pick if any games exist; 2–4 if the slate is full. Use the structured output schema. Empty array is only correct if literally zero games are scheduled today.`,
+      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find today's ${sportPlural}, then return a pick for EVERY matchup you can confirm on today's slate — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled today.`,
+      ...(excludeMatchups.length
+        ? [`Already covered today — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
+        : []),
       'For each pick, populate game_id with a stable identifier you derive from the date and matchup',
       `(e.g. "${league.toLowerCase()}-${todayISO()}-${'home-vs-away'}"), and home_team/away_team with the team or player names exactly as they appear in the source. Do NOT invent matchups — if you can\'t confirm a matchup via web_search, skip it.`,
     ].join('\n');
@@ -503,7 +506,20 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
 
   const stats30 = await getPerformanceStats(league, 30);
   const stats7 = await getPerformanceStats(league, 7);
-  const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch);
+
+  // Research mode has no feed-side dedup (the feed path filters by
+  // game_id before prompting) — so tell the model which matchups are
+  // already covered today, or a re-run would duplicate/overwrite them.
+  let excludeMatchups = [];
+  if (useResearch) {
+    const { data: existing } = await supabase
+      .from('picks')
+      .select('home_team,away_team')
+      .eq('league', league)
+      .eq('game_date', todayISO());
+    excludeMatchups = (existing || []).map((p) => `${p.away_team} @ ${p.home_team}`);
+  }
+  const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch, excludeMatchups);
 
   // max_tokens=32000 + effort=high: gives the agentic web_search loop
   // enough headroom to think AND emit the final JSON. effort=max +
