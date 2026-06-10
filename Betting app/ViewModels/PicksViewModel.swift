@@ -89,6 +89,29 @@ class PicksViewModel: ObservableObject {
     /// Backwards-compat alias for older views.
     var filteredPicks: [Pick] { filteredTodayPicks }
 
+    // MARK: - Upcoming events (future-dated picks)
+    //
+    // Event leagues (F1 next Grand Prix, UFC next card, Summer Football
+    // next fixtures) generate picks ahead of event day with game_date =
+    // the real event date. They ride along in `historyPicks` (its
+    // since-query has no upper bound) and surface in a dedicated
+    // "UPCOMING" feed section — kept out of effectiveTodayPicks so the
+    // today slate, free-tier gating, and Lock of the Day stay daily.
+
+    /// Pending picks dated after today (ET), soonest event first.
+    var upcomingEventPicks: [Pick] {
+        let today = Self.dateString(daysAgo: 0)
+        return historyPicks
+            .filter { $0.isPending && $0.gameDate > today }
+            .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
+    }
+
+    /// Upcoming events filtered by the active sport chip.
+    var filteredUpcomingEventPicks: [Pick] {
+        if selectedSport == "all" { return upcomingEventPicks }
+        return upcomingEventPicks.filter { $0.sport == selectedSport }
+    }
+
     /// Yesterday's picks, filtered by `selectedSport`.
     var filteredYesterdayPicks: [Pick] {
         if selectedSport == "all" { return yesterdayPicks }

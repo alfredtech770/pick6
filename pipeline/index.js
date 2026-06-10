@@ -177,7 +177,9 @@ async function fetchF1() {
     const res = await axios.get('https://api.jolpi.ca/ergast/f1/current.json', { timeout: 15000 });
     const races = res.data?.MRData?.RaceTable?.Races || [];
     const now = new Date();
-    const window = 3 * 24 * 60 * 60 * 1000; // next 72h
+    // 21 days: always surface the NEXT Grand Prix as an upcoming pick
+    // (with its real race date) instead of only race-weekend coverage.
+    const window = 21 * 24 * 60 * 60 * 1000;
     return races.filter((r) => {
       const t = new Date(`${r.date}T${r.time || '14:00:00Z'}`).getTime() - now.getTime();
       return t >= 0 && t <= window;
@@ -480,12 +482,17 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       : league === 'UFC' ? 'UFC fights'
       : league === 'WC' ? '2026 World Cup tournament matches'
       : `${league} matches`;
-    // Tournament leagues preview a day ahead so the in-app hub always
-    // shows the next slate before it kicks off.
-    const window = league === 'WC' ? "today's and tomorrow's" : "today's";
+    // Event-based leagues preview ahead so the app can always show the
+    // NEXT event with its real date: tournaments a day ahead, UFC the
+    // next card (within 14 days), F1 the next Grand Prix (21 days).
+    const searchTarget =
+      league === 'WC' ? `today's and tomorrow's ${sportPlural}`
+      : league === 'UFC' ? 'the next upcoming UFC event within the next 14 days (today included) — cover its main-card fights'
+      : league === 'F1' ? 'the next upcoming Grand Prix within the next 21 days (today included)'
+      : `today's ${sportPlural}`;
     return [
       ...header,
-      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${window} ${sportPlural}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
+      `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
       'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
       ...(excludeMatchups.length
         ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
@@ -500,6 +507,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     JSON.stringify(games, null, 2),
     '',
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
+    'Set game_date on every pick to the REAL calendar date (US Eastern Time) the event is played — for future events (e.g. an upcoming Grand Prix) use the event\'s date from the feed above, formatted YYYY-MM-DD.',
   ].join('\n');
 }
 
@@ -858,12 +866,14 @@ async function runPipeline() {
         if (scheduled.length) {
           // Primary path: we have scheduled events from the feed.
           games = scheduled.map(cfg.normalizer);
-          // De-dup against today's already-saved picks.
+          // De-dup against already-saved picks, today OR future —
+          // event leagues (F1) carry future-dated picks that must not
+          // regenerate on every run.
           const { data: existing } = await supabase
             .from('picks')
             .select('game_id')
             .eq('league', league)
-            .eq('game_date', todayISO());
+            .gte('game_date', todayISO());
           const seen = new Set((existing || []).map((p) => p.game_id));
           games = games.filter((g) => !seen.has(g.game_id));
           if (!games.length) {

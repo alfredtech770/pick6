@@ -381,6 +381,29 @@ struct HomeHiFiContent: View {
                             }
                         }
                     }
+
+                    // Upcoming events — future-dated picks (next F1 Grand
+                    // Prix, next UFC card, tournament fixtures), each card
+                    // carrying its real event date. Daily picks above stay
+                    // the headline; this section previews what's next.
+                    let upcoming = vm.filteredUpcomingEventPicks
+                    if !upcoming.isEmpty {
+                        SectionHeader(title: "UPCOMING EVENTS", cta: nil, onTapCTA: nil)
+                            .padding(.top, 18)
+                            .padding(.bottom, 2)
+                        ForEach(upcoming.prefix(6), id: \.id) { pick in
+                            Button {
+                                Haptics.tap()
+                                onTapPick(pick)
+                            } label: {
+                                GameCard(pick: pick,
+                                         isLive: false,
+                                         score: liveScore(for: pick))
+                                    .pressableScale(0.985)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 120)
@@ -1708,12 +1731,12 @@ struct GameCard: View {
     }
 
     private var formattedDate: String {
-        // gameDate ships as "yyyy-MM-dd"; show abbreviated weekday.
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        if let d = f.date(from: pick.gameDate) {
+        // gameDate ships as "yyyy-MM-dd" with no kickoff time — show
+        // the event DAY ("SUN JUN 14"), not a fabricated 00:00 clock.
+        if let d = pick.gameDateValue {
             let out = DateFormatter()
-            out.dateFormat = "EEE HH:mm"
+            out.dateFormat = "EEE MMM d"
+            out.timeZone = TimeZone(identifier: "America/New_York") ?? .current
             return out.string(from: d).uppercased()
         }
         return "TODAY"
@@ -2014,9 +2037,30 @@ struct ScoreView: View {
                     Text(kickoffText)
                         .font(.mono(11, weight: .bold))
                         .foregroundColor(Color(hex: "#B9B7B0"))
+                } else if let dateText = futureDateText {
+                    // No kickoff time in the feed (future-dated event
+                    // picks: next UFC card, tournament fixtures) — show
+                    // the event date instead of a bare "VS".
+                    Text(dateText)
+                        .font(.mono(11, weight: .bold))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
                 }
             }
         }
+    }
+
+    /// Event date ("SAT JUN 13") for picks whose game day is after
+    /// today (ET). Nil for same-day games — those either have a real
+    /// kickoff time from live_scores or just show "VS".
+    private var futureDateText: String? {
+        guard let d = pick.gameDateValue else { return nil }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+        guard d > Date() && !cal.isDateInToday(d) else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "EEE MMM d"
+        f.timeZone = cal.timeZone
+        return f.string(from: d).uppercased()
     }
 
     /// Real kickoff time from the live_scores feed (sportsdata.io's
