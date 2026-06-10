@@ -90,6 +90,17 @@ final class AuthManager {
         var outcome: SessionCheckOutcome = .noSession
         networkUnavailable = false
 
+        // Optimistic restore: if a session exists locally (Keychain),
+        // treat the user as signed in immediately — even if the network
+        // validation below fails transiently. A returning user on a
+        // flaky cell must never be bounced to the welcome screen while
+        // a session sits on the device; if the token is truly revoked,
+        // the authStateChanges listener will sign them out properly.
+        if let local = SupabaseManager.client.auth.currentSession {
+            isAuthenticated = true
+            userEmail = local.user.email
+        }
+
         do {
             let session = try await SupabaseManager.client.auth.session
             isAuthenticated = true
@@ -237,6 +248,12 @@ final class AuthManager {
     }
 
     func verifyOTP(email: String, token: String) async {
+        // Debounce double-fire: SMS/mail autofill can populate all six
+        // OTP boxes at once and trigger verify twice in the same tick.
+        // The second call burns the just-used token (403 otp_expired)
+        // and surfaces a spurious "invalid code" error over a login
+        // that actually succeeded.
+        guard !isLoading else { return }
         isLoading = true
         error = nil
         do {
