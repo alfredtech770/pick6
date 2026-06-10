@@ -58,6 +58,17 @@ struct Pick: Identifiable, Codable {
     var isLoss: Bool { result == "loss" }
     var isPending: Bool { result == "pending" }
 
+    /// User-facing pick line. Match-result leagues (Summer Football)
+    /// can call a draw, so the outcome type is made explicit —
+    /// "Mexico to win" / "Draw" — instead of a bare team name. Every
+    /// other sport keeps the raw pick text. Call sites uppercase as
+    /// needed for their typography.
+    var displayPick: String {
+        guard league == "WC" else { return pick }
+        if pick.lowercased().contains("draw") { return "Draw" }
+        return "\(pick) to win"
+    }
+
     /// Parses `gameDate` (ISO yyyy-MM-dd) into a Date at midnight
     /// in the pipeline's timezone (America/New_York). Using
     /// TimeZone.current here was a subtle bug: a user in PT would

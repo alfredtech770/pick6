@@ -1579,7 +1579,7 @@ struct GameCard: View {
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#B9B7B0"))
-                    Text(pick.pick.uppercased())
+                    Text(pick.displayPick.uppercased())
                         .font(.anton(17))
                         .tracking(0.17)
                         .foregroundColor(Color(hex: "#D4FF3A"))
@@ -1660,7 +1660,7 @@ struct GameCard: View {
 
             // Pick row
             HStack {
-                Text(pick.pick.uppercased())
+                Text(pick.displayPick.uppercased())
                     .font(.archivo(12, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()
@@ -1723,7 +1723,7 @@ struct GameCard: View {
         if !pick.homeTeam.isEmpty {
             return pick.homeTeam.uppercased()
         }
-        return pick.pick.uppercased()
+        return pick.displayPick.uppercased()
     }
 
     private var eventSub: String {
@@ -2502,7 +2502,7 @@ struct LockedPickCard: View {
                                 .font(.archivoNarrow(10, weight: .bold))
                                 .tracking(2)
                                 .foregroundColor(Color(hex: "#B9B7B0"))
-                            Text(pick.pick.uppercased())
+                            Text(pick.displayPick.uppercased())
                                 .font(.anton(17))
                                 .tracking(0.17)
                                 .foregroundColor(Color(hex: "#D4FF3A"))

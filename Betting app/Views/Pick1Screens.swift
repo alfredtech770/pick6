@@ -824,8 +824,8 @@ struct MatchDetailView: View {
     /// First word of the pick (e.g. "ARSENAL" of "ARSENAL TO HOLD LEAD").
     /// Falls back to the whole pick string if there's no whitespace.
     private var pickTitleHead: String {
-        let words = pick.pick.uppercased().split(separator: " ")
-        guard words.count > 1 else { return pick.pick.uppercased() }
+        let words = pick.displayPick.uppercased().split(separator: " ")
+        guard words.count > 1 else { return pick.displayPick.uppercased() }
         // Take the first 1-2 words as the head segment so the lime tail
         // gets a meaningful phrase rather than just the last word.
         let headCount = words.count >= 4 ? 2 : 1
@@ -834,7 +834,7 @@ struct MatchDetailView: View {
 
     /// Remaining words of the pick, displayed in lime under the head.
     private var pickTitleTail: String {
-        let words = pick.pick.uppercased().split(separator: " ")
+        let words = pick.displayPick.uppercased().split(separator: " ")
         guard words.count > 1 else { return "" }
         let headCount = words.count >= 4 ? 2 : 1
         return words.dropFirst(headCount).joined(separator: " ")
@@ -1453,7 +1453,7 @@ struct MatchDetailView: View {
             ]
         default:
             return [
-                .init(label: "AI PICK", sub: pick.pick.uppercased(), line: "", price: primaryOdds, cold: false),
+                .init(label: "AI PICK", sub: pick.displayPick.uppercased(), line: "", price: primaryOdds, cold: false),
             ]
         }
     }
@@ -2252,7 +2252,7 @@ struct SmallPickHero: View {
                 }
                 HStack(alignment: .center, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(pick.pick.uppercased())
+                        Text(pick.displayPick.uppercased())
                             .font(.anton(34))
                             .lineSpacing(-6)
                             .foregroundColor(Color(hex: "#0A0B0D"))
@@ -2339,7 +2339,7 @@ struct CompactPickCard: View {
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.pick.uppercased())
+                    Text(pick.displayPick.uppercased())
                         .font(.archivo(11, weight: .bold))
                         .foregroundColor(Color(hex: "#D4FF3A"))
                 }
@@ -3199,7 +3199,7 @@ struct WinsView: View {
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(pick.pick.uppercased())
+                Text(pick.displayPick.uppercased())
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Text("· \(pick.keyFactor ?? pick.league.uppercased())")
@@ -3621,7 +3621,7 @@ struct LiveView: View {
                     .font(.anton(20))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                     .lineLimit(1)
-                Text("\(next.league.uppercased()) · YOUR PICK: \(next.pick.uppercased())")
+                Text("\(next.league.uppercased()) · YOUR PICK: \(next.displayPick.uppercased())")
                     .font(.mono(10, weight: .medium))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .lineLimit(1)
@@ -3766,7 +3766,7 @@ struct LiveView: View {
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(pick.pick.uppercased())
+                Text(pick.displayPick.uppercased())
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()
@@ -4956,7 +4956,7 @@ struct SettledOutcomeCard: View {
                 Text("AI PICK")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(pick.pick.uppercased())
+                Text(pick.displayPick.uppercased())
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()

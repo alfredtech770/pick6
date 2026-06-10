@@ -29,6 +29,19 @@ struct TeamLogo: View {
         // athlete's headshot in a circle instead of a team crest.
         if AthleteHeadshot.isIndividual(sport: sport) {
             AthleteHeadshot(sport: sport, name: team, size: size)
+        } else if sport == "soccer", let code = wcFlagCode(for: team) {
+            // National teams (Summer Football) — country flag, not a
+            // club crest. The name lookup separates "Mexico" from
+            // "Arsenal" within the same soccer sport; clubs miss the
+            // map and fall through to the ESPN crest path below.
+            WCFlag(code: code)
+                .frame(width: size.w * 0.92, height: size.w * 0.62)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(.white.opacity(0.15), lineWidth: 1)
+                )
+                .frame(width: size.w, height: size.h)
         } else if let url = TeamLogoLookup.url(sport: sport, team: team) {
             AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
                 switch phase {

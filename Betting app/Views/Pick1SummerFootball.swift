@@ -454,7 +454,7 @@ struct SummerFootballHubView: View {
                     Text("▸ AI PREDICTION")
                         .font(.archivoNarrow(8, weight: .bold))
                         .tracking(2.0).foregroundColor(WC.gold)
-                    Text(pick.pick.uppercased())
+                    Text(pick.displayPick.uppercased())
                         .font(.anton(16)).foregroundColor(.white)
                         .lineLimit(2)
                         .minimumScaleFactor(0.8)
@@ -508,17 +508,7 @@ struct SummerFootballHubView: View {
     /// Map a country name to the closest WCFlag code; unknown teams
     /// fall through to WCFlag's neutral placeholder.
     private func flagCode(_ country: String) -> String {
-        let map: [String: String] = [
-            "USA": "US", "UNITED STATES": "US", "MEXICO": "MX",
-            "COLOMBIA": "CO", "UGANDA": "UG", "ENGLAND": "EN",
-            "JAPAN": "JP", "BRAZIL": "BR", "GHANA": "GH",
-            "FRANCE": "FR", "SPAIN": "ES", "CANADA": "CA",
-            "NETHERLANDS": "NL", "PORTUGAL": "PT", "GERMANY": "DE",
-            "ARGENTINA": "AR", "ITALY": "IT", "ICELAND": "IS",
-            "SOUTH AFRICA": "ZA", "SOUTH KOREA": "KR",
-            "KOREA REPUBLIC": "KR", "CZECHIA": "CZ", "CZECH REPUBLIC": "CZ",
-        ]
-        return map[country.uppercased().trimmingCharacters(in: .whitespaces)] ?? "??"
+        wcFlagCode(for: country) ?? "??"
     }
 
     /// Which side the AI picked, for highlighting that row. Matches
@@ -588,7 +578,7 @@ struct SummerFootballHubView: View {
                                     RoundedRectangle(cornerRadius: 4)
                                         .stroke(risk ? WC.red.opacity(0.4) : WC.accent.opacity(0.3), lineWidth: 1)
                                 )
-                            Text(p.pick.uppercased()).font(.archivoNarrow(8, weight: .bold))
+                            Text(p.displayPick.uppercased()).font(.archivoNarrow(8, weight: .bold))
                                 .tracking(1.6).foregroundColor(WC.mute)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -715,6 +705,25 @@ struct WCGoldBorder<S: Shape>: View {
 }
 
 // MARK: - Simplified country flags
+
+/// National-team name → WCFlag code. Nil when we don't have a flag
+/// for the country (callers fall back to their own placeholder).
+/// Shared by the Summer Football hub and TeamLogo, which uses a hit
+/// here to tell national teams apart from club sides within the same
+/// "soccer" sport.
+func wcFlagCode(for country: String) -> String? {
+    let map: [String: String] = [
+        "USA": "US", "UNITED STATES": "US", "MEXICO": "MX",
+        "COLOMBIA": "CO", "UGANDA": "UG", "ENGLAND": "EN",
+        "JAPAN": "JP", "BRAZIL": "BR", "GHANA": "GH",
+        "FRANCE": "FR", "SPAIN": "ES", "CANADA": "CA",
+        "NETHERLANDS": "NL", "PORTUGAL": "PT", "GERMANY": "DE",
+        "ARGENTINA": "AR", "ITALY": "IT", "ICELAND": "IS",
+        "SOUTH AFRICA": "ZA", "SOUTH KOREA": "KR",
+        "KOREA REPUBLIC": "KR", "CZECHIA": "CZ", "CZECH REPUBLIC": "CZ",
+    ]
+    return map[country.uppercased().trimmingCharacters(in: .whitespaces)]
+}
 
 /// Lightweight flag renderer matching the design's simplified inline
 /// SVG flags. Not heraldically exact — deliberately the same stylized
