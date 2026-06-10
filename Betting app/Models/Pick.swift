@@ -58,6 +58,12 @@ struct Pick: Identifiable, Codable {
     var isLoss: Bool { result == "loss" }
     var isPending: Bool { result == "pending" }
 
+    /// Refund-guarantee eligibility: any pick the AI calls at 85%+
+    /// carries the "we refund it if it loses" tag. Fulfillment is
+    /// out-of-band (user submits a claim form; honored as a
+    /// subscription refund/credit) — the app only displays the state.
+    var isRefundEligible: Bool { probability >= 85 }
+
     /// User-facing pick line. Match-result leagues (Summer Football)
     /// can call a draw, so the outcome type is made explicit —
     /// "Mexico to win" / "Draw" — instead of a bare team name. Every

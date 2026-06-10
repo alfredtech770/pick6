@@ -348,7 +348,7 @@ struct HomeHiFiContent: View {
                                 GameCard(pick: pick,
                                          isLive: isLive(pick),
                                          score: liveScore(for: pick),
-                                         isLockOfDay: pick.id == vm.lockOfDayPickID)
+                                         isRefundGuarantee: pick.isRefundEligible)
                                     .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
@@ -398,7 +398,8 @@ struct HomeHiFiContent: View {
                             } label: {
                                 GameCard(pick: pick,
                                          isLive: false,
-                                         score: liveScore(for: pick))
+                                         score: liveScore(for: pick),
+                                         isRefundGuarantee: pick.isRefundEligible)
                                     .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
@@ -1498,11 +1499,11 @@ struct GameCard: View {
     let isLive: Bool
     let score: LiveScore?
 
-    /// True when this card is the day's single Lock-of-the-Day pick
-    /// (highest-confidence pick ≥85%). Drives the top ribbon, which
-    /// reads "LOCK HIT" / "LOCK MISSED" once graded. Defaults to false
+    /// True for 85%+ picks, which carry the refund guarantee. Drives
+    /// the top ribbon: REFUND GUARANTEE while open, REFUNDED on a
+    /// graded loss, GUARANTEED PICK · HIT on a win. Defaults to false
     /// so other call sites / previews render unchanged.
-    var isLockOfDay: Bool = false
+    var isRefundGuarantee: Bool = false
 
     /// Authoritative card state — same helper every other surface uses.
     /// Replaces the old `isLive` Bool for badge / topline decisions so
@@ -1540,8 +1541,8 @@ struct GameCard: View {
         VStack(spacing: 0) {
             // Lock-of-the-Day ribbon — only on the day's single ≥85%
             // top pick. Reads HIT / MISSED once graded.
-            if isLockOfDay {
-                LockOfDayBadge(won: pick.isWin, lost: pick.isLoss)
+            if isRefundGuarantee {
+                RefundGuaranteeBadge(won: pick.isWin, lost: pick.isLoss)
             }
 
             // Top row — switches on the authoritative renderState so
@@ -1598,8 +1599,8 @@ struct GameCard: View {
     private var eventCardBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Lock-of-the-Day ribbon — see teamCardBody.
-            if isLockOfDay {
-                LockOfDayBadge(won: pick.isWin, lost: pick.isLoss)
+            if isRefundGuarantee {
+                RefundGuaranteeBadge(won: pick.isWin, lost: pick.isLoss)
             }
 
             // Tag + AI pill — for live/awaiting/final states swap the
@@ -1810,36 +1811,44 @@ struct GameCard: View {
     }
 }
 
-/// Daily "Lock of the Day" ribbon shown on the single highest-confidence
-/// (≥85%) pick of the day. A pure confidence highlight — no wager, money,
-/// or refund framing. Reads "LOCK OF THE DAY · AI TOP PICK" while pending,
-/// then "LOCK HIT" (green) or "LOCK MISSED" (muted) once the pick is graded.
-struct LockOfDayBadge: View {
+/// Refund-guarantee ribbon shown on every 85%+ pick. While the game is
+/// open it reads "REFUND GUARANTEE · WE REFUND IF IT LOSES"; a graded
+/// loss flips to "REFUNDED · CLAIM FORM COMING" (fulfilled out-of-band
+/// via a claim form); a graded win reads "GUARANTEED PICK · HIT".
+/// Product accepted the App Review wording risk knowingly (2026-06-10).
+struct RefundGuaranteeBadge: View {
     let won: Bool
     let lost: Bool
 
-    private enum Phase { case pending, hit, missed }
-    private var phase: Phase { won ? .hit : (lost ? .missed : .pending) }
+    private enum Phase { case pending, hit, refunded }
+    private var phase: Phase { won ? .hit : (lost ? .refunded : .pending) }
 
     private var accent: Color {
         switch phase {
-        case .pending: return Color(hex: "#D4FF3A")   // lime
-        case .hit:     return Color(hex: "#22C55E")   // green
-        case .missed:  return Color(hex: "#6E6F75")   // muted
+        case .pending:  return Color(hex: "#D4FF3A")   // lime
+        case .hit:      return Color(hex: "#22C55E")   // green
+        case .refunded: return Color(hex: "#22C55E")   // green = money back
         }
     }
     private var icon: String {
         switch phase {
-        case .pending: return "lock.fill"
-        case .hit:     return "checkmark.seal.fill"
-        case .missed:  return "xmark.seal.fill"
+        case .pending:  return "shield.lefthalf.filled"
+        case .hit:      return "checkmark.seal.fill"
+        case .refunded: return "arrow.uturn.left.circle.fill"
         }
     }
     private var label: String {
         switch phase {
-        case .pending: return "LOCK OF THE DAY"
-        case .hit:     return "LOCK HIT"
-        case .missed:  return "LOCK MISSED"
+        case .pending:  return "REFUND GUARANTEE"
+        case .hit:      return "GUARANTEED PICK · HIT"
+        case .refunded: return "REFUNDED"
+        }
+    }
+    private var sub: String? {
+        switch phase {
+        case .pending:  return "· WE REFUND IF IT LOSES"
+        case .refunded: return "· WE'VE GOT YOU COVERED"
+        case .hit:      return nil
         }
     }
 
@@ -1852,11 +1861,15 @@ struct LockOfDayBadge: View {
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2)
                 .foregroundColor(accent)
-            if phase == .pending {
-                Text("· AI TOP PICK")
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if let sub {
+                Text(sub)
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.4)
                     .foregroundColor(accent.opacity(0.65))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
         }

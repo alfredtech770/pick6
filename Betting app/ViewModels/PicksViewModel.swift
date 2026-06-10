@@ -162,28 +162,12 @@ class PicksViewModel: ObservableObject {
         return filteredTodayPicks.filter { !visibleIds.contains($0.id) }
     }
 
-    // MARK: - Lock of the Day
+    // MARK: - Refund guarantee
     //
-    // One pick per day is highlighted as the "Lock of the Day": the
-    // single highest-confidence pick, and only when it clears the 85%
-    // probability floor. The qualifying card shows a LOCK OF THE DAY
-    // ribbon; once graded it reads LOCK HIT / LOCK MISSED. This is a
-    // pure confidence highlight — no wager, money, or refund framing.
-
-    /// Minimum AI probability for a pick to qualify as the daily Lock.
-    static let lockConfidenceThreshold: Double = 85
-
-    /// The id of today's Lock-of-the-Day pick, or `nil` when no pick
-    /// clears the 85% floor. Computed over the *full* day's slate
-    /// (`effectiveTodayPicks`, every sport) so it's genuinely "one game
-    /// a day" regardless of which sport chip is active — the same card
-    /// stays flagged as the user filters.
-    var lockOfDayPickID: UUID? {
-        effectiveTodayPicks
-            .filter { $0.probability >= Self.lockConfidenceThreshold }
-            .max(by: { $0.probability < $1.probability })?
-            .id
-    }
+    // Every pick at 85%+ carries the refund-guarantee ribbon (see
+    // Pick.isRefundEligible) — "we refund it if it loses", honored
+    // out-of-band via a claim form. No per-day selection here anymore;
+    // eligibility is purely the probability floor on each pick.
 
     // MARK: - Stats (over the rolling 30-day history)
 
