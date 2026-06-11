@@ -235,9 +235,32 @@ final class AuthManager {
 
     // MARK: - OTP
 
+    // MARK: App Review demo account
+    //
+    // Apple requires a functional demo login (Guideline 2.1 / demo
+    // account), but Pick1 is passwordless — reviewers can't receive
+    // our OTP emails. For exactly ONE allow-listed address we accept a
+    // static verification code and sign in via a password grant under
+    // the hood. The account is a throwaway with no privileges; RLS
+    // gives it the same read-only access as any user.
+    private static let reviewerEmail = "review@pick1.live"
+    private static let reviewerStaticCode = "070770"
+    private static let reviewerPassword = "p1ReviewDemo!2026#OTP"
+
+    private func isReviewerEmail(_ email: String) -> Bool {
+        email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            == Self.reviewerEmail
+    }
+
     func sendOTP(email: String) async {
         isLoading = true
         error = nil
+        // Reviewer account: no email is actually sent — the static
+        // code in the App Review notes is entered on the next screen.
+        if isReviewerEmail(email) {
+            isLoading = false
+            return
+        }
         do {
             try await SupabaseManager.client.auth.signInWithOTP(email: email)
             isLoading = false
@@ -256,6 +279,20 @@ final class AuthManager {
         guard !isLoading else { return }
         isLoading = true
         error = nil
+        // Reviewer account + static code → password grant (see note above).
+        if isReviewerEmail(email), token == Self.reviewerStaticCode {
+            do {
+                try await SupabaseManager.client.auth.signIn(
+                    email: Self.reviewerEmail,
+                    password: Self.reviewerPassword
+                )
+                isLoading = false
+            } catch {
+                self.error = friendlyError(error)
+                isLoading = false
+            }
+            return
+        }
         do {
             try await SupabaseManager.client.auth.verifyOTP(
                 email: email,
