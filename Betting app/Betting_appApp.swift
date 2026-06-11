@@ -22,6 +22,11 @@ struct Betting_appApp: App {
     @StateObject private var subscriptions = SubscriptionManager()
     @StateObject private var favorites = FavoritesStore()
 
+    /// SwiftUI scene lifecycle — drives the ATT permission request.
+    /// applicationDidBecomeActive on the delegate adaptor never fires in
+    /// scene-based apps, which is why build 7's prompt never appeared.
+    @Environment(\.scenePhase) private var scenePhase
+
     /// Drives every t(...) lookup in the app. Picking a new language in
     /// Profile → Language mutates `languageCode` here, which propagates
     /// through @Environment(LocalizationManager.self) and triggers a
@@ -67,6 +72,11 @@ struct Betting_appApp: App {
             .task {
                 await authManager.checkSession()
                 await subscriptions.bootstrap()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    Analytics.requestATTIfNeeded()
+                }
             }
         }
     }

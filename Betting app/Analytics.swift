@@ -32,20 +32,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    // App Tracking Transparency — prompt once, then tell the Meta SDK whether
-    // advertiser tracking is allowed (sharpens iOS ad attribution when granted).
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
-            Settings.shared.isAdvertiserTrackingEnabled =
-                (ATTrackingManager.trackingAuthorizationStatus == .authorized)
-            return
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            ATTrackingManager.requestTrackingAuthorization { status in
-                Settings.shared.isAdvertiserTrackingEnabled = (status == .authorized)
-            }
-        }
-    }
+    // NOTE: applicationDidBecomeActive is NEVER called in SwiftUI
+    // scene-based apps — UIKit routes lifecycle events to the scene, so
+    // an ATT request placed here silently never fires (App Review
+    // flagged exactly this on build 7: "unable to locate the App
+    // Tracking Transparency permission request"). The request now lives
+    // in Analytics.requestATTIfNeeded(), driven by scenePhase == .active
+    // in Betting_appApp.
 }
 
 enum Analytics {
@@ -55,6 +48,26 @@ enum Analytics {
     // Meta — public App ID + Client Token (safe to ship).
     static let metaAppID       = "1750424039461325"
     static let metaClientToken = "e89e5a741c0d9b92f24a536d3632d33e"
+
+    /// App Tracking Transparency — prompt once, then tell the Meta SDK
+    /// whether advertiser tracking is allowed (sharpens ad attribution
+    /// when granted; SKAdNetwork covers attribution when denied).
+    /// Driven by scenePhase == .active (the SwiftUI-correct lifecycle
+    /// hook); safe to call repeatedly.
+    static func requestATTIfNeeded() {
+        let status = ATTrackingManager.trackingAuthorizationStatus
+        guard status == .notDetermined else {
+            Settings.shared.isAdvertiserTrackingEnabled = (status == .authorized)
+            return
+        }
+        // Small delay so the prompt lands after the first frame — an
+        // immediate request during scene activation can be dropped.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            ATTrackingManager.requestTrackingAuthorization { status in
+                Settings.shared.isAdvertiserTrackingEnabled = (status == .authorized)
+            }
+        }
+    }
 
     /// Call once at launch — from Betting_appApp.init(). (Meta init runs in AppDelegate.)
     static func bootstrap() {
