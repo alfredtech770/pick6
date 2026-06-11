@@ -2503,6 +2503,7 @@ struct ProfileView: View {
     @Environment(LocalizationManager.self) private var loc
 
     @State private var showEditProfile: Bool = false
+    @State private var showDeleteAccountConfirm: Bool = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -2542,6 +2543,20 @@ struct ProfileView: View {
                     .padding(.horizontal, 16)
                 Spacer().frame(height: 140)
             }
+        }
+        .alert("Delete your account?", isPresented: $showDeleteAccountConfirm) {
+            Button("Delete Account", role: .destructive) {
+                // Same path as EditProfileSheet: delete_current_user RPC
+                // (security definer pinned to auth.uid()), then bounce
+                // to the welcome flow.
+                Task {
+                    let ok = await auth.deleteAccount()
+                    if ok { onSignOut() }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your account and all associated data. This action cannot be undone.")
         }
         .sheet(isPresented: $showEditProfile) {
             EditProfileSheet(
@@ -2822,8 +2837,18 @@ struct ProfileView: View {
                         danger: true,
                         action: onSignOut
                     )
-                    // Delete Account moved into EditProfileSheet — it's
-                    // a profile-info action, not a support action.
+                    divider
+                    // Account deletion must be discoverable from the
+                    // top-level settings (App Review 5.1.1(v) — the
+                    // EditProfileSheet copy alone was judged hidden).
+                    settingsLinkRow(
+                        icon: "trash.fill",
+                        title: "Delete Account",
+                        sub: "Permanently erase your account & data",
+                        trailing: nil,
+                        danger: true,
+                        action: { showDeleteAccountConfirm = true }
+                    )
                 }
                 .background(cardBackground)
             }

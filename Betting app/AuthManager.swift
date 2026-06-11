@@ -346,15 +346,18 @@ final class AuthManager {
     // MARK: - Sign Out
 
     func signOut() async {
+        // Clear local state FIRST — the UI must flip to the welcome
+        // flow immediately. The remote revocation below is best-effort:
+        // on a flaky connection it can hang (not fail), and awaiting it
+        // before clearing state made Sign Out appear to do nothing
+        // (App Review 2.1(a)).
+        clearLocalUserState()
         do {
             try await SupabaseManager.client.auth.signOut()
         } catch {
-            // Best-effort: even if the network call fails, clear local
-            // state so the next session check doesn't think we're still
-            // signed in.
-            self.error = friendlyError(error)
+            // Remote revocation failed — local state is already gone,
+            // so the user is signed out on this device regardless.
         }
-        clearLocalUserState()
     }
 
     /// Reset every piece of per-user state stored locally. Called after

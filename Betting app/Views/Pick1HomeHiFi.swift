@@ -141,12 +141,17 @@ struct Pick1HomeHiFi: View {
                                 isPro: subs.isPro,
                                 onShowPaywall: { showPaywall = true },
                                 onSignOut: {
-                                    // Tear down realtime channels first
-                                    // so we don't leak subscriptions
-                                    // across the sign-in/sign-out cycle.
+                                    // Sign out FIRST — it clears local
+                                    // state synchronously so the UI
+                                    // flips immediately. The realtime
+                                    // teardown runs after; awaiting an
+                                    // unsubscribe on a flaky socket
+                                    // BEFORE signOut could hang forever
+                                    // and made the button appear dead
+                                    // (App Review 2.1(a) on iPad).
                                     Task {
-                                        await vm.stopLiveSession()
                                         await auth.signOut()
+                                        await vm.stopLiveSession()
                                     }
                                 })
                 }
