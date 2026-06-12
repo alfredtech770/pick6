@@ -425,6 +425,10 @@ const PICK_SCHEMA = {
             type: 'string',
             description: 'The calendar date the match is actually played, in US Eastern Time, formatted YYYY-MM-DD. For a normal daily slate this is today\'s date; for leagues whose prompt covers future fixtures (e.g. tournament previews) use each match\'s real date.',
           },
+          predicted_score: {
+            type: ['string', 'null'],
+            description: 'Your single most-likely FINAL SCORE for this matchup, formatted "<home>-<away>" from the home team\'s perspective (e.g. "2-1" for soccer, "112-104" for NBA, "5-3" for MLB). Null for events where a score makes no sense (fights, races).',
+          },
           market_odds: {
             type: ['number', 'null'],
             description: 'REAL current decimal odds for the PICKED outcome, found via web_search on Polymarket or a major sportsbook (DraftKings, FanDuel, bet365…). E.g. a -150 favorite is 1.67; Polymarket 60c is 1.0/0.60 ≈ 1.67. Must come from an actual market quote — null if you cannot find one. Never derive it from your own probability.',
@@ -458,7 +462,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source', 'predicted_score'],
         additionalProperties: false,
       },
     },
@@ -682,6 +686,10 @@ async function savePicks(league, picks) {
       ? p.market_odds : null,
     odds_source: (typeof p.odds_source === 'string' && p.odds_source.trim())
       ? p.odds_source.trim() : null,
+    // "<home>-<away>" only; anything else (prose, ranges) is dropped.
+    predicted_score: (typeof p.predicted_score === 'string'
+      && /^\d{1,3}-\d{1,3}$/.test(p.predicted_score.trim()))
+      ? p.predicted_score.trim() : null,
     result: 'pending',
   }));
 

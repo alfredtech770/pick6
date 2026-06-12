@@ -1048,6 +1048,17 @@ func teamShortName(_ team: String, sport: String? = nil) -> String {
         }
         return trimmed.uppercased()
     }
+    // National sides with a gender/format suffix — "England Women",
+    // "Australia Men", "India XI" — must keep the COUNTRY, not the
+    // suffix: dropping to the last word rendered "WOMEN vs WOMEN".
+    let words = trimmed.split(separator: " ").map(String.init)
+    let suffixes: Set<String> = ["WOMEN", "MEN", "XI", "U21", "U23"]
+    if words.count >= 2, suffixes.contains(words.last!.uppercased()) {
+        let country = words.dropLast().joined(separator: " ")
+        let marker = words.last!.uppercased() == "WOMEN" ? " W" : ""
+        let base = country.count <= 10 ? country : (words.first ?? country)
+        return (base + marker).uppercased()
+    }
     // Team sports — short names render as-is, long ones drop to the
     // nickname token ("Boston Celtics" → "CELTICS").
     if trimmed.count <= 12 { return trimmed.uppercased() }
@@ -1055,6 +1066,18 @@ func teamShortName(_ team: String, sport: String? = nil) -> String {
         return String(last).uppercased()
     }
     return crestAbbrev(trimmed)
+}
+
+/// User-facing league label. The pipeline's league KEY is a stable join
+/// id, not always the right display: cricket research covers more than
+/// the IPL (a T20 World Cup match labeled "IPL" was wrong), and "WC"
+/// must surface under our own brand.
+func displayLeague(_ league: String, sport: String? = nil) -> String {
+    switch league.uppercased() {
+    case "WC":  return "SUMMER CUP"
+    case "IPL": return "CRICKET"
+    default:    return league.uppercased()
+    }
 }
 
 private func crestColor(for team: String) -> Color {
@@ -1710,8 +1733,8 @@ struct GameCard: View {
     private var eventTag: String {
         switch pick.sport {
         case "f1":     return "RACE · \(formattedDate)"
-        case "combat": return "MAIN CARD · \(pick.league.uppercased())"
-        default:       return pick.league.uppercased()
+        case "combat": return "MAIN CARD · \(displayLeague(pick.league))"
+        default:       return displayLeague(pick.league)
         }
     }
 
@@ -1751,7 +1774,7 @@ struct GameCard: View {
     }
 
     private var scheduledTopLine: String {
-        let league = pick.league.uppercased()
+        let league = displayLeague(pick.league)
         switch league {
         case "EPL": return "EPL · MATCHDAY"
         case "NFL": return "NFL · PRIMETIME"
@@ -1780,7 +1803,7 @@ struct GameCard: View {
             if let s = score {
                 HStack(spacing: 6) {
                     LivePulseBadge(label: livePulseText(s))
-                    Text(pick.league)
+                    Text(displayLeague(pick.league))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.2)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1804,7 +1827,7 @@ struct GameCard: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
-                Text(pick.league)
+                Text(displayLeague(pick.league))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -2626,7 +2649,7 @@ struct LockedPickCard: View {
 
     /// Same scheduled-top-line mapping as GameCard.
     private var scheduledTopLine: String {
-        let league = pick.league.uppercased()
+        let league = displayLeague(pick.league)
         switch league {
         case "EPL": return "EPL · MATCHDAY"
         case "NFL": return "NFL · PRIMETIME"

@@ -310,7 +310,7 @@ struct MatchDetailView: View {
 
     private var detailTopNav: some View {
         TopNavBar(
-            crumb: pick.league.uppercased() + " · ",
+            crumb: displayLeague(pick.league) + " · ",
             crumbAccent: scheduledOrLiveLabel,
             // Only the in-progress state should show the red LIVE pulse
             // — past-pending picks read as AWAITING via the crumb, not
@@ -754,6 +754,34 @@ struct MatchDetailView: View {
             )
             .padding(.top, 16)
 
+            // Score prediction + (after grading) how accurate it was.
+            // This answers "did we just call the winner, or the score?"
+            if let scoreLine = scorePredictionLine {
+                HStack(spacing: 8) {
+                    Image(systemName: scoreLine.icon)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(scoreLine.color)
+                    Text(scoreLine.text)
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(1.6)
+                        .foregroundColor(scoreLine.color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(scoreLine.color.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(scoreLine.color.opacity(0.3), lineWidth: 1)
+                )
+                .padding(.top, 10)
+            }
+
             // Pick row — three stat columns, divided
             HStack(spacing: 6) {
                 ForEach(pickHeroStats, id: \.label) { s in
@@ -855,6 +883,33 @@ struct MatchDetailView: View {
 
     /// True when decimalOdds is a real market quote.
     private var hasMarketOdds: Bool { (pick.marketOdds ?? 0) > 1.0 }
+
+    /// One-line score-prediction status for the hero card.
+    /// Pregame:  "AI PREDICTED SCORE  2-1"
+    /// Graded:   exact hit / winner-only / miss, with the actual final.
+    private var scorePredictionLine: (icon: String, text: String, color: Color)? {
+        let lime = Color(hex: "#D4FF3A")
+        let green = Color(hex: "#22C55E")
+        let mute = Color(hex: "#6E6F75")
+        if pick.isPending {
+            guard let pred = pick.predictedScore else { return nil }
+            return ("target", "AI PREDICTED SCORE  \(pred)", lime)
+        }
+        guard let acc = pick.predictionAccuracy else { return nil }
+        let final = (pick.homeScore != nil && pick.awayScore != nil)
+            ? "\(pick.homeScore!)-\(pick.awayScore!)" : "—"
+        let pred = pick.predictedScore ?? "—"
+        switch acc {
+        case .exactScore:
+            return ("scope", "EXACT SCORE HIT · PREDICTED \(pred) · FINAL \(final)", green)
+        case .winnerCorrect:
+            return pick.predictedScore == nil
+                ? ("checkmark.circle.fill", "WINNER CORRECT · FINAL \(final)", lime)
+                : ("checkmark.circle.fill", "WINNER CORRECT · PREDICTED \(pred) · FINAL \(final)", lime)
+        case .missed:
+            return ("xmark.circle", "MISSED · PREDICTED \(pred) · FINAL \(final)", mute)
+        }
+    }
 
     /// Expected return % = (AI confidence × decimal odds − 1) × 100.
     /// With real market odds this is the AI's genuine projected edge
@@ -2400,12 +2455,12 @@ struct CompactPickCard: View {
                     .foregroundColor(Color(hex: "#F59E0B"))
             }
         case .won, .lost:
-            Text("FINAL · \(pick.league.uppercased())")
+            Text("FINAL · \(displayLeague(pick.league))")
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#B9B7B0"))
         case .upcoming:
-            Text(pick.league.uppercased())
+            Text(displayLeague(pick.league))
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#B9B7B0"))
@@ -3860,7 +3915,7 @@ struct LiveView: View {
                     pick: "", probability: 0, confidence: "*", reasoning: "",
                     keyFactor: nil, matchupFacts: nil, result: "pending",
                     homeScore: nil, awayScore: nil,
-                    marketOdds: nil, oddsSource: nil)
+                    marketOdds: nil, oddsSource: nil, predictedScore: nil)
     }
 
     /// Status-pill 3-state classifier:

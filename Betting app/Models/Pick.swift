@@ -37,6 +37,9 @@ struct Pick: Identifiable, Codable {
     let marketOdds: Double?
     /// Where marketOdds came from ("Polymarket", "DraftKings", …).
     let oddsSource: String?
+    /// The AI's most-likely final score, "<home>-<away>" (home-team
+    /// perspective), e.g. "2-1". Nil for fights/races or older rows.
+    let predictedScore: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -54,6 +57,7 @@ struct Pick: Identifiable, Codable {
         case awayScore = "away_score"
         case marketOdds = "market_odds"
         case oddsSource = "odds_source"
+        case predictedScore = "predicted_score"
     }
 
     // Confidence tier helper
@@ -72,6 +76,31 @@ struct Pick: Identifiable, Codable {
     /// out-of-band (user submits a claim form; honored as a
     /// subscription refund/credit) — the app only displays the state.
     var isRefundEligible: Bool { probability >= 85 }
+
+    /// How the graded result compares to the predicted score. Nil while
+    /// pending or when no score prediction exists.
+    enum PredictionAccuracy {
+        case exactScore        // predicted the final score exactly
+        case winnerCorrect     // right side, different score
+        case missed            // wrong side
+    }
+
+    var predictionAccuracy: PredictionAccuracy? {
+        guard !isPending else { return nil }
+        guard predictedScore != nil, homeScore != nil, awayScore != nil else {
+            // No score data — fall back to plain W/L.
+            return isWin ? .winnerCorrect : .missed
+        }
+        if isWin, predictedScoreMatchesFinal { return .exactScore }
+        return isWin ? .winnerCorrect : .missed
+    }
+
+    var predictedScoreMatchesFinal: Bool {
+        guard let pred = predictedScore,
+              let h = homeScore, let a = awayScore else { return false }
+        let parts = pred.split(separator: "-").compactMap { Int($0) }
+        return parts.count == 2 && parts[0] == h && parts[1] == a
+    }
 
     /// User-facing pick line. Match-result leagues (Summer Football)
     /// can call a draw, so the outcome type is made explicit —
@@ -224,6 +253,7 @@ extension Pick {
         // migration (or junk values) just fall back to implied odds.
         marketOdds = (try? c.decodeIfPresent(Double.self, forKey: .marketOdds)) ?? nil
         oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
+        predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
     }
 }
 
