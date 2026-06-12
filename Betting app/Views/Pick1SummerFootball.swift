@@ -755,8 +755,25 @@ func wcFlagCode(for country: String) -> String? {
         "DR CONGO": "CD", "CONGO DR": "CD", "GABON": "GA",
         "MOZAMBIQUE": "MZ", "ANGOLA": "AO", "BENIN": "BJ",
         "GUINEA": "GN", "TOGO": "TG", "LIBYA": "LY", "SUDAN": "SD",
+        // Cricket nations
+        "SRI LANKA": "LK", "PAKISTAN": "PK", "BANGLADESH": "BD",
+        "AFGHANISTAN": "AF", "NEPAL": "NP", "NAMIBIA": "NA",
+        "PAPUA NEW GUINEA": "PG", "MYANMAR": "MM",
     ]
     return map[country.uppercased().trimmingCharacters(in: .whitespaces)]
+}
+
+/// Strips squad suffixes ("England Women" → "England", "India XI" →
+/// "India") so national teams resolve to their country flag across
+/// sports — cricket and women's soccer names carry these routinely.
+func nationalTeamBase(_ team: String) -> String {
+    var words = team.trimmingCharacters(in: .whitespacesAndNewlines)
+        .split(separator: " ").map(String.init)
+    let suffixes: Set<String> = ["WOMEN", "MEN", "XI", "U19", "U21", "U23"]
+    while words.count > 1, suffixes.contains(words.last!.uppercased()) {
+        words.removeLast()
+    }
+    return words.joined(separator: " ")
 }
 
 /// Emoji flag for an ISO 3166-1 alpha-2 code ("BA" → 🇧🇦). Subdivision

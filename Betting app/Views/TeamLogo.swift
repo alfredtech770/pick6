@@ -29,11 +29,13 @@ struct TeamLogo: View {
         // athlete's headshot in a circle instead of a team crest.
         if AthleteHeadshot.isIndividual(sport: sport) {
             AthleteHeadshot(sport: sport, name: team, size: size)
-        } else if sport == "soccer", let code = wcFlagCode(for: team) {
-            // National teams (Summer Football) — country flag, not a
-            // club crest. The name lookup separates "Mexico" from
-            // "Arsenal" within the same soccer sport; clubs miss the
-            // map and fall through to the ESPN crest path below.
+        } else if sport == "soccer" || sport == "cricket",
+                  let code = wcFlagCode(for: nationalTeamBase(team)) {
+            // National teams (Summer Football, international cricket) —
+            // country flag, not a club crest. Squad suffixes are
+            // stripped first ("England Women" → England 🏴). Clubs and
+            // IPL franchises miss the country map and fall through to
+            // the ESPN/crest path below.
             WCFlag(code: code)
                 .frame(width: size.w * 0.92, height: size.w * 0.62)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
