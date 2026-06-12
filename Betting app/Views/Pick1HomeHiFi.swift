@@ -1603,9 +1603,11 @@ struct GameCard: View {
     // ─── EVENT LAYOUT (F1, MMA) ─────────────────────────────────
     private var eventCardBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Lock-of-the-Day ribbon — see teamCardBody.
+            // Result / guarantee ribbon — see teamCardBody.
             if isRefundGuarantee {
                 RefundGuaranteeBadge(won: pick.isWin, lost: pick.isLoss)
+            } else if pick.isWin || pick.isLoss {
+                PredictionResultBadge(won: pick.isWin)
             }
 
             // Tag + AI pill — for live/awaiting/final states swap the
@@ -1813,6 +1815,48 @@ struct GameCard: View {
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#B9B7B0"))
         }
+    }
+}
+
+/// Graded-result ribbon for ordinary picks (the 85%+ refund picks use
+/// RefundGuaranteeBadge instead). A WIN gets the loudest treatment on
+/// the card — solid lime, ink text — because "we called it" is the
+/// product's whole pitch; a miss stays honest but quiet.
+struct PredictionResultBadge: View {
+    let won: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: won ? "trophy.fill" : "xmark.circle.fill")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#6E6F75"))
+            Text(won ? "PREDICTION HIT" : "PREDICTION MISSED")
+                .font(.archivoNarrow(11, weight: .bold))
+                .tracking(2.2)
+                .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#6E6F75"))
+            if won {
+                Text("· AI CALLED IT")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundColor(Color(hex: "#0A0B0D").opacity(0.65))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, won ? 7 : 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(won ? Color(hex: "#D4FF3A") : Color(hex: "#16181C"))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(won ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"),
+                        lineWidth: 1)
+        )
+        .shadow(color: won ? Color(hex: "#D4FF3A").opacity(0.35) : .clear,
+                radius: 10, x: 0, y: 4)
+        .padding(.bottom, 12)
     }
 }
 
