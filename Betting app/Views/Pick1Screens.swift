@@ -437,6 +437,8 @@ struct MatchDetailView: View {
                     .tracking(-0.15)
                     .foregroundColor(Color(hex: "#F5F3EE"))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.45)
+                    .allowsTightening(true)
             }
             .frame(maxWidth: .infinity)
 
@@ -458,6 +460,8 @@ struct MatchDetailView: View {
                     .tracking(-0.15)
                     .foregroundColor(Color(hex: "#F5F3EE"))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.45)
+                    .allowsTightening(true)
             }
             .frame(maxWidth: .infinity)
         }
@@ -469,7 +473,9 @@ struct MatchDetailView: View {
     /// Sport-specific layouts use slightly tighter Anton (26pt vs 30pt)
     /// because individual-athlete names tend to be longer.
     private var teamTight: Bool {
-        ["combat", "tennis", "f1"].contains(pick.sport)
+        // Cricket and soccer carry long national-team names
+        // ("SRI LANKA W") — start them at the tighter size too.
+        ["combat", "tennis", "f1", "cricket", "soccer"].contains(pick.sport)
     }
 
     /// Clock pill above the score. Per-state styling:
