@@ -696,6 +696,14 @@ enum LogoPrefetch {
             } else {
                 if let u = TeamLogoLookup.url(sport: p.sport, team: p.homeTeam) { urls.insert(u) }
                 if let u = TeamLogoLookup.url(sport: p.sport, team: p.awayTeam) { urls.insert(u) }
+                // National-team flag images (soccer / cricket) — warm
+                // them with everything else so flags never pop in.
+                if p.sport == "soccer" || p.sport == "cricket" {
+                    for team in [p.homeTeam, p.awayTeam] {
+                        if let code = wcFlagCode(for: nationalTeamBase(team)),
+                           let u = flagImageURL(for: code) { urls.insert(u) }
+                    }
+                }
             }
         }
         warm(urls: urls)

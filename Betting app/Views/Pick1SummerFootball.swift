@@ -776,6 +776,19 @@ func nationalTeamBase(_ team: String) -> String {
     return words.joined(separator: " ")
 }
 
+/// Full-bleed flag image URL (flagcdn.com, free hotlink) for an ISO
+/// alpha-2 or GB subdivision code. Real rectangular flag art that
+/// fills the frame exactly like the hand-drawn flags — emoji glyphs
+/// float inside their tile and read as framed, which looked broken
+/// next to the drawn England flag.
+func flagImageURL(for code: String) -> URL? {
+    let c = code.lowercased()
+    let valid = (code.count == 2 && code.allSatisfy { $0.isLetter && $0.isASCII })
+        || c == "gb-sct" || c == "gb-wls"
+    guard valid else { return nil }
+    return URL(string: "https://flagcdn.com/w160/\(c).png")
+}
+
 /// Emoji flag for an ISO 3166-1 alpha-2 code ("BA" → 🇧🇦). Subdivision
 /// codes (GB-SCT 🏴󠁧󠁢󠁳󠁣󠁴󠁿 / GB-WLS 🏴󠁧󠁢󠁷󠁬󠁳󠁿) are special-cased.
 func emojiFlag(for code: String) -> String? {
@@ -908,15 +921,27 @@ struct WCFlag: View {
                         .offset(x: -w * 0.28)
                 }
             default:
-                // No hand-drawn art for this country — render its real
-                // emoji flag on a dark tile. Covers every national team
-                // without per-country artwork.
-                if let emoji = emojiFlag(for: code) {
-                    ZStack {
-                        Color(hex: "#1A1C20")
-                        Text(emoji)
-                            .font(.system(size: min(w, h) * 0.92))
-                            .minimumScaleFactor(0.5)
+                // No hand-drawn art — full-bleed flag image (flagcdn),
+                // so every country fills the frame exactly like the
+                // drawn flags. Emoji while loading, gray when unknown.
+                if let url = flagImageURL(for: code) {
+                    AsyncImage(url: url,
+                               transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
+                        switch phase {
+                        case .success(let img):
+                            img.resizable()
+                                .scaledToFill()
+                                .frame(width: w, height: h)
+                                .clipped()
+                        default:
+                            ZStack {
+                                Color(hex: "#1A1C20")
+                                if let emoji = emojiFlag(for: code) {
+                                    Text(emoji)
+                                        .font(.system(size: min(w, h) * 0.8))
+                                }
+                            }
+                        }
                     }
                 } else {
                     Color(hex: "#2A2A2E")
