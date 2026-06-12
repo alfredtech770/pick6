@@ -1883,20 +1883,15 @@ struct SportHubView: View {
     }
 
     private var heroTagline: String {
-        // E.g. "REGULAR SEASON · NIGHT 104" — short context line. Falls
-        // back to a generic seasonal tagline when nothing's running.
-        switch sport {
-        case "basketball": return "REGULAR SEASON · TONIGHT"
-        case "football":   return "WEEK 15 · SUNDAY SLATE"
-        case "soccer":     return "PREMIER LEAGUE · MATCHDAY"
-        case "baseball":   return "REGULAR SEASON · TODAY"
-        case "hockey":     return "REGULAR SEASON · TONIGHT"
-        case "combat":     return "FIGHT NIGHT"
-        case "f1":         return "RACE WEEK"
-        case "tennis":     return "TOUR · MATCHDAY"
-        case "cricket":    return "IPL · MATCHDAY"
-        default:           return "TODAY"
-        }
+        // Derived from the leagues that actually have picks — the old
+        // hardcoded per-sport lines claimed things like "WEEK 15 ·
+        // SUNDAY SLATE" in June. Reads e.g. "SUMMER CUP · TODAY",
+        // "CRICKET · TODAY", "UFC · UPCOMING".
+        let upcoming = vm.upcomingEventPicks.filter { $0.sport == sport }
+        let leagues = Set((picksForSport + upcoming).map { displayLeague($0.league) })
+        if leagues.isEmpty { return "NO GAMES SCHEDULED" }
+        let label = leagues.sorted().joined(separator: " · ")
+        return picksForSport.isEmpty ? "\(label) · UPCOMING" : "\(label) · TODAY"
     }
 
     private var heroSub: String {
