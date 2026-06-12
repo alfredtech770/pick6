@@ -1733,6 +1733,10 @@ struct SportHubView: View {
     let onTapPick: (Pick) -> Void
     var onUnlock: () -> Void = {}
 
+    /// Active league filter (a real pick.league key like "EPL"/"WC").
+    /// Nil = show every league for the sport.
+    @State private var selectedLeague: String? = nil
+
     var body: some View {
         ZStack(alignment: .top) {
             Color(hex: "#07080a").ignoresSafeArea()
@@ -1786,7 +1790,7 @@ struct SportHubView: View {
                     HubSectionHead(
                         title: hasLiveToday ? "TODAY · LIVE & UPCOMING"
                                             : (isPro ? "TODAY" : "FREE PICK"),
-                        meta: "\(picksForSport.count) GAME\(picksForSport.count == 1 ? "" : "S")",
+                        meta: "\(filteredPicksForSport.count) GAME\(filteredPicksForSport.count == 1 ? "" : "S")",
                         live: hasLiveToday
                     )
                     .padding(.bottom, 10)
@@ -1928,84 +1932,63 @@ struct SportHubView: View {
         let count: Int
         let swatch: Color
         var active: Bool = false
+        var league: String = ""
     }
 
-    /// League chips for the active sport. The first chip is the primary
-    /// league for that sport (NBA, NFL, EPL, …) and is active by default;
-    /// the rest are sister leagues / sub-tours users can filter to. Counts
-    /// for non-primary leagues are placeholders until pick data is wired
-    /// in for them.
+    /// League chips derived from the REAL picks for this sport —
+    /// label, count, and presence all come from data (today's slate +
+    /// future-dated event picks), so the rail never shows leagues we
+    /// don't cover or made-up counts. Tapping a chip filters the page;
+    /// tapping the active chip clears the filter.
     private var leaguesForSport: [LeagueChip] {
-        let primaryCount = picksForSport.count
-        switch sport {
-        case "basketball":
-            return [
-                LeagueChip(id: "nba",        name: "NBA",        count: primaryCount, swatch: Color(hex: "#1d428a"), active: true),
-                LeagueChip(id: "gleague",    name: "G-League",   count: 4,            swatch: Color(hex: "#552583")),
-                LeagueChip(id: "ncaab",      name: "NCAAB",      count: 8,            swatch: Color(hex: "#ff6600")),
-                LeagueChip(id: "euroleague", name: "EuroLeague", count: 6,            swatch: Color(hex: "#cc0000")),
-            ]
-        case "football":
-            return [
-                LeagueChip(id: "nfl",   name: "NFL",   count: primaryCount, swatch: Color(hex: "#013369"), active: true),
-                LeagueChip(id: "ncaaf", name: "NCAAF", count: 8,            swatch: Color(hex: "#660000")),
-                LeagueChip(id: "cfl",   name: "CFL",   count: 4,            swatch: Color(hex: "#c8102e")),
-                LeagueChip(id: "xfl",   name: "XFL",   count: 2,            swatch: Color(hex: "#000000")),
-            ]
-        case "soccer":
-            return [
-                LeagueChip(id: "epl",        name: "Premier League", count: primaryCount, swatch: Color(hex: "#3d195b"), active: true),
-                LeagueChip(id: "laliga",     name: "La Liga",        count: 5,            swatch: Color(hex: "#ff4b44")),
-                LeagueChip(id: "bundesliga", name: "Bundesliga",     count: 6,            swatch: Color(hex: "#d20515")),
-                LeagueChip(id: "seriea",     name: "Serie A",        count: 4,            swatch: Color(hex: "#008fd7")),
-                LeagueChip(id: "ucl",        name: "Champions Lg",   count: 2,            swatch: Color(hex: "#0e1e5b")),
-                LeagueChip(id: "mls",        name: "MLS",            count: 3,            swatch: Color(hex: "#001d39")),
-            ]
-        case "baseball":
-            return [
-                LeagueChip(id: "mlb",   name: "MLB",   count: primaryCount, swatch: Color(hex: "#041e42"), active: true),
-                LeagueChip(id: "npb",   name: "NPB",   count: 6,            swatch: Color(hex: "#c8102e")),
-                LeagueChip(id: "kbo",   name: "KBO",   count: 5,            swatch: Color(hex: "#003478")),
-                LeagueChip(id: "ncaab", name: "NCAAB", count: 4,            swatch: Color(hex: "#bd3039")),
-            ]
-        case "hockey":
-            return [
-                LeagueChip(id: "nhl",  name: "NHL",  count: primaryCount, swatch: Color(hex: "#041e42"), active: true),
-                LeagueChip(id: "khl",  name: "KHL",  count: 3,            swatch: Color(hex: "#c8102e")),
-                LeagueChip(id: "ahl",  name: "AHL",  count: 5,            swatch: Color(hex: "#003087")),
-                LeagueChip(id: "ncaa", name: "NCAA", count: 2,            swatch: Color(hex: "#660000")),
-            ]
-        case "cricket":
-            return [
-                LeagueChip(id: "ipl",  name: "IPL",      count: primaryCount, swatch: Color(hex: "#004ba0"), active: true),
-                LeagueChip(id: "bbl",  name: "Big Bash", count: 1,            swatch: Color(hex: "#ffd100")),
-                LeagueChip(id: "t20i", name: "T20I",     count: 3,            swatch: Color(hex: "#ff6600")),
-                LeagueChip(id: "test", name: "Test",     count: 1,            swatch: Color(hex: "#1d1d1b")),
-            ]
-        case "tennis":
-            return [
-                LeagueChip(id: "atp",  name: "ATP Tour",   count: primaryCount, swatch: Color(hex: "#0066cc"), active: true),
-                LeagueChip(id: "wta",  name: "WTA Tour",   count: 4,            swatch: Color(hex: "#e6007e")),
-                LeagueChip(id: "slam", name: "Grand Slam", count: 2,            swatch: Color(hex: "#ffd700")),
-            ]
-        case "combat":
-            // Use the "ufc" id so the chip pulls ESPN's real UFC crest;
-            // LeagueLogoLookup has no entry under "combat".
-            return [LeagueChip(id: "ufc",
-                               name: leagueLabel,
-                               count: primaryCount,
-                               swatch: glowColor,
-                               active: true)]
-        default:
-            return [LeagueChip(id: sport,
-                               name: leagueLabel,
-                               count: primaryCount,
-                               swatch: glowColor,
-                               active: true)]
+        let source = picksForSport
+            + vm.upcomingEventPicks.filter { $0.sport == sport }
+        let grouped = Dictionary(grouping: source, by: { $0.league })
+        return grouped
+            .map { league, ps in
+                LeagueChip(id: chipLogoId(for: league),
+                           name: displayLeague(league),
+                           count: ps.count,
+                           swatch: glowColor,
+                           active: selectedLeague == league,
+                           league: league)
+            }
+            .sorted { $0.count != $1.count ? $0.count > $1.count
+                                           : $0.name < $1.name }
+    }
+
+    /// pick.league key → LeagueLogo id (ESPN crest where one exists).
+    private func chipLogoId(for league: String) -> String {
+        switch league.uppercased() {
+        case "NBA": return "nba"
+        case "NFL": return "nfl"
+        case "MLB": return "mlb"
+        case "NHL": return "nhl"
+        case "EPL": return "epl"
+        case "UFC": return "ufc"
+        case "IPL": return "ipl"
+        case "F1":  return "f1"
+        default:    return league.lowercased()   // WC etc. → symbol tile
         }
     }
 
+    /// Today's picks narrowed to the selected league (nil = all).
+    private var filteredPicksForSport: [Pick] {
+        guard let l = selectedLeague else { return picksForSport }
+        return picksForSport.filter { $0.league == l }
+    }
+
     private func leagueChip(_ l: LeagueChip) -> some View {
+        Button {
+            Haptics.tap()
+            selectedLeague = (selectedLeague == l.league) ? nil : l.league
+        } label: {
+            chipLabel(l)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func chipLabel(_ l: LeagueChip) -> some View {
         HStack(spacing: 8) {
             // Real league crest (Champions League, Bundesliga, La
             // Liga, NBA, NFL …) hot-linked from ESPN's league-logo
@@ -2082,7 +2065,7 @@ struct SportHubView: View {
     @ViewBuilder
     private var todayList: some View {
         LazyVStack(spacing: 8) {
-            let visible = isPro ? picksForSport
+            let visible = isPro ? filteredPicksForSport
                                 : Array(topPick.map { [$0] } ?? [])
             ForEach(visible) { p in
                 Button { onTapPick(p) } label: {
