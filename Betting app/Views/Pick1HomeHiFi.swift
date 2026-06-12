@@ -625,7 +625,12 @@ struct HeroCard: View {
                                              ? Color(hex: "#D4FF3A")
                                              : Color.white)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.6)
+                            // 0.45 floor: long national-team names
+                            // ("OVER HERZEGOVINA") shrink to fit
+                            // instead of ellipsizing — same rule as
+                            // the detail-page title.
+                            .minimumScaleFactor(0.45)
+                            .allowsTightening(true)
                     }
                 }
 
