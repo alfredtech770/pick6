@@ -3460,17 +3460,16 @@ struct WinsView: View {
 // ════════════════════════════════════════════════════════════════
 
 struct LiveView: View {
-    enum LiveTab: String, CaseIterable {
-        case mine = "My Picks", favs = "Favorites", all = "All Live"
-    }
-
     @ObservedObject var vm: PicksViewModel
     var isPro: Bool = true
     let onTapPick: (Pick) -> Void
     var onUnlock: () -> Void = {}
 
     @EnvironmentObject private var favorites: FavoritesStore
-    @State private var liveTab: LiveTab = .all
+    /// Single filter on the Live page: everything live (default) vs
+    /// just the user's starred picks. The old MY PICKS / ALL LIVE
+    /// segmented tabs were cut — one FAVORITES toggle is the whole UI.
+    @State private var favoritesOnly = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -3487,7 +3486,7 @@ struct LiveView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 10)
 
-                if let nextUp = nextUpcomingPick, liveTab != .all {
+                if let nextUp = nextUpcomingPick, favoritesOnly {
                     watchBanner(nextUp)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
@@ -3512,13 +3511,10 @@ struct LiveView: View {
     /// scoped to recent activity).
     @ViewBuilder
     private var tabBody: some View {
-        switch liveTab {
-        case .all:
-            allLiveSection
-        case .mine:
-            myLiveAndRecentSection
-        case .favs:
+        if favoritesOnly {
             favoritesRecentSection
+        } else {
+            allLiveSection
         }
     }
 
@@ -3700,37 +3696,31 @@ struct LiveView: View {
                            liveScore: liveScore(for: pick))
     }
 
-    /// Segmented tabs row — MY PICKS (with cnt) / FAVORITES / ALL LIVE.
-    /// Labels are uppercased to match the screenshot ("MY PICKS 5",
-    /// "FAVORITES", "ALL LIVE").
+    /// Single FAVORITES toggle — the only filter on the Live page.
     private var tabsRow: some View {
         HStack(spacing: 8) {
-            ForEach(LiveTab.allCases, id: \.self) { t in
-                Button { liveTab = t } label: {
-                    HStack(spacing: 6) {
-                        Text(t.rawValue.uppercased())
-                            .font(.archivoNarrow(11, weight: .bold))
-                            .tracking(1.6)
-                        if t == .mine && livePicks.count > 0 {
-                            Text("\(livePicks.count)")
-                                .font(.mono(10, weight: .bold))
-                                .foregroundColor(liveTab == t
-                                                 ? Color(hex: "#0A0B0D").opacity(0.6)
-                                                 : Color(hex: "#6E6F75"))
-                        }
-                    }
-                    .foregroundColor(liveTab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(liveTab == t
-                                               ? Color(hex: "#F5F3EE")
-                                               : Color(hex: "#101114")))
-                    .overlay(Capsule().stroke(liveTab == t
-                                              ? Color(hex: "#F5F3EE")
-                                              : Color(hex: "#22252B"), lineWidth: 1))
+            Button {
+                Haptics.tap()
+                favoritesOnly.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: favoritesOnly ? "star.fill" : "star")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("FAVORITES")
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(1.6)
                 }
-                .buttonStyle(.plain)
+                .foregroundColor(favoritesOnly ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(favoritesOnly
+                                           ? Color(hex: "#F5F3EE")
+                                           : Color(hex: "#101114")))
+                .overlay(Capsule().stroke(favoritesOnly
+                                          ? Color(hex: "#F5F3EE")
+                                          : Color(hex: "#22252B"), lineWidth: 1))
             }
+            .buttonStyle(.plain)
             Spacer()
         }
     }
