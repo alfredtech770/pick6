@@ -713,6 +713,9 @@ struct WCGoldBorder<S: Shape>: View {
 /// "soccer" sport.
 func wcFlagCode(for country: String) -> String? {
     let map: [String: String] = [
+        // Custom-drawn flags keep their codes; everything else is an
+        // ISO 3166-1 alpha-2 code that WCFlag renders as the country's
+        // emoji flag — full national-team coverage with no artwork.
         "USA": "US", "UNITED STATES": "US", "MEXICO": "MX",
         "COLOMBIA": "CO", "UGANDA": "UG", "ENGLAND": "EN",
         "JAPAN": "JP", "BRAZIL": "BR", "GHANA": "GH",
@@ -721,8 +724,53 @@ func wcFlagCode(for country: String) -> String? {
         "ARGENTINA": "AR", "ITALY": "IT", "ICELAND": "IS",
         "SOUTH AFRICA": "ZA", "SOUTH KOREA": "KR",
         "KOREA REPUBLIC": "KR", "CZECHIA": "CZ", "CZECH REPUBLIC": "CZ",
+        // 2026 tournament field + common internationals (emoji-rendered)
+        "BOSNIA AND HERZEGOVINA": "BA", "BOSNIA-HERZEGOVINA": "BA",
+        "BOSNIA": "BA", "PARAGUAY": "PY", "BELGIUM": "BE",
+        "CROATIA": "HR", "MOROCCO": "MA", "SENEGAL": "SN",
+        "SWITZERLAND": "CH", "URUGUAY": "UY", "DENMARK": "DK",
+        "TUNISIA": "TN", "SAUDI ARABIA": "SA", "AUSTRALIA": "AU",
+        "IRAN": "IR", "QATAR": "QA", "ECUADOR": "EC",
+        "CAMEROON": "CM", "SERBIA": "RS", "POLAND": "PL",
+        "COSTA RICA": "CR", "EGYPT": "EG", "ALGERIA": "DZ",
+        "NIGERIA": "NG", "NORWAY": "NO", "SWEDEN": "SE",
+        "AUSTRIA": "AT", "UKRAINE": "UA", "TURKEY": "TR",
+        "TURKIYE": "TR", "GREECE": "GR", "ROMANIA": "RO",
+        "HUNGARY": "HU", "CHILE": "CL", "PERU": "PE",
+        "VENEZUELA": "VE", "BOLIVIA": "BO", "PANAMA": "PA",
+        "HONDURAS": "HN", "JAMAICA": "JM", "NEW ZEALAND": "NZ",
+        "IVORY COAST": "CI", "COTE D'IVOIRE": "CI", "MALI": "ML",
+        "BURKINA FASO": "BF", "UZBEKISTAN": "UZ", "JORDAN": "JO",
+        "IRAQ": "IQ", "UNITED ARAB EMIRATES": "AE", "CHINA": "CN",
+        "INDIA": "IN", "INDONESIA": "ID", "CURACAO": "CW",
+        "HAITI": "HT", "CAPE VERDE": "CV", "CABO VERDE": "CV",
+        "SCOTLAND": "GB-SCT", "WALES": "GB-WLS",
+        "REPUBLIC OF IRELAND": "IE", "IRELAND": "IE",
+        "RUSSIA": "RU", "SLOVAKIA": "SK", "SLOVENIA": "SI",
+        "FINLAND": "FI", "ISRAEL": "IL", "KUWAIT": "KW",
+        "OMAN": "OM", "BAHRAIN": "BH", "THAILAND": "TH",
+        "VIETNAM": "VN", "MALAYSIA": "MY", "PHILIPPINES": "PH",
+        "GUATEMALA": "GT", "EL SALVADOR": "SV", "TRINIDAD AND TOBAGO": "TT",
+        "ZAMBIA": "ZM", "ZIMBABWE": "ZW", "KENYA": "KE",
+        "DR CONGO": "CD", "CONGO DR": "CD", "GABON": "GA",
+        "MOZAMBIQUE": "MZ", "ANGOLA": "AO", "BENIN": "BJ",
+        "GUINEA": "GN", "TOGO": "TG", "LIBYA": "LY", "SUDAN": "SD",
     ]
     return map[country.uppercased().trimmingCharacters(in: .whitespaces)]
+}
+
+/// Emoji flag for an ISO 3166-1 alpha-2 code ("BA" → 🇧🇦). Subdivision
+/// codes (GB-SCT 🏴󠁧󠁢󠁳󠁣󠁴󠁿 / GB-WLS 🏴󠁧󠁢󠁷󠁬󠁳󠁿) are special-cased.
+func emojiFlag(for code: String) -> String? {
+    if code == "GB-SCT" { return "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}" }
+    if code == "GB-WLS" { return "\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}" }
+    guard code.count == 2, code.allSatisfy({ $0.isLetter && $0.isASCII }) else { return nil }
+    var out = ""
+    for ch in code.uppercased().unicodeScalars {
+        guard let flagScalar = UnicodeScalar(0x1F1E6 + ch.value - 65) else { return nil }
+        out.unicodeScalars.append(flagScalar)
+    }
+    return out
 }
 
 /// Lightweight flag renderer matching the design's simplified inline
@@ -843,7 +891,19 @@ struct WCFlag: View {
                         .offset(x: -w * 0.28)
                 }
             default:
-                Color(hex: "#2A2A2E")
+                // No hand-drawn art for this country — render its real
+                // emoji flag on a dark tile. Covers every national team
+                // without per-country artwork.
+                if let emoji = emojiFlag(for: code) {
+                    ZStack {
+                        Color(hex: "#1A1C20")
+                        Text(emoji)
+                            .font(.system(size: min(w, h) * 0.92))
+                            .minimumScaleFactor(0.5)
+                    }
+                } else {
+                    Color(hex: "#2A2A2E")
+                }
             }
         }
     }

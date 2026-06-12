@@ -447,10 +447,13 @@ class PicksViewModel: ObservableObject {
         self.historyPicks    = h
         self.liveScores      = s
         isLoading = false
-        // Warm the logo cache for the slate the user is about to see so
-        // team crests / athlete headshots paint instantly instead of
-        // flashing the placeholder badge.
-        LogoPrefetch.warm(picks: t + y)
+        // Warm the logo cache for EVERYTHING the user can reach — the
+        // today slate, yesterday's results, the 30-day history, and
+        // future-dated event picks (next UFC card / Grand Prix /
+        // tournament fixtures) — so crests and headshots are already
+        // cached while the splash loader is still on screen and no
+        // card ever flashes a placeholder.
+        LogoPrefetch.warm(picks: t + y + h)
     }
 
     private func fetchPicks(forDate dateString: String) async -> [Pick] {
