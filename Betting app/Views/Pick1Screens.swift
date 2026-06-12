@@ -723,23 +723,30 @@ struct MatchDetailView: View {
             }
             .padding(.top, 4)
 
-            // Expected return — single hero stat (analytics framing)
+            // Potential payout — the number users actually understand:
+            // the odds multiplier and what $100 turns into. (The old
+            // "EXPECTED RETURN −6.0% vs market consensus" read as
+            // analyst jargon; AI edge now lives in the stat row.)
             VStack(alignment: .center, spacing: 4) {
-                Text("EXPECTED RETURN")
+                Text("POTENTIAL PAYOUT")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text(expectedReturnText)
+                Text(payoutMultiplierText)
                     .font(.anton(44))
                     .tracking(-0.4)
-                    .foregroundColor(expectedReturnColor)
-                    .shadow(color: expectedReturnColor.opacity(0.35),
+                    .foregroundColor(sportAccent)
+                    .shadow(color: sportAccent.opacity(0.35),
                             radius: 8, x: 0, y: 0)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text("vs market consensus")
-                    .font(.archivoNarrow(10, weight: .semibold))
+                Text(payoutSubText)
+                    .font(.archivoNarrow(11, weight: .semibold))
                     .tracking(0.5)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                Text(payoutSourceText)
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.6)
                     .foregroundColor(Color(hex: "#6E6F75"))
             }
             .frame(maxWidth: .infinity)
@@ -925,6 +932,23 @@ struct MatchDetailView: View {
         String(format: "%+.1f%%", expectedReturnPercent)
     }
 
+    /// "1.83x" — the payout multiplier on the picked outcome.
+    private var payoutMultiplierText: String {
+        String(format: "%.2fx", decimalOdds)
+    }
+
+    /// "$100 returns $183 if it hits" — concrete, no jargon.
+    private var payoutSubText: String {
+        "$100 returns $\(Int((100 * decimalOdds).rounded())) if it hits"
+    }
+
+    /// Where the multiplier comes from — a real market or our estimate.
+    private var payoutSourceText: String {
+        hasMarketOdds
+            ? "MARKET ODDS · \((pick.oddsSource ?? "MARKET").uppercased())"
+            : "ESTIMATED FROM AI CONFIDENCE"
+    }
+
     /// Lime accent when the AI sees positive edge, muted ink otherwise
     /// so a negative number doesn't shout at the user.
     private var expectedReturnColor: Color {
@@ -959,11 +983,12 @@ struct MatchDetailView: View {
         // Label the odds column honestly: a real market quote shows its
         // source ("DRAFTKINGS" / "POLYMARKET"); the confidence-derived
         // fallback keeps the old IMPLIED ODDS label.
-        let oddsLabel = hasMarketOdds
-            ? (pick.oddsSource?.uppercased() ?? "MARKET ODDS")
-            : "IMPLIED ODDS"
+        // The payout hero already shows the multiplier — this column
+        // carries the AI's edge vs the market price instead ("+13%"
+        // when our probability beats what the odds imply).
+        let _ = oddsStr
         return [
-            .init(label: oddsLabel,    value: oddsStr, suffix: "x"),
+            .init(label: "AI EDGE",    value: expectedReturnText, suffix: nil),
             .init(label: "CONFIDENCE", value: "\(Int(pick.probability))", suffix: "%"),
             .init(label: statusLabel,  value: statusValue, suffix: nil),
         ]
