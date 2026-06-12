@@ -1936,20 +1936,57 @@ struct SportHubView: View {
     /// don't cover or made-up counts. Tapping a chip filters the page;
     /// tapping the active chip clears the filter.
     private var leaguesForSport: [LeagueChip] {
-        let source = picksForSport
+        let active = picksForSport
             + vm.upcomingEventPicks.filter { $0.sport == sport }
-        let grouped = Dictionary(grouping: source, by: { $0.league })
-        return grouped
-            .map { league, ps in
+        if !active.isEmpty {
+            let grouped = Dictionary(grouping: active, by: { $0.league })
+            return grouped
+                .map { league, ps in
+                    LeagueChip(id: chipLogoId(for: league),
+                               name: displayLeague(league),
+                               count: ps.count,
+                               swatch: glowColor,
+                               active: selectedLeague == league,
+                               league: league)
+                }
+                .sorted { $0.count != $1.count ? $0.count > $1.count
+                                               : $0.name < $1.name }
+        }
+        // Off-day / off-season: no live data for this sport. Keep the
+        // rail present by showing the leagues we've covered recently
+        // (30-day history), or the sport's primary league as a last
+        // resort — count 0 is hidden by chipLabel.
+        let recent = Set(vm.historyPicks
+            .filter { $0.sport == sport }
+            .map { $0.league })
+        let leagues = recent.isEmpty ? [primaryLeague] : Array(recent)
+        return leagues
+            .map { league in
                 LeagueChip(id: chipLogoId(for: league),
                            name: displayLeague(league),
-                           count: ps.count,
+                           count: 0,
                            swatch: glowColor,
-                           active: selectedLeague == league,
+                           active: false,
                            league: league)
             }
-            .sorted { $0.count != $1.count ? $0.count > $1.count
-                                           : $0.name < $1.name }
+            .sorted { $0.name < $1.name }
+    }
+
+    /// The flagship league key per sport — rail fallback when there is
+    /// no pick history at all (fresh install, off-season).
+    private var primaryLeague: String {
+        switch sport {
+        case "basketball": return "NBA"
+        case "football":   return "NFL"
+        case "soccer":     return "EPL"
+        case "baseball":   return "MLB"
+        case "hockey":     return "NHL"
+        case "combat":     return "UFC"
+        case "f1":         return "F1"
+        case "cricket":    return "IPL"
+        case "tennis":     return "ATP"
+        default:           return sport.uppercased()
+        }
     }
 
     /// pick.league key → LeagueLogo id (ESPN crest where one exists).
@@ -1998,10 +2035,12 @@ struct SportHubView: View {
             Text(l.name)
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(1.6)
-            Text("\(l.count)")
-                .font(.mono(10, weight: .bold))
-                .foregroundColor(l.active ? Color(hex: "#0A0B0D").opacity(0.5)
-                                          : Color(hex: "#6E6F75"))
+            if l.count > 0 {
+                Text("\(l.count)")
+                    .font(.mono(10, weight: .bold))
+                    .foregroundColor(l.active ? Color(hex: "#0A0B0D").opacity(0.5)
+                                              : Color(hex: "#6E6F75"))
+            }
         }
         .foregroundColor(l.active ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
         .padding(.horizontal, 12)
