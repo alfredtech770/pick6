@@ -711,14 +711,14 @@ struct MatchDetailView: View {
                     .tracking(-0.4)
                     .foregroundColor(Color(hex: "#F5F3EE"))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.45)
                 if !pickTitleTail.isEmpty {
                     Text(pickTitleTail)
                         .font(.anton(40))
                         .tracking(-0.4)
                         .foregroundColor(sportAccent)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.45)
                 }
             }
             .padding(.top, 4)
@@ -852,7 +852,7 @@ struct MatchDetailView: View {
     /// First word of the pick (e.g. "ARSENAL" of "ARSENAL TO HOLD LEAD").
     /// Falls back to the whole pick string if there's no whitespace.
     private var pickTitleHead: String {
-        let words = pick.displayPick.uppercased().split(separator: " ")
+        let words = pick.shortDisplayPick.uppercased().split(separator: " ")
         guard words.count > 1 else { return pick.displayPick.uppercased() }
         // Take the first 1-2 words as the head segment so the lime tail
         // gets a meaningful phrase rather than just the last word.
@@ -862,7 +862,7 @@ struct MatchDetailView: View {
 
     /// Remaining words of the pick, displayed in lime under the head.
     private var pickTitleTail: String {
-        let words = pick.displayPick.uppercased().split(separator: " ")
+        let words = pick.shortDisplayPick.uppercased().split(separator: " ")
         guard words.count > 1 else { return "" }
         let headCount = words.count >= 4 ? 2 : 1
         return words.dropFirst(headCount).joined(separator: " ")
@@ -2321,12 +2321,12 @@ struct SmallPickHero: View {
                 }
                 HStack(alignment: .center, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(pick.displayPick.uppercased())
+                        Text(pick.shortDisplayPick.uppercased())
                             .font(.anton(34))
                             .lineSpacing(-6)
                             .foregroundColor(Color(hex: "#0A0B0D"))
                             .lineLimit(2)
-                            .minimumScaleFactor(0.6)
+                            .minimumScaleFactor(0.5)
                         Text("over \(opp.uppercased())")
                             .font(.archivo(11, weight: .bold))
                             .tracking(1.4)
@@ -2408,9 +2408,11 @@ struct CompactPickCard: View {
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.displayPick.uppercased())
+                    Text(pick.shortDisplayPick.uppercased())
                         .font(.archivo(11, weight: .bold))
                         .foregroundColor(Color(hex: "#D4FF3A"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
                 Spacer()
                 Text(pick.keyFactor ?? "—")

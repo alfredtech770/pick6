@@ -1608,8 +1608,10 @@ struct GameCard: View {
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#B9B7B0"))
-                    Text(pick.displayPick.uppercased())
+                    Text(pick.shortDisplayPick.uppercased())
                         .font(.anton(17))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.55)
                         .tracking(0.17)
                         .foregroundColor(Color(hex: "#D4FF3A"))
                 }

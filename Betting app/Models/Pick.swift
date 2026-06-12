@@ -102,6 +102,21 @@ struct Pick: Identifiable, Codable {
         return parts.count == 2 && parts[0] == h && parts[1] == a
     }
 
+    /// Compact pick line for tight surfaces (detail-page hero title,
+    /// card pick rows): when the pick is one of the two teams, render
+    /// its short name ("Philadelphia Phillies" → "PHILLIES",
+    /// "England Women" → "ENGLAND W") so big type never ellipsizes.
+    var shortDisplayPick: String {
+        if league == "WC", pick.lowercased().contains("draw") { return "Draw" }
+        var base = pick
+        if pick.caseInsensitiveCompare(homeTeam) == .orderedSame {
+            base = teamShortName(homeTeam, sport: sport)
+        } else if pick.caseInsensitiveCompare(awayTeam) == .orderedSame {
+            base = teamShortName(awayTeam, sport: sport)
+        }
+        return league == "WC" ? base + " to win" : base
+    }
+
     /// User-facing pick line. Match-result leagues (Summer Football)
     /// can call a draw, so the outcome type is made explicit —
     /// "Mexico to win" / "Draw" — instead of a bare team name. Every
