@@ -956,20 +956,130 @@ async function refreshActiveLeaguesCache() {
   return active;
 }
 
+// ── ESPN public scoreboard (free, keyless) ─────────────────────
+// Replaces sportsdata.io (subscription lapsed) as the live-score
+// source. One endpoint shape covers every league we run. Events are
+// matched to OUR picks by team-name pair and upserted under the
+// pick's game_id, so the app's pick→live_scores join works unchanged
+// and hourly grading picks finals up automatically.
+const ESPN_PATHS = {
+  NBA: 'basketball/nba',
+  NFL: 'football/nfl',
+  MLB: 'baseball/mlb',
+  NHL: 'hockey/nhl',
+  EPL: 'soccer/eng.1',
+  WC:  'soccer/fifa.world',
+  UFC: 'mma/ufc',
+  F1:  'racing/f1',
+};
+
+function normName(n) {
+  return (n || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function teamsMatch(a, b) {
+  const na = normName(a), nb = normName(b);
+  if (!na || !nb) return false;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  // Last word (nickname) match: "los angeles dodgers" vs "dodgers".
+  const la = na.split(' ').pop(), lb = nb.split(' ').pop();
+  return la.length > 3 && la === lb;
+}
+
+async function espnScoreboard(league) {
+  const path = ESPN_PATHS[league];
+  if (!path) return [];
+  // Today AND yesterday (ET): the default scoreboard drops finished
+  // games at midnight, which would leave last night's finals ungraded.
+  const dates = [daysAgoISO(1), todayISO()].map((d) => d.replace(/-/g, ''));
+  const events = [];
+  for (const d of dates) {
+    try {
+      const res = await axios.get(
+        `https://site.api.espn.com/apis/site/v2/sports/${path}/scoreboard?dates=${d}`,
+        { timeout: 15000 },
+      );
+      events.push(...(res.data?.events || []));
+    } catch (e) {
+      err(`ESPN scoreboard ${league} ${d} failed:`, e.message);
+    }
+  }
+  {
+    return events.map((ev) => {
+      const comp = ev.competitions?.[0];
+      const cs = comp?.competitors || [];
+      const home = cs.find((c) => c.homeAway === 'home');
+      const away = cs.find((c) => c.homeAway === 'away');
+      const st = ev.status?.type || {};
+      return {
+        homeName: home?.team?.displayName || home?.athlete?.displayName || '',
+        awayName: away?.team?.displayName || away?.athlete?.displayName || '',
+        homeScore: home?.score != null ? Number(home.score) : null,
+        awayScore: away?.score != null ? Number(away.score) : null,
+        state: st.state || 'pre',             // pre | in | post
+        detail: st.shortDetail || st.description || '',
+        period: ev.status?.period ?? null,
+        startTime: ev.date || null,
+      };
+    });
+  }
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
   try {
-    // ── live_scores refresh ONLY ── this runs every 5 minutes. We
-    // deliberately do NOT call backfillMissingScores or gradePicks
-    // here — score grading runs hourly via gradeAndBackfillTick.
-    const active = await refreshActiveLeaguesCache();
-    for (const [league, cfg] of Object.entries(LEAGUES)) {
-      if (cfg.promptMode === 'research') continue;
-      if (!cfg.fetcher) continue;
-      if (!active.has(league)) continue;  // skip leagues with no games today
-      const raw = await cfg.fetcher();
-      if (raw.length) await upsertLiveScores(league, raw);
+    // Pending picks from the last 3 days through tomorrow — covers
+    // in-play games, ungraded finals, and tonight's event previews.
+    const { data: picks, error } = await supabase
+      .from('picks')
+      .select('game_id, league, sport, home_team, away_team, game_date')
+      .eq('result', 'pending')
+      .gte('game_date', daysAgoISO(3));
+    if (error || !picks?.length) return;
+
+    const byLeague = {};
+    for (const p of picks) (byLeague[p.league] ||= []).push(p);
+
+    for (const [league, leaguePicks] of Object.entries(byLeague)) {
+      if (!ESPN_PATHS[league]) continue;
+      const events = await espnScoreboard(league);
+      if (!events.length) continue;
+
+      const rows = [];
+      for (const p of leaguePicks) {
+        const ev = events.find((e) =>
+          (teamsMatch(e.homeName, p.home_team) && teamsMatch(e.awayName, p.away_team)) ||
+          (teamsMatch(e.homeName, p.away_team) && teamsMatch(e.awayName, p.home_team)));
+        if (!ev || !p.game_id) continue;
+        // Orient scores to OUR home/away columns (ESPN's home side may
+        // be flipped relative to the pick row).
+        const flipped = !teamsMatch(ev.homeName, p.home_team);
+        const status = ev.state === 'post' ? 'Final'
+          : ev.state === 'in' ? 'InProgress'
+          : 'Scheduled';
+        rows.push({
+          game_id: p.game_id,
+          sport: p.sport,
+          league,
+          home_team: p.home_team,
+          away_team: p.away_team,
+          home_score: flipped ? ev.awayScore : ev.homeScore,
+          away_score: flipped ? ev.homeScore : ev.awayScore,
+          status,
+          quarter: ev.period != null ? String(ev.period) : null,
+          start_time: ev.startTime,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      if (rows.length) {
+        const { error: e2 } = await supabase
+          .from('live_scores')
+          .upsert(rows, { onConflict: 'game_id' });
+        if (e2) err(`live_scores upsert (${league}) failed:`, e2.message);
+        else log(`ESPN ${league}: ${rows.length} score row(s) refreshed`);
+      }
     }
   } catch (e) {
     err('Live tick crashed:', e.message);
