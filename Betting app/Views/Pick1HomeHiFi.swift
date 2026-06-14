@@ -1153,7 +1153,7 @@ struct WinsThisWeekTile: View {
     private var slots: Int { max(games, 7) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 12, weight: .bold))
@@ -1166,7 +1166,7 @@ struct WinsThisWeekTile: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(wins)")
-                    .font(.anton(72))
+                    .font(.anton(52))
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .tracking(-1.4)
                     .monospacedDigit()
@@ -1200,7 +1200,7 @@ struct WinsThisWeekTile: View {
                 }
             }
         }
-        .padding(16)
+        .padding(13)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
@@ -1222,7 +1222,7 @@ struct AccuracyTile: View {
     private let slots = 10
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: moodIcon)
                     .font(.system(size: 12, weight: .bold))
@@ -1235,7 +1235,7 @@ struct AccuracyTile: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(mood == .empty ? "—" : "\(Int(accuracy.rounded()))")
-                    .font(.anton(72))
+                    .font(.anton(52))
                     .foregroundColor(numberColor)
                     .tracking(-1.4)
                     .monospacedDigit()
@@ -1276,7 +1276,7 @@ struct AccuracyTile: View {
                 trailingBadge
             }
         }
-        .padding(16)
+        .padding(13)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
