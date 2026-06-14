@@ -1218,12 +1218,14 @@ http.createServer(async (req, res) => {
 // Live-score refresh — every 5 minutes during the game window. Calls
 // sportsdata.io only; no Claude spend. Active-league cache means we
 // skip leagues with no games today entirely.
-cron.schedule('*/5 * * * *', () => {
+cron.schedule('*/2 * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
     10,
   );
-  // 10am – 1am ET window covers MLB doubleheaders + west-coast late games.
+  // Every 2 min in the game window (10am–1am ET) so live scores feel
+  // near-real-time. ESPN's scoreboard is free + keyless, so the only
+  // cost is bandwidth — no Claude/paid calls in this loop.
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
