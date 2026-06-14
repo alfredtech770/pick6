@@ -150,6 +150,8 @@ enum LeagueLogoLookup {
         case "bundesliga": path = "leaguelogos/soccer/500/10"
         case "seriea":     path = "leaguelogos/soccer/500/12"
         case "mls":        path = "leaguelogos/soccer/500/19"
+        case "ligue1":     path = "leaguelogos/soccer/500/9"
+        case "ligamx":     path = "leaguelogos/soccer/500/22"
         // ── US major leagues ──
         case "nba":        path = "teamlogos/leagues/500/nba"
         case "nfl":        path = "teamlogos/leagues/500/nfl"
@@ -157,6 +159,7 @@ enum LeagueLogoLookup {
         case "nhl":        path = "teamlogos/leagues/500/nhl"
         case "xfl":        path = "teamlogos/leagues/500/xfl"
         case "ufc":        path = "teamlogos/leagues/500/ufc"
+        case "wnba":       path = "teamlogos/leagues/500/wnba"
         // ── Cricket ──
         case "ipl":        path = "leaguelogos/cricket/500/8048"
         // No ESPN logo: gleague, ncaab, euroleague, ncaaf, cfl,

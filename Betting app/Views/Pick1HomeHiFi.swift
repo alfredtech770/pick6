@@ -1079,9 +1079,21 @@ func teamShortName(_ team: String, sport: String? = nil) -> String {
 /// must surface under our own brand.
 func displayLeague(_ league: String, sport: String? = nil) -> String {
     switch league.uppercased() {
-    case "WC":  return "SUMMER CUP"
-    case "IPL": return "CRICKET"
-    default:    return league.uppercased()
+    case "WC":         return "SUMMER CUP"
+    case "IPL":        return "CRICKET"
+    case "LALIGA":     return "LA LIGA"
+    case "SERIEA":     return "SERIE A"
+    case "BUNDESLIGA": return "BUNDESLIGA"
+    case "LIGUE1":     return "LIGUE 1"
+    case "UCL":        return "CHAMPIONS LEAGUE"
+    case "MLS":        return "MLS"
+    case "LIGAMX":     return "LIGA MX"
+    case "WNBA":       return "WNBA"
+    case "EUROLEAGUE": return "EUROLEAGUE"
+    case "NCAAB":      return "NCAAB"
+    case "KBO":        return "KBO"
+    case "NPB":        return "NPB"
+    default:           return league.uppercased()
     }
 }
 

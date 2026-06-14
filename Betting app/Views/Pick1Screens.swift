@@ -2000,6 +2000,18 @@ struct SportHubView: View {
         case "UFC": return "ufc"
         case "IPL": return "ipl"
         case "F1":  return "f1"
+        case "LALIGA": return "laliga"
+        case "SERIEA": return "seriea"
+        case "BUNDESLIGA": return "bundesliga"
+        case "LIGUE1": return "ligue1"
+        case "UCL": return "ucl"
+        case "MLS": return "mls"
+        case "LIGAMX": return "ligamx"
+        case "WNBA": return "wnba"
+        case "EUROLEAGUE": return "euroleague"
+        case "NCAAB": return "ncaab"
+        case "KBO": return "kbo"
+        case "NPB": return "npb"
         default:    return league.lowercased()   // WC etc. → symbol tile
         }
     }
