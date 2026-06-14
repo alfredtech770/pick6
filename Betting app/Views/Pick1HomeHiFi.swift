@@ -1093,6 +1093,7 @@ func displayLeague(_ league: String, sport: String? = nil) -> String {
     case "NCAAB":      return "NCAAB"
     case "KBO":        return "KBO"
     case "NPB":        return "NPB"
+    case "NASCAR":     return "NASCAR"
     default:           return league.uppercased()
     }
 }

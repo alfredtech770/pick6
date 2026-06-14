@@ -278,7 +278,11 @@ struct MatchDetailView: View {
                         case .summary:
                             VStack(spacing: 14) {
                                 summaryPanel
-                                matchupPanel
+                                if isRaceEvent, let drivers = pick.fieldOdds, !drivers.isEmpty {
+                                    racePodiumPanel(drivers)
+                                } else {
+                                    matchupPanel
+                                }
                             }
                         case .odds:
                             oddsPanel
@@ -417,6 +421,92 @@ struct MatchDetailView: View {
         case .lost:           return "FINAL · L"
         case .upcoming:       return "TODAY"
         }
+    }
+
+    /// Race events (F1/NASCAR) use the field-odds frame instead of a
+    /// two-competitor matchup card.
+    private var isRaceEvent: Bool { pick.sport == "f1" }
+
+    /// Podium-probabilities frame: every contending driver with their
+    /// win and podium (top-3) chances, ranked, the AI's pick highlighted.
+    /// Replaces the nonsensical "driver vs Field" stat rows for races.
+    private func racePodiumPanel(_ raw: [DriverOdds]) -> some View {
+        let drivers = raw.sorted { $0.win > $1.win }
+        let maxWin = max(1, drivers.map { $0.win }.max() ?? 1)
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("PODIUM PROBABILITIES")
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Spacer()
+                Text("\(drivers.count) DRIVERS")
+                    .font(.mono(9, weight: .bold))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+            .padding(.bottom, 4)
+            HStack {
+                Text("WIN AND PODIUM CHANCE")
+                    .font(.mono(9, weight: .medium))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Spacer()
+                Text("WIN")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 44, alignment: .trailing)
+                Text("PODIUM")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .frame(width: 52, alignment: .trailing)
+            }
+            .padding(.bottom, 10)
+            VStack(spacing: 8) {
+                ForEach(Array(drivers.enumerated()), id: \.element.id) { idx, d in
+                    let isPicked = d.name.caseInsensitiveCompare(pick.pick) == .orderedSame
+                        || pick.pick.localizedCaseInsensitiveContains(d.name)
+                    HStack(spacing: 10) {
+                        Text("\(idx + 1)")
+                            .font(.mono(11, weight: .heavy))
+                            .foregroundColor(isPicked ? sportAccent : Color(hex: "#6E6F75"))
+                            .frame(width: 18, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(d.name.uppercased())
+                                .font(.archivo(12, weight: .bold))
+                                .foregroundColor(isPicked ? sportAccent : Color(hex: "#F5F3EE"))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color(hex: "#1A1C20"))
+                                        .frame(height: 4)
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(isPicked ? sportAccent : Color(hex: "#3A3D44"))
+                                        .frame(width: geo.size.width * CGFloat(d.win / maxWin),
+                                               height: 4)
+                                }
+                            }
+                            .frame(height: 4)
+                        }
+                        Text("\(Int(d.win.rounded()))%")
+                            .font(.mono(12, weight: .heavy))
+                            .foregroundColor(isPicked ? sportAccent : Color(hex: "#F5F3EE"))
+                            .frame(width: 44, alignment: .trailing)
+                        Text("\(Int(d.podium.rounded()))%")
+                            .font(.mono(12, weight: .bold))
+                            .foregroundColor(Color(hex: "#B9B7B0"))
+                            .frame(width: 52, alignment: .trailing)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color(hex: "#22252B"), lineWidth: 1))
+        )
     }
 
     /// Score header — `home` always renders on the LEFT, `away` on the RIGHT.
@@ -2012,6 +2102,7 @@ struct SportHubView: View {
         case "NCAAB": return "ncaab"
         case "KBO": return "kbo"
         case "NPB": return "npb"
+        case "NASCAR": return "nascar"
         default:    return league.lowercased()   // WC etc. → symbol tile
         }
     }
@@ -3973,7 +4064,7 @@ struct LiveView: View {
                     keyFactor: nil, matchupFacts: nil, result: "pending",
                     homeScore: nil, awayScore: nil,
                     marketOdds: nil, oddsSource: nil, predictedScore: nil,
-                    homeLogo: nil, awayLogo: nil)
+                    homeLogo: nil, awayLogo: nil, fieldOdds: nil)
     }
 
     /// Status-pill 3-state classifier:

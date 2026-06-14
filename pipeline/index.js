@@ -343,6 +343,8 @@ const LEAGUES = {
     notes: 'KBO — Korean pro baseball (Mar–Oct). Pick the game winner.' },
   NPB: { sport: 'baseball', promptMode: 'research', fetcher: null,
     notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
+  NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
+    notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -452,6 +454,20 @@ const PICK_SCHEMA = {
             type: 'string',
             description: 'The calendar date the match is actually played, in US Eastern Time, formatted YYYY-MM-DD. For a normal daily slate this is today\'s date; for leagues whose prompt covers future fixtures (e.g. tournament previews) use each match\'s real date.',
           },
+          field_odds: {
+            type: ['array', 'null'],
+            description: 'RACE EVENTS ONLY (F1, NASCAR): the top 8-10 drivers ranked by win chance, each with their win and podium probabilities as integer percents. Use real grid/championship form + any market odds you can find. Null for non-race sports.',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Driver full name' },
+                win: { type: 'number', description: 'Win probability %, 0-100' },
+                podium: { type: 'number', description: 'Podium (top-3) probability %, 0-100' },
+              },
+              required: ['name', 'win', 'podium'],
+              additionalProperties: false,
+            },
+          },
           predicted_score: {
             type: ['string', 'null'],
             description: 'Your single most-likely FINAL SCORE for this matchup, formatted "<home>-<away>" from the home team\'s perspective (e.g. "2-1" for soccer, "112-104" for NBA, "5-3" for MLB). Null for events where a score makes no sense (fights, races).',
@@ -489,7 +505,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source', 'predicted_score'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source', 'predicted_score', 'field_odds'],
         additionalProperties: false,
       },
     },
@@ -717,6 +733,15 @@ async function savePicks(league, picks) {
     predicted_score: (typeof p.predicted_score === 'string'
       && /^\d{1,3}-\d{1,3}$/.test(p.predicted_score.trim()))
       ? p.predicted_score.trim() : null,
+    field_odds: Array.isArray(p.field_odds)
+      ? p.field_odds
+          .filter((d) => d && typeof d.name === 'string'
+            && typeof d.win === 'number' && typeof d.podium === 'number')
+          .map((d) => ({ name: d.name.trim(),
+                         win: Math.max(0, Math.min(100, Math.round(d.win))),
+                         podium: Math.max(0, Math.min(100, Math.round(d.podium))) }))
+          .slice(0, 12)
+      : null,
     result: 'pending',
   }));
 
@@ -1013,6 +1038,7 @@ const ESPN_PATHS = {
   LIGAMX: 'soccer/mex.1',
   WNBA: 'basketball/wnba',
   NCAAB: 'basketball/mens-college-basketball',
+  NASCAR: 'racing/nascar-premier',
   UFC: 'mma/ufc',
   F1:  'racing/f1',
 };

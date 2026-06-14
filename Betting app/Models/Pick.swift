@@ -44,6 +44,8 @@ struct Pick: Identifiable, Codable {
     /// Nil for athlete sports / older rows.
     let homeLogo: String?
     let awayLogo: String?
+    /// Race events (F1/NASCAR): top drivers + win/podium probabilities.
+    let fieldOdds: [DriverOdds]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -64,6 +66,7 @@ struct Pick: Identifiable, Codable {
         case predictedScore = "predicted_score"
         case homeLogo = "home_logo"
         case awayLogo = "away_logo"
+        case fieldOdds = "field_odds"
     }
 
     // Confidence tier helper
@@ -236,6 +239,14 @@ struct Pick: Identifiable, Codable {
 /// One real, web-search-backed supporting fact for a pick — a labeled
 /// value the AI pipeline generates (e.g. "Recent form" → "W-W-L-W-D").
 /// Rendered in the detail page's MATCHUP card.
+/// One driver's win + podium probability for a race event.
+struct DriverOdds: Codable, Identifiable, Hashable {
+    let name: String
+    let win: Double
+    let podium: Double
+    var id: String { name }
+}
+
 struct MatchupFact: Codable, Identifiable, Hashable {
     let label: String
     let value: String
@@ -277,6 +288,7 @@ extension Pick {
         predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
         homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
+        fieldOdds = (try? c.decodeIfPresent([DriverOdds].self, forKey: .fieldOdds)) ?? nil
     }
 }
 
