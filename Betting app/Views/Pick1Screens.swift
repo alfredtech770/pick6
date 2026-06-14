@@ -1878,15 +1878,25 @@ struct SportHubView: View {
 
                     // ── TODAY ────────────────────────────────────────
                     HubSectionHead(
-                        title: hasLiveToday ? "TODAY · LIVE & UPCOMING"
-                                            : (isPro ? "TODAY" : "FREE PICK"),
-                        meta: "\(filteredPicksForSport.count) GAME\(filteredPicksForSport.count == 1 ? "" : "S")",
+                        title: (sport == "f1") ? "RACE FIELD"
+                             : (hasLiveToday ? "TODAY · LIVE & UPCOMING"
+                                             : (isPro ? "TODAY" : "FREE PICK")),
+                        meta: (sport == "f1" && (topPick?.fieldOdds?.isEmpty == false))
+                             ? "\(topPick!.fieldOdds!.count) DRIVERS"
+                             : "\(filteredPicksForSport.count) GAME\(filteredPicksForSport.count == 1 ? "" : "S")",
                         live: hasLiveToday
                     )
                     .padding(.bottom, 10)
-                    todayList
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 22)
+                    Group {
+                        if sport == "f1", let race = topPick,
+                           let drivers = race.fieldOdds, !drivers.isEmpty {
+                            raceDriverCards(race: race, drivers: drivers)
+                        } else {
+                            todayList
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 22)
 
                     // ── YESTERDAY (only when there's history) ────────
                     if !yesterdayForSport.isEmpty {
@@ -2200,6 +2210,71 @@ struct SportHubView: View {
     // ════════════════════════════════════════════════════════════
 
     @ViewBuilder
+    /// One card per driver: position, name, headshot, win% + podium%.
+    /// The AI's pick is accented. Tapping any card opens the full race
+    /// detail (with the complete podium-probabilities table). Free tier
+    /// sees the top 3, the rest locked.
+    private func raceDriverCards(race: Pick, drivers: [DriverOdds]) -> some View {
+        let sorted = drivers.sorted { $0.win > $1.win }
+        let visible = isPro ? sorted : Array(sorted.prefix(3))
+        return LazyVStack(spacing: 8) {
+            ForEach(Array(visible.enumerated()), id: \.element.id) { idx, d in
+                let isPicked = race.pick.localizedCaseInsensitiveContains(d.name)
+                    || d.name.localizedCaseInsensitiveContains(race.pick)
+                Button { onTapPick(race) } label: {
+                    HStack(spacing: 12) {
+                        Text("\(idx + 1)")
+                            .font(.anton(20))
+                            .foregroundColor(isPicked ? glowColor : Color(hex: "#6E6F75"))
+                            .frame(width: 26)
+                        AthleteHeadshot(sport: "f1", name: d.name, size: .small)
+                            .frame(width: 40, height: 40)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(d.name.uppercased())
+                                .font(.archivo(14, weight: .bold))
+                                .foregroundColor(isPicked ? glowColor : Color(hex: "#F5F3EE"))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            if isPicked {
+                                Text("AI PICK · RACE WINNER")
+                                    .font(.archivoNarrow(8, weight: .bold))
+                                    .tracking(1.6)
+                                    .foregroundColor(glowColor.opacity(0.8))
+                            } else {
+                                Text("PODIUM \(Int(d.podium.rounded()))%")
+                                    .font(.mono(9, weight: .medium))
+                                    .foregroundColor(Color(hex: "#6E6F75"))
+                            }
+                        }
+                        Spacer(minLength: 6)
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("\(Int(d.win.rounded()))%")
+                                .font(.anton(22))
+                                .foregroundColor(isPicked ? glowColor : Color(hex: "#F5F3EE"))
+                                .monospacedDigit()
+                            Text("WIN")
+                                .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
+                                .foregroundColor(Color(hex: "#6E6F75"))
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color(hex: "#101114"))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(isPicked ? glowColor.opacity(0.5) : Color(hex: "#22252B"),
+                                        lineWidth: 1))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            if !isPro, sorted.count > 3 {
+                ProUnlockCard(lockedCount: sorted.count - 3, onUnlock: onUnlock)
+            }
+        }
+    }
+
     private var todayList: some View {
         LazyVStack(spacing: 8) {
             let visible = isPro ? filteredPicksForSport

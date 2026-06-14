@@ -648,7 +648,9 @@ struct HeroCard: View {
                                    size: 110,
                                    stroke: 6,
                                    numberColor: Color.white)
-                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam, sport: pick?.sport ?? "")
+                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam,
+                          sport: pick?.sport ?? "",
+                          soloName: pick?.sport == "f1" ? pick?.pick : nil)
             }
             .frame(width: 130)
         }
@@ -656,6 +658,13 @@ struct HeroCard: View {
 
     private var headlineText: String {
         guard let pick = pick else { return "NO PICKS\nYET" }
+        // Race events (F1/NASCAR) aren't head-to-head — the pick is the
+        // driver, the "other" side is the whole field. "ANTONELLI OVER
+        // FIELD" read as nonsense, so races get "<DRIVER> / TO WIN".
+        if pick.sport == "f1" {
+            let driver = teamShortName(pick.pick, sport: pick.sport).uppercased()
+            return "\(driver)\nTO WIN"
+        }
         // "AWAY OVER HOME" if pick is away; "HOME OVER AWAY" if pick is home.
         // Use teamShortName so "BOSTON CELTICS" / "PHILADELPHIA 76ERS" don't
         // overflow the 50pt Anton at our hero width — we just want
@@ -954,15 +963,22 @@ struct CrestPair: View {
     let home: String?
     let away: String?
     var sport: String = ""
+    /// Race events pass the picked driver here — shown alone instead of
+    /// the meaningless "Field vs Grand Prix" pair.
+    var soloName: String? = nil
 
     var body: some View {
-        HStack(spacing: 4) {
-            TeamLogo(sport: sport, team: away ?? "—", size: .small)
-            Text("VS")
-                .font(.archivoNarrow(11, weight: .bold))
-                .tracking(1.5)
-                .foregroundColor(Color.black.opacity(0.55))
-            TeamLogo(sport: sport, team: home ?? "—", size: .small)
+        if let solo = soloName {
+            TeamLogo(sport: sport, team: solo, size: .small)
+        } else {
+            HStack(spacing: 4) {
+                TeamLogo(sport: sport, team: away ?? "—", size: .small)
+                Text("VS")
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(Color.black.opacity(0.55))
+                TeamLogo(sport: sport, team: home ?? "—", size: .small)
+            }
         }
     }
 }
