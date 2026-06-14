@@ -923,7 +923,9 @@ struct WCFlag: View {
             default:
                 // No hand-drawn art — full-bleed flag image (flagcdn),
                 // so every country fills the frame exactly like the
-                // drawn flags. Emoji while loading, gray when unknown.
+                // drawn flags. While loading / on failure / for unknown
+                // codes we ALWAYS draw a strong fallback (emoji flag
+                // filling the tile, or the country code) — never blank.
                 if let url = flagImageURL(for: code) {
                     AsyncImage(url: url,
                                transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
@@ -934,18 +936,35 @@ struct WCFlag: View {
                                 .frame(width: w, height: h)
                                 .clipped()
                         default:
-                            ZStack {
-                                Color(hex: "#1A1C20")
-                                if let emoji = emojiFlag(for: code) {
-                                    Text(emoji)
-                                        .font(.system(size: min(w, h) * 0.8))
-                                }
-                            }
+                            flagFallback(w, h)
                         }
                     }
                 } else {
-                    Color(hex: "#2A2A2E")
+                    flagFallback(w, h)
                 }
+            }
+        }
+    }
+
+    /// Guaranteed-non-empty flag fallback: the emoji flag scaled to fill
+    /// the tile (reads as a real flag, not a small framed glyph), or the
+    /// country code text when there's no emoji for the code. Used while
+    /// the flagcdn image loads, on load failure, and for unknown codes.
+    @ViewBuilder
+    private func flagFallback(_ w: CGFloat, _ h: CGFloat) -> some View {
+        ZStack {
+            Color(hex: "#15171B")
+            if let emoji = emojiFlag(for: code) {
+                Text(emoji)
+                    .font(.system(size: h * 1.15))
+                    .frame(width: w, height: h, alignment: .center)
+                    .clipped()
+            } else {
+                Text(code.uppercased())
+                    .font(.system(size: min(w, h) * 0.42, weight: .heavy))
+                    .foregroundColor(Color(hex: "#C8CAD0"))
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
             }
         }
     }
