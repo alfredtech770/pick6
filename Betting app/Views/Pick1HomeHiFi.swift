@@ -283,7 +283,7 @@ struct HomeHiFiContent: View {
                          record: vm.recentRecord(),
                          mood: vm.accuracyMood,
                          last10: vm.last10Results)
-                    .padding(.horizontal, 26)
+                    .padding(.horizontal, 16)
                     .padding(.top, 16)
 
                 // Summer Football banner — sits between the stats row
