@@ -283,7 +283,7 @@ struct HomeHiFiContent: View {
                          record: vm.recentRecord(),
                          mood: vm.accuracyMood,
                          last10: vm.last10Results)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 26)
                     .padding(.top, 16)
 
                 // Summer Football banner — sits between the stats row
@@ -1123,17 +1123,33 @@ struct StatsRow: View {
     let mood: PicksViewModel.AccuracyMood
     let last10: [Bool]
 
+    /// Measured half-width so both tiles are EXACTLY equal regardless of
+    /// content ("44 wins" is intrinsically wider than "60 %", which
+    /// otherwise let the WINS tile claim more than half).
+    @State private var tileWidth: CGFloat = 0
+
     var body: some View {
         HStack(spacing: 10) {
             WinsThisWeekTile(wins: winsThisWeek,
                              games: gamesThisWeek,
                              losses: lossesThisWeek)
+                .frame(width: tileWidth > 0 ? tileWidth : nil)
             AccuracyTile(accuracy: accuracy,
                          delta: delta,
                          record: record,
                          mood: mood,
                          last10: last10)
+                .frame(width: tileWidth > 0 ? tileWidth : nil)
         }
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { tileWidth = (geo.size.width - 10) / 2 }
+                    .onChange(of: geo.size.width) { _, w in
+                        tileWidth = (w - 10) / 2
+                    }
+            }
+        )
     }
 }
 
@@ -1153,7 +1169,7 @@ struct WinsThisWeekTile: View {
     private var slots: Int { max(games, 7) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 12, weight: .bold))
@@ -1166,7 +1182,7 @@ struct WinsThisWeekTile: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(wins)")
-                    .font(.anton(52))
+                    .font(.anton(72))
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .tracking(-1.4)
                     .monospacedDigit()
@@ -1176,6 +1192,8 @@ struct WinsThisWeekTile: View {
                 Text(wins == 1 ? "win" : "wins")
                     .font(.archivo(18, weight: .bold))
                     .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             .animation(Pick1Springs.smooth, value: wins)
             // Segmented bar — each played game lights a segment.
@@ -1197,10 +1215,12 @@ struct WinsThisWeekTile: View {
                     Text("\(wins)-\(losses)")
                         .font(.mono(10, weight: .bold))
                         .foregroundColor(Color(hex: "#D4FF3A"))
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
         }
-        .padding(13)
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
@@ -1222,7 +1242,7 @@ struct AccuracyTile: View {
     private let slots = 10
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: moodIcon)
                     .font(.system(size: 12, weight: .bold))
@@ -1235,7 +1255,7 @@ struct AccuracyTile: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(mood == .empty ? "—" : "\(Int(accuracy.rounded()))")
-                    .font(.anton(52))
+                    .font(.anton(72))
                     .foregroundColor(numberColor)
                     .tracking(-1.4)
                     .monospacedDigit()
@@ -1246,6 +1266,8 @@ struct AccuracyTile: View {
                     Text("%")
                         .font(.archivo(18, weight: .bold))
                         .foregroundColor(Color(hex: "#B9B7B0"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
             }
             .animation(Pick1Springs.smooth, value: accuracy)
@@ -1276,7 +1298,7 @@ struct AccuracyTile: View {
                 trailingBadge
             }
         }
-        .padding(13)
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
