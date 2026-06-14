@@ -309,7 +309,10 @@ enum AthleteHeadshotLookup {
             guard let id = lookup(in: ufcIds, name: name) else { return nil }
             return URL(string: "https://a.espncdn.com/i/headshots/mma/players/full/\(id).png")
         case "f1":
-            guard let id = lookup(in: f1Ids, name: name) else { return nil }
+            // F1 + NASCAR share ESPN's "rpm" (racing) headshot path, so
+            // both driver tables resolve through the same case.
+            guard let id = lookup(in: f1Ids, name: name)
+                        ?? lookup(in: nascarIds, name: name) else { return nil }
             return URL(string: "https://a.espncdn.com/i/headshots/rpm/players/full/\(id).png")
         case "tennis":
             guard let id = lookup(in: tennisIds, name: name) else { return nil }
@@ -384,6 +387,42 @@ private let f1Ids: [String: String] = [
     "zhou":       "5682",  "guanyu zhou":        "5682", "zhou guanyu": "5682",
     "bottas":     "4520",  "valtteri bottas":    "4520",
     "perez":      "4472",  "sergio perez":       "4472", "sergio pérez": "4472", "pérez": "4472",
+]
+
+/// NASCAR Cup Series driver IDs — same ESPN "rpm" headshot path as F1,
+/// every ID verified to resolve on the CDN and name-matched against
+/// ESPN's racing API. Keyed by last name + full name (fuzzy lookup
+/// also catches first/last token).
+private let nascarIds: [String: String] = [
+    "larson":     "4539",  "kyle larson":        "4539",
+    "byron":      "4721",  "william byron":      "4721",
+    "elliott":    "4574",  "chase elliott":      "4574",
+    "bowman":     "4555",  "alex bowman":        "4555",
+    "hamlin":     "747",   "denny hamlin":       "747",
+    "bell":       "4700",  "christopher bell":   "4700",
+    "gibbs":      "5651",  "ty gibbs":           "5651",
+    "reddick":    "4577",  "tyler reddick":      "4577",
+    "wallace":    "4534",  "bubba wallace":      "4534",
+    "blaney":     "4531",  "ryan blaney":        "4531",
+    "logano":     "4319",  "joey logano":        "4319",
+    "cindric":    "4718",  "austin cindric":     "4718",
+    "keselowski": "626",   "brad keselowski":    "626",
+    "buescher":   "4480",  "chris buescher":     "4480",
+    "preece":     "4585",  "ryan preece":        "4585",
+    "chastain":   "4495",  "ross chastain":      "4495",
+    "suarez":     "4645",  "daniel suarez":      "4645",
+    "briscoe":    "4773",  "chase briscoe":      "4773",
+    "jones":      "4777",  "erik jones":         "4777",
+    "hocevar":    "5610",  "carson hocevar":     "5610",
+    "dillon":     "4332",  "austin dillon":      "4332",
+    "berry":      "4656",  "josh berry":         "4656",
+    "gilliland":  "4782",  "todd gilliland":     "4782",
+    "mcdowell":   "4729",  "michael mcdowell":   "4729",
+    "stenhouse":  "4351",  "ricky stenhouse jr.": "4351", "ricky stenhouse": "4351",
+    "allmendinger":"805",  "aj allmendinger":    "805",
+    "nemechek":   "4612",  "john hunter nemechek":"4612",
+    "gragson":    "4768",  "noah gragson":       "4768",
+    "custer":     "4634",  "cole custer":        "4634",
 ]
 
 /// Verified ATP tennis IDs (mined from ESPN search.image URLs and

@@ -1881,14 +1881,14 @@ struct SportHubView: View {
                         title: (sport == "f1") ? "RACE FIELD"
                              : (hasLiveToday ? "TODAY · LIVE & UPCOMING"
                                              : (isPro ? "TODAY" : "FREE PICK")),
-                        meta: (sport == "f1" && (topPick?.fieldOdds?.isEmpty == false))
-                             ? "\(topPick!.fieldOdds!.count) DRIVERS"
+                        meta: (sport == "f1" && (featuredRace?.fieldOdds?.isEmpty == false))
+                             ? "\(featuredRace!.fieldOdds!.count) DRIVERS"
                              : "\(filteredPicksForSport.count) GAME\(filteredPicksForSport.count == 1 ? "" : "S")",
                         live: hasLiveToday
                     )
                     .padding(.bottom, 10)
                     Group {
-                        if sport == "f1", let race = topPick,
+                        if sport == "f1", let race = featuredRace,
                            let drivers = race.fieldOdds, !drivers.isEmpty {
                             raceDriverCards(race: race, drivers: drivers)
                         } else {
@@ -2228,6 +2228,35 @@ struct SportHubView: View {
         return (Color(hex: "#9AA0AA"), "F1")
     }
 
+    /// NASCAR drivers identify by manufacturer — colour + badge by make
+    /// (Chevrolet gold, Toyota red, Ford blue), generic fallback.
+    private func nascarTeam(_ name: String) -> (color: Color, team: String) {
+        let n = name.lowercased()
+        func hit(_ keys: [String]) -> Bool { keys.contains { n.contains($0) } }
+        // Chevrolet — Hendrick, Trackhouse, RCR, Spire, Kaulig
+        if hit(["larson", "byron", "elliott", "bowman", "chastain",
+                "suarez", "hocevar", "dillon", "allmendinger"]) {
+            return (Color(hex: "#E5B83C"), "CHEVROLET")
+        }
+        // Toyota — Joe Gibbs Racing, 23XI, Legacy MC
+        if hit(["hamlin", "bell", "gibbs", "reddick", "wallace",
+                "briscoe", "nemechek"]) {
+            return (Color(hex: "#EB1B2E"), "TOYOTA")
+        }
+        // Ford — Penske, RFK, Wood Brothers, Front Row
+        if hit(["blaney", "logano", "cindric", "keselowski", "buescher",
+                "preece", "berry", "gilliland", "mcdowell", "stenhouse",
+                "gragson", "custer", "jones"]) {
+            return (Color(hex: "#2D6FCF"), "FORD")
+        }
+        return (Color(hex: "#9AA0AA"), "NASCAR")
+    }
+
+    /// Pick the right constructor/manufacturer colour map for the series.
+    private func driverTeam(_ name: String, league: String) -> (color: Color, team: String) {
+        league.uppercased() == "NASCAR" ? nascarTeam(name) : f1Team(name)
+    }
+
     /// One BIG card per driver — headshot, position, team color + name,
     /// win% (constructor-colored) and podium%. AI pick gets a glowing
     /// team-colored border. Tapping opens the full race detail.
@@ -2239,7 +2268,7 @@ struct SportHubView: View {
             ForEach(Array(visible.enumerated()), id: \.element.id) { idx, d in
                 let isPicked = race.pick.localizedCaseInsensitiveContains(d.name)
                     || d.name.localizedCaseInsensitiveContains(race.pick)
-                let team = f1Team(d.name)
+                let team = driverTeam(d.name, league: race.league)
                 Button { onTapPick(race) } label: {
                     HStack(spacing: 14) {
                         Text("\(idx + 1)")
@@ -2542,7 +2571,19 @@ struct SportHubView: View {
     }
 
     private var topPick: Pick? {
-        picksForSport.max(by: { $0.probability < $1.probability })
+        // Respect the league filter so selecting a league chip (e.g.
+        // NASCAR on the racing page) re-points the hero + field at that
+        // league. nil filter → whole-sport top pick, unchanged.
+        filteredPicksForSport.max(by: { $0.probability < $1.probability })
+    }
+
+    /// Race whose driver field the RACE FIELD section renders: the
+    /// highest-confidence race carrying field odds within the active
+    /// league filter. Lets the racing page switch between F1 and NASCAR.
+    private var featuredRace: Pick? {
+        filteredPicksForSport
+            .filter { $0.fieldOdds?.isEmpty == false }
+            .max(by: { $0.probability < $1.probability })
     }
 
     private var avgConf: Double {
