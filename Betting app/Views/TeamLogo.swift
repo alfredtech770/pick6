@@ -18,6 +18,84 @@
 // have stable per-athlete imagery, so we keep the colored shield crest.
 
 import SwiftUI
+import UIKit
+
+// ════════════════════════════════════════════════════════════════════
+// MARK: - CachedImage — the one image loader behind every logo / flag /
+//         headshot. Fixes the "a couple are always missing" problem.
+// ════════════════════════════════════════════════════════════════════
+//
+// SwiftUI's AsyncImage keeps no decoded in-memory cache and never
+// retries: every time a card scrolls back on screen it re-requests, and
+// any transient CDN hiccup leaves that one slot stuck on the placeholder
+// — which reads as "missing". CachedImage fixes all three:
+//   1. Decoded UIImages live in a process-wide NSCache, so once a logo
+//      has loaded it paints instantly forever after — no re-flash.
+//   2. Transient failures retry a few times with backoff before giving
+//      up, so a single dropped request doesn't blank a badge.
+//   3. The caller's branded fallback shows until the real image is
+//      ready — the slot is never empty.
+// Drop-in shaped like AsyncImage(url:content:placeholder:).
+
+/// Process-wide decoded-image cache (keyed by absolute URL).
+enum ImageMemoryCache {
+    static let shared: NSCache<NSURL, UIImage> = {
+        let c = NSCache<NSURL, UIImage>()
+        c.countLimit = 600            // plenty for a full slate of crests
+        return c
+    }()
+}
+
+struct CachedImage<Content: View, Placeholder: View>: View {
+    let url: URL?
+    @ViewBuilder var content: (Image) -> Content
+    @ViewBuilder var placeholder: () -> Placeholder
+
+    @State private var uiImage: UIImage?
+
+    var body: some View {
+        Group {
+            if let img = uiImage {
+                content(Image(uiImage: img))
+            } else {
+                placeholder()
+            }
+        }
+        .task(id: url) { await load() }
+    }
+
+    @MainActor
+    private func load() async {
+        guard let url else { uiImage = nil; return }
+        let key = url as NSURL
+        if let cached = ImageMemoryCache.shared.object(forKey: key) {
+            uiImage = cached
+            return
+        }
+        // Recycled cell with a new URL: drop the stale image so the
+        // placeholder shows instead of the previous team's logo.
+        uiImage = nil
+        for attempt in 0..<3 {
+            if Task.isCancelled { return }
+            do {
+                var req = URLRequest(url: url)
+                req.cachePolicy = .returnCacheDataElseLoad   // reuse prefetched bytes
+                req.timeoutInterval = 12
+                let (data, _) = try await URLSession.shared.data(for: req)
+                if let img = UIImage(data: data) {
+                    ImageMemoryCache.shared.setObject(img, forKey: key)
+                    if !Task.isCancelled { uiImage = img }
+                    return
+                }
+                return   // got bytes but not an image — don't hammer the CDN
+            } catch {
+                if Task.isCancelled { return }
+                // brief backoff, then retry the transient failure
+                try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 350_000_000)
+            }
+        }
+    }
+}
 
 /// Real team-crest URLs captured by the pipeline from ESPN (keyed by
 /// normalized team name). Populated from loaded picks on each refresh,
@@ -73,22 +151,15 @@ struct TeamLogo: View {
                 .frame(width: size.w, height: size.h)
         } else if let url = TeamLogoStore.url(for: team)
                     ?? TeamLogoLookup.url(sport: sport, team: team) {
-            AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .padding(size == .big ? 4 : 2)
-                        .frame(width: size.w, height: size.h)
-                case .empty:
-                    // While loading, show the colored crest so we don't pop
-                    Crest(team: team, size: size)
-                case .failure:
-                    Crest(team: team, size: size)
-                @unknown default:
-                    Crest(team: team, size: size)
-                }
+            CachedImage(url: url) { image in
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .padding(size == .big ? 4 : 2)
+                    .frame(width: size.w, height: size.h)
+            } placeholder: {
+                // Colored crest while loading / if the logo can't be fetched
+                Crest(team: team, size: size)
             }
         } else {
             // Team sport with no logo mapping — keep colored shield.
@@ -120,27 +191,21 @@ struct LeagueLogo: View {
 
     var body: some View {
         if let url = LeagueLogoLookup.url(leagueId) {
-            AsyncImage(url: url,
-                       transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
-                switch phase {
-                case .success(let image):
-                    // League marks are designed for a light ground, so
-                    // sit them on a small white tile regardless of the
-                    // chip's active/inactive state.
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .padding(2)
-                        .frame(width: size, height: size)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(Color.white)
-                        )
-                case .empty, .failure:
-                    fallbackTile
-                @unknown default:
-                    fallbackTile
-                }
+            CachedImage(url: url) { image in
+                // League marks are designed for a light ground, so sit
+                // them on a small white tile regardless of the chip's
+                // active/inactive state.
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .padding(2)
+                    .frame(width: size, height: size)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(Color.white)
+                    )
+            } placeholder: {
+                fallbackTile
             }
             .frame(width: size, height: size)
         } else {
@@ -233,16 +298,10 @@ struct AthleteHeadshot: View {
                 .overlay(Circle().stroke(Color(hex: "#2D3038"), lineWidth: 1))
 
             if let url = AthleteHeadshotLookup.url(sport: sport, name: name) {
-                AsyncImage(url: url,
-                           transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .empty, .failure:
-                        placeholder
-                    @unknown default:
-                        placeholder
-                    }
+                CachedImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    placeholder
                 }
                 .clipShape(Circle())
             } else {
@@ -322,15 +381,30 @@ enum AthleteHeadshotLookup {
         }
     }
 
-    /// Try direct + last-token + first-token matches against the table.
+    /// Normalize a name the same way the ID tables are keyed: lowercase,
+    /// strip accents, and drop any non-alphanumeric (apostrophes, periods,
+    /// hyphens) so "O'Malley", "Hülkenberg", and "Stenhouse Jr." all match.
+    private static func norm(_ s: String) -> String {
+        s.lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .components(separatedBy: CharacterSet.alphanumerics.union(.whitespaces).inverted)
+            .joined()
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
+    /// Match against the table by full normalized name, then last-name
+    /// (after dropping Jr./Sr./III suffixes), then first name.
     private static func lookup(in table: [String: String], name: String) -> String? {
-        let lower = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        if lower.isEmpty { return nil }
-        if let hit = table[lower] { return hit }
-        let last  = lower.split(separator: " ").last.map(String.init) ?? lower
-        if let hit = table[last] { return hit }
-        let first = lower.split(separator: " ").first.map(String.init) ?? lower
-        if let hit = table[first] { return hit }
+        let full = norm(name)
+        if full.isEmpty { return nil }
+        if let hit = table[full] { return hit }
+        var tokens = full.split(separator: " ").map(String.init)
+        let suffixes: Set<String> = ["jr", "sr", "ii", "iii", "iv", "v"]
+        while tokens.count > 1, suffixes.contains(tokens.last!) { tokens.removeLast() }
+        if let last = tokens.last, let hit = table[last] { return hit }
+        if let first = tokens.first, let hit = table[first] { return hit }
         return nil
     }
 }

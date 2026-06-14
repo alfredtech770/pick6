@@ -927,17 +927,13 @@ struct WCFlag: View {
                 // codes we ALWAYS draw a strong fallback (emoji flag
                 // filling the tile, or the country code) — never blank.
                 if let url = flagImageURL(for: code) {
-                    AsyncImage(url: url,
-                               transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable()
-                                .scaledToFill()
-                                .frame(width: w, height: h)
-                                .clipped()
-                        default:
-                            flagFallback(w, h)
-                        }
+                    CachedImage(url: url) { img in
+                        img.resizable()
+                            .scaledToFill()
+                            .frame(width: w, height: h)
+                            .clipped()
+                    } placeholder: {
+                        flagFallback(w, h)
                     }
                 } else {
                     flagFallback(w, h)
