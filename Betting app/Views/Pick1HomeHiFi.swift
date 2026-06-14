@@ -1196,14 +1196,7 @@ struct WinsThisWeekTile: View {
                     .minimumScaleFactor(0.6)
             }
             .animation(Pick1Springs.smooth, value: wins)
-            // Segmented bar — each played game lights a segment.
-            HStack(spacing: 3) {
-                ForEach(0..<slots, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(i < wins ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
-                        .frame(height: 5)
-                }
-            }
+            Spacer(minLength: 0)
             HStack {
                 Text("OF \(games) THIS WEEK")
                     .font(.mono(10, weight: .medium))
@@ -1271,17 +1264,7 @@ struct AccuracyTile: View {
                 }
             }
             .animation(Pick1Springs.smooth, value: accuracy)
-            // Last-10 segmented bar — same visual rhythm as the
-            // weekly bar on the sibling tile. Reverses the array so
-            // the OLDEST pick is on the left and the most recent on
-            // the right (reads as a timeline).
-            HStack(spacing: 3) {
-                ForEach(0..<slots, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(segmentColor(at: i))
-                        .frame(height: 5)
-                }
-            }
+            Spacer(minLength: 0)
             HStack {
                 if mood == .empty || (record.wins + record.losses) == 0 {
                     Text("AWAITING RESULTS")
