@@ -357,9 +357,33 @@ private let ufcIds: [String: String] = [
 ]
 
 private let f1Ids: [String: String] = [
+    // Full 2026 grid — every ID verified to resolve on ESPN's CDN
+    // (/i/headshots/rpm/players/full/<id>.png) and confirmed against
+    // the athlete's real name via ESPN's racing API.
     "hamilton":   "868",   "lewis hamilton":     "868",
-    "leclerc":    "5499",  "charles leclerc":    "5499",
-    "zhou":       "5588",  "guanyu zhou":        "5588",
+    "leclerc":    "5498",  "charles leclerc":    "5498",
+    "verstappen": "4665",  "max verstappen":     "4665",
+    "tsunoda":    "5652",  "yuki tsunoda":       "5652",
+    "norris":     "5579",  "lando norris":       "5579",
+    "piastri":    "5752",  "oscar piastri":      "5752",
+    "russell":    "5503",  "george russell":     "5503",
+    "antonelli":  "5829",  "kimi antonelli":     "5829", "andrea kimi antonelli": "5829",
+    "alonso":     "348",   "fernando alonso":    "348",
+    "stroll":     "4775",  "lance stroll":       "4775",
+    "sainz":      "4686",  "carlos sainz":       "4686",
+    "albon":      "5592",  "alexander albon":    "5592", "alex albon": "5592",
+    "gasly":      "5501",  "pierre gasly":       "5501",
+    "doohan":     "5746",  "jack doohan":        "5746",
+    "colapinto":  "5823",  "franco colapinto":   "5823",
+    "lawson":     "5741",  "liam lawson":        "5741",
+    "hadjar":     "5790",  "isack hadjar":       "5790",
+    "ocon":       "4678",  "esteban ocon":       "4678",
+    "bearman":    "5789",  "oliver bearman":     "5789", "ollie bearman": "5789",
+    "hulkenberg": "4396",  "nico hulkenberg":    "4396", "nico hülkenberg": "4396", "hülkenberg": "4396",
+    "bortoleto":  "5835",  "gabriel bortoleto":  "5835",
+    "zhou":       "5682",  "guanyu zhou":        "5682", "zhou guanyu": "5682",
+    "bottas":     "4520",  "valtteri bottas":    "4520",
+    "perez":      "4472",  "sergio perez":       "4472", "sergio pérez": "4472", "pérez": "4472",
 ]
 
 /// Verified ATP tennis IDs (mined from ESPN search.image URLs and
