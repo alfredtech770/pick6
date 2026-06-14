@@ -2210,62 +2210,120 @@ struct SportHubView: View {
     // ════════════════════════════════════════════════════════════
 
     @ViewBuilder
-    /// One card per driver: position, name, headshot, win% + podium%.
-    /// The AI's pick is accented. Tapping any card opens the full race
-    /// detail (with the complete podium-probabilities table). Free tier
-    /// sees the top 3, the rest locked.
+    /// 2026 F1 grid: driver → constructor accent color + team name.
+    /// Used to brand each driver card. Falls back to a neutral grey.
+    private func f1Team(_ name: String) -> (color: Color, team: String) {
+        let n = name.lowercased()
+        func hit(_ keys: [String]) -> Bool { keys.contains { n.contains($0) } }
+        if hit(["antonelli", "russell"])              { return (Color(hex: "#27F4D2"), "MERCEDES") }
+        if hit(["verstappen", "tsunoda"])             { return (Color(hex: "#3671C6"), "RED BULL") }
+        if hit(["norris", "piastri"])                 { return (Color(hex: "#FF8000"), "McLAREN") }
+        if hit(["leclerc", "hamilton"])               { return (Color(hex: "#E8002D"), "FERRARI") }
+        if hit(["alonso", "stroll"])                  { return (Color(hex: "#229971"), "ASTON MARTIN") }
+        if hit(["sainz", "albon"])                    { return (Color(hex: "#64C4FF"), "WILLIAMS") }
+        if hit(["gasly", "doohan", "colapinto"])      { return (Color(hex: "#0093CC"), "ALPINE") }
+        if hit(["lawson", "hadjar"])                  { return (Color(hex: "#6692FF"), "RB") }
+        if hit(["ocon", "bearman"])                   { return (Color(hex: "#B6BABD"), "HAAS") }
+        if hit(["hulkenberg", "bortoleto"])           { return (Color(hex: "#52E252"), "KICK SAUBER") }
+        return (Color(hex: "#9AA0AA"), "F1")
+    }
+
+    /// One BIG card per driver — headshot, position, team color + name,
+    /// win% (constructor-colored) and podium%. AI pick gets a glowing
+    /// team-colored border. Tapping opens the full race detail.
     private func raceDriverCards(race: Pick, drivers: [DriverOdds]) -> some View {
         let sorted = drivers.sorted { $0.win > $1.win }
         let visible = isPro ? sorted : Array(sorted.prefix(3))
-        return LazyVStack(spacing: 8) {
+        let maxWin = max(1, sorted.map { $0.win }.max() ?? 1)
+        return LazyVStack(spacing: 10) {
             ForEach(Array(visible.enumerated()), id: \.element.id) { idx, d in
                 let isPicked = race.pick.localizedCaseInsensitiveContains(d.name)
                     || d.name.localizedCaseInsensitiveContains(race.pick)
+                let team = f1Team(d.name)
                 Button { onTapPick(race) } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 14) {
                         Text("\(idx + 1)")
-                            .font(.anton(20))
-                            .foregroundColor(isPicked ? glowColor : Color(hex: "#6E6F75"))
-                            .frame(width: 26)
-                        AthleteHeadshot(sport: "f1", name: d.name, size: .small)
-                            .frame(width: 40, height: 40)
-                        VStack(alignment: .leading, spacing: 3) {
+                            .font(.anton(26))
+                            .foregroundColor(isPicked ? team.color : Color(hex: "#54585F"))
+                            .frame(width: 30)
+                        // Headshot ringed in the constructor color.
+                        AthleteHeadshot(sport: "f1", name: d.name, size: .big)
+                            .frame(width: 60, height: 60)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(team.color, lineWidth: 2.5))
+                            .shadow(color: team.color.opacity(0.4), radius: 6, x: 0, y: 2)
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(d.name.uppercased())
-                                .font(.archivo(14, weight: .bold))
-                                .foregroundColor(isPicked ? glowColor : Color(hex: "#F5F3EE"))
+                                .font(.anton(19))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                                .minimumScaleFactor(0.6)
+                            HStack(spacing: 6) {
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(team.color)
+                                    .frame(width: 14, height: 3)
+                                Text(team.team)
+                                    .font(.archivoNarrow(9, weight: .bold))
+                                    .tracking(1.4)
+                                    .foregroundColor(team.color)
+                                    .lineLimit(1)
+                            }
                             if isPicked {
-                                Text("AI PICK · RACE WINNER")
+                                Text("★ AI PICK · RACE WINNER")
                                     .font(.archivoNarrow(8, weight: .bold))
-                                    .tracking(1.6)
-                                    .foregroundColor(glowColor.opacity(0.8))
+                                    .tracking(1.4)
+                                    .foregroundColor(Color(hex: "#F5F3EE").opacity(0.7))
                             } else {
                                 Text("PODIUM \(Int(d.podium.rounded()))%")
                                     .font(.mono(9, weight: .medium))
-                                    .foregroundColor(Color(hex: "#6E6F75"))
+                                    .foregroundColor(Color(hex: "#8A8F98"))
                             }
                         }
                         Spacer(minLength: 6)
-                        VStack(alignment: .trailing, spacing: 1) {
+                        VStack(alignment: .trailing, spacing: 2) {
                             Text("\(Int(d.win.rounded()))%")
-                                .font(.anton(22))
-                                .foregroundColor(isPicked ? glowColor : Color(hex: "#F5F3EE"))
+                                .font(.anton(30))
+                                .foregroundColor(team.color)
                                 .monospacedDigit()
                             Text("WIN")
-                                .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
+                                .font(.archivoNarrow(8, weight: .bold)).tracking(1.8)
                                 .foregroundColor(Color(hex: "#6E6F75"))
+                            // mini win-share bar in team color
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color(hex: "#1A1C20"))
+                                .frame(width: 56, height: 4)
+                                .overlay(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(team.color)
+                                        .frame(width: 56 * CGFloat(d.win / maxWin), height: 4)
+                                }
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color(hex: "#101114"))
-                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(isPicked ? glowColor.opacity(0.5) : Color(hex: "#22252B"),
-                                        lineWidth: 1))
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(LinearGradient(
+                                    colors: [team.color.opacity(isPicked ? 0.16 : 0.09),
+                                             Color(hex: "#0E0F12")],
+                                    startPoint: .leading, endPoint: .trailing))
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(team.color.opacity(isPicked ? 0.75 : 0.30),
+                                        lineWidth: isPicked ? 1.5 : 1)
+                        }
                     )
+                    // Constructor-colored left accent stripe.
+                    .overlay(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(team.color)
+                            .frame(width: 4)
+                            .padding(.vertical, 14)
+                            .padding(.leading, 2)
+                    }
+                    .shadow(color: isPicked ? team.color.opacity(0.25) : .clear,
+                            radius: 12, x: 0, y: 6)
                 }
                 .buttonStyle(.plain)
             }
