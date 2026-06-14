@@ -1036,7 +1036,9 @@ async function espnScoreboard(league) {
   if (!path) return [];
   // Today AND yesterday (ET): the default scoreboard drops finished
   // games at midnight, which would leave last night's finals ungraded.
-  const dates = [daysAgoISO(1), todayISO()].map((d) => d.replace(/-/g, ''));
+  const tomorrow = (() => { const d = new Date(); d.setUTCDate(d.getUTCDate() + 1);
+    return d.toLocaleDateString('en-CA', { timeZone: TZ }); })();
+  const dates = [daysAgoISO(1), todayISO(), tomorrow].map((d) => d.replace(/-/g, ''));
   const events = [];
   for (const d of dates) {
     try {
@@ -1056,9 +1058,13 @@ async function espnScoreboard(league) {
       const home = cs.find((c) => c.homeAway === 'home');
       const away = cs.find((c) => c.homeAway === 'away');
       const st = ev.status?.type || {};
+      const logoOf = (c) => c?.team?.logo
+        || (c?.team?.logos && c.team.logos[0]?.href) || null;
       return {
         homeName: home?.team?.displayName || home?.athlete?.displayName || '',
         awayName: away?.team?.displayName || away?.athlete?.displayName || '',
+        homeLogo: logoOf(home),
+        awayLogo: logoOf(away),
         homeScore: home?.score != null ? Number(home.score) : null,
         awayScore: away?.score != null ? Number(away.score) : null,
         state: st.state || 'pre',             // pre | in | post
@@ -1085,6 +1091,7 @@ async function liveTick() {
 
     const byLeague = {};
     for (const p of picks) (byLeague[p.league] ||= []).push(p);
+    const logoUpdates = [];
 
     for (const [league, leaguePicks] of Object.entries(byLeague)) {
       if (!ESPN_PATHS[league]) continue;
@@ -1103,6 +1110,14 @@ async function liveTick() {
         const status = ev.state === 'post' ? 'Final'
           : ev.state === 'in' ? 'InProgress'
           : 'Scheduled';
+        // Capture the real ESPN crest URLs (oriented to our columns)
+        // so the app never needs a hardcoded team→logo map.
+        const homeLogo = flipped ? ev.awayLogo : ev.homeLogo;
+        const awayLogo = flipped ? ev.homeLogo : ev.awayLogo;
+        if (homeLogo || awayLogo) {
+          logoUpdates.push({ id: p.game_id, home_logo: homeLogo, away_logo: awayLogo,
+                             pick_id: p.id });
+        }
         rows.push({
           game_id: p.game_id,
           sport: p.sport,
@@ -1125,6 +1140,14 @@ async function liveTick() {
         else log(`ESPN ${league}: ${rows.length} score row(s) refreshed`);
       }
     }
+    // Write captured crest URLs onto the pick rows (one update each;
+    // only the logo columns, so scores/results are untouched).
+    for (const u of logoUpdates) {
+      await supabase.from('picks')
+        .update({ home_logo: u.home_logo, away_logo: u.away_logo })
+        .eq('id', u.pick_id);
+    }
+    if (logoUpdates.length) log(`Crest URLs set on ${logoUpdates.length} pick(s)`);
   } catch (e) {
     err('Live tick crashed:', e.message);
   } finally {
@@ -1216,7 +1239,12 @@ cron.schedule('0 * * * *', () => {
 
 // Pick generation — once daily at 5am ET. The ONLY Claude entry point.
 // Grades yesterday, then generates today's picks across all leagues.
-cron.schedule('0 5 * * *', runPipeline, { timezone: TZ });
+cron.schedule('0 5 * * *', async () => {
+  await runPipeline();
+  // Backfill crest URLs immediately so morning cards aren't logoless
+  // until the first in-window live tick.
+  try { await liveTick(); } catch (e) { err('post-run logo enrich failed:', e.message); }
+}, { timezone: TZ });
 
 // Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });

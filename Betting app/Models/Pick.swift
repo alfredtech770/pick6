@@ -40,6 +40,10 @@ struct Pick: Identifiable, Codable {
     /// The AI's most-likely final score, "<home>-<away>" (home-team
     /// perspective), e.g. "2-1". Nil for fights/races or older rows.
     let predictedScore: String?
+    /// Exact ESPN crest URLs for the two teams (pipeline-captured).
+    /// Nil for athlete sports / older rows.
+    let homeLogo: String?
+    let awayLogo: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -58,6 +62,8 @@ struct Pick: Identifiable, Codable {
         case marketOdds = "market_odds"
         case oddsSource = "odds_source"
         case predictedScore = "predicted_score"
+        case homeLogo = "home_logo"
+        case awayLogo = "away_logo"
     }
 
     // Confidence tier helper
@@ -269,6 +275,8 @@ extension Pick {
         marketOdds = (try? c.decodeIfPresent(Double.self, forKey: .marketOdds)) ?? nil
         oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
         predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
+        homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
+        awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
     }
 }
 

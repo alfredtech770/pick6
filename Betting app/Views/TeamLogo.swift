@@ -19,6 +19,33 @@
 
 import SwiftUI
 
+/// Real team-crest URLs captured by the pipeline from ESPN (keyed by
+/// normalized team name). Populated from loaded picks on each refresh,
+/// so TeamLogo resolves any team's actual logo without a hardcoded
+/// name→id map. In-memory only; repopulated every launch.
+enum TeamLogoStore {
+    private static var map: [String: String] = [:]
+
+    static func normKey(_ name: String) -> String {
+        name.lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    static func register(picks: [Pick]) {
+        for p in picks {
+            if let h = p.homeLogo, !h.isEmpty { map[normKey(p.homeTeam)] = h }
+            if let a = p.awayLogo, !a.isEmpty { map[normKey(p.awayTeam)] = a }
+        }
+    }
+
+    static func url(for team: String) -> URL? {
+        guard let s = map[normKey(team)] else { return nil }
+        return URL(string: s)
+    }
+}
+
 struct TeamLogo: View {
     let sport: String
     let team: String
@@ -44,7 +71,8 @@ struct TeamLogo: View {
                         .stroke(.white.opacity(0.15), lineWidth: 1)
                 )
                 .frame(width: size.w, height: size.h)
-        } else if let url = TeamLogoLookup.url(sport: sport, team: team) {
+        } else if let url = TeamLogoStore.url(for: team)
+                    ?? TeamLogoLookup.url(sport: sport, team: team) {
             AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.25))) { phase in
                 switch phase {
                 case .success(let image):

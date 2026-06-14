@@ -3967,7 +3967,8 @@ struct LiveView: View {
                     pick: "", probability: 0, confidence: "*", reasoning: "",
                     keyFactor: nil, matchupFacts: nil, result: "pending",
                     homeScore: nil, awayScore: nil,
-                    marketOdds: nil, oddsSource: nil, predictedScore: nil)
+                    marketOdds: nil, oddsSource: nil, predictedScore: nil,
+                    homeLogo: nil, awayLogo: nil)
     }
 
     /// Status-pill 3-state classifier:

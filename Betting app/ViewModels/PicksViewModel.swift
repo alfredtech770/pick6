@@ -453,6 +453,7 @@ class PicksViewModel: ObservableObject {
         // tournament fixtures) — so crests and headshots are already
         // cached while the splash loader is still on screen and no
         // card ever flashes a placeholder.
+        TeamLogoStore.register(picks: t + y + h)
         LogoPrefetch.warm(picks: t + y + h)
     }
 
@@ -638,6 +639,7 @@ class PicksViewModel: ObservableObject {
     // MARK: - Helpers
 
     private func applyPickUpdate(_ updated: Pick) {
+        TeamLogoStore.register(picks: [updated])
         if let i = todayPicks.firstIndex(where: { $0.id == updated.id }) {
             todayPicks[i] = updated
         }
