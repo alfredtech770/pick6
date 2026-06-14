@@ -2621,6 +2621,7 @@ struct ProfileView: View {
 
     @State private var showEditProfile: Bool = false
     @State private var showDeleteAccountConfirm: Bool = false
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -2935,7 +2936,11 @@ struct ProfileView: View {
                         title: loc.t(.settings_help_center),
                         sub: "FAQs · contact us",
                         trailing: nil,
-                        action: {}
+                        action: {
+                            if let url = URL(string: "mailto:support@pick1.live") {
+                                openURL(url)
+                            }
+                        }
                     )
                     divider
                     settingsLinkRow(
