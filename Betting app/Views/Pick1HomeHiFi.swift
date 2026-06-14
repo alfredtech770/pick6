@@ -1162,6 +1162,7 @@ struct WinsThisWeekTile: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(wins)")
@@ -1169,6 +1170,8 @@ struct WinsThisWeekTile: View {
                     .foregroundColor(Color(hex: "#D4FF3A"))
                     .tracking(-1.4)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .contentTransition(.numericText())
                 Text(wins == 1 ? "win" : "wins")
                     .font(.archivo(18, weight: .bold))
@@ -1187,7 +1190,9 @@ struct WinsThisWeekTile: View {
                 Text("OF \(games) THIS WEEK")
                     .font(.mono(10, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Spacer()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 4)
                 if losses > 0 {
                     Text("\(wins)-\(losses)")
                         .font(.mono(10, weight: .bold))
@@ -1196,7 +1201,7 @@ struct WinsThisWeekTile: View {
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
 }
@@ -1226,6 +1231,7 @@ struct AccuracyTile: View {
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineLimit(1)
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(mood == .empty ? "—" : "\(Int(accuracy.rounded()))")
@@ -1233,6 +1239,8 @@ struct AccuracyTile: View {
                     .foregroundColor(numberColor)
                     .tracking(-1.4)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .contentTransition(.numericText())
                 if mood != .empty {
                     Text("%")
@@ -1261,13 +1269,15 @@ struct AccuracyTile: View {
                     Text("\(record.wins)-\(record.losses) LAST \(record.wins + record.losses)")
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                Spacer()
+                Spacer(minLength: 4)
                 trailingBadge
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(tileBackground)
     }
 
