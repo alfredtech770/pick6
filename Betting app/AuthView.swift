@@ -144,8 +144,21 @@ struct AuthView: View {
                         }
                     case .failure(let error):
                         guard let authError = error as? ASAuthorizationError else {
+                            Analytics.track("apple_signin_failed", [
+                                "stage": "authorization",
+                                "message": String(String(describing: error).prefix(200)),
+                            ])
                             authManager.error = "Apple Sign In failed. Please try again."
                             return
+                        }
+                        // Log every non-cancel authorization failure with its
+                        // ASAuthorizationError code so iPad/device-specific
+                        // failures are diagnosable from analytics.
+                        if authError.code != .canceled {
+                            Analytics.track("apple_signin_failed", [
+                                "stage": "authorization",
+                                "code": authError.code.rawValue,
+                            ])
                         }
                         switch authError.code {
                         case .canceled:

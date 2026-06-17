@@ -338,6 +338,13 @@ final class AuthManager {
             )
             isLoading = false
         } catch {
+            // Capture the EXACT server-side reason (e.g. "Unacceptable
+            // audience in id_token") so a SIWA failure is never a blind
+            // guess again — surfaces in PostHog even when we can't repro.
+            Analytics.track("apple_signin_failed", [
+                "stage": "supabase_token_exchange",
+                "message": String(String(describing: error).prefix(300)),
+            ])
             self.error = friendlyError(error)
             isLoading = false
         }
