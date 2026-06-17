@@ -279,7 +279,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Betting app/Betting app.entitlements";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = S33MH59G79;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -330,7 +330,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Betting app/Betting app.entitlements";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = S33MH59G79;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
