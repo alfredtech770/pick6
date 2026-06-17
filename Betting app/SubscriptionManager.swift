@@ -28,6 +28,7 @@
 
 import Foundation
 import Combine
+import Supabase
 import StoreKit
 import SwiftUI
 
@@ -206,7 +207,15 @@ final class SubscriptionManager: ObservableObject {
         lastError = nil
 
         do {
-            let result = try await product.purchase()
+            // Tag the purchase with the signed-in user's UUID. Apple echoes
+            // this back as `appAccountToken` in every App Store Server
+            // Notification, which is how the `apple-notifications` webhook maps
+            // a subscription to a row in `public.subscriptions`.
+            var options: Set<Product.PurchaseOption> = []
+            if let uid = SupabaseManager.client.auth.currentSession?.user.id {
+                options.insert(.appAccountToken(uid))
+            }
+            let result = try await product.purchase(options: options)
             switch result {
             case .success(let verification):
                 let transaction = try Self.checkVerified(verification)
