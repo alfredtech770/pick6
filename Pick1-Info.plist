@@ -26,6 +26,10 @@
 	<string>public.app-category.sports</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>telephony</string>
+	</array>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>We use this to measure ad performance and improve your experience. Your data is never sold.</string>
 	<key>SKAdNetworkItems</key>
