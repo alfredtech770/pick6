@@ -115,6 +115,15 @@ final class SubscriptionManager: ObservableObject {
 
     private var transactionListenerTask: Task<Void, Never>?
 
+    /// Grace window after a successful purchase during which
+    /// `refreshEntitlements()` must NOT downgrade us back to Free.
+    /// StoreKit's `Transaction.currentEntitlements` settles
+    /// asynchronously, so a re-query fired immediately after a buy can
+    /// momentarily return empty — which is exactly the "paid but the app
+    /// didn't unlock" bug. We grant optimistically from the verified
+    /// transaction and hold it until currentEntitlements catches up.
+    private var optimisticEntitlementUntil: Date = .distantPast
+
     init() {
         // Always start listening before checking entitlements so we don't
         // miss a purchase that completes mid-app-launch.
@@ -248,7 +257,18 @@ final class SubscriptionManager: ObservableObject {
             switch result {
             case .success(let verification):
                 let transaction = try Self.checkVerified(verification)
+                // Grant Pro IMMEDIATELY from the transaction we just
+                // verified — do NOT wait on a currentEntitlements re-query,
+                // which can lag and leave the buyer locked. This is the
+                // unlock the user sees the instant the purchase clears.
+                self.isPro = true
+                self.activeProductId = transaction.productID
+                self.activeExpiration = transaction.expirationDate
+                self.optimisticEntitlementUntil = Date().addingTimeInterval(60)
                 await transaction.finish()
+                // Reconcile against StoreKit's source of truth. Guarded by
+                // the grace window above so it can't bounce us back to Free
+                // while currentEntitlements is still settling.
                 await refreshEntitlements()
                 // The trial is now consumed — reflect ineligibility so a
                 // later visit to the paywall shows full-price copy.
@@ -324,6 +344,10 @@ final class SubscriptionManager: ObservableObject {
             self.isPro = true
             self.activeProductId = tx.productID
             self.activeExpiration = tx.expirationDate
+        } else if Date() < optimisticEntitlementUntil {
+            // A purchase just completed but currentEntitlements hasn't
+            // settled yet. Hold the optimistic grant rather than flipping
+            // the freshly-paid user back to Free for a few seconds.
         } else {
             self.isPro = false
             self.activeProductId = nil
