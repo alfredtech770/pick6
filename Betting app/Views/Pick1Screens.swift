@@ -4130,14 +4130,18 @@ struct LiveView: View {
                 }
                 .frame(maxWidth: .infinity)
                 if let s = score, let h = s.homeScore, let a = s.awayScore {
+                    // Winning team's score in white; the trailing team darker.
+                    let winWhite = Color(hex: "#FFFFFF")
+                    let loseDark = Color(hex: "#5C6069")
+                    let tie      = Color(hex: "#B9B7B0")
                     HStack(spacing: 6) {
                         Text("\(a)")
                             .font(.anton(30))
-                            .foregroundColor(a > h ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                            .foregroundColor(a == h ? tie : (a > h ? winWhite : loseDark))
                         Text("–").font(.anton(16)).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(h)")
                             .font(.anton(30))
-                            .foregroundColor(h > a ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                            .foregroundColor(a == h ? tie : (h > a ? winWhite : loseDark))
                     }
                 } else {
                     HStack(spacing: 6) {
@@ -4156,13 +4160,17 @@ struct LiveView: View {
                 .frame(maxWidth: .infinity)
             }
 
-            // Game-progress bar — 4pt lime fill over a panel-2 track.
-            // Without a true clock feed we approximate from the period.
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: "#22252B"))
-                    Capsule().fill(Color(hex: "#D4FF3A"))
-                        .frame(width: geo.size.width * gameProgress(score))
+            // Game-progress bar — 4pt lime fill that climbs with real elapsed
+            // game time. TimelineView re-evaluates every 30s so it advances on
+            // its own, not just when a score update arrives.
+            TimelineView(.periodic(from: .now, by: 30)) { _ in
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color(hex: "#22252B"))
+                        Capsule().fill(Color(hex: "#D4FF3A"))
+                            .frame(width: geo.size.width * gameProgress(score))
+                            .animation(.easeOut(duration: 0.6), value: gameProgress(score))
+                    }
                 }
             }
             .frame(height: 4)
@@ -4207,15 +4215,41 @@ struct LiveView: View {
     /// fall back to a status heuristic.
     private func gameProgress(_ score: LiveScore?) -> CGFloat {
         guard let s = score else { return 0 }
-        if let qStr = s.quarter, let q = Int(qStr) {
-            // Q1=0.25, Q2=0.5, Q3=0.75, Q4=0.95 (leave headroom for OT)
-            switch pick(of: s).sport {
-            case "basketball", "football": return min(0.95, CGFloat(q) * 0.25)
-            case "hockey":                  return min(0.95, CGFloat(q) * 0.33)
-            default:                        return 0.5
+        if (s.status ?? "").uppercased().contains("FINAL") { return 1.0 }
+        guard s.isLive else { return 0.0 }
+        // Primary: real wall-clock elapsed since kickoff over a typical game
+        // length — so the bar climbs continuously as the game goes on.
+        if let start = s.startTime {
+            let elapsed = Date().timeIntervalSince(start)
+            if elapsed > 0 {
+                return max(0.04, min(0.97, CGFloat(elapsed / typicalGameDuration(s.sport))))
             }
         }
-        return s.isLive ? 0.5 : 0.0
+        // Fallback: period-based when we have a quarter but no usable start.
+        if let qStr = s.quarter, let q = Int(qStr) {
+            switch s.sport {
+            case "basketball", "football": return min(0.95, CGFloat(q) * 0.25)
+            case "hockey":                 return min(0.95, CGFloat(q) * 0.33)
+            default:                       return min(0.95, CGFloat(q) * 0.25)
+            }
+        }
+        return 0.5
+    }
+
+    /// Rough wall-clock length of a typical game per sport, used to map
+    /// elapsed time → a 0…1 progress bar when there's no live clock feed.
+    private func typicalGameDuration(_ sport: String) -> TimeInterval {
+        switch sport {
+        case "basketball": return 2.3 * 3600
+        case "football":   return 3.1 * 3600
+        case "soccer":     return 2.0 * 3600   // 90' + half-time + stoppage
+        case "baseball":   return 3.1 * 3600
+        case "hockey":     return 2.5 * 3600
+        case "cricket":    return 3.6 * 3600   // T20
+        case "f1":         return 2.0 * 3600
+        case "combat":     return 1.5 * 3600
+        default:           return 2.5 * 3600
+        }
     }
 
     /// Helper to look up the pick that owns a given live_score row,
