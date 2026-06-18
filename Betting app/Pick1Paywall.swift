@@ -238,10 +238,10 @@ struct OBPaywallScreen: View {
     private var toggle: some View {
         HStack(spacing: 6) {
             toggleSegment(.weekly,
-                          label: "Weekly", price: "$14.99", per: "/wk",
+                          label: "Weekly", price: priceText(.weekly), per: "/wk",
                           showSave: false)
             toggleSegment(.monthly,
-                          label: "Monthly", price: "$39.99", per: "/mo",
+                          label: "Monthly", price: priceText(.monthly), per: "/mo",
                           showSave: true)
         }
         .padding(6)
@@ -312,12 +312,13 @@ struct OBPaywallScreen: View {
                     .foregroundColor(.p1Mute)
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("$")
-                        .font(.custom("BarlowCondensed-Black", size: 28))
-                        .foregroundColor(.p1Ink2)
-                    Text(copy.price)
-                        .font(.custom("BarlowCondensed-Black", size: 54))
+                    // Full localized price incl. the storefront's own currency
+                    // symbol ($, €, £, ¥ …) — never a hardcoded dollar sign.
+                    Text(priceText(plan))
+                        .font(.custom("BarlowCondensed-Black", size: 50))
                         .foregroundColor(.p1Foreground)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                     Text(copy.per)
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundColor(.p1Mute)
@@ -537,8 +538,9 @@ struct OBPaywallScreen: View {
         //   • Renewal terms (auto, cancel window)
         //   • That payment goes through Apple
         // Localized so the disclosure is honored in the user's language.
-        let copy = loc.t(plan == .weekly ? .paywall_fineprint_weekly
-                                         : .paywall_fineprint_monthly)
+        let copy = String(format: loc.t(plan == .weekly ? .paywall_fineprint_weekly
+                                                         : .paywall_fineprint_monthly),
+                          priceText(plan))
         return Text(copy)
             .font(.system(size: 10))
             .foregroundColor(.p1Mute)
@@ -662,7 +664,7 @@ struct OBPaywallScreen: View {
                             .textCase(.uppercase)
                             .foregroundColor(.p1LimeInk)
                     case .ready:
-                        Text(loc.t(plan == .monthly ? .paywall_cta_trial : .paywall_cta_subscribe))
+                        Text(loc.t(.paywall_cta_trial))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)
@@ -736,7 +738,8 @@ struct OBPaywallScreen: View {
             // Required subscription disclosure (App Review 3.1.2(c)): trial
             // length + price billed after trial + auto-renewal, shown clearly
             // and legibly right at the purchase action — not buried fine print.
-            Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
+            Text(String(format: loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly),
+                        priceText(plan)))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.p1Ink2)
                 .multilineTextAlignment(.center)
@@ -750,6 +753,19 @@ struct OBPaywallScreen: View {
             ? "weekly"
             : "monthly"
         return subs.products.first { $0.id.lowercased().contains(needle) }
+    }
+
+    /// The StoreKit product backing a plan (so we can read its localized price).
+    private func product(for plan: PaywallPlan) -> Product? {
+        let needle = plan == .weekly ? "weekly" : "monthly"
+        return subs.products.first { $0.id.lowercased().contains(needle) }
+    }
+
+    /// Localized storefront price — "$14.99" in the US, "14,99 €" in France,
+    /// "£11.99" in the UK, etc. StoreKit formats it for the user's region.
+    /// Falls back to the hardcoded copy only until products finish loading.
+    private func priceText(_ plan: PaywallPlan) -> String {
+        product(for: plan)?.displayPrice ?? "$\(planCopy[plan]!.price)"
     }
 
     private func triggerPurchase() {
