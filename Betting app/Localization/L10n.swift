@@ -141,6 +141,14 @@ enum L10nKey: String, CaseIterable {
     case paywall_fineprint_monthly
     case paywall_then_weekly               // "Then $14.99/week · Cancel anytime"
     case paywall_then_monthly
+    // No-trial variants — shown once the Apple ID has already used its
+    // one introductory free trial (Apple grants exactly one per
+    // subscription group, never reset by cancelling). These promise no
+    // trial and bill immediately.
+    case paywall_then_weekly_notrial       // "$14.99/week · Auto-renews · Cancel anytime"
+    case paywall_then_monthly_notrial
+    case paywall_fineprint_weekly_notrial
+    case paywall_fineprint_monthly_notrial
     case paywall_cta_trial
     case paywall_cta_subscribe             // weekly (no trial) CTA
     case paywall_restore

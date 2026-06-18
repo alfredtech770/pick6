@@ -538,9 +538,7 @@ struct OBPaywallScreen: View {
         //   • Renewal terms (auto, cancel window)
         //   • That payment goes through Apple
         // Localized so the disclosure is honored in the user's language.
-        let copy = String(format: loc.t(plan == .weekly ? .paywall_fineprint_weekly
-                                                         : .paywall_fineprint_monthly),
-                          priceText(plan))
+        let copy = String(format: loc.t(fineprintKey), priceText(plan))
         return Text(copy)
             .font(.system(size: 10))
             .foregroundColor(.p1Mute)
@@ -664,7 +662,12 @@ struct OBPaywallScreen: View {
                             .textCase(.uppercase)
                             .foregroundColor(.p1LimeInk)
                     case .ready:
-                        Text(loc.t(.paywall_cta_trial))
+                        // Only promise a free trial to an Apple ID that's
+                        // still eligible for one. A returning user who
+                        // already used theirs sees "Subscribe Now" — Apple
+                        // won't grant a second trial regardless, so the CTA
+                        // must not claim it would.
+                        Text(loc.t(subs.introOfferEligible ? .paywall_cta_trial : .paywall_cta_subscribe))
                             .font(.custom("BarlowCondensed-Black", size: 15))
                             .kerning(2.6)
                             .textCase(.uppercase)
@@ -738,8 +741,9 @@ struct OBPaywallScreen: View {
             // Required subscription disclosure (App Review 3.1.2(c)): trial
             // length + price billed after trial + auto-renewal, shown clearly
             // and legibly right at the purchase action — not buried fine print.
-            Text(String(format: loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly),
-                        priceText(plan)))
+            // Switches to no-trial wording once the trial's been used so we
+            // never disclose a "3 days free" that Apple won't honor.
+            Text(String(format: loc.t(thenKey), priceText(plan)))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.p1Ink2)
                 .multilineTextAlignment(.center)
@@ -766,6 +770,26 @@ struct OBPaywallScreen: View {
     /// Falls back to the hardcoded copy only until products finish loading.
     private func priceText(_ plan: PaywallPlan) -> String {
         product(for: plan)?.displayPrice ?? "$\(planCopy[plan]!.price)"
+    }
+
+    /// The "then …" disclosure key for the selected plan — trial wording
+    /// while the Apple ID is still trial-eligible, no-trial wording once
+    /// the single per-Apple-ID introductory offer has been consumed.
+    private var thenKey: L10nKey {
+        if subs.introOfferEligible {
+            return plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly
+        } else {
+            return plan == .weekly ? .paywall_then_weekly_notrial : .paywall_then_monthly_notrial
+        }
+    }
+
+    /// Same trial / no-trial split for the longer 3.1.2 fine-print block.
+    private var fineprintKey: L10nKey {
+        if subs.introOfferEligible {
+            return plan == .weekly ? .paywall_fineprint_weekly : .paywall_fineprint_monthly
+        } else {
+            return plan == .weekly ? .paywall_fineprint_weekly_notrial : .paywall_fineprint_monthly_notrial
+        }
     }
 
     private func triggerPurchase() {

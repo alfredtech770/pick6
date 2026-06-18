@@ -56,6 +56,18 @@ final class SubscriptionManager: ObservableObject {
     /// Last error from a purchase attempt, surfaced to the UI.
     @Published var lastError: String?
 
+    /// Whether this Apple ID can still receive the introductory free
+    /// trial. Apple grants exactly ONE introductory offer per
+    /// subscription group per Apple ID (and its Family Sharing group) —
+    /// once it's been used, cancelling and re-subscribing does NOT make
+    /// the user eligible again; they pay full price from the next
+    /// purchase on. We mirror Apple's server-side rule here so the
+    /// paywall stops advertising a "3-day free trial" to a returning
+    /// user who's already burned theirs, and shows straight subscribe
+    /// copy + pricing instead. Defaults to `true` (a brand-new Apple ID
+    /// is eligible) until StoreKit tells us otherwise.
+    @Published private(set) var introOfferEligible: Bool = true
+
     // MARK: - Product load state
     //
     // Background: App Review rejected build 6 with "the SUBSCRIBE NOW button
@@ -181,6 +193,7 @@ final class SubscriptionManager: ObservableObject {
                 self.lastLoadError = "Subscriptions aren't available right now. Tap retry, or check your connection."
             } else {
                 self.productsLoadState = .loaded
+                await refreshIntroEligibility()
             }
         } catch {
             self.productsLoadState = .failed
@@ -195,6 +208,22 @@ final class SubscriptionManager: ObservableObject {
     /// but named for intent at the call site.
     func reloadProducts() async {
         await loadProducts()
+    }
+
+    /// Recomputes `introOfferEligible` from StoreKit. Eligibility is a
+    /// property of the whole subscription group, so any product in the
+    /// group answers for all of them. StoreKit derives the answer from
+    /// the Apple ID's transaction history (including past trials on this
+    /// device / Family Sharing group), so a user who cancels after their
+    /// trial correctly comes back ineligible.
+    func refreshIntroEligibility() async {
+        guard let sub = products.compactMap({ $0.subscription }).first else { return }
+        // No intro offer configured at all → nothing to be eligible for.
+        guard sub.introductoryOffer != nil else {
+            self.introOfferEligible = false
+            return
+        }
+        self.introOfferEligible = await sub.isEligibleForIntroOffer
     }
 
     // MARK: - Purchase
@@ -221,6 +250,9 @@ final class SubscriptionManager: ObservableObject {
                 let transaction = try Self.checkVerified(verification)
                 await transaction.finish()
                 await refreshEntitlements()
+                // The trial is now consumed — reflect ineligibility so a
+                // later visit to the paywall shows full-price copy.
+                await refreshIntroEligibility()
                 Analytics.subscribed(
                     amount: NSDecimalNumber(decimal: product.price).doubleValue,
                     currency: product.priceFormatStyle.currencyCode,
@@ -258,6 +290,7 @@ final class SubscriptionManager: ObservableObject {
             // through `StoreKit.Transaction.currentEntitlements`.
             try await AppStore.sync()
             await refreshEntitlements()
+            await refreshIntroEligibility()
         } catch {
             lastError = error.localizedDescription
         }
