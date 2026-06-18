@@ -733,9 +733,15 @@ struct OBPaywallScreen: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
         } else {
+            // Required subscription disclosure (App Review 3.1.2(c)): trial
+            // length + price billed after trial + auto-renewal, shown clearly
+            // and legibly right at the purchase action — not buried fine print.
             Text(loc.t(plan == .weekly ? .paywall_then_weekly : .paywall_then_monthly))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.p1Mute)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.p1Ink2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
         }
     }
 
