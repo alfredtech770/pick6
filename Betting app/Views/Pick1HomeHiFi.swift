@@ -418,10 +418,8 @@ struct HomeHiFiContent: View {
         // Pull-to-refresh — for a sports app the user opens at game
         // time, "tug down to fetch new scores" is muscle memory. Reuses
         // the same loadAll() path that runs on `.task`.
-        .refreshable {
-            await vm.loadAll()
-            Haptics.success()
-        }
+        // Pull-to-refresh removed — a manual refresh re-ran loadAll and briefly
+        // emptied the slate. Realtime + the .task load keep picks fresh.
         .fullScreenCover(isPresented: $showSummerFootball) {
             SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false })
         }

@@ -454,7 +454,15 @@ final class AuthManager {
                         await self.loadProfile(userId: userId)
                     }
                 case .signedOut:
-                    self.clearLocalUserState()
+                    // Rapid, concurrent Supabase calls (e.g. fast nav-bar
+                    // tapping firing loadAll + realtime at once) can lose a
+                    // refresh-token-rotation race and surface a SPURIOUS
+                    // .signedOut while a valid session is still on the device.
+                    // Only clear state when the session is genuinely gone — a
+                    // real sign-out leaves no session in the keychain.
+                    if SupabaseManager.client.auth.currentSession == nil {
+                        self.clearLocalUserState()
+                    }
                 default:
                     break
                 }

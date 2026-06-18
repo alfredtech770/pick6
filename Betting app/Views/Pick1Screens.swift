@@ -1920,10 +1920,7 @@ struct SportHubView: View {
                     Spacer().frame(height: 140)
                 }
             }
-            .refreshable {
-                await vm.loadAll()
-                Haptics.success()
-            }
+            // Pull-to-refresh removed — it re-ran loadAll and briefly emptied the slate.
         }
         .preferredColorScheme(.dark)
     }
@@ -3426,10 +3423,7 @@ struct WinsView: View {
                 Spacer().frame(height: 140)
             }
         }
-        .refreshable {
-            await vm.loadAll()
-            Haptics.success()
-        }
+        // Pull-to-refresh removed — it re-ran loadAll and briefly emptied the slate.
     }
 
     /// Favorited picks (any state — pending / win / loss) the user
@@ -3797,10 +3791,7 @@ struct LiveView: View {
                 Spacer().frame(height: 140)
             }
         }
-        .refreshable {
-            await vm.loadAll()
-            Haptics.success()
-        }
+        // Pull-to-refresh removed — it re-ran loadAll and briefly emptied the slate.
     }
 
     /// Active-tab content. All Live → today's in-progress games (across
