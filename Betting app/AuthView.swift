@@ -139,8 +139,14 @@ struct AuthView: View {
                             authManager.error = "Apple Sign In failed. Please try again."
                             return
                         }
+                        // Apple includes the name only on the very first
+                        // authorization — capture it here and hand it through.
+                        let given = credential.fullName?.givenName
+                        let family = credential.fullName?.familyName
                         Task {
-                            await authManager.signInWithApple(idToken: idToken, nonce: appleNonce)
+                            await authManager.signInWithApple(
+                                idToken: idToken, nonce: appleNonce,
+                                firstName: given, lastName: family)
                         }
                     case .failure(let error):
                         guard let authError = error as? ASAuthorizationError else {

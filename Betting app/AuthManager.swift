@@ -222,6 +222,14 @@ final class AuthManager {
                 ))
                 .execute()
 
+            // Mirror the name into user metadata too, so it lands in the
+            // signups analytics table (covers email users who set their name
+            // here rather than via Apple). Best-effort.
+            try? await SupabaseManager.client.auth.update(
+                user: UserAttributes(data: ["first_name": .string(firstName),
+                                            "last_name":  .string(lastName)])
+            )
+
             self.firstName = firstName
             self.lastName  = lastName
             self.whatsapp  = whatsapp
@@ -329,13 +337,25 @@ final class AuthManager {
 
     // MARK: - Apple Sign In
 
-    func signInWithApple(idToken: String, nonce: String) async {
+    func signInWithApple(idToken: String, nonce: String,
+                         firstName: String? = nil, lastName: String? = nil) async {
         isLoading = true
         error = nil
         do {
             try await SupabaseManager.client.auth.signInWithIdToken(
                 credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
             )
+            // Apple only sends the user's name on their FIRST authorization —
+            // persist it to user metadata now (a DB trigger mirrors it into the
+            // signups table). Best-effort; never blocks sign-in.
+            let fn = firstName?.trimmingCharacters(in: .whitespaces) ?? ""
+            let ln = lastName?.trimmingCharacters(in: .whitespaces) ?? ""
+            if !fn.isEmpty || !ln.isEmpty {
+                try? await SupabaseManager.client.auth.update(
+                    user: UserAttributes(data: ["first_name": .string(fn),
+                                                "last_name":  .string(ln)])
+                )
+            }
             isLoading = false
         } catch {
             // Capture the EXACT server-side reason (e.g. "Unacceptable
