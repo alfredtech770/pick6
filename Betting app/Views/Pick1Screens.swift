@@ -3749,6 +3749,301 @@ struct WinsView: View {
 }
 
 // ════════════════════════════════════════════════════════════════
+// MARK: - Prediction history (won / lost track record)
+// ════════════════════════════════════════════════════════════════
+
+/// Tapping the WINS / ACCURACY tiles opens this sheet: every graded
+/// pick we made — won or lost — newest first, each row tagged with the
+/// payout the pick would have returned (green +X% for a win, the
+/// foregone +X% in red for a loss). Pending picks are excluded; this is
+/// strictly the settled track record.
+struct PredictionHistoryView: View {
+    @ObservedObject var vm: PicksViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    /// All / Won / Lost filter.
+    private enum Filter: String, CaseIterable { case all = "ALL", won = "WON", lost = "LOST" }
+    @State private var filter: Filter = .all
+
+    var body: some View {
+        VStack(spacing: 0) {
+            grabber
+            header
+            filterRow
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
+
+            if visiblePicks.isEmpty {
+                Spacer()
+                emptyState
+                Spacer()
+            } else {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 8) {
+                        ForEach(visiblePicks) { p in
+                            historyRow(pick: p)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 28)
+                }
+            }
+        }
+        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+    }
+
+    // MARK: data
+
+    /// Settled picks across history + yesterday, de-duplicated by id,
+    /// newest first. yesterdayPicks can hold freshly-graded rows that
+    /// haven't migrated into historyPicks yet, so we merge both.
+    private var settledPicks: [Pick] {
+        var byId: [UUID: Pick] = [:]
+        for p in vm.historyPicks where p.isWin || p.isLoss { byId[p.id] = p }
+        for p in vm.yesterdayPicks where p.isWin || p.isLoss { byId[p.id] = p }
+        return byId.values.sorted {
+            ($0.gameDate, $0.createdAt ?? Date.distantPast)
+                > ($1.gameDate, $1.createdAt ?? Date.distantPast)
+        }
+    }
+
+    private var visiblePicks: [Pick] {
+        switch filter {
+        case .all:  return settledPicks
+        case .won:  return settledPicks.filter { $0.isWin }
+        case .lost: return settledPicks.filter { $0.isLoss }
+        }
+    }
+
+    private var wonCount: Int { settledPicks.filter { $0.isWin }.count }
+    private var lostCount: Int { settledPicks.filter { $0.isLoss }.count }
+
+    // MARK: chrome
+
+    private var grabber: some View {
+        Capsule()
+            .fill(Color(hex: "#2D3038"))
+            .frame(width: 38, height: 5)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("TRACK")
+                    .font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
+                + Text(" RECORD.")
+                    .font(.anton(26)).foregroundColor(Color(hex: "#D4FF3A"))
+                Text("\(wonCount)–\(lostCount) ON GRADED PICKS")
+                    .font(.archivoNarrow(10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+            Spacer()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .heavy))
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(Color(hex: "#16181C")))
+                    .overlay(Circle().stroke(Color(hex: "#22252B"), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private var filterRow: some View {
+        HStack(spacing: 8) {
+            ForEach(Filter.allCases, id: \.self) { f in
+                let count = f == .all ? settledPicks.count : (f == .won ? wonCount : lostCount)
+                Button {
+                    Haptics.tap()
+                    filter = f
+                } label: {
+                    Text("\(f.rawValue) \(count)")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(1.6)
+                        .foregroundColor(filter == f ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule().fill(filter == f ? Color(hex: "#D4FF3A") : Color(hex: "#101114"))
+                        )
+                        .overlay(
+                            Capsule().stroke(filter == f ? Color.clear : Color(hex: "#22252B"), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 34))
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text("No graded picks yet")
+                .font(.anton(20))
+                .foregroundColor(Color(hex: "#F5F3EE"))
+            Text("Won and lost predictions will show up here\nonce today's games are scored.")
+                .font(.archivo(12, weight: .regular))
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 40)
+    }
+
+    // MARK: row
+
+    /// One settled pick: league · date tag, mirrored matchup with the
+    /// final score, a W/L badge, and the payout tag — what the pick
+    /// returned (win) or what it would have returned (loss).
+    private func historyRow(pick: Pick) -> some View {
+        let won = pick.isWin
+        let pickedHome = pick.pick.lowercased().contains(pick.homeTeam.lowercased())
+        let pickedAway = pick.pick.lowercased().contains(pick.awayTeam.lowercased())
+        // Strike the team that didn't win.
+        let homeWon = (pick.homeScore ?? 0) > (pick.awayScore ?? 0)
+        let awayWon = (pick.awayScore ?? 0) > (pick.homeScore ?? 0)
+        let homeStrike = !homeWon && (pick.homeScore != nil)
+        let awayStrike = !awayWon && (pick.awayScore != nil)
+        _ = (pickedHome, pickedAway)
+
+        return VStack(spacing: 0) {
+            HStack {
+                Text("\(pick.league.uppercased()) · \(relativeGameDate(pick.gameDate)) · FINAL")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#B9B7B0"))
+                Spacer()
+                resultBadge(won: won)
+            }
+            .padding(.bottom, 12)
+
+            HStack(alignment: .center, spacing: 10) {
+                HStack(spacing: 9) {
+                    TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .small)
+                    Text(teamShortName(pick.homeTeam, sport: pick.sport))
+                        .font(.anton(17))
+                        .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let h = pick.homeScore, let a = pick.awayScore {
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text("\(h)").font(.anton(22)).fontWeight(.black)
+                            .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        Text("–").font(.anton(13)).foregroundColor(Color(hex: "#6E6F75"))
+                        Text("\(a)").font(.anton(22)).fontWeight(.black)
+                            .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                    }
+                } else {
+                    Text("VS").font(.archivoNarrow(11, weight: .bold))
+                        .tracking(2).foregroundColor(Color(hex: "#6E6F75"))
+                }
+
+                HStack(spacing: 9) {
+                    Text(teamShortName(pick.awayTeam, sport: pick.sport))
+                        .font(.anton(17))
+                        .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
+                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
+                        .lineLimit(1)
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            HStack(spacing: 8) {
+                Text("AI PICK")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text(pick.displayPick.uppercased())
+                    .font(.archivo(11, weight: .bold))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .lineLimit(1)
+                Spacer()
+                payoutTag(pick: pick, won: won)
+            }
+            .padding(.top, 10)
+            .overlay(alignment: .top) {
+                DashedLine()
+                    .stroke(Color(hex: "#22252B"),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .frame(height: 1)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color(hex: "#1B1D22"), lineWidth: 1)
+                )
+        )
+    }
+
+    @ViewBuilder
+    private func resultBadge(won: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: won ? "checkmark" : "xmark")
+                .font(.system(size: 9, weight: .heavy))
+            Text(won ? "WON" : "LOST")
+                .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+        }
+        .foregroundColor(won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36"))
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background((won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36")).opacity(0.1))
+        .overlay(Capsule().stroke((won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36")).opacity(0.3), lineWidth: 1))
+        .clipShape(Capsule())
+    }
+
+    /// The money tag the user asked for: a win shows the payout it
+    /// returned in green ("+83%"); a loss shows the same potential
+    /// return it would have paid, in red, so the cost of the miss is
+    /// explicit.
+    @ViewBuilder
+    private func payoutTag(pick: Pick, won: Bool) -> some View {
+        let pct = pick.potentialReturnPercent
+        HStack(spacing: 4) {
+            Image(systemName: won ? "arrow.up.right" : "arrow.down.right")
+                .font(.system(size: 9, weight: .heavy))
+            Text("\(pct >= 0 ? "+" : "")\(pct)%")
+                .font(.archivoNarrow(11, weight: .heavy))
+                .tracking(0.5)
+        }
+        .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#FF5A36"))
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(
+            Capsule().fill(won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36").opacity(0.12))
+        )
+        .overlay(
+            Capsule().stroke(won ? Color.clear : Color(hex: "#FF5A36").opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    /// "TODAY", "YESTERDAY", "N DAYS AGO" — local copy so the view is
+    /// self-contained (WinsView keeps its own private one).
+    private func relativeGameDate(_ ymd: String) -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        guard let d = f.date(from: ymd) else { return ymd.uppercased() }
+        let cal = Calendar.current
+        if cal.isDateInToday(d)     { return "TODAY" }
+        if cal.isDateInYesterday(d) { return "YESTERDAY" }
+        let days = cal.dateComponents([.day], from: d, to: Date()).day ?? 0
+        return "\(days) DAYS AGO"
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
 // MARK: - Live (in-play tracker)
 // ════════════════════════════════════════════════════════════════
 

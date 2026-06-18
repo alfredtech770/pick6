@@ -80,6 +80,18 @@ struct Pick: Identifiable, Codable {
     var isLoss: Bool { result == "loss" }
     var isPending: Bool { result == "pending" }
 
+    /// Decimal payout odds — real market odds when the pipeline captured
+    /// them, otherwise implied from the AI's confidence. Same logic the
+    /// detail page uses for its payout multiplier.
+    var decimalOdds: Double {
+        if let m = marketOdds, m > 1.0 { return m }
+        let p = max(0.40, min(0.90, probability / 100.0))
+        return max(1.20, 1.0 / p)
+    }
+
+    /// Profit %, if this pick hit, on a unit stake — e.g. +83 for 1.83x.
+    var potentialReturnPercent: Int { Int(((decimalOdds - 1.0) * 100).rounded()) }
+
     /// Refund-guarantee eligibility: any pick the AI calls at 85%+
     /// carries the "we refund it if it loses" tag. Fulfillment is
     /// out-of-band (user submits a claim form; honored as a

@@ -254,6 +254,8 @@ struct HomeHiFiContent: View {
 
     /// Drives the Summer Football hub presentation (full-screen cover).
     @State private var showSummerFootball = false
+    /// Won/lost prediction history sheet (opened from the stats tiles).
+    @State private var showHistory = false
 
     var body: some View {
         ScrollView {
@@ -282,7 +284,8 @@ struct HomeHiFiContent: View {
                          delta: vm.accuracyDelta(),
                          record: vm.recentRecord(),
                          mood: vm.accuracyMood,
-                         last10: vm.last10Results)
+                         last10: vm.last10Results,
+                         onTap: { showHistory = true })
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -422,6 +425,9 @@ struct HomeHiFiContent: View {
         // emptied the slate. Realtime + the .task load keep picks fresh.
         .fullScreenCover(isPresented: $showSummerFootball) {
             SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false })
+        }
+        .sheet(isPresented: $showHistory) {
+            PredictionHistoryView(vm: vm)
         }
     }
 
@@ -1136,6 +1142,8 @@ struct StatsRow: View {
     let record: (wins: Int, losses: Int)
     let mood: PicksViewModel.AccuracyMood
     let last10: [Bool]
+    /// Tapping either tile opens the won/lost prediction history.
+    var onTap: () -> Void = {}
 
     /// Measured half-width so both tiles are EXACTLY equal regardless of
     /// content ("44 wins" is intrinsically wider than "60 %", which
@@ -1155,6 +1163,8 @@ struct StatsRow: View {
                          last10: last10)
                 .frame(width: tileWidth > 0 ? tileWidth : nil)
         }
+        .contentShape(Rectangle())
+        .onTapGesture { Haptics.tap(); onTap() }
         .background(
             GeometryReader { geo in
                 Color.clear
