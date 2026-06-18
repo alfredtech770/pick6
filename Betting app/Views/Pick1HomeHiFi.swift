@@ -557,8 +557,7 @@ struct HeroCard: View {
             // Liquid Glass veil — refractive depth, low opacity so
             // it adds material feel without lightening the gray.
             Color.clear
-                .glassEffect(.regular.interactive(),
-                             in: BottomRoundedShape(radius: 32))
+                .glassCompat(in: BottomRoundedShape(radius: 32), interactive: true)
                 .opacity(0.08)
                 .allowsHitTesting(false)
         }
@@ -2301,11 +2300,7 @@ struct FloatingNav: View {
         // Profile tab on the trailing edge). Plain glass below; the
         // individual NavItem buttons handle press feedback via their
         // own .buttonStyle(.plain).
-        .glassEffect(
-            .regular
-                .tint(Color(hex: "#16181C").opacity(0.55)),
-            in: .capsule
-        )
+        .glassCompat(in: .capsule, tint: Color(hex: "#16181C").opacity(0.55))
         // Subtle 1pt rim — Liquid Glass already draws an edge, but a
         // very faint white-on-white stroke keeps the pill legible
         // against bright lime hero backdrops.
@@ -2541,7 +2536,7 @@ struct LimeGlassSurface: View {
             // specular highlights of Apple's glass material while the
             // lime color still drives the chroma.
             Color.clear
-                .glassEffect(.regular.interactive(), in: shape)
+                .glassCompat(in: shape, interactive: true)
                 .opacity(0.55)
                 .allowsHitTesting(false)
 
