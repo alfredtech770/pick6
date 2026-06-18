@@ -76,6 +76,11 @@ struct Betting_appApp: App {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Analytics.requestATTIfNeeded()
+                    // Re-register for push on every activation (token can
+                    // change) and re-upload if one was captured before the
+                    // user signed in.
+                    PushManager.shared.registerIfAuthorized()
+                    PushManager.shared.uploadIfPending()
                 }
             }
         }

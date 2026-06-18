@@ -32,6 +32,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    // APNs token callbacks → PushManager persists the token per-user so the
+    // send-push Edge Function can deliver per-game notifications.
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Task { @MainActor in PushManager.shared.setDeviceToken(deviceToken) }
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        // Best-effort — registration can fail (no network / simulator); the
+        // app stays fully usable, we simply won't have a token this session.
+    }
+
     // NOTE: applicationDidBecomeActive is NEVER called in SwiftUI
     // scene-based apps — UIKit routes lifecycle events to the scene, so
     // an ATT request placed here silently never fires (App Review

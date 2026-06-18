@@ -1102,6 +1102,24 @@ async function espnScoreboard(league) {
   }
 }
 
+// Fire a push via the send-push Edge Function. Fully guarded — a push
+// failure (or APNS not configured yet) must never disrupt the live tick.
+async function sendPush(title, body, prefKey, data) {
+  try {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+    if (!url || !key) return;
+    const r = await fetch(`${url}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, prefKey, data }),
+    });
+    if (!r.ok) err(`send-push ${r.status}: ${(await r.text()).slice(0, 140)}`);
+  } catch (e) {
+    err('sendPush failed:', e.message);
+  }
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
@@ -1114,6 +1132,23 @@ async function liveTick() {
       .eq('result', 'pending')
       .gte('game_date', daysAgoISO(3));
     if (error || !picks?.length) return;
+
+    // Prior scores so we can detect *changes* and only push on real events
+    // (a goal, or a game going final) — not every 2-minute poll.
+    const gameIds = picks.map((p) => p.game_id).filter(Boolean);
+    const prevById = {};
+    if (gameIds.length) {
+      const { data: prev } = await supabase
+        .from('live_scores')
+        .select('game_id, home_score, away_score, status')
+        .in('game_id', gameIds);
+      for (const r of prev || []) prevById[r.game_id] = r;
+    }
+    // Sports where each score is a discrete event worth a "they scored!"
+    // push. High-frequency sports (basketball/baseball/football) only push
+    // on final, to avoid spamming.
+    const GOAL_SPORTS = new Set(['soccer', 'hockey']);
+    const pushEvents = [];
 
     const byLeague = {};
     for (const p of picks) (byLeague[p.league] ||= []).push(p);
@@ -1144,19 +1179,37 @@ async function liveTick() {
           logoUpdates.push({ id: p.game_id, home_logo: homeLogo, away_logo: awayLogo,
                              pick_id: p.id });
         }
+        const homeScore = flipped ? ev.awayScore : ev.homeScore;
+        const awayScore = flipped ? ev.homeScore : ev.awayScore;
         rows.push({
           game_id: p.game_id,
           sport: p.sport,
           league,
           home_team: p.home_team,
           away_team: p.away_team,
-          home_score: flipped ? ev.awayScore : ev.homeScore,
-          away_score: flipped ? ev.homeScore : ev.awayScore,
+          home_score: homeScore,
+          away_score: awayScore,
           status,
           quarter: ev.period != null ? String(ev.period) : null,
           start_time: ev.startTime,
           updated_at: new Date().toISOString(),
         });
+
+        // ── Per-game push automations (only on real events) ──────────
+        const prev = prevById[p.game_id];
+        const score = `${p.home_team} ${homeScore ?? 0}–${awayScore ?? 0} ${p.away_team}`;
+        if (prev) {
+          const scoreChanged =
+            String(prev.home_score) !== String(homeScore) ||
+            String(prev.away_score) !== String(awayScore);
+          if (status === 'Final' && prev.status !== 'Final') {
+            // Final whistle — one push per game, every sport.
+            pushEvents.push({ title: `Final · ${score}`, body: 'Your Pick1 pick is in.', prefKey: 'results' });
+          } else if (status === 'InProgress' && scoreChanged && GOAL_SPORTS.has(p.sport)) {
+            // A goal in a low-scoring sport — "as they score".
+            pushEvents.push({ title: `⚽ ${score}`, body: `Live now · ${league}`, prefKey: 'live' });
+          }
+        }
       }
       if (rows.length) {
         const { error: e2 } = await supabase
@@ -1166,6 +1219,11 @@ async function liveTick() {
         else log(`ESPN ${league}: ${rows.length} score row(s) refreshed`);
       }
     }
+    // Deliver any per-game pushes collected above (goals + finals).
+    for (const ev of pushEvents) {
+      await sendPush(ev.title, ev.body, ev.prefKey);
+    }
+    if (pushEvents.length) log(`Push: ${pushEvents.length} game event(s) sent`);
     // Write captured crest URLs onto the pick rows (one update each;
     // only the logo columns, so scores/results are untouched).
     for (const u of logoUpdates) {

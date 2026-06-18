@@ -1126,7 +1126,14 @@ struct OBNotificationsScreen: View {
         withAnimation(.easeOut(duration: 0.18)) { showSystem = false }
         if allowed {
             UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+                .requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                    guard granted else { return }
+                    // Permission granted → ask APNs for a device token so the
+                    // backend can actually deliver the alerts we just promised.
+                    DispatchQueue.main.async {
+                        UIApplication.shared.registerForRemoteNotifications()
+                    }
+                }
         }
         // Either way, advance the flow.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
