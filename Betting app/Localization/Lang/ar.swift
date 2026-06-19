@@ -125,6 +125,10 @@ enum ArabicStrings {
         .paywall_manage_subscription:    "إدارة الاشتراك",
         .paywall_skip:                   "الدخول مجانًا",
         .paywall_purchase_pending:       "عملية الشراء قيد الموافقة. سنفتح PRO فور اكتمالها.",
+        .update_title:                   "تحديث متوفّر",
+        .update_body:                    "إصدار جديد من Pick1 جاهز — حدّث للحصول على أحدث التوقّعات والإصلاحات.",
+        .update_cta:                     "تحديث",
+        .update_later:                   "لاحقًا",
 
         // Cards
         .card_live:                      "مباشر",

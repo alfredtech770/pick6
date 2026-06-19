@@ -125,6 +125,10 @@ enum EnglishStrings {
         .paywall_manage_subscription:    "Manage Subscription",
         .paywall_skip:                   "Access Free",
         .paywall_purchase_pending:       "Your purchase is pending approval. We'll unlock Pro as soon as it clears.",
+        .update_title:                   "Update available",
+        .update_body:                    "A new version of Pick1 is ready — update for the latest picks and fixes.",
+        .update_cta:                     "Update",
+        .update_later:                   "Later",
 
         // Cards
         .card_live:                      "LIVE",

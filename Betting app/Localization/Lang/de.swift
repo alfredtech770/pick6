@@ -124,6 +124,10 @@ enum GermanStrings {
         .paywall_manage_subscription:    "Abo verwalten",
         .paywall_skip:                   "Gratis weiter",
         .paywall_purchase_pending:       "Dein Kauf wartet auf Freigabe. Sobald er bestätigt ist, schalten wir Pro frei.",
+        .update_title:                   "Update verfügbar",
+        .update_body:                    "Eine neue Version von Pick1 ist da — aktualisiere für die neuesten Tipps und Fixes.",
+        .update_cta:                     "Aktualisieren",
+        .update_later:                   "Später",
 
         // Cards
         .card_live:                      "LIVE",

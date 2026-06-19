@@ -124,6 +124,10 @@ enum PortugueseStrings {
         .paywall_manage_subscription:    "Gerir Subscrição",
         .paywall_skip:                   "Aceder Grátis",
         .paywall_purchase_pending:       "A tua compra está pendente de aprovação. Vamos desbloquear o Pro assim que for validada.",
+        .update_title:                   "Atualização disponível",
+        .update_body:                    "Uma nova versão da Pick1 está pronta — atualiza para os últimos palpites e correções.",
+        .update_cta:                     "Atualizar",
+        .update_later:                   "Mais tarde",
 
         // Cards
         .card_live:                      "EM DIRETO",

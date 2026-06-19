@@ -62,6 +62,10 @@ struct Pick1HomeHiFi: View {
     @State private var showPaywall: Bool = false
     @State private var showWins: Bool = false
     @StateObject private var vm = PicksViewModel()
+    @StateObject private var updateChecker = UpdateChecker()
+    /// Dismissed for this session only — the banner returns next launch
+    /// while a newer App Store version is still out there.
+    @State private var updateDismissed = false
     @EnvironmentObject private var subs: SubscriptionManager
     @Environment(AuthManager.self) private var auth
     // Drives the foreground-refresh: when the user returns to the app
@@ -180,7 +184,20 @@ struct Pick1HomeHiFi: View {
                 .padding(.bottom, -12)
         }
         .preferredColorScheme(.dark)
+        // Slim "Update available" banner pinned to the top — shows
+        // whenever the App Store has a newer version than this build.
+        .overlay(alignment: .top) {
+            if updateChecker.updateAvailable && !updateDismissed {
+                UpdateBanner(
+                    onUpdate: { updateChecker.openAppStore() },
+                    onDismiss: { withAnimation(Pick1Springs.smooth) { updateDismissed = true } }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(Pick1Springs.smooth, value: updateChecker.updateAvailable)
         .task { await vm.startLiveSession() }
+        .task { await updateChecker.check() }
         // Re-pull the slate + rebind realtime whenever the app comes
         // back to the foreground. Catches: scores that ticked while
         // backgrounded, games that finished, and (critically) the ET
@@ -189,6 +206,7 @@ struct Pick1HomeHiFi: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Task { await vm.refreshForForeground() }
+                Task { await updateChecker.check() }
             }
         }
         .sheet(item: $detailPick) { pick in

@@ -165,6 +165,12 @@ enum L10nKey: String, CaseIterable {
     case paywall_skip                      // "Access Free"
     case paywall_purchase_pending
 
+    // ─── Update prompt (new App Store version available) ──────────
+    case update_title
+    case update_body
+    case update_cta
+    case update_later
+
     // ─── Home / pick cards ────────────────────────────────────────
     case card_live
     case card_final

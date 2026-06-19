@@ -124,6 +124,10 @@ enum ItalianStrings {
         .paywall_manage_subscription:    "Gestisci abbonamento",
         .paywall_skip:                   "Accedi gratis",
         .paywall_purchase_pending:       "Il tuo acquisto è in attesa di approvazione. Sbloccheremo Pro non appena verrà confermato.",
+        .update_title:                   "Aggiornamento disponibile",
+        .update_body:                    "Una nuova versione di Pick1 è pronta — aggiorna per gli ultimi pronostici e correzioni.",
+        .update_cta:                     "Aggiorna",
+        .update_later:                   "Più tardi",
 
         // Cards
         .card_live:                      "LIVE",
