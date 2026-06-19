@@ -57,6 +57,9 @@ final class PushManager {
         let environment: String
         let platform: String
         let app_version: String?
+        /// The user's chosen app language ("en"/"fr"/"es"/…), so the
+        /// send-push function can localize every notification server-side.
+        let locale: String
     }
 
     private func upload() async {
@@ -77,7 +80,8 @@ final class PushManager {
                              user_id: userId.uuidString,
                              environment: environment,
                              platform: "ios",
-                             app_version: version),
+                             app_version: version,
+                             locale: LocalizationManager.shared.languageCode),
                     onConflict: "token"
                 )
                 .execute()

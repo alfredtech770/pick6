@@ -1102,9 +1102,26 @@ async function espnScoreboard(league) {
   }
 }
 
+// Profit % a pick would return on a unit stake — mirrors the app's
+// Pick.potentialReturnPercent so the "you won +X%" push matches what the
+// user sees in-app. Real market odds when present, else implied from the
+// AI's confidence.
+function payoutPct(p) {
+  let dec;
+  if (p.market_odds && p.market_odds > 1) dec = p.market_odds;
+  else {
+    const prob = Math.max(0.40, Math.min(0.90, (p.probability || 50) / 100));
+    dec = Math.max(1.20, 1 / prob);
+  }
+  return Math.round((dec - 1) * 100);
+}
+
 // Fire a push via the send-push Edge Function. Fully guarded — a push
 // failure (or APNS not configured yet) must never disrupt the live tick.
-async function sendPush(title, body, prefKey, data) {
+// Pass a payload object: { key, args, prefKey, userIds?, data? } for
+// server-localized copy (preferred), or { title, body, prefKey } for a
+// literal one-off. send-push renders `key` in each device's own language.
+async function sendPush(payload) {
   try {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
@@ -1112,7 +1129,7 @@ async function sendPush(title, body, prefKey, data) {
     const r = await fetch(`${url}/functions/v1/send-push`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, body, prefKey, data }),
+      body: JSON.stringify(payload),
     });
     if (!r.ok) err(`send-push ${r.status}: ${(await r.text()).slice(0, 140)}`);
   } catch (e) {
@@ -1128,7 +1145,7 @@ async function liveTick() {
     // in-play games, ungraded finals, and tonight's event previews.
     const { data: picks, error } = await supabase
       .from('picks')
-      .select('game_id, league, sport, home_team, away_team, game_date')
+      .select('game_id, league, sport, home_team, away_team, game_date, pick, probability, market_odds')
       .eq('result', 'pending')
       .gte('game_date', daysAgoISO(3));
     if (error || !picks?.length) return;
@@ -1202,12 +1219,35 @@ async function liveTick() {
           const scoreChanged =
             String(prev.home_score) !== String(homeScore) ||
             String(prev.away_score) !== String(awayScore);
+          const scoreShort = `${homeScore ?? 0}–${awayScore ?? 0}`;
           if (status === 'Final' && prev.status !== 'Final') {
-            // Final whistle — one push per game, every sport.
-            pushEvents.push({ title: `Final · ${score}`, body: 'Your Pick1 pick is in.', prefKey: 'results' });
+            // Final whistle — celebrate a win, soft re-hook on a loss.
+            // win/loss is the same for everyone (the AI's pick is global),
+            // so this is per-game, not per-user.
+            const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
+            const awayWon = (awayScore ?? 0) > (homeScore ?? 0);
+            const pl = (p.pick || '').toLowerCase();
+            let pickWon = null;
+            if (pl.includes('draw')) pickWon = !homeWon && !awayWon;
+            else if (p.home_team && pl.includes(p.home_team.toLowerCase())) pickWon = homeWon;
+            else if (p.away_team && pl.includes(p.away_team.toLowerCase())) pickWon = awayWon;
+            if (pickWon === true) {
+              pushEvents.push({ key: 'result_win', prefKey: 'results',
+                args: { team: p.pick, score: scoreShort, pct: payoutPct(p) } });
+            } else if (pickWon === false) {
+              pushEvents.push({ key: 'result_loss', prefKey: 'results',
+                args: { score: scoreShort } });
+            }
+            // pickWon === null (couldn't map the pick to a side) → no push.
           } else if (status === 'InProgress' && scoreChanged && GOAL_SPORTS.has(p.sport)) {
-            // A goal in a low-scoring sport — "as they score".
-            pushEvents.push({ title: `⚽ ${score}`, body: `Live now · ${league}`, prefKey: 'live' });
+            // A goal in a low-scoring sport — "as they score". Whichever
+            // side's tally went up is the scorer. NOTE: still goes to all
+            // 'live'-opted users; favorite-only targeting needs the
+            // favorites→DB sync (separate follow-up) to pass userIds.
+            const homeScored = String(prev.home_score) !== String(homeScore);
+            const scorer = homeScored ? p.home_team : p.away_team;
+            pushEvents.push({ key: 'goal_fav', prefKey: 'live',
+              args: { score: scoreShort, team: scorer, league } });
           }
         }
       }
@@ -1221,7 +1261,7 @@ async function liveTick() {
     }
     // Deliver any per-game pushes collected above (goals + finals).
     for (const ev of pushEvents) {
-      await sendPush(ev.title, ev.body, ev.prefKey);
+      await sendPush(ev);
     }
     if (pushEvents.length) log(`Push: ${pushEvents.length} game event(s) sent`);
     // Write captured crest URLs onto the pick rows (one update each;
