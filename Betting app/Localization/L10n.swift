@@ -137,6 +137,13 @@ enum L10nKey: String, CaseIterable {
     case paywall_compare_meta
     case paywall_faq_title
     case paywall_faq_meta
+    // FAQ accordion (was hardcoded English; now localized + 3-day-trial-correct)
+    case paywall_faq_q_cancel
+    case paywall_faq_a_cancel
+    case paywall_faq_q_trial
+    case paywall_faq_a_trial
+    case paywall_faq_q_switch
+    case paywall_faq_a_switch
     case paywall_fineprint_weekly
     case paywall_fineprint_monthly
     case paywall_then_weekly               // "Then $14.99/week · Cancel anytime"

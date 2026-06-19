@@ -3,7 +3,7 @@
 // `Pick6 Account Pages.html` (Paywall · Weekly $14.99 / Monthly $39.99).
 //
 // Shown at the end of the onboarding flow, after the Success step. The
-// CTA starts a 7-day free trial; the back button skips into the app.
+// CTA starts a 3-day free trial; the back button skips into the app.
 //
 // Layout:
 //   Top nav (back + "APP · GO PRO" crumb)
@@ -491,14 +491,15 @@ struct OBPaywallScreen: View {
 
     // MARK: - FAQ
 
-    private let faqs: [PaywallFAQItem] = [
-        .init(q: "Can I cancel anytime?",
-              a: "Yes — cancel from Settings or the App Store at any time. You'll keep Pro access until the end of your billing period."),
-        .init(q: "What's included in the 7-day trial?",
-              a: "Full Pro access — unlimited picks, all sports, live tracking, full analytics. No charge until day 7. Cancel before then to avoid any charge."),
-        .init(q: "Can I switch between weekly and monthly?",
-              a: "Yes — switch plans at any time from Settings. The new rate takes effect on your next billing cycle."),
-    ]
+    /// Localized FAQ, built from the active language. Trial wording is
+    /// 3 days to match the actual introductory offer we sell.
+    private var faqs: [PaywallFAQItem] {
+        [
+            .init(q: loc.t(.paywall_faq_q_cancel), a: loc.t(.paywall_faq_a_cancel)),
+            .init(q: loc.t(.paywall_faq_q_trial),  a: loc.t(.paywall_faq_a_trial)),
+            .init(q: loc.t(.paywall_faq_q_switch), a: loc.t(.paywall_faq_a_switch)),
+        ]
+    }
 
     private var faq: some View {
         VStack(spacing: 8) {

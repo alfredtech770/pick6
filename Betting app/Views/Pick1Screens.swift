@@ -332,7 +332,7 @@ struct MatchDetailView: View {
             // radius authoritative.
             Button {
                 let wasStarred = starred
-                favorites.toggle(pick.id)
+                favorites.toggle(pick)
                 // Haptic + brief toast on add; only haptic on remove
                 // (toast on every tap would be noisy).
                 if !wasStarred {
@@ -3628,7 +3628,7 @@ struct WinsView: View {
                     .lineLimit(1)
                 Spacer()
                 Button {
-                    favorites.toggle(pick.id)   // un-favorite
+                    favorites.toggle(pick)   // un-favorite
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .heavy))

@@ -424,7 +424,9 @@ struct HomeHiFiContent: View {
         // Pull-to-refresh removed — a manual refresh re-ran loadAll and briefly
         // emptied the slate. Realtime + the .task load keep picks fresh.
         .fullScreenCover(isPresented: $showSummerFootball) {
-            SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false })
+            SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false },
+                                  isPro: isPro,
+                                  onUnlock: { showSummerFootball = false; onUnlock() })
         }
         .sheet(isPresented: $showHistory) {
             PredictionHistoryView(vm: vm)

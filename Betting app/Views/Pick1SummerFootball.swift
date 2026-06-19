@@ -145,6 +145,10 @@ struct WCTrophy: View {
 struct SummerFootballHubView: View {
     @ObservedObject var vm: PicksViewModel
     let onClose: () -> Void
+    /// Free users get the single NEXT match; the rest of the slate is
+    /// Pro-only (matches the rest of the app's free = 1 game gate).
+    var isPro: Bool = true
+    var onUnlock: () -> Void = {}
 
     /// Tapping a match (featured or a slate row) opens the standard
     /// MatchDetailView with the real AI pick. FavoritesStore is
@@ -204,9 +208,20 @@ struct SummerFootballHubView: View {
                     if !slate.isEmpty {
                         sectionHead(title: "UPCOMING", accent: "MATCHES",
                                     metaLive: false, meta: "\(slate.count) MORE")
-                        matchesList
+                        if isPro {
+                            matchesList
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 16)
+                        } else {
+                            // Free tier: the full slate is locked. One tap
+                            // opens the paywall.
+                            Button { Haptics.tap(); onUnlock() } label: {
+                                slateLockCard.pressableScale(0.985)
+                            }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 16)
+                        }
                     }
 
                     if upcomingMatches.isEmpty {
@@ -244,6 +259,44 @@ struct SummerFootballHubView: View {
         let f = DateFormatter()
         f.dateFormat = "MMM d"
         return f.string(from: date).uppercased()
+    }
+
+    /// Free-tier lock over the rest of the tournament slate — a single
+    /// acid-green-framed card prompting the upgrade (consistent with the
+    /// Profile / Live unlock framing).
+    private var slateLockCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 16, weight: .heavy))
+                .foregroundColor(WC.gold)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(WC.gold.opacity(0.14)))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(slate.count) MORE MATCHES")
+                    .font(.archivoNarrow(12, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundColor(WC.ink)
+                Text("Unlock every match prediction with Pro")
+                    .font(.archivo(11, weight: .regular))
+                    .foregroundColor(WC.mute)
+            }
+            Spacer()
+            Text("GO PRO")
+                .font(.archivoNarrow(11, weight: .heavy))
+                .tracking(1.6)
+                .foregroundColor(WC.bg)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Capsule().fill(WC.gold))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(WC.gold.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(WC.gold.opacity(0.5), lineWidth: 1)
+                )
+        )
     }
 
     /// Shown between tournament days, when every fetched fixture has

@@ -1137,6 +1137,49 @@ async function sendPush(payload) {
   }
 }
 
+// Daily "today's #1 lock is in" push — fires after the 5am pick run.
+// Sends the single highest-confidence pick of the day to everyone
+// opted into 'picks'. Localized server-side by send-push.
+async function sendDailyPickDrop() {
+  try {
+    const today = daysAgoISO(0);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('pick, probability')
+      .eq('game_date', today)
+      .order('probability', { ascending: false })
+      .limit(1);
+    if (!picks || !picks.length) return;
+    const top = picks[0];
+    await sendPush({ key: 'pick_drop', prefKey: 'picks',
+      args: { team: top.pick, conf: Math.round(top.probability || 0) } });
+    log(`Push: pick_drop sent (${top.pick})`);
+  } catch (e) { err('sendDailyPickDrop failed:', e.message); }
+}
+
+// Daily recap push — "you went X/Y, riding them all = +Z%". Only fires
+// on net-positive days (the hook is the upside); silent on flat/down
+// days so it never reads as a downer.
+async function sendDailyRecap() {
+  try {
+    const y = daysAgoISO(1);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('result, probability, market_odds')
+      .eq('game_date', y)
+      .in('result', ['win', 'loss']);
+    if (!picks || !picks.length) return;
+    const wins = picks.filter((p) => p.result === 'win').length;
+    const games = picks.length;
+    let units = 0;
+    for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
+    const roi = Math.round((units / games) * 100);
+    if (roi <= 0) return;   // only hype profitable days
+    await sendPush({ key: 'recap', prefKey: 'results', args: { wins, games, pct: roi } });
+    log(`Push: recap sent (${wins}/${games}, +${roi}%)`);
+  } catch (e) { err('sendDailyRecap failed:', e.message); }
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
@@ -1246,7 +1289,9 @@ async function liveTick() {
             // favorites→DB sync (separate follow-up) to pass userIds.
             const homeScored = String(prev.home_score) !== String(homeScore);
             const scorer = homeScored ? p.home_team : p.away_team;
+            // favOnly → delivered only to users who favorited this game.
             pushEvents.push({ key: 'goal_fav', prefKey: 'live',
+              favOnly: true, gameId: p.game_id,
               args: { score: scoreShort, team: scorer, league } });
           }
         }
@@ -1261,7 +1306,16 @@ async function liveTick() {
     }
     // Deliver any per-game pushes collected above (goals + finals).
     for (const ev of pushEvents) {
-      await sendPush(ev);
+      if (ev.favOnly) {
+        // Goal alerts go ONLY to users who favorited this game.
+        const { data: favs } = await supabase
+          .from('user_favorites').select('user_id').eq('game_id', ev.gameId);
+        const userIds = (favs || []).map((f) => f.user_id);
+        if (!userIds.length) continue;   // nobody favorited it → skip
+        await sendPush({ key: ev.key, args: ev.args, prefKey: ev.prefKey, userIds });
+      } else {
+        await sendPush(ev);
+      }
     }
     if (pushEvents.length) log(`Push: ${pushEvents.length} game event(s) sent`);
     // Write captured crest URLs onto the pick rows (one update each;
@@ -1370,10 +1424,16 @@ cron.schedule('0 5 * * *', async () => {
   // Backfill crest URLs immediately so morning cards aren't logoless
   // until the first in-window live tick.
   try { await liveTick(); } catch (e) { err('post-run logo enrich failed:', e.message); }
+  // Today's #1 pick is now in the DB — push it out.
+  await sendDailyPickDrop();
 }, { timezone: TZ });
 
 // Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
+
+// Daily recap push at 9am ET — after the overnight slate has graded,
+// before the morning's pick_drop competition. Hypes profitable days.
+cron.schedule('0 9 * * *', sendDailyRecap, { timezone: TZ });
 
 // NOTE — we intentionally do NOT run runPipeline() on boot. Every
 // Railway redeploy used to fire a full pipeline run, which costs

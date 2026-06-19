@@ -15,6 +15,7 @@
 
 import Foundation
 import Combine
+import Supabase
 
 @MainActor
 final class FavoritesStore: ObservableObject {
@@ -51,6 +52,46 @@ final class FavoritesStore: ObservableObject {
         }
         save()
         return ids.contains(id)
+    }
+
+    /// Pick-aware toggle: flips the local star AND syncs the pick's
+    /// `game_id` to the `user_favorites` table so the pipeline can send
+    /// goal pushes ONLY to users who favorited that game. Best-effort —
+    /// a failed sync never blocks the UI (the local star still works).
+    @discardableResult
+    func toggle(_ pick: Pick) -> Bool {
+        let nowFav = toggle(pick.id)
+        syncToDB(pick: pick, on: nowFav)
+        return nowFav
+    }
+
+    private struct FavRow: Encodable { let user_id: String; let game_id: String }
+
+    private func syncToDB(pick: Pick, on: Bool) {
+        guard let gameId = pick.gameId, !gameId.isEmpty,
+              let userId = SupabaseManager.client.auth.currentSession?.user.id
+        else { return }
+        let uid = userId.uuidString
+        Task {
+            do {
+                if on {
+                    try await SupabaseManager.client
+                        .from("user_favorites")
+                        .upsert(FavRow(user_id: uid, game_id: gameId),
+                                onConflict: "user_id,game_id")
+                        .execute()
+                } else {
+                    try await SupabaseManager.client
+                        .from("user_favorites")
+                        .delete()
+                        .eq("user_id", value: uid)
+                        .eq("game_id", value: gameId)
+                        .execute()
+                }
+            } catch {
+                // Best-effort — local star is the source of truth for UI.
+            }
+        }
     }
 
     /// Bulk-clear (used by the Wins page's "Clear all" action).
