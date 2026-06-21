@@ -81,6 +81,9 @@ struct Betting_appApp: App {
                     // user signed in.
                     PushManager.shared.registerIfAuthorized()
                     PushManager.shared.uploadIfPending()
+                    // Re-check comped Pro grants so a newly-granted (or
+                    // just-signed-in) user unlocks without a full relaunch.
+                    Task { await subscriptions.refreshCompAccess() }
                 }
             }
         }

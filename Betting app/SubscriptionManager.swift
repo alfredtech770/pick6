@@ -41,6 +41,13 @@ final class SubscriptionManager: ObservableObject {
     /// Becomes true once the user has an active entitlement to either tier.
     @Published private(set) var isPro: Bool = false
 
+    /// True when this user has a comped Pro grant (a row in
+    /// `public.pro_grants` with no expiry or a future one). Grants Pro
+    /// WITHOUT an Apple purchase — used to hand out free access to
+    /// specific users (press, influencers, team, friends). OR-ed into
+    /// `isPro` so it stacks with any real subscription.
+    @Published private(set) var compPro: Bool = false
+
     /// Active subscription's product ID (or nil if free).
     @Published private(set) var activeProductId: String?
 
@@ -168,6 +175,7 @@ final class SubscriptionManager: ObservableObject {
     func bootstrap() async {
         await loadProducts()
         await refreshEntitlements()
+        await refreshCompAccess()
     }
 
     // MARK: - Loading products
@@ -316,6 +324,35 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
+    // MARK: - Comp access (free Pro grants)
+
+    /// Checks `public.pro_grants` for the signed-in user and reflects it
+    /// in `compPro` / `isPro`. A row with a null expiry is permanent; a
+    /// future `expires_at` is time-limited. Filtered server-side so we
+    /// only need to know whether a matching row exists. Best-effort — a
+    /// network failure just leaves Pro driven by Apple's receipt.
+    func refreshCompAccess() async {
+        guard let userId = SupabaseManager.client.auth.currentSession?.user.id else {
+            compPro = false
+            return
+        }
+        struct GrantRow: Decodable { let user_id: String }
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        do {
+            let rows: [GrantRow] = try await SupabaseManager.client
+                .from("pro_grants")
+                .select("user_id")
+                .eq("user_id", value: userId.uuidString)
+                .or("expires_at.is.null,expires_at.gt.\(nowISO)")
+                .execute()
+                .value
+            compPro = !rows.isEmpty
+            if compPro { isPro = true }   // grant immediately; never downgrade a comp
+        } catch {
+            // Leave compPro untouched on failure.
+        }
+    }
+
     // MARK: - Entitlement check
 
     /// Walks `StoreKit.Transaction.currentEntitlements` and updates `isPro`.
@@ -349,7 +386,9 @@ final class SubscriptionManager: ObservableObject {
             // settled yet. Hold the optimistic grant rather than flipping
             // the freshly-paid user back to Free for a few seconds.
         } else {
-            self.isPro = false
+            // No active Apple subscription — but a comp grant still
+            // counts as Pro. Only drop to Free when neither is present.
+            self.isPro = compPro
             self.activeProductId = nil
             self.activeExpiration = nil
         }
