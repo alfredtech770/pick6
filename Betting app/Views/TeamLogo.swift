@@ -286,6 +286,17 @@ struct AthleteHeadshot: View {
         }
     }
 
+    /// Resolved headshot + country flag (dynamic, cached). Seeded
+    /// synchronously from cache so a known athlete paints with no flash.
+    @State private var info: AthleteResolver.Info?
+
+    /// Best headshot URL: dynamically-resolved first, then the hardcoded
+    /// map, then nil (→ silhouette placeholder).
+    private var headshotURL: URL? {
+        if let s = info?.headshot, let u = URL(string: s) { return u }
+        return AthleteHeadshotLookup.url(sport: sport, name: name)
+    }
+
     var body: some View {
         ZStack {
             // Always-present background ring + fill so the headshot
@@ -297,7 +308,7 @@ struct AthleteHeadshot: View {
                     endPoint: .bottomTrailing))
                 .overlay(Circle().stroke(Color(hex: "#2D3038"), lineWidth: 1))
 
-            if let url = AthleteHeadshotLookup.url(sport: sport, name: name) {
+            if let url = headshotURL {
                 CachedImage(url: url) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
@@ -310,6 +321,29 @@ struct AthleteHeadshot: View {
         }
         .frame(width: dimension, height: dimension)
         .clipShape(Circle())
+        // Country flag badge, bottom-trailing — appears once resolved.
+        .overlay(alignment: .bottomTrailing) { flagBadge }
+        .task(id: name) {
+            info = AthleteResolver.shared.cached(sport: sport, name: name)
+            if info?.headshot == nil || info?.flag == nil {
+                info = await AthleteResolver.shared.resolve(sport: sport, name: name)
+            }
+        }
+    }
+
+    /// Small circular country flag pinned to the headshot corner.
+    @ViewBuilder
+    private var flagBadge: some View {
+        if let f = info?.flag, let u = URL(string: f) {
+            let d = dimension * 0.36
+            CachedImage(url: u) { img in
+                img.resizable().scaledToFill()
+            } placeholder: { Color.clear }
+            .frame(width: d, height: d)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Color(hex: "#0A0B0D"), lineWidth: 1.5))
+            .offset(x: 1, y: 1)
+        }
     }
 
     /// Square (so the circle reads as a profile pic rather than a tall
@@ -381,10 +415,22 @@ enum AthleteHeadshotLookup {
         }
     }
 
+    /// The ESPN athlete ID for a (sport, name), from the hardcoded maps —
+    /// the instant fast-path the dynamic `AthleteResolver` tries before
+    /// hitting ESPN's search API.
+    static func athleteId(sport: String, name: String) -> String? {
+        switch sport {
+        case "combat": return lookup(in: ufcIds, name: name)
+        case "f1":     return lookup(in: f1Ids, name: name) ?? lookup(in: nascarIds, name: name)
+        case "tennis": return lookup(in: tennisIds, name: name)
+        default:       return nil
+        }
+    }
+
     /// Normalize a name the same way the ID tables are keyed: lowercase,
     /// strip accents, and drop any non-alphanumeric (apostrophes, periods,
     /// hyphens) so "O'Malley", "Hülkenberg", and "Stenhouse Jr." all match.
-    private static func norm(_ s: String) -> String {
+    static func norm(_ s: String) -> String {
         s.lowercased()
             .folding(options: .diacriticInsensitive, locale: .current)
             .components(separatedBy: CharacterSet.alphanumerics.union(.whitespaces).inverted)
