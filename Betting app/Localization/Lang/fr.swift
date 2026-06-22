@@ -142,6 +142,7 @@ enum FrenchStrings {
         .card_pick_label:                "IA",
         .card_save_pick:                 "Enregistrer le pick",
         .card_saved_toast:               "ENREGISTRÉ · CONFIANCE IA {n} %",
+        .card_unlock_pro:                "DÉBLOQUER AVEC PRO",
 
         // Age gate
         .age_gate_title:                 "18 ANS ET PLUS",

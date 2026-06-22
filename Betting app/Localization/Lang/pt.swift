@@ -142,6 +142,7 @@ enum PortugueseStrings {
         .card_pick_label:                "IA",
         .card_save_pick:                 "Guardar pick",
         .card_saved_toast:               "GUARDADO · {n}% CONFIANÇA IA",
+        .card_unlock_pro:                "DESBLOQUEAR COM PRO",
 
         // Age gate
         .age_gate_title:                 "APENAS 18+",

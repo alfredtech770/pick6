@@ -143,6 +143,7 @@ enum ArabicStrings {
         .card_pick_label:                "AI",
         .card_save_pick:                 "حفظ التوقّع",
         .card_saved_toast:               "تم الحفظ · ثقة AI {n}%",
+        .card_unlock_pro:                "افتحه مع Pro",
 
         // Age gate
         .age_gate_title:                 "للأعمار 18+ فقط",

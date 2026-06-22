@@ -184,6 +184,7 @@ enum L10nKey: String, CaseIterable {
     case card_pick_label                   // "AI" caps prefix
     case card_save_pick                    // CTA on detail
     case card_saved_toast                  // "SAVED · {n}% AI CONFIDENCE"
+    case card_unlock_pro                    // concealed upcoming-event pick (Free)
 
     // ─── Age gate ─────────────────────────────────────────────────
     case age_gate_title                    // "18+ ONLY"

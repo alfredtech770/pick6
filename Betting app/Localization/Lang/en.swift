@@ -143,6 +143,7 @@ enum EnglishStrings {
         .card_pick_label:                "AI",
         .card_save_pick:                 "Save pick",
         .card_saved_toast:               "SAVED · {n}% AI CONFIDENCE",
+        .card_unlock_pro:                "UNLOCK WITH PRO",
 
         // Age gate
         .age_gate_title:                 "18+ ONLY",

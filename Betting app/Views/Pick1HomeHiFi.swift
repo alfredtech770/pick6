@@ -420,12 +420,15 @@ struct HomeHiFiContent: View {
                         ForEach(upcoming.prefix(6), id: \.id) { pick in
                             Button {
                                 Haptics.tap()
-                                onTapPick(pick)
+                                // Free users can't open a future prediction —
+                                // the card is locked and tapping prompts Pro.
+                                if isPro { onTapPick(pick) } else { onUnlock() }
                             } label: {
                                 GameCard(pick: pick,
                                          isLive: false,
                                          score: liveScore(for: pick),
-                                         isRefundGuarantee: pick.isRefundEligible)
+                                         isRefundGuarantee: isPro && pick.isRefundEligible,
+                                         concealPick: !isPro)
                                     .pressableScale(0.985)
                             }
                             .buttonStyle(.plain)
@@ -1609,6 +1612,13 @@ struct GameCard: View {
     /// so other call sites / previews render unchanged.
     var isRefundGuarantee: Bool = false
 
+    /// When true, the AI pick + confidence are concealed behind a Pro
+    /// lock (matchup + date still show). Used for Free users in the
+    /// Upcoming Events section so future predictions stay gated.
+    var concealPick: Bool = false
+
+    @Environment(LocalizationManager.self) private var loc
+
     /// Authoritative card state — same helper every other surface uses.
     /// Replaces the old `isLive` Bool for badge / topline decisions so
     /// past-pending picks render with an "AWAITING" treatment instead
@@ -1659,7 +1669,11 @@ struct GameCard: View {
             HStack {
                 topRowBadge
                 Spacer()
-                ConfChip(percent: pick.probability, hot: pick.probability >= 80)
+                if concealPick {
+                    lockChip
+                } else {
+                    ConfChip(percent: pick.probability, hot: pick.probability >= 80)
+                }
             }
             .padding(.bottom, 14)
 
@@ -1684,15 +1698,21 @@ struct GameCard: View {
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#B9B7B0"))
-                    Text(pick.shortDisplayPick.uppercased())
+                    Text(concealPick ? loc.t(.card_unlock_pro) : pick.shortDisplayPick.uppercased())
                         .font(.anton(17))
                         .lineLimit(1)
                         .minimumScaleFactor(0.55)
                         .tracking(0.17)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(concealPick ? Color(hex: "#6E6F75") : Color(hex: "#D4FF3A"))
                 }
                 Spacer()
-                MiniRing(percent: pick.probability)
+                if concealPick {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                } else {
+                    MiniRing(percent: pick.probability)
+                }
             }
             .padding(.top, 12)
         }
@@ -1726,8 +1746,12 @@ struct GameCard: View {
                     topRowBadge
                 }
                 Spacer()
-                ConfChip(percent: pick.probability,
-                         hot: pick.probability >= 70)
+                if concealPick {
+                    lockChip
+                } else {
+                    ConfChip(percent: pick.probability,
+                             hot: pick.probability >= 70)
+                }
             }
             .padding(.bottom, 10)
 
@@ -1739,8 +1763,9 @@ struct GameCard: View {
                 .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Sub (key factor / context)
-            if !eventSub.isEmpty {
+            // Sub (key factor / context) — hidden when concealed, since
+            // the key factor often hints at the pick.
+            if !eventSub.isEmpty && !concealPick {
                 Text(eventSub)
                     .font(.mono(10))
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -1769,12 +1794,19 @@ struct GameCard: View {
 
             // Pick row
             HStack {
-                Text(pick.displayPick.uppercased())
+                Text(concealPick ? loc.t(.card_unlock_pro) : pick.displayPick.uppercased())
                     .font(.archivo(12, weight: .bold))
-                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .foregroundColor(concealPick ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
                 Spacer()
-                MiniRing(percent: pick.probability)
-                    .frame(width: 36, height: 36)
+                if concealPick {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .frame(width: 36, height: 36)
+                } else {
+                    MiniRing(percent: pick.probability)
+                        .frame(width: 36, height: 36)
+                }
             }
             .padding(.top, 10)
         }
@@ -1782,6 +1814,17 @@ struct GameCard: View {
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(homeCardBackground)
+    }
+
+    /// Small acid-green lock chip shown where the confidence % would be
+    /// when a Free user views a concealed Upcoming Event.
+    private var lockChip: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 10, weight: .heavy))
+            .foregroundColor(Color(hex: "#D4FF3A"))
+            .padding(.horizontal, 9).padding(.vertical, 5)
+            .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.12)))
+            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.35), lineWidth: 1))
     }
 
     // ─── Shared card background (matches design's `.gcard`) ─────

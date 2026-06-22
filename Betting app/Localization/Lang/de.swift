@@ -142,6 +142,7 @@ enum GermanStrings {
         .card_pick_label:                "KI",
         .card_save_pick:                 "Tipp speichern",
         .card_saved_toast:               "GESPEICHERT · {n}% KI-KONFIDENZ",
+        .card_unlock_pro:                "MIT PRO FREISCHALTEN",
 
         // Age gate
         .age_gate_title:                 "NUR AB 18",

@@ -142,6 +142,7 @@ enum ItalianStrings {
         .card_pick_label:                "IA",
         .card_save_pick:                 "Salva pronostico",
         .card_saved_toast:               "SALVATO · {n}% FIDUCIA IA",
+        .card_unlock_pro:                "SBLOCCA CON PRO",
 
         // Age gate
         .age_gate_title:                 "SOLO 18+",
