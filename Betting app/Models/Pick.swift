@@ -341,7 +341,7 @@ enum ConfidenceTier {
 }
 
 // MARK: - Live Score Model
-struct LiveScore: Identifiable, Codable {
+struct LiveScore: Identifiable, Codable, Equatable {
     let id: UUID
     let gameId: String
     let sport: String

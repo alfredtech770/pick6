@@ -67,6 +67,7 @@ struct Pick1HomeHiFi: View {
     /// while a newer App Store version is still out there.
     @State private var updateDismissed = false
     @EnvironmentObject private var subs: SubscriptionManager
+    @EnvironmentObject private var favorites: FavoritesStore
     @Environment(AuthManager.self) private var auth
     // Drives the foreground-refresh: when the user returns to the app
     // we re-pull the slate and rebind realtime if the ET day rolled
@@ -198,6 +199,14 @@ struct Pick1HomeHiFi: View {
         .animation(Pick1Springs.smooth, value: updateChecker.updateAvailable)
         .task { await vm.startLiveSession() }
         .task { await updateChecker.check() }
+        // Drive Live Activities off the live-score feed: start/update/end
+        // a Lock-Screen + Dynamic Island card for each favorited game that's
+        // in play (Apple Sports style).
+        .onChange(of: vm.liveScores) { _, scores in
+            let all = vm.todayPicks + vm.historyPicks
+            let favGameIds = Set(all.filter { favorites.contains($0.id) }.compactMap(\.gameId))
+            LiveActivityManager.shared.sync(favoritePickGameIds: favGameIds, picks: all, scores: scores)
+        }
         // Re-pull the slate + rebind realtime whenever the app comes
         // back to the foreground. Catches: scores that ticked while
         // backgrounded, games that finished, and (critically) the ET
