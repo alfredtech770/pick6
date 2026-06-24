@@ -36,15 +36,55 @@ final class TeamLogoResolver: ObservableObject {
     func resolve(sport: String, team: String) async -> URL? {
         let k = key(sport, team)
         if let s = cache[k] { return s.isEmpty ? nil : URL(string: s) }
-        let url = await search(sport: sport, team: team)
+        // ESPN covers US majors + WNBA/NCAA/MLS; TheSportsDB fills the
+        // gaps ESPN doesn't index (KBO, NPB, EuroLeague, KHL, lower
+        // soccer, …) so smaller leagues still get a real crest.
+        var url = await searchESPN(sport: sport, team: team)
+        if url == nil { url = await searchSportsDB(sport: sport, team: team) }
         cache[k] = url?.absoluteString ?? ""
         save()
         return url
     }
 
+    /// TheSportsDB search → team badge. Free, broad international coverage.
+    private func searchSportsDB(sport: String, team: String) async -> URL? {
+        guard let q = team.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=\(q)")
+        else { return nil }
+        let want = sportsDBSport(sport)
+        do {
+            var req = URLRequest(url: url); req.timeoutInterval = 8
+            let (data, _) = try await URLSession.shared.data(for: req)
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let teams = json["teams"] as? [[String: Any]] else { return nil }
+            // Prefer the same-sport match; else first team with a badge.
+            func badge(_ t: [String: Any]) -> URL? {
+                if let s = t["strBadge"] as? String, let u = URL(string: s) { return u }
+                if let s = t["strTeamBadge"] as? String, let u = URL(string: s) { return u }
+                return nil
+            }
+            if let match = teams.first(where: { ($0["strSport"] as? String) == want }),
+               let u = badge(match) { return u }
+            for t in teams { if let u = badge(t) { return u } }
+        } catch { }
+        return nil
+    }
+
+    private func sportsDBSport(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "Basketball"
+        case "football":   return "American Football"
+        case "baseball":   return "Baseball"
+        case "hockey":     return "Ice Hockey"
+        case "soccer":     return "Soccer"
+        case "cricket":    return "Cricket"
+        default:           return sport
+        }
+    }
+
     /// ESPN site search → first `team` result matching the sport, taking
     /// its logo image.
-    private func search(sport: String, team: String) async -> URL? {
+    private func searchESPN(sport: String, team: String) async -> URL? {
         guard let q = team.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "https://site.api.espn.com/apis/search/v2?query=\(q)&limit=8")
         else { return nil }
