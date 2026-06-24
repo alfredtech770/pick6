@@ -1173,6 +1173,31 @@ func leagueBlurb(_ league: String) -> String? {
     }
 }
 
+/// Just the country/region flag for a cryptic league — appended to the
+/// league code on game cards (e.g. "KBO 🇰🇷") so the card itself tells you
+/// the country without needing to open the detail. Nil for well-known
+/// leagues (no flag clutter).
+func leagueFlag(_ league: String) -> String? {
+    switch league.uppercased() {
+    case "KBO":        return "🇰🇷"
+    case "NPB":        return "🇯🇵"
+    case "EUROLEAGUE": return "🇪🇺"
+    case "IPL":        return "🇮🇳"
+    case "MLS":        return "🇺🇸"
+    case "LIGAMX":     return "🇲🇽"
+    case "KHL":        return "🇷🇺"
+    case "AHL":        return "🇺🇸"
+    case "WNBA":       return "🇺🇸"
+    case "NCAAB":      return "🇺🇸"
+    case "LALIGA":     return "🇪🇸"
+    case "SERIEA":     return "🇮🇹"
+    case "BUNDESLIGA": return "🇩🇪"
+    case "LIGUE1":     return "🇫🇷"
+    case "UCL":        return "🇪🇺"
+    default:           return nil
+    }
+}
+
 private func crestColor(for team: String) -> Color {
     // Stable palette per team: use simple hash → curated palette of bold sports hues
     let palette: [Color] = [
@@ -1938,7 +1963,10 @@ struct GameCard: View {
         case "UFC": return "UFC · MAIN CARD"
         case "F1":  return "F1 · RACE WEEKEND"
         case "IPL": return "IPL · MATCH DAY"
-        default:    return league
+        default:
+            // Cryptic leagues get a country flag so the card is self-explanatory.
+            if let flag = leagueFlag(pick.league) { return "\(league) \(flag)" }
+            return league
         }
     }
 
@@ -2809,7 +2837,10 @@ struct LockedPickCard: View {
         case "UFC": return "UFC · MAIN CARD"
         case "F1":  return "F1 · RACE WEEKEND"
         case "IPL": return "IPL · MATCH DAY"
-        default:    return league
+        default:
+            // Cryptic leagues get a country flag so the card is self-explanatory.
+            if let flag = leagueFlag(pick.league) { return "\(league) \(flag)" }
+            return league
         }
     }
 }
