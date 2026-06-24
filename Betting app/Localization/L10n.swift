@@ -164,6 +164,11 @@ enum L10nKey: String, CaseIterable {
     case paywall_manage_subscription
     case paywall_skip                      // "Access Free"
     case paywall_purchase_pending
+    // Track-record social proof strip
+    case paywall_track_kicker              // "PROVEN RESULTS"
+    case paywall_track_accuracy            // "ACCURACY"
+    case paywall_track_wins                // "WINS"
+    case paywall_track_graded              // "GRADED PICKS"
 
     // ─── Update prompt (new App Store version available) ──────────
     case update_title

@@ -70,6 +70,7 @@ struct Betting_appApp: App {
             // edges, sheet animations) automatically once this is set.
             .environment(\.layoutDirection, localization.layoutDirection)
             .task {
+                RatingsPrompt.incrementLaunch()
                 await authManager.checkSession()
                 await subscriptions.bootstrap()
             }

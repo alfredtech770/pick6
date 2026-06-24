@@ -452,6 +452,14 @@ struct HomeHiFiContent: View {
         .sheet(isPresented: $showHistory) {
             PredictionHistoryView(vm: vm)
         }
+        .task {
+            // Ask for an App Store rating only at a genuine high point —
+            // an engaged user who has winning picks to feel good about.
+            // RatingsPrompt itself enforces the launch-count / once-per-
+            // version gating; the delay lets stats load first.
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            RatingsPrompt.maybeRequest(hasPositiveSignal: vm.winsThisWeek > 0)
+        }
     }
 
     private var topPick: Pick? {

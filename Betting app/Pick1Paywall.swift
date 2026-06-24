@@ -42,6 +42,7 @@ struct OBPaywallScreen: View {
     @State private var plan: PaywallPlan = .monthly
     @EnvironmentObject private var subs: SubscriptionManager
     @Environment(LocalizationManager.self) private var loc
+    @ObservedObject private var perf = PerformanceStats.shared
 
     /// "Access Free" skip button reveals 7 seconds after the paywall opens.
     /// Lets users dismiss the paywall without subscribing — required for
@@ -63,6 +64,7 @@ struct OBPaywallScreen: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     hero.padding(.top, 8)
+                    trackRecord.padding(.top, 18)
                     toggle.padding(.top, 18)
                     planCard.padding(.top, 14)
                     sectionHeading(title: "FREE vs PRO", meta: "WHAT YOU GET")
@@ -125,6 +127,7 @@ struct OBPaywallScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             stickyBar
         }
+        .task { await perf.refresh() }
     }
 
     // MARK: - Top nav
@@ -231,6 +234,61 @@ struct OBPaywallScreen: View {
         .padding(.horizontal, 22)
         // No per-hero glow — the screen-level lime wash already
         // covers the full hero area with room to bleed.
+    }
+
+    // MARK: - Track record (social proof)
+
+    /// Real, server-computed AI performance — the strongest conversion
+    /// argument for a prediction app. Hidden until we have a meaningful
+    /// sample so we never show a thin/embarrassing number.
+    @ViewBuilder
+    private var trackRecord: some View {
+        if let s = perf.stats, s.total >= 20 {
+            HStack(spacing: 0) {
+                trackStat(value: "\(s.accuracy)%", label: loc.t(.paywall_track_accuracy))
+                trackDivider
+                trackStat(value: "\(s.wins)", label: loc.t(.paywall_track_wins))
+                trackDivider
+                trackStat(value: "\(s.total)", label: loc.t(.paywall_track_graded))
+            }
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.p1Lime.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.p1Lime.opacity(0.28), lineWidth: 1)
+                    )
+            )
+            .overlay(alignment: .top) {
+                Text(loc.t(.paywall_track_kicker))
+                    .font(.custom("BarlowCondensed-Bold", size: 9))
+                    .kerning(2)
+                    .foregroundColor(.p1LimeInk)
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .background(Capsule().fill(Color.p1Lime))
+                    .offset(y: -8)
+            }
+            .padding(.horizontal, 22)
+        }
+    }
+
+    private func trackStat(value: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.custom("BarlowCondensed-Black", size: 26))
+                .foregroundColor(.p1Lime)
+            Text(label)
+                .font(.custom("BarlowCondensed-Bold", size: 9))
+                .kerning(1.4)
+                .foregroundColor(.p1Mute)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var trackDivider: some View {
+        Rectangle().fill(Color.p1Line).frame(width: 1, height: 28)
     }
 
     // MARK: - Plan toggle
