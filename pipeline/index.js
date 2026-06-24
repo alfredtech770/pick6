@@ -1137,6 +1137,24 @@ async function sendPush(payload) {
   }
 }
 
+// Push a Live Activity (lock-screen / Dynamic Island) update via the
+// push-live-activity Edge Function. Guarded — never disrupts the live tick.
+async function pushLiveActivity(gameId, contentState, event) {
+  try {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+    if (!url || !key) return;
+    const r = await fetch(`${url}/functions/v1/push-live-activity`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, contentState, event }),
+    });
+    if (!r.ok) err(`push-live-activity ${r.status}: ${(await r.text()).slice(0, 120)}`);
+  } catch (e) {
+    err('pushLiveActivity failed:', e.message);
+  }
+}
+
 // Daily "today's #1 lock is in" push — fires after the 5am pick run.
 // Sends the single highest-confidence pick of the day to everyone
 // opted into 'picks'. Localized server-side by send-push.
@@ -1209,6 +1227,7 @@ async function liveTick() {
     // on final, to avoid spamming.
     const GOAL_SPORTS = new Set(['soccer', 'hockey']);
     const pushEvents = [];
+    const laEvents = [];   // Live Activity (Apple Sports card) updates
 
     const byLeague = {};
     for (const p of picks) (byLeague[p.league] ||= []).push(p);
@@ -1263,6 +1282,31 @@ async function liveTick() {
             String(prev.home_score) !== String(homeScore) ||
             String(prev.away_score) !== String(awayScore);
           const scoreShort = `${homeScore ?? 0}–${awayScore ?? 0}`;
+
+          // ── Live Activity (lock-screen / Dynamic Island) update ──
+          // Pushed to the activity tokens for this game so the card
+          // refreshes in the background, Apple Sports style.
+          {
+            const pl = (p.pick || '').toLowerCase();
+            const pHome = p.home_team && pl.includes(p.home_team.toLowerCase());
+            const pAway = p.away_team && pl.includes(p.away_team.toLowerCase());
+            const hitting = pHome ? (homeScore ?? 0) >= (awayScore ?? 0)
+                          : pAway ? (awayScore ?? 0) >= (homeScore ?? 0) : false;
+            const isFinal = status === 'Final';
+            const laState = {
+              homeScore: homeScore ?? 0,
+              awayScore: awayScore ?? 0,
+              statusLine: isFinal ? 'FINAL' : (ev.period != null ? `LIVE · ${ev.period}` : 'LIVE'),
+              pickHitting: hitting,
+              isFinal,
+            };
+            if (isFinal && prev.status !== 'Final') {
+              laEvents.push({ gameId: p.game_id, contentState: laState, event: 'end' });
+            } else if (status === 'InProgress' && scoreChanged) {
+              laEvents.push({ gameId: p.game_id, contentState: laState, event: 'update' });
+            }
+          }
+
           if (status === 'Final' && prev.status !== 'Final') {
             // Final whistle — celebrate a win, soft re-hook on a loss.
             // win/loss is the same for everyone (the AI's pick is global),
@@ -1304,6 +1348,12 @@ async function liveTick() {
         else log(`ESPN ${league}: ${rows.length} score row(s) refreshed`);
       }
     }
+    // Deliver Live Activity updates (no-op per game if nobody's tracking it).
+    for (const la of laEvents) {
+      await pushLiveActivity(la.gameId, la.contentState, la.event);
+    }
+    if (laEvents.length) log(`Live Activity: ${laEvents.length} update(s) pushed`);
+
     // Deliver any per-game pushes collected above (goals + finals).
     for (const ev of pushEvents) {
       if (ev.favOnly) {
