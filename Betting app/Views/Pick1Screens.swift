@@ -3283,7 +3283,7 @@ struct ProfileView: View {
                         Text("·")
                             .font(.archivo(12, weight: .bold))
                             .foregroundColor(Color(hex: "#0A0B0D").opacity(0.4))
-                        Text("7-day trial")
+                        Text("3-day trial")
                             .font(.archivo(12, weight: .bold))
                             .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
                     }

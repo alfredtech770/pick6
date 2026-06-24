@@ -2567,7 +2567,7 @@ struct ProUnlockCard: View {
                     .foregroundColor(Color(hex: "#0A0B0D"))
 
                 HStack(spacing: 6) {
-                    Text("7-day free trial")
+                    Text("3-day free trial")
                         .font(.archivo(12, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
                     Image(systemName: "arrow.right")

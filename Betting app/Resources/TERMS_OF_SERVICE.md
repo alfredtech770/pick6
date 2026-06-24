@@ -50,12 +50,12 @@ Pick1 offers two tiers:
 | Tier | Price | What you get |
 |---|---|---|
 | **Free** | $0 | One AI pick per sport per day (the highest-confidence pick of the day) |
-| **Pro Weekly** | $14.99/week | Every AI pick across all 8 sports, full reasoning, live tracking |
-| **Pro Monthly** | $39.99/month with 7-day free trial for new subscribers | Same as Pro Weekly, billed monthly |
+| **Pro Weekly** | $14.99/week with 3-day free trial for new subscribers | Every AI pick across all 8 sports, full reasoning, live tracking |
+| **Pro Monthly** | $39.99/month with 3-day free trial for new subscribers | Same as Pro Weekly, billed monthly |
 
 ### 4.2 Free trial
 
-The 7-day free trial applies to **new subscribers** of the Monthly product only. The trial begins when you tap "Start 7-Day Free Trial". At the end of the 7th day, your subscription auto-renews at $39.99/month unless you cancel at least 24 hours before the trial ends.
+The 3-day free trial applies to **new subscribers** of either Pro product. The trial begins when you tap "Start 3-Day Free Trial". At the end of the 3rd day, your subscription auto-renews at the standard price unless you cancel at least 24 hours before the trial ends.
 
 If you have previously subscribed to or trialed any Pick1 Pro product, you are not eligible for another free trial.
 

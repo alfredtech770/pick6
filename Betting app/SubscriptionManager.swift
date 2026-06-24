@@ -13,7 +13,7 @@
 //   com.pick1.app.pro.weekly    Auto-Renewable Weekly  $14.99
 //   com.pick1.app.pro.monthly   Auto-Renewable Monthly $39.99
 //
-// A 7-day free trial is configured as an "Introductory Offer" on the
+// A 3-day free trial is configured as an "Introductory Offer" on the
 // MONTHLY product only (the weekly product has no introductory offer).
 //
 // The Xcode target's bundle identifier is com.pick1.app (matches the IDs).
