@@ -2967,6 +2967,10 @@ struct ProfileView: View {
             PrivacySecuritySheet(isOpen: $showPrivacySecurity)
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showInvite) {
+            InviteFriendsView()
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showTerms) {
             LegalSheet(doc: .terms, isOpen: $showTerms)
                 .presentationDragIndicator(.visible)
@@ -3086,6 +3090,7 @@ struct ProfileView: View {
     @State private var notificationsOn: Bool = true
     @State private var showLanguagePicker: Bool = false
     @State private var showPrivacySecurity: Bool = false
+    @State private var showInvite: Bool = false
     @State private var showTerms: Bool = false
     /// Persisted language preference. Stored as the BCP-47 region-less
     /// code ("en", "fr", "es" …); UI lookups use `languageCode` for the
@@ -3174,6 +3179,14 @@ struct ProfileView: View {
                         trailing: isPro ? loc.t(.settings_subscription_pro)
                                         : loc.t(.settings_subscription_free),
                         action: onShowPaywall
+                    )
+                    divider
+                    settingsLinkRow(
+                        icon: "gift.fill",
+                        title: loc.t(.referral_title),
+                        sub: loc.t(.referral_subtitle),
+                        trailing: nil,
+                        action: { showInvite = true }
                     )
                     divider
                     settingsLinkRow(

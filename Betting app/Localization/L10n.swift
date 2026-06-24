@@ -170,6 +170,19 @@ enum L10nKey: String, CaseIterable {
     case paywall_track_wins                // "WINS"
     case paywall_track_graded              // "GRADED PICKS"
 
+    // ─── Referral / invite ────────────────────────────────────────
+    case referral_title
+    case referral_subtitle
+    case referral_your_code
+    case referral_share_cta
+    case referral_have_code
+    case referral_enter
+    case referral_redeem
+    case referral_redeemed
+    case referral_err_invalid
+    case referral_err_used
+    case referral_share_msg                // "...code %@ ... %@" (code, url)
+
     // ─── Update prompt (new App Store version available) ──────────
     case update_title
     case update_body
