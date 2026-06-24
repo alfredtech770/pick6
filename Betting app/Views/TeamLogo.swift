@@ -129,6 +129,15 @@ struct TeamLogo: View {
     let team: String
     let size: Crest.Size
 
+    /// Dynamically-resolved logo (ESPN search) when the pipeline + hardcoded
+    /// maps miss — e.g. WNBA, EuroLeague, NCAA, KBO/NPB.
+    @State private var resolvedURL: URL?
+
+    /// Instant logo from the pipeline-captured URL or the hardcoded maps.
+    private var staticURL: URL? {
+        TeamLogoStore.url(for: team) ?? TeamLogoLookup.url(sport: sport, team: team)
+    }
+
     var body: some View {
         // Individual-athlete sports (UFC / F1 / Tennis) — render the
         // athlete's headshot in a circle instead of a team crest.
@@ -149,21 +158,39 @@ struct TeamLogo: View {
                         .stroke(.white.opacity(0.15), lineWidth: 1)
                 )
                 .frame(width: size.w, height: size.h)
-        } else if let url = TeamLogoStore.url(for: team)
-                    ?? TeamLogoLookup.url(sport: sport, team: team) {
-            CachedImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .padding(size == .big ? 4 : 2)
-                    .frame(width: size.w, height: size.h)
-            } placeholder: {
-                // Colored crest while loading / if the logo can't be fetched
+        } else {
+            teamCrest
+        }
+    }
+
+    /// Real crest when we have a URL (pipeline / hardcoded / dynamically
+    /// resolved), otherwise the colored shield. Kicks off a dynamic ESPN
+    /// lookup when the fast paths miss so unmapped leagues still get a
+    /// real logo instead of a generic shield.
+    @ViewBuilder
+    private var teamCrest: some View {
+        Group {
+            if let url = staticURL ?? resolvedURL {
+                CachedImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(size == .big ? 4 : 2)
+                        .frame(width: size.w, height: size.h)
+                } placeholder: {
+                    Crest(team: team, size: size)
+                }
+            } else {
+                // Colored shield while the dynamic lookup runs / if it fails.
                 Crest(team: team, size: size)
             }
-        } else {
-            // Team sport with no logo mapping — keep colored shield.
-            Crest(team: team, size: size)
+        }
+        .task(id: team) {
+            guard staticURL == nil else { return }
+            resolvedURL = TeamLogoResolver.shared.cached(sport: sport, team: team)
+            if resolvedURL == nil {
+                resolvedURL = await TeamLogoResolver.shared.resolve(sport: sport, team: team)
+            }
         }
     }
 }
