@@ -269,6 +269,16 @@ struct MatchDetailView: View {
                     // fake per-stat splits for every game, even upcoming
                     // ones — removed).
                     scoreHeader
+                    // "What is this league" descriptor — only shows for
+                    // leagues whose code isn't self-explanatory (KBO, NPB,
+                    // EuroLeague, …), so users know what they're looking at.
+                    if let blurb = leagueBlurb(pick.league) {
+                        Text(blurb)
+                            .font(.archivo(11, weight: .medium))
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.bottom, 12)
+                    }
                     pickHeroCard
                         .padding(.horizontal, 16)
                         .padding(.bottom, 14)

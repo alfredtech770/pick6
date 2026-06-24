@@ -1148,6 +1148,31 @@ func displayLeague(_ league: String, sport: String? = nil) -> String {
     }
 }
 
+/// One-line "what is this league" descriptor — full name + country/region
+/// flag — for leagues whose code isn't self-explanatory. Flag instead of a
+/// country word keeps it language-neutral. Returns nil for universally-known
+/// leagues (NBA/NFL/MLB/NHL/EPL/UFC/F1) so the detail page stays clean.
+func leagueBlurb(_ league: String) -> String? {
+    switch league.uppercased() {
+    case "KBO":        return "Korea Baseball Organization · 🇰🇷"
+    case "NPB":        return "Nippon Professional Baseball · 🇯🇵"
+    case "EUROLEAGUE": return "EuroLeague Basketball · 🇪🇺"
+    case "IPL":        return "Indian Premier League · 🇮🇳"
+    case "MLS":        return "Major League Soccer · 🇺🇸"
+    case "LIGAMX":     return "Liga MX · 🇲🇽"
+    case "KHL":        return "Kontinental Hockey League · 🇷🇺"
+    case "AHL":        return "American Hockey League · 🇺🇸"
+    case "WNBA":       return "Women's National Basketball · 🇺🇸"
+    case "NCAAB":      return "NCAA College Basketball · 🇺🇸"
+    case "LALIGA":     return "La Liga · 🇪🇸"
+    case "SERIEA":     return "Serie A · 🇮🇹"
+    case "BUNDESLIGA": return "Bundesliga · 🇩🇪"
+    case "LIGUE1":     return "Ligue 1 · 🇫🇷"
+    case "UCL":        return "UEFA Champions League · 🇪🇺"
+    default:           return nil
+    }
+}
+
 private func crestColor(for team: String) -> Color {
     // Stable palette per team: use simple hash → curated palette of bold sports hues
     let palette: [Color] = [
