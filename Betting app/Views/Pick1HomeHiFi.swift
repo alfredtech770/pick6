@@ -66,6 +66,9 @@ struct Pick1HomeHiFi: View {
     /// Dismissed for this session only — the banner returns next launch
     /// while a newer App Store version is still out there.
     @State private var updateDismissed = false
+    /// Keeps the splash up until the first slate + its flags/logos are
+    /// fully cached, so the home appears complete (no pop-in).
+    @State private var contentReady = false
     @EnvironmentObject private var subs: SubscriptionManager
     @EnvironmentObject private var favorites: FavoritesStore
     @Environment(AuthManager.self) private var auth
@@ -127,6 +130,9 @@ struct Pick1HomeHiFi: View {
                                         onTapSport: { sportHub = $0 },
                                         onUnlock: { showPaywall = true })
                             .ignoresSafeArea(edges: .top)
+                            // Screenshots of the picks feed capture the
+                            // "go get your own" promo instead of the picks.
+                            .shareGuarded()
                     }
                 case .picks:
                     // Picks tab renders the Wins design exactly — the
@@ -197,7 +203,26 @@ struct Pick1HomeHiFi: View {
             }
         }
         .animation(Pick1Springs.smooth, value: updateChecker.updateAvailable)
-        .task { await vm.startLiveSession() }
+        .overlay {
+            if !contentReady {
+                Pick1SplashLoader()
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
+        }
+        .task {
+            await vm.startLiveSession()
+            // Fully cache the home's flags + logos before revealing — the
+            // splash stays up until this finishes (or the safety timeout).
+            await LogoPrefetch.warmAwaiting(picks: vm.todayPicks + vm.filteredUpcomingEventPicks)
+            withAnimation(.easeOut(duration: 0.4)) { contentReady = true }
+        }
+        .task {
+            // Safety net: never let the splash stick longer than ~8s, even
+            // if the network is slow.
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            if !contentReady { withAnimation(.easeOut(duration: 0.4)) { contentReady = true } }
+        }
         .task { await updateChecker.check() }
         // Drive Live Activities off the live-score feed: start/update/end
         // a Lock-Screen + Dynamic Island card for each favorited game that's
