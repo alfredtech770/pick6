@@ -1072,54 +1072,6 @@ enum LogoPrefetch {
         warm(urls: urls)
     }
 
-    /// AWAITABLE prefetch — gathers every image URL the given picks will
-    /// render (team crests, national flags, athlete headshots + flags),
-    /// resolving the dynamic ones (WNBA / smaller leagues / off-map
-    /// fighters) too, then downloads them all and waits. Used by the splash
-    /// loader so flags + logos are fully cached BEFORE the home appears —
-    /// no pop-in. Capped by the per-request timeout so it never hangs.
-    @MainActor
-    static func warmAwaiting(picks: [Pick]) async {
-        var urls = Set<URL>()
-        for p in picks {
-            if AthleteHeadshot.isIndividual(sport: p.sport) {
-                for name in [p.homeTeam, p.awayTeam] {
-                    if let u = AthleteHeadshotLookup.url(sport: p.sport, name: name) { urls.insert(u) }
-                    else {
-                        let info = await AthleteResolver.shared.resolve(sport: p.sport, name: name)
-                        if let s = info.headshot, let u = URL(string: s) { urls.insert(u) }
-                        if let s = info.flag, let u = URL(string: s) { urls.insert(u) }
-                    }
-                }
-            } else if (p.sport == "soccer" || p.sport == "cricket"),
-                      wcFlagCode(for: nationalTeamBase(p.homeTeam)) != nil {
-                for name in [p.homeTeam, p.awayTeam] {
-                    if let code = wcFlagCode(for: nationalTeamBase(name)),
-                       let u = flagImageURL(for: code) { urls.insert(u) }
-                }
-            } else {
-                for name in [p.homeTeam, p.awayTeam] {
-                    if let u = TeamLogoStore.url(for: name) ?? TeamLogoLookup.url(sport: p.sport, team: name) {
-                        urls.insert(u)
-                    } else if let u = await TeamLogoResolver.shared.resolve(sport: p.sport, team: name) {
-                        urls.insert(u)
-                    }
-                }
-            }
-        }
-        guard !urls.isEmpty else { return }
-        await withTaskGroup(of: Void.self) { group in
-            for url in urls {
-                group.addTask {
-                    var req = URLRequest(url: url)
-                    req.cachePolicy = .returnCacheDataElseLoad
-                    req.timeoutInterval = 6
-                    _ = try? await URLSession.shared.data(for: req)
-                }
-            }
-        }
-    }
-
     /// Prefetch a set of arbitrary logo URLs (used by the Summer Football hub
     /// for any async crests, and internally by `warm(picks:)`).
     static func warm(urls: Set<URL>) {
