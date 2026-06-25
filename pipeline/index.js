@@ -271,7 +271,12 @@ const LEAGUES = {
   },
 
   // ─── Combat — multiple bouts per card; one pick per bout ───────
+  // DISABLED 2026-06-25: the research-mode model was confabulating fighter
+  // records, debut status, betting lines, and methods of victory (a single
+  // bad breakdown cost a partnership). Stays off until the grounded combat
+  // path (real fighter data + verification pass) is built and validated.
   UFC: {
+    enabled: false,
     sport: 'combat', promptMode: 'team', fetcher: fetchUFC, researchFallback: true,
     notes: 'Treat each fight as an independent prediction. Reach, age, fight IQ, recent form, layoff length, and weight cuts all matter. Skip prelims or matchups with sparse data.',
     normalizer: (f) => ({
@@ -925,6 +930,7 @@ async function runPipeline() {
     await gradePicks();
 
     for (const [league, cfg] of Object.entries(LEAGUES)) {
+      if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
       // 1. Pull events from primary source.
       const raw = cfg.fetcher ? await cfg.fetcher() : [];
 
@@ -1004,6 +1010,7 @@ async function refreshActiveLeaguesCache() {
   if (leaguesCacheDate === today && leaguesWithGamesToday !== null) return leaguesWithGamesToday;
   const active = new Set();
   for (const [league, cfg] of Object.entries(LEAGUES)) {
+    if (cfg.enabled === false) continue;
     if (cfg.promptMode === 'research' || !cfg.fetcher) continue;
     try {
       const raw = await cfg.fetcher();
