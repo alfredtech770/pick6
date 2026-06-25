@@ -29,6 +29,7 @@ const axios = require('axios');
 // Without it, @supabase/realtime-js throws on createClient() and
 // crashes the worker on boot.
 const ws = require('ws');
+const combat = require('./combat');   // grounded UFC/MMA path (ESPN-sourced facts + verification)
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-7';
@@ -276,7 +277,8 @@ const LEAGUES = {
   // bad breakdown cost a partnership). Stays off until the grounded combat
   // path (real fighter data + verification pass) is built and validated.
   UFC: {
-    enabled: false,
+    enabled: false,        // flip to true only after a grounded sample is reviewed
+    combatGrounded: true,  // route through combat.js (ESPN facts + verification), NOT research mode
     sport: 'combat', promptMode: 'team', fetcher: fetchUFC, researchFallback: true,
     notes: 'Treat each fight as an independent prediction. Reach, age, fight IQ, recent form, layoff length, and weight cuts all matter. Skip prelims or matchups with sparse data.',
     normalizer: (f) => ({
@@ -931,6 +933,38 @@ async function runPipeline() {
 
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
+
+      // GROUNDED COMBAT PATH — facts come from ESPN, not the model's memory.
+      // Build per-fight ground truth → constrained generation → verification
+      // pass → save. Bypasses the research-mode flow that confabulated.
+      if (cfg.combatGrounded) {
+        if (claudeBudgetExceeded()) { log(`🛑 ${league}: Claude cost ceiling reached — skipping.`); continue; }
+        if (!checkWebSearchBudget(15)) { log(`💸 ${league}: web_search budget reached — skipping.`); continue; }
+        const gt = await combat.buildCardGroundTruth();
+        if (!gt || !gt.fights?.length) { log(`${league}: no upcoming card on ESPN — skipping.`); continue; }
+        const eventDate = (gt.event.date || '').slice(0, 10);
+        // De-dup: skip the whole event if we've already saved its fights.
+        const { data: existing } = await supabase.from('picks')
+          .select('game_id').eq('league', 'UFC').gte('game_date', todayISO());
+        const seen = new Set((existing || []).map((p) => p.game_id));
+        gt.fights = gt.fights.filter((f) => !seen.has(`ufc-${f.fightId}`));
+        if (!gt.fights.length) { log(`${league}: upcoming card already covered.`); continue; }
+        log(`Analyzing ${gt.fights.length} ${league} fights (grounded: ${gt.event.name})…`);
+        let draft = await combat.generateGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, groundTruth: gt, schema: PICK_SCHEMA, log });
+        draft = await combat.verifyGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, picks: draft, groundTruth: gt, log });
+        // Stamp deterministic ids/dates so dedup + scheduling work.
+        const fightByName = new Map();
+        for (const f of gt.fights) { fightByName.set(f.a.name, f); fightByName.set(f.b.name, f); }
+        for (const p of draft) {
+          const f = fightByName.get(p.home_team) || fightByName.get(p.away_team);
+          if (f) p.game_id = `ufc-${f.fightId}`;
+          p.game_date = eventDate;
+          p.predicted_score = null; p.field_odds = null;
+        }
+        await savePicks('UFC', draft);
+        continue;
+      }
+
       // 1. Pull events from primary source.
       const raw = cfg.fetcher ? await cfg.fetcher() : [];
 

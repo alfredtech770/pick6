@@ -214,11 +214,140 @@ async function buildCardGroundTruth({ mainCardOnly = false } = {}) {
   return { event: { id: card.eventId, name: card.eventName, date: card.eventDate }, fights: out };
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 5. GROUNDED GENERATION — write picks that may only assert fetched facts
+// ════════════════════════════════════════════════════════════════════
+// The model is handed the ground truth and told, in no uncertain terms,
+// that it may not state anything outside it. The two failure modes that
+// cost the partnership are called out by name:
+//   • experience/debut: derive ONLY from recent[]. Non-empty recent →
+//     the fighter is NOT debuting. Never call anyone a debutant/newcomer
+//     unless recent is empty AND loggedFights is 0.
+//   • method of victory: describe a past fight ONLY from its stats. If
+//     takedownsLanded is 0 and controlTime ~0, it was NOT a grappling
+//     win — do not say "top control"/"grappling dominance".
+// web_search is permitted for ONE thing only: the current betting line.
+
+function fightToContext(f) {
+  const side = (s) => {
+    if (!s.recent || !s.recent.length) {
+      return `${s.name} (record ${s.record || 'unknown'}) — NO fight history available on file. Treat as LIMITED DATA: do not assert experience level, debut status, or any past-fight specifics.`;
+    }
+    const lines = s.recent.map((r) => {
+      const td = r.takedownsLanded != null ? `${r.takedownsLanded} TD landed` : 'TD n/a';
+      const ctrl = r.controlTime ? `${r.controlTime} control` : 'no control';
+      const grappled = (r.takedownsLanded === 0 && (!r.controlTime || r.controlTime === '0:00'));
+      return `   • ${r.date} ${r.win ? 'WON' : 'LOST'} vs ${r.opponent} — ${td}, ${ctrl}, ${r.knockdowns ?? 0} KD, ${r.submissions ?? 0} sub, ${r.sigStrikesLanded ?? '?'} sig strikes${grappled ? ' [STAND-UP FIGHT: no takedowns, no control]' : ''}`;
+    });
+    return `${s.name} (record ${s.record || 'unknown'}, ${s.recent.length}+ fights on file → EXPERIENCED, not a debutant):\n${lines.join('\n')}`;
+  };
+  return `FIGHT: ${f.a.name} vs ${f.b.name}${f.weightClass ? ` (${f.weightClass})` : ''}${f.cardSegment ? ` — ${f.cardSegment}` : ''}\nA) ${side(f.a)}\nB) ${side(f.b)}`;
+}
+
+const GROUNDED_SYSTEM = `You are the combat-sports prediction engine for Pick1. You are writing fight breakdowns that a professional MMA analyst will read. Accuracy is the ONLY thing that matters — a single invented fact loses the partnership.
+
+ABSOLUTE RULES:
+1. You may ONLY state facts that appear in the GROUND TRUTH provided for each fight. Records, experience, and past-fight specifics come from there and NOWHERE ELSE.
+2. EXPERIENCE/DEBUT: If a fighter has fights listed on file, they are EXPERIENCED — never call them a debutant, newcomer, or inexperienced. Only call someone a debutant if their ground truth explicitly says NO fight history available.
+3. METHOD OF VICTORY: Describe a past fight ONLY from its stats. If a fight is tagged [STAND-UP FIGHT: no takedowns, no control], you MUST NOT describe it as a grappling win, top control, or wrestling dominance — it was decided on the feet. If takedowns landed > 0 and control time is meaningful, grappling framing is fair.
+4. NO INVENTED NUMBERS: Never state a betting line, Tapology/poll percentage, or model number unless you found it THIS run via web_search and you name the source. Otherwise omit it.
+5. For a LIMITED DATA fighter (no history on file), keep the breakdown general and cautious — physical/contextual reasoning only, no fabricated specifics.
+
+Use web_search for ONE purpose only: the current betting line for the picked fighter (market_odds + odds_source). Null both if not found. Do NOT web_search for records or fight history — use the ground truth.
+
+Pick the stronger fighter in each fight with an honest, calibrated probability (integer 55-97). Reasoning = 2-3 sentences built strictly from the ground truth. key_factor = the single biggest grounded reason. matchup_facts = 3-5 {label,value} pairs taken straight from the ground truth.`;
+
+async function generateGroundedCombatPicks({ anthropic, model, groundTruth, schema, log = console.log }) {
+  const fightsCtx = groundTruth.fights.map(fightToContext).join('\n\n');
+  const userPrompt = [
+    `Event: ${groundTruth.event.name} — ${groundTruth.event.date}`,
+    `Set game_date to ${(groundTruth.event.date || '').slice(0, 10)} on every pick.`,
+    '',
+    'GROUND TRUTH (the ONLY facts you may assert):',
+    '',
+    fightsCtx,
+    '',
+    'Return one pick per fight via the schema. home_team/away_team must match the fighter names above exactly. The "pick" must be one of them.',
+  ].join('\n');
+
+  const stream = anthropic.messages.stream({
+    model,
+    max_tokens: 32000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'high', format: { type: 'json_schema', schema } },
+    tools: [{ type: 'web_search_20260209', name: 'web_search' }],
+    system: [{ type: 'text', text: GROUNDED_SYSTEM, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+  const final = await stream.finalMessage();
+  const block = final.content.find((b) => b.type === 'text');
+  const picks = block ? JSON.parse(block.text).picks : [];
+  log(`🥊 Grounded generation produced ${picks.length} combat picks`);
+  return picks;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 6. VERIFICATION PASS — fact-check every claim against the ground truth
+// ════════════════════════════════════════════════════════════════════
+// A second, independent model call whose only job is to REFUTE. It sees
+// the ground truth and the draft breakdown and strips/rewrites anything
+// the ground truth doesn't support, or drops the pick if its rationale
+// collapses. This is the backstop for anything that slips past gen.
+
+const VERIFY_SCHEMA = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['clean', 'corrected', 'drop'] },
+    issues: { type: 'array', items: { type: 'string' }, description: 'Each unsupported/false claim found, quoted.' },
+    reasoning: { type: 'string', description: 'Corrected reasoning using only ground-truth facts.' },
+    key_factor: { type: 'string' },
+    matchup_facts: {
+      type: 'array',
+      items: { type: 'object', properties: { label: { type: 'string' }, value: { type: 'string' } }, required: ['label', 'value'], additionalProperties: false },
+    },
+  },
+  required: ['verdict', 'issues', 'reasoning', 'key_factor', 'matchup_facts'],
+  additionalProperties: false,
+};
+
+async function verifyGroundedCombatPicks({ anthropic, model, picks, groundTruth, log = console.log }) {
+  const byFight = new Map();
+  for (const f of groundTruth.fights) {
+    byFight.set(`${f.a.name}|${f.b.name}`, f);
+    byFight.set(`${f.b.name}|${f.a.name}`, f);
+  }
+  const kept = [];
+  for (const p of picks) {
+    const f = byFight.get(`${p.home_team}|${p.away_team}`);
+    if (!f) { kept.push(p); continue; }   // can't map → leave as-is (rare)
+    const truth = fightToContext(f);
+    const draft = `pick: ${p.pick} (${p.probability}%)\nreasoning: ${p.reasoning}\nkey_factor: ${p.key_factor}\nmatchup_facts: ${JSON.stringify(p.matchup_facts)}`;
+    const msg = await anthropic.messages.create({
+      model,
+      max_tokens: 1500,
+      system: 'You are a ruthless MMA fact-checker. The GROUND TRUTH is the only source of truth. Find every claim in the DRAFT that the ground truth does not support — invented records, wrong experience/debut status, grappling claims about stand-up fights, fabricated betting lines or poll numbers. Rewrite reasoning/key_factor/matchup_facts to keep ONLY supported claims. If after removing unsupported claims the pick has no real rationale left, verdict=drop. If you removed/changed anything, verdict=corrected; if it was already fully supported, verdict=clean.',
+      output_config: { format: { type: 'json_schema', schema: VERIFY_SCHEMA } },
+      messages: [{ role: 'user', content: `GROUND TRUTH:\n${truth}\n\nDRAFT:\n${draft}` }],
+    });
+    const block = msg.content.find((b) => b.type === 'text');
+    const v = block ? JSON.parse(block.text) : null;
+    if (!v) { kept.push(p); continue; }
+    if (v.verdict === 'drop') { log(`   ✂️  dropped ${p.home_team} vs ${p.away_team}: ${v.issues.join('; ')}`); continue; }
+    if (v.verdict === 'corrected') log(`   ✏️  corrected ${p.home_team} vs ${p.away_team}: ${v.issues.join('; ')}`);
+    kept.push({ ...p, reasoning: v.reasoning, key_factor: v.key_factor, matchup_facts: v.matchup_facts });
+  }
+  log(`🔎 Verification: ${kept.length}/${picks.length} combat picks kept`);
+  return kept;
+}
+
 module.exports = {
   fetchUpcomingCard,
   resolveFighterId,
   fighterProfile,
   buildCardGroundTruth,
+  fightToContext,
+  generateGroundedCombatPicks,
+  verifyGroundedCombatPicks,
 };
 
 // ── CLI test: `node combat.js test` ──────────────────────────────────
