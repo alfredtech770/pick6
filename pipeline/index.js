@@ -277,7 +277,7 @@ const LEAGUES = {
   // bad breakdown cost a partnership). Stays off until the grounded combat
   // path (real fighter data + verification pass) is built and validated.
   UFC: {
-    enabled: false,        // flip to true only after a grounded sample is reviewed
+    enabled: true,         // re-enabled 2026-06-25 after grounded sample verified on-device
     combatGrounded: true,  // route through combat.js (ESPN facts + verification), NOT research mode
     sport: 'combat', promptMode: 'team', fetcher: fetchUFC, researchFallback: true,
     notes: 'Treat each fight as an independent prediction. Reach, age, fight IQ, recent form, layoff length, and weight cuts all matter. Skip prelims or matchups with sparse data.',
