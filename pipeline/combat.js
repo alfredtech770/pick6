@@ -340,6 +340,96 @@ async function verifyGroundedCombatPicks({ anthropic, model, picks, groundTruth,
   return kept;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 7. TALE OF THE TAPE — physicals + career stats for the detail card
+// ════════════════════════════════════════════════════════════════════
+// ESPN's athlete profile carries the full tale-of-the-tape (height, reach,
+// age, stance, weight class, nickname, country) and a career-stats split
+// (strikes/min, accuracy, takedown avg/accuracy, sub avg, finish %). All
+// of it is real and free. We compute the comparison server-side so the app
+// renders a complete fight card without any client-side guessing.
+
+async function careerStats(id) {
+  const d = await getJSON(`${CORE}/athletes/${id}/statistics?lang=en&region=us`);
+  const cats = d?.splits?.categories;
+  if (!cats) return null;
+  const v = (n) => { for (const c of cats) for (const s of c.stats || []) if (s.name === n) return s.displayValue; return null; };
+  // NOTE: ESPN's koPercentage/tkoPercentage/decisionPercentage are
+  // mis-scaled (a heavy finisher reads ~6%), so we deliberately exclude
+  // them. The per-minute/accuracy/avg fields below are reliable.
+  return {
+    strLPM: v('strikeLPM'), strAcc: v('strikeAccuracy'),
+    tdAvg: v('takedownAvg'), tdAcc: v('takedownAccuracy'),
+    subAvg: v('submissionAvg'),
+  };
+}
+
+async function fighterTale(name, record = null) {
+  const id = await resolveFighterId(name);
+  if (!id) return { name, record, id: null };
+  const [prof, career] = await Promise.all([
+    getJSON(`${CORE}/athletes/${id}?lang=en&region=us`),
+    careerStats(id),
+  ]);
+  const wc = prof?.weightClass;
+  return {
+    name, id, record,
+    nickname: prof?.nickname || null,
+    height: prof?.displayHeight || null,
+    reach: prof?.reach != null ? `${prof.reach}"` : null,
+    reachNum: typeof prof?.reach === 'number' ? prof.reach : null,
+    age: prof?.age ?? null,
+    stance: typeof prof?.stance === 'string' ? prof.stance : (prof?.stance?.text || null),
+    weightClass: (typeof wc === 'string' ? wc : wc?.text) || null,
+    country: prof?.citizenship || null,
+    career: career || null,
+  };
+}
+
+const last = (n) => (n || '').trim().split(/\s+/).slice(-1)[0];
+
+// Structured side-by-side object stored on the pick (powers the app's
+// Tale of the Tape section). home/away match the pick's home_team/away_team.
+async function buildTaleOfTape(fight) {
+  const [a, b] = await Promise.all([
+    fighterTale(fight.a.name, fight.a.record),
+    fighterTale(fight.b.name, fight.b.record),
+  ]);
+  const edges = {};
+  if (a.reachNum && b.reachNum && a.reachNum !== b.reachNum) {
+    const diff = Math.round((a.reachNum - b.reachNum) * 10) / 10;
+    edges.reach = { fighter: diff > 0 ? a.name : b.name, value: `+${Math.abs(diff)}"` };
+  }
+  if (a.age && b.age && a.age !== b.age) {
+    edges.youth = { fighter: a.age < b.age ? a.name : b.name, value: `${Math.abs(a.age - b.age)} yrs younger` };
+  }
+  return { a, b, edges, weightClass: a.weightClass || b.weightClass || fight.weightClass || null };
+}
+
+// Deterministic comparison rows for the existing single-column MATCHUP
+// list — the no-build quick win. Each value packs both fighters by last
+// name so it stays compact and never fabricated.
+function combatComparisonFacts(tot) {
+  const { a, b } = tot;
+  const la = last(a.name), lb = last(b.name);
+  const rows = [];
+  const both = (la1, va, vb, label, suffix = '') => {
+    if (va == null && vb == null) return;
+    rows.push({ label, value: `${la} ${va ?? '—'}${suffix} · ${lb} ${vb ?? '—'}${suffix}` });
+  };
+  if (a.record || b.record) both(la, a.record, b.record, 'Record');
+  both(la, a.reach, b.reach, 'Reach');
+  both(la, a.height, b.height, 'Height');
+  if (a.age || b.age) both(la, a.age, b.age, 'Age');
+  if (a.career?.strLPM || b.career?.strLPM) both(la, a.career?.strLPM, b.career?.strLPM, 'Strikes/min');
+  if (a.career?.strAcc || b.career?.strAcc) {
+    const pct = (v) => v != null ? `${Math.round(parseFloat(v))}%` : '—';
+    rows.push({ label: 'Strike accuracy', value: `${la} ${pct(a.career?.strAcc)} · ${lb} ${pct(b.career?.strAcc)}` });
+  }
+  if (a.career?.tdAvg || b.career?.tdAvg) both(la, a.career?.tdAvg, b.career?.tdAvg, 'Takedowns/15');
+  return rows.slice(0, 7);
+}
+
 module.exports = {
   fetchUpcomingCard,
   resolveFighterId,
@@ -348,6 +438,9 @@ module.exports = {
   fightToContext,
   generateGroundedCombatPicks,
   verifyGroundedCombatPicks,
+  fighterTale,
+  buildTaleOfTape,
+  combatComparisonFacts,
 };
 
 // ── CLI test: `node combat.js test` ──────────────────────────────────

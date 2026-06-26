@@ -749,6 +749,9 @@ async function savePicks(league, picks) {
                          podium: Math.max(0, Math.min(100, Math.round(d.podium))) }))
           .slice(0, 12)
       : null,
+    // Structured tale-of-the-tape for combat (physicals + career stats);
+    // null for every other sport.
+    tale_of_tape: p.tale_of_tape || null,
     result: 'pending',
   }));
 
@@ -957,7 +960,18 @@ async function runPipeline() {
         for (const f of gt.fights) { fightByName.set(f.a.name, f); fightByName.set(f.b.name, f); }
         for (const p of draft) {
           const f = fightByName.get(p.home_team) || fightByName.get(p.away_team);
-          if (f) p.game_id = `ufc-${f.fightId}`;
+          if (f) {
+            p.game_id = `ufc-${f.fightId}`;
+            // Tale of the tape (ESPN physicals + career stats) → structured
+            // field for the app's side-by-side section AND a clean,
+            // guaranteed-accurate set of MATCHUP facts (replaces the
+            // model's facts, which the reasoning text already covers).
+            try {
+              const tot = await combat.buildTaleOfTape(f);
+              const facts = combat.combatComparisonFacts(tot);
+              if (facts.length) { p.matchup_facts = facts; p.tale_of_tape = tot; }
+            } catch (e) { log(`   tale-of-tape failed for ${p.home_team}: ${e.message}`); }
+          }
           p.game_date = eventDate;
           p.predicted_score = null; p.field_odds = null;
         }
