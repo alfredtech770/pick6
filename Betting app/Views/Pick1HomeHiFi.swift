@@ -1549,12 +1549,12 @@ struct SportFilter: View {
         }
     }
 
-    /// All 8 sport chips, always visible. Order matches the user's
-    /// preferred order (Football, Basketball, Baseball, F1, Combat,
-    /// Soccer, Cricket, Hockey). Tapping a sport with no picks today
-    /// shows the empty state — better discovery than hiding the chip.
+    /// The sport chips, always visible, in the requested order:
+    /// Soccer · MLB · Golf · F1 · MMA · Cricket · Basketball · Hockey.
+    /// Tapping a sport with no picks today shows the empty state — better
+    /// discovery than hiding the chip.
     private var visibleSports: [String] {
-        ["football", "basketball", "baseball", "f1", "combat", "soccer", "cricket", "hockey"]
+        ["soccer", "baseball", "golf", "f1", "combat", "cricket", "basketball", "hockey"]
     }
 
     /// Carousel label — uses the SPORT category name (Basketball, Soccer)
@@ -1567,10 +1567,11 @@ struct SportFilter: View {
         case "basketball": return "Basketball"
         case "football":   return "Football"
         case "soccer":     return "Soccer"
-        case "baseball":   return "Baseball"
+        case "baseball":   return "MLB"
+        case "golf":       return "Golf"
         case "hockey":     return "Hockey"
         case "combat":     return "MMA"
-        case "f1":         return "Racing"
+        case "f1":         return "F1"
         case "cricket":    return "Cricket"
         default:           return sport.capitalized
         }
@@ -1585,6 +1586,7 @@ struct SportFilter: View {
         case "hockey":     return "hockey.puck.fill"
         case "combat":     return "figure.boxing"
         case "f1":         return "car.fill"
+        case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
         default:           return "circle"
         }
