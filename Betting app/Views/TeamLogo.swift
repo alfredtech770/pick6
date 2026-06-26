@@ -308,7 +308,7 @@ struct AthleteHeadshot: View {
 
     static func isIndividual(sport: String) -> Bool {
         switch sport {
-        case "combat", "f1", "tennis": return true
+        case "combat", "f1", "tennis", "golf": return true
         default: return false
         }
     }

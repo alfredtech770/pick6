@@ -108,6 +108,7 @@ final class AthleteResolver: ObservableObject {
         case "combat": return "mma"
         case "tennis": return "tennis"
         case "f1":     return "racing"
+        case "golf":   return "golf"
         default:       return sport
         }
     }
@@ -118,6 +119,7 @@ final class AthleteResolver: ObservableObject {
         case "combat": return "mma"
         case "f1":     return "rpm"
         case "tennis": return "tennis"
+        case "golf":   return "golf"
         default:       return "mma"
         }
     }

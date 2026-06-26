@@ -412,6 +412,7 @@ struct MatchDetailView: View {
         case "hockey":     return Color(hex: "#5B8CFF")   // blue
         case "combat":     return Color(hex: "#FF3C28")   // red
         case "f1":         return Color(hex: "#E10600")   // ferrari red
+        case "golf":       return Color(hex: "#3FA34D")   // fairway green
         case "tennis":     return Color(hex: "#C6FF3A")   // electric yellow-green
         case "cricket":    return Color(hex: "#FFD93D")   // saffron
         default:           return Color(hex: "#D4FF3A")
@@ -440,7 +441,7 @@ struct MatchDetailView: View {
 
     /// Race events (F1/NASCAR) use the field-odds frame instead of a
     /// two-competitor matchup card.
-    private var isRaceEvent: Bool { pick.sport == "f1" }
+    private var isRaceEvent: Bool { pick.sport == "f1" || pick.sport == "golf" }
 
     /// Podium-probabilities frame: every contending driver with their
     /// win and podium (top-3) chances, ranked, the AI's pick highlighted.
@@ -528,7 +529,34 @@ struct MatchDetailView: View {
     /// Each team gets a real `TeamLogo` (uses our ESPN-CDN wrapper, falls back
     /// to the colored shield for individual-athlete sports). Team names are
     /// fixed 30pt Anton (26pt for tennis/UFC/F1 where names are longer).
+    /// Field events (F1, golf) aren't head-to-head — "CHAMPIONSHIP VS
+    /// FIELD" reads as nonsense — so they get a single-competitor header:
+    /// the picked driver/golfer + the event name.
     private var scoreHeader: some View {
+        if isRaceEvent { return AnyView(fieldEventHeader) }
+        return AnyView(twoColumnHeader)
+    }
+
+    private var fieldEventHeader: some View {
+        VStack(spacing: 8) {
+            AthleteHeadshot(sport: pick.sport, name: pick.pick, size: .big)
+            Text("OUR PICK · TO WIN")
+                .font(.archivoNarrow(10, weight: .bold)).tracking(2.8)
+                .foregroundColor(Color(hex: "#6E6F75"))
+            Text(teamShortName(pick.pick, sport: pick.sport))
+                .font(.anton(30)).tracking(-0.15)
+                .foregroundColor(Color(hex: "#F5F3EE"))
+                .lineLimit(1).minimumScaleFactor(0.45).allowsTightening(true)
+            Text(pick.homeTeam.uppercased())
+                .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
+                .foregroundColor(sportAccent)
+                .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20).padding(.top, 4).padding(.bottom, 18)
+    }
+
+    private var twoColumnHeader: some View {
         HStack(alignment: .center, spacing: 14) {
             // HOME column (always left)
             VStack(spacing: 8) {
@@ -2245,16 +2273,17 @@ struct SportHubView: View {
                     // ── TODAY ────────────────────────────────────────
                     HubSectionHead(
                         title: (sport == "f1") ? "RACE FIELD"
+                             : (sport == "golf") ? "THE FIELD"
                              : (hasLiveToday ? "TODAY · LIVE & UPCOMING"
                                              : (isPro ? "TODAY" : "FREE PICK")),
-                        meta: (sport == "f1" && (featuredRace?.fieldOdds?.isEmpty == false))
-                             ? "\(featuredRace!.fieldOdds!.count) DRIVERS"
+                        meta: ((sport == "f1" || sport == "golf") && (featuredRace?.fieldOdds?.isEmpty == false))
+                             ? "\(featuredRace!.fieldOdds!.count) \(sport == "golf" ? "CONTENDERS" : "DRIVERS")"
                              : "\(filteredPicksForSport.count) GAME\(filteredPicksForSport.count == 1 ? "" : "S")",
                         live: hasLiveToday
                     )
                     .padding(.bottom, 10)
                     Group {
-                        if sport == "f1", let race = featuredRace,
+                        if (sport == "f1" || sport == "golf"), let race = featuredRace,
                            let drivers = race.fieldOdds, !drivers.isEmpty {
                             raceDriverCards(race: race, drivers: drivers)
                         } else {

@@ -693,7 +693,7 @@ struct HeroCard: View {
                                    numberColor: Color.white)
                 CrestPair(home: pick?.homeTeam, away: pick?.awayTeam,
                           sport: pick?.sport ?? "",
-                          soloName: pick?.sport == "f1" ? pick?.pick : nil)
+                          soloName: (pick?.sport == "f1" || pick?.sport == "golf") ? pick?.pick : nil)
             }
             .frame(width: 130)
         }
@@ -704,9 +704,9 @@ struct HeroCard: View {
         // Race events (F1/NASCAR) aren't head-to-head — the pick is the
         // driver, the "other" side is the whole field. "ANTONELLI OVER
         // FIELD" read as nonsense, so races get "<DRIVER> / TO WIN".
-        if pick.sport == "f1" {
-            let driver = teamShortName(pick.pick, sport: pick.sport).uppercased()
-            return "\(driver)\nTO WIN"
+        if pick.sport == "f1" || pick.sport == "golf" {
+            let winner = teamShortName(pick.pick, sport: pick.sport).uppercased()
+            return "\(winner)\nTO WIN"
         }
         // "AWAY OVER HOME" if pick is away; "HOME OVER AWAY" if pick is home.
         // Use teamShortName so "BOSTON CELTICS" / "PHILADELPHIA 76ERS" don't
@@ -1106,7 +1106,7 @@ func teamShortName(_ team: String, sport: String? = nil) -> String {
     // of total length — "Jon Jones" → "JONES", "Jannik Sinner" →
     // "SINNER", "Lando Norris" → "NORRIS". Keeps cards tight and
     // matches how UFC / F1 / tennis broadcasts label competitors.
-    if let sport, sport == "combat" || sport == "f1" || sport == "tennis" {
+    if let sport, sport == "combat" || sport == "f1" || sport == "tennis" || sport == "golf" {
         if let last = trimmed.split(separator: " ").last {
             return String(last).uppercased()
         }
@@ -1716,7 +1716,7 @@ struct GameCard: View {
     /// card layout (which already wires AthleteHeadshot for the two
     /// fighters via TeamColumn → TeamLogo).
     private var isEventLayout: Bool {
-        pick.sport == "f1"
+        pick.sport == "f1" || pick.sport == "golf"
     }
 
     // ─── TEAM LAYOUT (NBA, NFL, EPL, MLB, NHL, NCAA, Cricket, Tennis) ──
