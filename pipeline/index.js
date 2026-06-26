@@ -32,6 +32,7 @@ const ws = require('ws');
 const combat = require('./combat');   // grounded UFC/MMA path (ESPN-sourced facts + verification)
 const soccer = require('./soccer');   // grounded World Cup facts (ESPN standings + form)
 const teamsport = require('./teamsport'); // grounded MLB/NBA/WNBA/NFL/NHL facts (ESPN standings + probables)
+const f1 = require('./f1');            // grounded F1 facts (ESPN driver championship)
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-7';
@@ -1056,6 +1057,9 @@ async function runPipeline() {
         // MLB/NBA/WNBA/NFL/NHL: replace model facts with ESPN season data.
         try { picks = await teamsport.enrichPicks(league, picks); }
         catch (e) { log(`   ${league} grounding failed: ${e.message}`); }
+      } else if (league === 'F1') {
+        try { picks = await f1.enrichPicks(picks); }
+        catch (e) { log(`   F1 grounding failed: ${e.message}`); }
       }
       await savePicks(league, picks);
     }
