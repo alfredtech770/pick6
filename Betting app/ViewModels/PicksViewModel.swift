@@ -185,15 +185,14 @@ class PicksViewModel: ObservableObject {
 
     // MARK: - Accuracy (home-screen "ACCURACY" tile)
     //
-    // The home tile is global — it should show the AI's overall hit
-    // rate regardless of which sport chip is selected. Wired through
-    // these helpers instead of `winRate` so the number doesn't jump
-    // around when the user filters chips.
+    // Sport-aware: when a sport chip is selected the tile reflects only
+    // that sport's settled picks; on "ALL" it's the overall hit rate.
+    // Routed through `filteredHistoryPicks` so it tracks the carousel.
 
-    /// AI hit rate over all settled picks (across every sport). Drives
-    /// the big number on the AccuracyTile.
+    /// AI hit rate over settled picks for the selected sport (every sport
+    /// on "ALL"). Drives the big number on the AccuracyTile.
     var accuracyAll: Double {
-        let settled = historyPicks.filter { !$0.isPending }
+        let settled = filteredHistoryPicks.filter { !$0.isPending }
         guard !settled.isEmpty else { return 0 }
         let wins = settled.filter { $0.isWin }.count
         return Double(wins) / Double(settled.count) * 100
@@ -203,7 +202,7 @@ class PicksViewModel: ObservableObject {
     /// + delta vs the prior N. Default N = 10 → "9-1 LAST 10".
     func recentSettled(_ n: Int = 10) -> [Pick] {
         Array(
-            historyPicks
+            filteredHistoryPicks
                 .filter { !$0.isPending }
                 .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                         > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
@@ -231,7 +230,7 @@ class PicksViewModel: ObservableObject {
     /// points. Positive when the AI is heating up, negative when cooling.
     /// Nil if either window is empty.
     func accuracyDelta(window: Int = 10) -> Double? {
-        let settled = historyPicks
+        let settled = filteredHistoryPicks
             .filter { !$0.isPending }
             .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                     > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
@@ -259,7 +258,7 @@ class PicksViewModel: ObservableObject {
     }
 
     var accuracyMood: AccuracyMood {
-        let settled = historyPicks.filter { !$0.isPending }
+        let settled = filteredHistoryPicks.filter { !$0.isPending }
         guard !settled.isEmpty else { return .empty }
         switch accuracyAll {
         case 80...:  return .bullish
@@ -287,7 +286,7 @@ class PicksViewModel: ObservableObject {
         }()
         // game_date is stored as ISO yyyy-MM-dd; compare strings safely
         // by parsing.
-        return historyPicks.filter { p in
+        return filteredHistoryPicks.filter { p in
             guard !p.isPending,
                   let date = fmt.date(from: p.gameDate)
             else { return false }
@@ -325,7 +324,7 @@ class PicksViewModel: ObservableObject {
             guard let day = cal.date(byAdding: .day, value: -offset, to: today)
             else { continue }
             let key = isoFmt.string(from: day)
-            let dayPicks = historyPicks.filter { $0.gameDate == key && !$0.isPending }
+            let dayPicks = filteredHistoryPicks.filter { $0.gameDate == key && !$0.isPending }
             if dayPicks.isEmpty {
                 values.append(lastKnown)
             } else {
