@@ -151,21 +151,11 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
-    /// True only when both:
-    ///   • The build is DEBUG (Xcode's automatic Debug configuration)
-    ///   • The dedicated `PICK1_DEV_OVERRIDE` compilation flag is set
-    ///     via xcconfig / OTHER_SWIFT_FLAGS for the developer's local
-    ///     scheme. Neither alone is enough — this stops a stray DEBUG
-    ///     leak in a Release build from granting free Pro.
-    /// To enable for local dev, add to your scheme's "Run" settings:
-    ///   OTHER_SWIFT_FLAGS = -D PICK1_DEV_OVERRIDE
-    static var devOverrideActive: Bool {
-        #if DEBUG && PICK1_DEV_OVERRIDE
-        return true
-        #else
-        return false
-        #endif
-    }
+    /// Dev Pro-override is fully disabled — the paywall and real StoreKit
+    /// entitlements are authoritative in every build. (Previously gated on
+    /// DEBUG + PICK1_DEV_OVERRIDE; removed so nothing can ever grant free
+    /// Pro or skip the paywall.)
+    static var devOverrideActive: Bool { false }
 
     deinit {
         transactionListenerTask?.cancel()
