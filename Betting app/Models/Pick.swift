@@ -50,6 +50,10 @@ struct Pick: Identifiable, Codable {
     /// stats) for both fighters, powering the side-by-side detail section.
     /// Defaulted so the manual `Pick(...)` builders compile unchanged.
     var taleOfTape: TaleOfTape? = nil
+    /// Confident betting projections (combat method/distance, team
+    /// total/margin). Only the calls the model was confident about —
+    /// coin-flips are omitted upstream. Powers the PROJECTION section.
+    var bettingProps: [BettingProp]? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -72,6 +76,7 @@ struct Pick: Identifiable, Codable {
         case awayLogo = "away_logo"
         case fieldOdds = "field_odds"
         case taleOfTape = "tale_of_tape"
+        case bettingProps = "betting_props"
     }
 
     // Confidence tier helper
@@ -270,6 +275,16 @@ struct MatchupFact: Codable, Identifiable, Hashable {
     var id: String { label + value }
 }
 
+/// A single confident betting projection (e.g. "How it ends → KO/TKO",
+/// "Projected total → 3"). `hint` is optional subtext like a confidence
+/// level or a unit ("combined goals").
+struct BettingProp: Codable, Identifiable, Hashable {
+    let label: String
+    let value: String
+    let hint: String?
+    var id: String { label + value }
+}
+
 // MARK: - Tale of the Tape (combat)
 
 /// ESPN-sourced fight comparison data the pipeline attaches to combat
@@ -340,6 +355,7 @@ extension Pick {
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
         fieldOdds = (try? c.decodeIfPresent([DriverOdds].self, forKey: .fieldOdds)) ?? nil
         taleOfTape = (try? c.decodeIfPresent(TaleOfTape.self, forKey: .taleOfTape)) ?? nil
+        bettingProps = (try? c.decodeIfPresent([BettingProp].self, forKey: .bettingProps)) ?? nil
     }
 }
 

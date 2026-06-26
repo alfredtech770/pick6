@@ -288,6 +288,7 @@ struct MatchDetailView: View {
                         case .summary:
                             VStack(spacing: 14) {
                                 summaryPanel
+                                projectionPanel
                                 if isRaceEvent, let drivers = pick.fieldOdds, !drivers.isEmpty {
                                     racePodiumPanel(drivers)
                                 } else if pick.sport == "combat", pick.taleOfTape != nil {
@@ -1272,6 +1273,65 @@ struct MatchDetailView: View {
                 }
 
                 Text("AI-COMPILED · VERIFIED VIA WEB SEARCH")
+                    .font(.archivoNarrow(8, weight: .bold))
+                    .tracking(1.6)
+                    .foregroundColor(Color(hex: "#4A4B50"))
+                    .padding(.top, 12)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBackground)
+        }
+    }
+
+    /// PROJECTION — the few confident betting calls the model surfaced
+    /// (combat: how it ends + rounds; team sports: projected total +
+    /// winning margin). Coin-flips are dropped upstream, so this only
+    /// renders when there's at least one call worth showing.
+    @ViewBuilder
+    private var projectionPanel: some View {
+        if let props = pick.bettingProps, !props.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(sportAccent)
+                    Text("PROJECTION")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                .padding(.bottom, 12)
+
+                ForEach(Array(props.enumerated()), id: \.offset) { idx, prop in
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(prop.label.uppercased())
+                                .font(.archivoNarrow(11, weight: .bold))
+                                .tracking(0.6)
+                                .foregroundColor(Color(hex: "#9A9B9F"))
+                            if let hint = prop.hint, !hint.isEmpty {
+                                Text(hint.uppercased())
+                                    .font(.archivoNarrow(8, weight: .bold))
+                                    .tracking(1.0)
+                                    .foregroundColor(Color(hex: "#5A5B60"))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(prop.value)
+                            .font(.archivo(14, weight: .bold))
+                            .foregroundColor(sportAccent)
+                            .multilineTextAlignment(.trailing)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .padding(.vertical, 10)
+                    .overlay(alignment: .top) {
+                        if idx > 0 { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                    }
+                }
+
+                Text("AI PROJECTION · NOT A GUARANTEE")
                     .font(.archivoNarrow(8, weight: .bold))
                     .tracking(1.6)
                     .foregroundColor(Color(hex: "#4A4B50"))

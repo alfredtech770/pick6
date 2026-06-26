@@ -375,10 +375,12 @@ async function fighterTale(name, record = null) {
   return {
     name, id, record,
     nickname: prof?.nickname || null,
-    height: prof?.displayHeight || null,
-    reach: prof?.reach != null ? `${prof.reach}"` : null,
-    reachNum: typeof prof?.reach === 'number' ? prof.reach : null,
-    age: prof?.age ?? null,
+    // ESPN reports 0 / empty for fighters it doesn't have physicals on —
+    // treat those as missing so the card shows "—", not "0\"".
+    height: (prof?.displayHeight && !/^0/.test(prof.displayHeight)) ? prof.displayHeight : null,
+    reach: (typeof prof?.reach === 'number' && prof.reach > 0) ? `${prof.reach}"` : null,
+    reachNum: (typeof prof?.reach === 'number' && prof.reach > 0) ? prof.reach : null,
+    age: prof?.age > 0 ? prof.age : null,
     stance: typeof prof?.stance === 'string' ? prof.stance : (prof?.stance?.text || null),
     weightClass: (typeof wc === 'string' ? wc : wc?.text) || null,
     country: prof?.citizenship || null,
