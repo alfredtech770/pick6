@@ -31,6 +31,7 @@ const axios = require('axios');
 const ws = require('ws');
 const combat = require('./combat');   // grounded UFC/MMA path (ESPN-sourced facts + verification)
 const soccer = require('./soccer');   // grounded World Cup facts (ESPN standings + form)
+const teamsport = require('./teamsport'); // grounded MLB/NBA/WNBA/NFL/NHL facts (ESPN standings + probables)
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-7';
@@ -759,6 +760,7 @@ async function savePicks(league, picks) {
     // null for every other sport.
     tale_of_tape: p.tale_of_tape || null,
     soccer_comparison: p.soccer_comparison || null,
+    team_comparison: p.team_comparison || null,
     // Confident betting props: combat method/distance (grounded path) or
     // team total/margin (from projected score). Null when none qualify.
     betting_props: (Array.isArray(p.betting_props) && p.betting_props.length)
@@ -1050,6 +1052,10 @@ async function runPipeline() {
       if (league === 'WC') {
         try { picks = await soccer.enrichPicks(picks); }
         catch (e) { log(`   soccer grounding failed: ${e.message}`); }
+      } else if (teamsport.isSupported(league)) {
+        // MLB/NBA/WNBA/NFL/NHL: replace model facts with ESPN season data.
+        try { picks = await teamsport.enrichPicks(league, picks); }
+        catch (e) { log(`   ${league} grounding failed: ${e.message}`); }
       }
       await savePicks(league, picks);
     }
