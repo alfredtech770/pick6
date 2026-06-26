@@ -293,6 +293,8 @@ struct MatchDetailView: View {
                                     racePodiumPanel(drivers)
                                 } else if pick.sport == "combat", pick.taleOfTape != nil {
                                     taleOfTapePanel
+                                } else if pick.sport == "soccer", pick.soccerComparison != nil {
+                                    formGuidePanel
                                 } else {
                                     matchupPanel
                                 }
@@ -1413,6 +1415,68 @@ struct MatchDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
         }
+    }
+
+    /// FORM GUIDE — ESPN-grounded soccer team comparison (group position,
+    /// points, record, goals, recent form), the soccer analog of the
+    /// combat Tale of the Tape. Stronger side highlighted in accent.
+    @ViewBuilder
+    private var formGuidePanel: some View {
+        if let comp = pick.soccerComparison, let h = comp.home, let a = comp.away {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "soccerball")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(sportAccent)
+                    Text("FORM GUIDE")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                .padding(.bottom, 14)
+
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text((h.name ?? "—").uppercased()).font(.anton(15)).foregroundColor(Color(hex: "#F5F3EE"))
+                        if let g = h.group { Text(g.uppercased()).font(.archivoNarrow(9, weight: .bold)).tracking(1.0).foregroundColor(sportAccent) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("VS").font(.archivoNarrow(10, weight: .bold)).foregroundColor(Color(hex: "#4A4B50"))
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text((a.name ?? "—").uppercased()).font(.anton(15)).foregroundColor(Color(hex: "#F5F3EE"))
+                        if let g = a.group { Text(g.uppercased()).font(.archivoNarrow(9, weight: .bold)).tracking(1.0).foregroundColor(sportAccent) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.bottom, 10)
+
+                totRow("POSITION", h.position, a.position, betterHigher: false)
+                totRow("POINTS", h.points, a.points, betterHigher: true)
+                totRow("RECORD W-D-L", h.record, a.record)
+                totRow("GOALS GF-GA", goalsStr(h), goalsStr(a))
+                if h.form != nil || a.form != nil {
+                    totRow("RECENT FORM", spacedForm(h.form), spacedForm(a.form))
+                }
+
+                Text("VERIFIED VIA ESPN")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
+                    .foregroundColor(Color(hex: "#4A4B50"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 10)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBackground)
+        }
+    }
+
+    private func goalsStr(_ t: SoccerTeam) -> String? {
+        guard t.goalsFor != nil || t.goalsAgainst != nil else { return nil }
+        return "\(t.goalsFor ?? "—")-\(t.goalsAgainst ?? "—")"
+    }
+    private func spacedForm(_ f: String?) -> String? {
+        guard let f, !f.isEmpty else { return nil }
+        return f.map { String($0) }.joined(separator: " ")
     }
 
     private func totLast(_ name: String?) -> String {

@@ -54,6 +54,9 @@ struct Pick: Identifiable, Codable {
     /// total/margin). Only the calls the model was confident about —
     /// coin-flips are omitted upstream. Powers the PROJECTION section.
     var bettingProps: [BettingProp]? = nil
+    /// Soccer (World Cup): ESPN-grounded team comparison (group standing,
+    /// record, goals, form) powering the side-by-side FORM GUIDE section.
+    var soccerComparison: SoccerComparison? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -77,6 +80,7 @@ struct Pick: Identifiable, Codable {
         case fieldOdds = "field_odds"
         case taleOfTape = "tale_of_tape"
         case bettingProps = "betting_props"
+        case soccerComparison = "soccer_comparison"
     }
 
     // Confidence tier helper
@@ -318,6 +322,29 @@ struct ToTCareer: Codable, Hashable {
     let subAvg: String?   // submission attempts per 15 min
 }
 
+// MARK: - Soccer Form Guide (World Cup)
+
+/// ESPN-grounded team comparison for a soccer fixture. `home`/`away`
+/// correspond to the pick's home/away teams.
+struct SoccerComparison: Codable, Hashable {
+    let home: SoccerTeam?
+    let away: SoccerTeam?
+    let competition: String?
+}
+
+/// One team's grounded tournament profile. Strings as ESPN reports them.
+struct SoccerTeam: Codable, Hashable {
+    let name: String?
+    let group: String?
+    let position: String?       // "1st", "2nd", …
+    let points: String?
+    let record: String?         // "W-D-L", e.g. "1-1-0"
+    let goalsFor: String?
+    let goalsAgainst: String?
+    let played: String?
+    let form: String?           // recent "WWDWL"
+}
+
 // MARK: - Lenient decoding
 
 /// Custom decoder kept in an extension (not the struct body) so the
@@ -356,6 +383,7 @@ extension Pick {
         fieldOdds = (try? c.decodeIfPresent([DriverOdds].self, forKey: .fieldOdds)) ?? nil
         taleOfTape = (try? c.decodeIfPresent(TaleOfTape.self, forKey: .taleOfTape)) ?? nil
         bettingProps = (try? c.decodeIfPresent([BettingProp].self, forKey: .bettingProps)) ?? nil
+        soccerComparison = (try? c.decodeIfPresent(SoccerComparison.self, forKey: .soccerComparison)) ?? nil
     }
 }
 
