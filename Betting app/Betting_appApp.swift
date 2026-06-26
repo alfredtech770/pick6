@@ -45,6 +45,18 @@ struct Betting_appApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
+                #if DEBUG && PICK1_DEV_OVERRIDE
+                // DEV BYPASS — skip auth + onboarding + paywall and land
+                // straight in the app. Pairs with SubscriptionManager, which
+                // forces isPro under the same flag, so the build is a full
+                // Pro session for fast feature testing. Gated on DEBUG +
+                // PICK1_DEV_OVERRIDE, so it can NEVER reach a release build.
+                // To test the real onboarding/paywall flow, remove
+                // OTHER_SWIFT_FLAGS = "-D PICK1_DEV_OVERRIDE" from the Debug
+                // config (or run a Release build).
+                Pick1HomeHiFi()
+                    .preferredColorScheme(.dark)
+                #else
                 if authManager.isCheckingSession {
                     Pick1SplashLoader()
                         .preferredColorScheme(.dark)
@@ -60,6 +72,7 @@ struct Betting_appApp: App {
                     Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
                 }
+                #endif
             }
             .environment(authManager)
             .environment(localization)
