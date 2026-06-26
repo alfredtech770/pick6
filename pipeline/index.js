@@ -454,7 +454,7 @@ Required reasoning before committing to a pick:
 Hard rules:
 - For ANY league with multiple matchups today, you MUST return AT LEAST ONE pick — pick the strongest opportunity even if your edge is modest.
 - Aim for 2–4 picks per league when the slate is full (5+ games). Be selective but not silent.
-- Probability floor is 55%. Anything 55%+ is fair game for a pick.
+- Probability floor is 55% for head-to-head picks. EXCEPTION: field events (F1, golf) use the realistic WIN probability from a whole field, which is normally 15-40% — never floor those at 55%.
 - Singles only — no parlays, no multi-leg.
 - The "pick" field MUST be one of {home_team, away_team} from the input. Casing/whitespace can vary slightly but the team must clearly match.
 - Probability is an integer 55–97.
@@ -465,8 +465,8 @@ Hard rules:
 
 For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
 For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
-For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick).
-For GOLF: home_team is the tournament name, away_team is "Field"; "pick" is the predicted winning golfer's full name. The field of ~70+ means even the favorite rarely exceeds ~25% — keep probabilities honest. Use the live leaderboard (each player's position + score to par) provided in the feed when the event is underway. Populate field_odds with the top 6-8 contenders + their win and top-5 probabilities.
+For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick). CALIBRATION: "probability" is the realistic chance this driver WINS the race — even a dominant championship leader rarely exceeds ~35%. It MUST match the picked driver's field_odds win %, and for field events it may fall well below the usual 55% floor (the floor does NOT apply to F1/golf).
+For GOLF: home_team is the tournament name, away_team is "Field"; "pick" is the predicted winning golfer's full name. The field of ~70+ means even the favorite rarely exceeds ~25% — keep probabilities honest. CALIBRATION: "probability" is the realistic win chance, MUST match the picked golfer's field_odds win %, and may fall well below the 55% floor (which does NOT apply to golf). Use the live leaderboard (each player's position + score to par) provided in the feed when the event is underway. Populate field_odds with the top 6-8 contenders + their win and top-5 probabilities.
 For TENNIS: research today's slate via web_search; surface the strongest match-ups with clear edges (top seeds vs lower-ranked, ranking gaps, surface specialists).`;
 
 const PICK_SCHEMA = {
@@ -514,7 +514,7 @@ const PICK_SCHEMA = {
           pick: { type: 'string', description: 'The team/fighter/driver picked. For team sports must equal home_team or away_team. For F1, the driver name.' },
           probability: {
             type: 'integer',
-            description: 'Integer 55-97. 55-64 is a slight edge, 65-74 is a strong lean, 75-89 is high confidence, 90+ is overwhelming.',
+            description: 'Integer. Head-to-head picks: 55-97 (55-64 slight edge, 65-74 strong lean, 75-89 high, 90+ overwhelming). FIELD EVENTS (F1, golf): the realistic win probability from the field, typically 15-40% — NOT floored at 55, and must equal the picked competitor\'s field_odds win %.',
           },
           confidence: { type: 'string', enum: ['***', '**', '*'] },
           reasoning: { type: 'string' },

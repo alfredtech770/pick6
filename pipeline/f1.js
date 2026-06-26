@@ -58,7 +58,8 @@ async function fetchDriverStandings() {
   }
   const byKey = new Map(drivers.map((d) => [normKey(d.name), d]));
   const leader = drivers.find((d) => String(d.rank) === '1') || drivers[0] || null;
-  return { byKey, leader };
+  const runnerUp = drivers.find((d) => String(d.rank) === '2') || null;
+  return { byKey, leader, runnerUp };
 }
 
 // Grounded facts for an F1 pick (the picked driver).
@@ -70,10 +71,16 @@ function f1Facts(driverName, standings) {
   const ord = (n) => { const i = parseInt(n, 10); return Number.isNaN(i) ? n : `${i}${['th','st','nd','rd'][(i%100>10&&i%100<14)?0:(i%10)]||'th'}`; };
   if (d.rank) rows.push({ label: 'Championship', value: `${d.name} — ${ord(d.rank)}, ${d.points ?? '—'} pts` });
   const lead = standings.leader;
-  if (lead && String(d.rank) !== '1') {
+  if (String(d.rank) === '1' && standings.runnerUp) {
+    const margin = Number(d.points) - Number(standings.runnerUp.points);
+    if (Number.isFinite(margin)) rows.push({ label: 'Title lead', value: `+${margin} pts over ${standings.runnerUp.name}` });
+  } else if (lead && String(d.rank) !== '1') {
     const gap = (Number(lead.points) - Number(d.points));
     const gapStr = Number.isFinite(gap) ? `, +${gap} ahead` : '';
     rows.push({ label: 'Title leader', value: `${lead.name} — ${lead.points} pts${gapStr}` });
+  }
+  if (standings.runnerUp && String(d.rank) === '1') {
+    rows.push({ label: 'Closest rival', value: `${standings.runnerUp.name} (${standings.runnerUp.points} pts)` });
   }
   // NOTE: ESPN's per-race columns are POINTS scored (incl. sprints), not
   // finishing positions — ambiguous to present, so deliberately omitted.
