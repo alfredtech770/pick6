@@ -46,6 +46,10 @@ struct Pick: Identifiable, Codable {
     let awayLogo: String?
     /// Race events (F1/NASCAR): top drivers + win/podium probabilities.
     let fieldOdds: [DriverOdds]?
+    /// Combat only: ESPN-sourced tale of the tape (physicals + career
+    /// stats) for both fighters, powering the side-by-side detail section.
+    /// Defaulted so the manual `Pick(...)` builders compile unchanged.
+    var taleOfTape: TaleOfTape? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -67,6 +71,7 @@ struct Pick: Identifiable, Codable {
         case homeLogo = "home_logo"
         case awayLogo = "away_logo"
         case fieldOdds = "field_odds"
+        case taleOfTape = "tale_of_tape"
     }
 
     // Confidence tier helper
@@ -265,6 +270,39 @@ struct MatchupFact: Codable, Identifiable, Hashable {
     var id: String { label + value }
 }
 
+// MARK: - Tale of the Tape (combat)
+
+/// ESPN-sourced fight comparison data the pipeline attaches to combat
+/// picks. `a`/`b` correspond to the fight's two competitors. Every field
+/// is optional so a fighter ESPN tracks thinly still renders what we have.
+struct TaleOfTape: Codable, Hashable {
+    let a: ToTFighter?
+    let b: ToTFighter?
+    let weightClass: String?
+}
+
+struct ToTFighter: Codable, Hashable {
+    let name: String?
+    let record: String?
+    let nickname: String?
+    let height: String?
+    let reach: String?
+    let age: Int?
+    let stance: String?
+    let weightClass: String?
+    let country: String?
+    let career: ToTCareer?
+}
+
+/// Career rate stats (strings as ESPN reports them — e.g. "4.71", "54.87").
+struct ToTCareer: Codable, Hashable {
+    let strLPM: String?   // significant strikes landed per minute
+    let strAcc: String?   // striking accuracy %
+    let tdAvg: String?    // takedowns per 15 min
+    let tdAcc: String?    // takedown accuracy %
+    let subAvg: String?   // submission attempts per 15 min
+}
+
 // MARK: - Lenient decoding
 
 /// Custom decoder kept in an extension (not the struct body) so the
@@ -301,6 +339,7 @@ extension Pick {
         homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
         fieldOdds = (try? c.decodeIfPresent([DriverOdds].self, forKey: .fieldOdds)) ?? nil
+        taleOfTape = (try? c.decodeIfPresent(TaleOfTape.self, forKey: .taleOfTape)) ?? nil
     }
 }
 

@@ -290,6 +290,8 @@ struct MatchDetailView: View {
                                 summaryPanel
                                 if isRaceEvent, let drivers = pick.fieldOdds, !drivers.isEmpty {
                                     racePodiumPanel(drivers)
+                                } else if pick.sport == "combat", pick.taleOfTape != nil {
+                                    taleOfTapePanel
                                 } else {
                                     matchupPanel
                                 }
@@ -1278,6 +1280,121 @@ struct MatchDetailView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
+        }
+    }
+
+    /// TALE OF THE TAPE — ESPN-sourced side-by-side comparison for combat
+    /// (physicals + career stats). Replaces the generic MATCHUP list for
+    /// fights with real, grounded numbers; the stronger side of each row
+    /// is highlighted in the sport accent.
+    @ViewBuilder
+    private var taleOfTapePanel: some View {
+        if let tot = pick.taleOfTape, let a = tot.a, let b = tot.b {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "figure.boxing")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(sportAccent)
+                    Text("TALE OF THE TAPE")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.4)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                }
+                .padding(.bottom, 14)
+
+                // Fighter name + record columns
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(totLast(a.name)).font(.anton(16)).foregroundColor(Color(hex: "#F5F3EE"))
+                        if let r = a.record { Text(r).font(.archivoNarrow(11, weight: .bold)).foregroundColor(sportAccent) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("VS").font(.archivoNarrow(10, weight: .bold)).foregroundColor(Color(hex: "#4A4B50"))
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(totLast(b.name)).font(.anton(16)).foregroundColor(Color(hex: "#F5F3EE"))
+                        if let r = b.record { Text(r).font(.archivoNarrow(11, weight: .bold)).foregroundColor(sportAccent) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.bottom, 10)
+
+                totRow("REACH", a.reach, b.reach, betterHigher: true)
+                totRow("HEIGHT", a.height, b.height)
+                totRow("AGE", a.age.map { "\($0)" }, b.age.map { "\($0)" }, betterHigher: false)
+                totRow("STANCE", a.stance, b.stance)
+
+                if a.career != nil || b.career != nil {
+                    Text("CAREER")
+                        .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
+                        .foregroundColor(Color(hex: "#4A4B50"))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 14).padding(.bottom, 2)
+                    totRow("STRIKES / MIN", a.career?.strLPM, b.career?.strLPM, betterHigher: true)
+                    totRow("STR. ACCURACY", totPct(a.career?.strAcc), totPct(b.career?.strAcc), betterHigher: true)
+                    totRow("TAKEDOWNS / 15", a.career?.tdAvg, b.career?.tdAvg, betterHigher: true)
+                    totRow("TD ACCURACY", totPct(a.career?.tdAcc), totPct(b.career?.tdAcc), betterHigher: true)
+                }
+
+                if let wc = tot.weightClass {
+                    Text(wc.uppercased())
+                        .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 12)
+                }
+
+                Text("VERIFIED VIA ESPN STATS")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
+                    .foregroundColor(Color(hex: "#4A4B50"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 8)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBackground)
+        }
+    }
+
+    private func totLast(_ name: String?) -> String {
+        guard let n = name, let l = n.split(separator: " ").last else { return (name ?? "—").uppercased() }
+        return String(l).uppercased()
+    }
+    private func totPct(_ v: String?) -> String? {
+        guard let v, let d = Double(v) else { return nil }
+        return "\(Int(d.rounded()))%"
+    }
+    private func totNum(_ v: String?) -> Double? {
+        guard let v else { return nil }
+        return Double(v.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression))
+    }
+
+    @ViewBuilder
+    private func totRow(_ label: String, _ av: String?, _ bv: String?, betterHigher: Bool? = nil) -> some View {
+        let aHi: Bool = {
+            guard let bh = betterHigher, let an = totNum(av), let bn = totNum(bv), an != bn else { return false }
+            return bh ? an > bn : an < bn
+        }()
+        let bHi: Bool = {
+            guard let bh = betterHigher, let an = totNum(av), let bn = totNum(bv), an != bn else { return false }
+            return bh ? bn > an : bn < an
+        }()
+        HStack(spacing: 10) {
+            Text(av ?? "—")
+                .font(.archivo(13, weight: .bold))
+                .foregroundColor(aHi ? sportAccent : Color(hex: "#E7E4DC"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(label)
+                .font(.archivoNarrow(9, weight: .bold)).tracking(1.0)
+                .foregroundColor(Color(hex: "#6E6F75"))
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text(bv ?? "—")
+                .font(.archivo(13, weight: .bold))
+                .foregroundColor(bHi ? sportAccent : Color(hex: "#E7E4DC"))
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.vertical, 8)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color(hex: "#1A1C20")).frame(height: 1)
         }
     }
 
