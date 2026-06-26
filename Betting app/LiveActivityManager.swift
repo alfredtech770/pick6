@@ -8,6 +8,7 @@
 import Foundation
 import ActivityKit
 import Supabase
+import UIKit
 
 @MainActor
 final class LiveActivityManager {
@@ -16,6 +17,7 @@ final class LiveActivityManager {
 
     private var activities: [String: Activity<Pick1GameAttributes>] = [:]   // gameId → activity
     private var tokenTasks: [String: Task<Void, Never>] = [:]
+    private var creating: Set<String> = []   // gameIds with an in-flight start
 
     /// Whether the user has Live Activities enabled in Settings.
     var enabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
@@ -50,25 +52,69 @@ final class LiveActivityManager {
             Task { await existing.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(1800))) }
             return
         }
-        guard score.isLive else { return }
-        let attrs = Pick1GameAttributes(
-            homeTeam: teamShortName(pick.homeTeam, sport: pick.sport),
-            awayTeam: teamShortName(pick.awayTeam, sport: pick.sport),
-            homeAbbr: abbr(pick.homeTeam, sport: pick.sport),
-            awayAbbr: abbr(pick.awayTeam, sport: pick.sport),
-            league: displayLeague(pick.league),
-            pickText: pick.displayPick,
-            gameId: gid)
-        do {
-            let act = try Activity.request(
-                attributes: attrs,
-                content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(1800)),
-                pushType: .token)
-            activities[gid] = act
-            observePushToken(act, gameId: gid)
-        } catch {
-            // Activity request can fail if the user disabled them mid-flight.
+        guard score.isLive, !creating.contains(gid) else { return }
+        creating.insert(gid)
+        // Download + shrink the crests and resolve flags BEFORE requesting,
+        // so the Lock Screen / Dynamic Island shows real logos, not just text.
+        Task {
+            let homePNG = await liveLogoData(pick.homeLogo)
+            let awayPNG = await liveLogoData(pick.awayLogo)
+            let (hFlag, aFlag) = flags(for: pick)
+            defer { creating.remove(gid) }
+            guard activities[gid] == nil else { return }
+            let attrs = Pick1GameAttributes(
+                homeTeam: teamShortName(pick.homeTeam, sport: pick.sport),
+                awayTeam: teamShortName(pick.awayTeam, sport: pick.sport),
+                homeAbbr: abbr(pick.homeTeam, sport: pick.sport),
+                awayAbbr: abbr(pick.awayTeam, sport: pick.sport),
+                league: displayLeague(pick.league),
+                pickText: pick.displayPick,
+                gameId: gid,
+                sport: pick.sport,
+                homeLogoPNG: homePNG, awayLogoPNG: awayPNG,
+                homeFlag: hFlag, awayFlag: aFlag)
+            do {
+                let act = try Activity.request(
+                    attributes: attrs,
+                    content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(1800)),
+                    pushType: .token)
+                activities[gid] = act
+                observePushToken(act, gameId: gid)
+            } catch {
+                // Activity request can fail if the user disabled them mid-flight.
+            }
         }
+    }
+
+    /// Download a crest and downscale it to a tiny PNG the Live Activity can
+    /// carry. ActivityKit payloads are size-capped, so anything that doesn't
+    /// shrink under the budget is dropped (the widget falls back to a flag
+    /// or sport symbol).
+    private func liveLogoData(_ urlString: String?) async -> Data? {
+        guard let s = urlString, !s.isEmpty, let url = URL(string: s) else { return nil }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard let img = UIImage(data: data) else { return nil }
+            let target: CGFloat = 44
+            let longest = max(img.size.width, img.size.height, 1)
+            let scale = min(target / longest, 1)
+            let newSize = CGSize(width: img.size.width * scale, height: img.size.height * scale)
+            let fmt = UIGraphicsImageRendererFormat(); fmt.scale = 1; fmt.opaque = false
+            let resized = UIGraphicsImageRenderer(size: newSize, format: fmt)
+                .image { _ in img.draw(in: CGRect(origin: .zero, size: newSize)) }
+            guard let png = resized.pngData(), png.count <= 3000 else { return nil }   // ~3KB budget
+            return png
+        } catch { return nil }
+    }
+
+    /// Country flag emoji for national-team sports.
+    private func flags(for pick: Pick) -> (String?, String?) {
+        guard pick.sport == "soccer" || pick.sport == "cricket" else { return (nil, nil) }
+        func f(_ team: String) -> String? {
+            guard let code = wcFlagCode(for: nationalTeamBase(team)) else { return nil }
+            return emojiFlag(for: code)
+        }
+        return (f(pick.homeTeam), f(pick.awayTeam))
     }
 
     private func update(pick: Pick, score: LiveScore) {

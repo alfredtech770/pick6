@@ -29,4 +29,14 @@ struct Pick1GameAttributes: ActivityAttributes {
     /// The user's pick text (e.g. "Morocco to win").
     var pickText: String
     var gameId: String
+    /// The sport — drives the fallback SF Symbol when there's no logo/flag.
+    var sport: String = ""
+    /// Tiny pre-downscaled team-crest PNGs (the widget can't load remote
+    /// images, so the app downloads + shrinks them and passes the bytes).
+    /// Nil when there's no crest or it didn't fit the size budget.
+    var homeLogoPNG: Data? = nil
+    var awayLogoPNG: Data? = nil
+    /// Country flag emoji for national-team sports (soccer / cricket).
+    var homeFlag: String? = nil
+    var awayFlag: String? = nil
 }
