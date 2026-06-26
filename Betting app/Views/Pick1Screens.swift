@@ -237,7 +237,7 @@ struct MatchDetailView: View {
     // and odds. The old LINEUPS / H2H tabs were hardcoded placeholder
     // rosters and fake past-game results — removed rather than ship
     // fabricated content in a sports app.
-    enum Tab: String, CaseIterable { case summary, odds }
+    enum Tab: String, CaseIterable { case summary, ourCall }
     @State private var tab: Tab = .summary
     @State private var showToast: Bool = false
 
@@ -251,7 +251,7 @@ struct MatchDetailView: View {
     private func tabLabel(_ t: Tab) -> String {
         switch t {
         case .summary: return "AI ANALYSIS"
-        case .odds:    return "ODDS"
+        case .ourCall: return "OUR CALL"
         }
     }
 
@@ -299,8 +299,8 @@ struct MatchDetailView: View {
                                     matchupPanel
                                 }
                             }
-                        case .odds:
-                            oddsPanel
+                        case .ourCall:
+                            ourCallPanel
                         }
                     }
                     .padding(.horizontal, 16)
@@ -1590,9 +1590,124 @@ struct MatchDetailView: View {
         .background(cardBackground)
     }
 
-    /// ODDS panel — list of odds rows with label/sub, optional line
-    /// chip, and a price button (lime for the AI-favored side, cold
-    /// panel for alternates). Mirrors design's `.odds-card`.
+    /// OUR CALL — the actionable read: who we're backing, our confidence,
+    /// the confident props, and a VALUE check (our probability vs the
+    /// market's implied probability) so the edge is visible — not just a
+    /// price list. A prediction, deliberately NOT framed as financial advice.
+    private var ourCallPanel: some View {
+        let ourPct = Int(pick.probability.rounded())
+        let impliedPct: Int? = pick.marketOdds.flatMap { $0 > 1.0 ? Int((100.0 / $0).rounded()) : nil }
+        let payout = pick.marketOdds ?? (ourPct > 0 ? 100.0 / Double(ourPct) : 1.0)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            // 1. Who we're backing + our confidence
+            Text("WE'RE BACKING")
+                .font(.archivoNarrow(10, weight: .bold)).tracking(2.4)
+                .foregroundColor(Color(hex: "#6E6F75"))
+            HStack(alignment: .center, spacing: 8) {
+                Text(pick.pick.uppercased())
+                    .font(.anton(22))
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("\(ourPct)%")
+                    .font(.anton(22))
+                    .foregroundColor(sportAccent)
+            }
+            .padding(.top, 6)
+            Text(confidenceTierLabel)
+                .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                .foregroundColor(sportAccent)
+                .padding(.top, 2).padding(.bottom, 14)
+
+            // 2. VALUE check — our read vs the market's implied probability
+            if let imp = impliedPct {
+                HStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("OUR READ").font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
+                        Text("\(ourPct)%").font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("MARKET IMPLIED").font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
+                        Text("\(imp)%").font(.anton(20)).foregroundColor(Color(hex: "#B9B7B0"))
+                    }.frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.vertical, 12)
+                .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                valueVerdict(edge: ourPct - imp).padding(.top, 12)
+            } else {
+                Text("No live market line to compare — this call is based on our model read.")
+                    .font(.archivo(12)).foregroundColor(Color(hex: "#8A8D94"))
+                    .padding(.vertical, 12)
+                    .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+            }
+
+            // 3. The confident props we already generate
+            if let props = pick.bettingProps, !props.isEmpty {
+                Text("ALSO LIKELY")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .padding(.top, 16).padding(.bottom, 4)
+                ForEach(Array(props.enumerated()), id: \.offset) { _, prop in
+                    HStack {
+                        Text(prop.label.uppercased())
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(0.6)
+                            .foregroundColor(Color(hex: "#9A9B9F"))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(prop.value)
+                            .font(.archivo(13, weight: .bold)).foregroundColor(Color(hex: "#F5F3EE"))
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+
+            // 4. Potential return
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("POTENTIAL RETURN").font(.archivoNarrow(9, weight: .bold)).tracking(1.6).foregroundColor(Color(hex: "#6E6F75"))
+                    Text(pick.oddsSource.map { "LINE VIA \($0.uppercased())" } ?? "FAIR PRICE FROM OUR CONFIDENCE")
+                        .font(.archivoNarrow(8, weight: .bold)).tracking(1.0).foregroundColor(Color(hex: "#4A4B50"))
+                }
+                Spacer()
+                Text("$100 → $\(Int((payout * 100).rounded()))")
+                    .font(.anton(18)).foregroundColor(sportAccent)
+            }
+            .padding(.top, 16)
+            .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1).padding(.top, 8) }
+
+            Text("Our prediction — not a guarantee, and not financial advice.")
+                .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
+                .foregroundColor(Color(hex: "#4A4B50"))
+                .padding(.top, 14)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    /// The value verdict pill: VALUE when our probability beats the market's
+    /// implied price, NO EDGE when the market is ahead, FAIR in between.
+    private func valueVerdict(edge: Int) -> some View {
+        let isValue = edge >= 6
+        let isNoEdge = edge <= -6
+        let label = isValue ? "VALUE · +\(edge)%" : (isNoEdge ? "NO EDGE · \(edge)%" : "FAIR PRICE")
+        let sub = isValue ? "We rate this higher than the market — the price has value."
+            : (isNoEdge ? "The market rates this above us — thin value, consider passing."
+                        : "Our read is in line with the market price.")
+        let fg = isValue ? Color(hex: "#0A0B0D") : (isNoEdge ? Color(hex: "#F0A8A0") : Color(hex: "#E7E4DC"))
+        let bg = isValue ? sportAccent : (isNoEdge ? Color(hex: "#2A1416") : Color(hex: "#16181C"))
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.archivoNarrow(12, weight: .bold)).tracking(1.4).foregroundColor(fg)
+            Text(sub).font(.archivo(11)).foregroundColor(isValue ? Color(hex: "#0A0B0D").opacity(0.7) : Color(hex: "#8A8D94"))
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bg))
+    }
+
+    /// ODDS panel — legacy price list, no longer shown (replaced by the
+    /// OUR CALL tab) but kept for reference.
     @ViewBuilder
     private var oddsPanel: some View {
         let rows = oddsRows(for: pick)
