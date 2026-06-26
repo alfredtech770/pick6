@@ -33,6 +33,7 @@ const combat = require('./combat');   // grounded UFC/MMA path (ESPN-sourced fac
 const soccer = require('./soccer');   // grounded World Cup facts (ESPN standings + form)
 const teamsport = require('./teamsport'); // grounded MLB/NBA/WNBA/NFL/NHL facts (ESPN standings + probables)
 const f1 = require('./f1');            // grounded F1 facts (ESPN driver championship)
+const golf = require('./golf');        // grounded PGA golf facts (ESPN tournament + leaderboard)
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-7';
@@ -194,6 +195,9 @@ async function fetchF1() {
   }
 }
 
+// Golf: the current / next PGA tournament with its field + live board.
+const fetchGolf = () => golf.fetchTournaments();
+
 // ════════════════════════════════════════════════════════════════
 // LEAGUE REGISTRY
 // ════════════════════════════════════════════════════════════════
@@ -307,6 +311,20 @@ const LEAGUES = {
       round: r.round,
       circuit: r.Circuit?.circuitName,
       start_time: `${r.date}T${r.time || '14:00:00Z'}`,
+      status: 'Scheduled',
+    }),
+  },
+
+  // ─── Golf — predict the tournament winner from the field (F1-style) ─
+  GOLF: {
+    sport: 'golf', promptMode: 'race', fetcher: fetchGolf,
+    notes: 'Predict the WINNER of the PGA tournament from the field. A field of ~70+ means even the favorite is usually only 15-25% — calibrate honestly, never inflate one golfer. When the event is underway use the live leaderboard (position + score to par) below; otherwise use recent form + course history.',
+    normalizer: (t) => ({
+      game_id: `golf-${t.id}`,
+      home_team: t.name,            // tournament name
+      away_team: 'Field',           // pick = predicted winning golfer
+      start_time: t.date,
+      field: t.players,             // grounded field + live board → prompt
       status: 'Scheduled',
     }),
   },
@@ -448,6 +466,7 @@ Hard rules:
 For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
 For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
 For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick).
+For GOLF: home_team is the tournament name, away_team is "Field"; "pick" is the predicted winning golfer's full name. The field of ~70+ means even the favorite rarely exceeds ~25% — keep probabilities honest. Use the live leaderboard (each player's position + score to par) provided in the feed when the event is underway. Populate field_odds with the top 6-8 contenders + their win and top-5 probabilities.
 For TENNIS: research today's slate via web_search; surface the strongest match-ups with clear edges (top seeds vs lower-ranked, ranking gaps, surface specialists).`;
 
 const PICK_SCHEMA = {
@@ -466,7 +485,7 @@ const PICK_SCHEMA = {
           },
           field_odds: {
             type: ['array', 'null'],
-            description: 'RACE EVENTS ONLY (F1, NASCAR): the top 8-10 drivers ranked by win chance, each with their win and podium probabilities as integer percents. Use real grid/championship form + any market odds you can find. Null for non-race sports.',
+            description: 'RACE / FIELD EVENTS ONLY (F1, NASCAR, GOLF): the top contenders ranked by win chance, each with their win and podium/top-5 probabilities as integer percents. Use real grid/championship form / live leaderboard + any market odds you can find. Null for non-field sports.',
             items: {
               type: 'object',
               properties: {
@@ -1060,6 +1079,9 @@ async function runPipeline() {
       } else if (league === 'F1') {
         try { picks = await f1.enrichPicks(picks); }
         catch (e) { log(`   F1 grounding failed: ${e.message}`); }
+      } else if (league === 'GOLF') {
+        try { picks = await golf.enrichPicks(picks); }
+        catch (e) { log(`   golf grounding failed: ${e.message}`); }
       }
       await savePicks(league, picks);
     }
