@@ -713,7 +713,12 @@ async function savePicks(league, picks) {
       && p.game_date >= fallbackDate)
       ? p.game_date : fallbackDate;
 
-  const rows = picks.map((p) => ({
+  const rows = picks.map((p) => {
+    // Team-sport betting props derived from the projected score (no AI);
+    // combat picks arrive with p.betting_props already set by the grounded
+    // path. Either way → the betting_props column.
+    const teamProps = combat.teamBettingProps({ predictedScore: p.predicted_score, homeTeam: p.home_team, awayTeam: p.away_team, pick: p.pick, sport });
+    return {
     sport,
     league,
     game_date: pickDate(p),
@@ -752,8 +757,14 @@ async function savePicks(league, picks) {
     // Structured tale-of-the-tape for combat (physicals + career stats);
     // null for every other sport.
     tale_of_tape: p.tale_of_tape || null,
+    // Confident betting props: combat method/distance (grounded path) or
+    // team total/margin (from projected score). Null when none qualify.
+    betting_props: (Array.isArray(p.betting_props) && p.betting_props.length)
+      ? p.betting_props
+      : (teamProps.length ? teamProps : null),
     result: 'pending',
-  }));
+    };
+  });
 
   const { error } = await supabase
     .from('picks')
@@ -955,6 +966,12 @@ async function runPipeline() {
         log(`Analyzing ${gt.fights.length} ${league} fights (grounded: ${gt.event.name})…`);
         let draft = await combat.generateGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, groundTruth: gt, schema: PICK_SCHEMA, log });
         draft = await combat.verifyGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, picks: draft, groundTruth: gt, log });
+        // Confident outcome props (method + distance) for the whole card.
+        let outByPair = new Map();
+        try {
+          const outcomes = await combat.generateCombatProps({ anthropic, model: ANTHROPIC_MODEL, groundTruth: gt, log });
+          for (const o of outcomes) { outByPair.set(`${o.home_team}|${o.away_team}`, o); outByPair.set(`${o.away_team}|${o.home_team}`, o); }
+        } catch (e) { log(`   combat props failed: ${e.message}`); }
         // Stamp deterministic ids/dates so dedup + scheduling work.
         const fightByName = new Map();
         for (const f of gt.fights) { fightByName.set(f.a.name, f); fightByName.set(f.b.name, f); }
@@ -972,6 +989,7 @@ async function runPipeline() {
               if (facts.length) { p.matchup_facts = facts; p.tale_of_tape = tot; }
             } catch (e) { log(`   tale-of-tape failed for ${p.home_team}: ${e.message}`); }
           }
+          p.betting_props = combat.combatPropItems(outByPair.get(`${p.home_team}|${p.away_team}`));
           p.game_date = eventDate;
           p.predicted_score = null; p.field_odds = null;
         }

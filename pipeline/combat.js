@@ -430,6 +430,98 @@ function combatComparisonFacts(tot) {
   return rows.slice(0, 7);
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 8. BETTING PROPS — confident, grounded fight outcome predictions
+// ════════════════════════════════════════════════════════════════════
+// Method (how it ends) + distance (does it reach the judges). Predicted
+// from the SAME ground truth — recent finish/durability patterns + career
+// rates. Genuine toss-ups return 'unsure' and are never shown. These are
+// clearly framed as predictions, not facts.
+
+const PROPS_SCHEMA = {
+  type: 'object',
+  properties: {
+    fights: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          home_team: { type: 'string' },
+          away_team: { type: 'string' },
+          method: { type: 'string', enum: ['KO/TKO', 'Submission', 'Decision', 'unsure'] },
+          method_confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+          distance: { type: 'string', enum: ['Goes the distance', 'Ends inside distance', 'unsure'] },
+          distance_confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+        },
+        required: ['home_team', 'away_team', 'method', 'method_confidence', 'distance', 'distance_confidence'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['fights'],
+  additionalProperties: false,
+};
+
+async function generateCombatProps({ anthropic, model, groundTruth, log = console.log }) {
+  const ctx = groundTruth.fights.map(fightToContext).join('\n\n');
+  const sys = `You predict HOW each MMA fight most likely ends, using ONLY the provided ground truth: recent results (did each fighter finish opponents or get finished?), control/takedown/strike patterns, and career rates. Two predictions per fight:
+- method: KO/TKO, Submission, or Decision. Use 'unsure' for a genuine toss-up.
+- distance: "Goes the distance" (reaches the judges) or "Ends inside distance". Use 'unsure' if unclear.
+Set confidence honestly. A fighter with no finishes on file and a durable opponent → likely Decision/distance. A heavy finisher vs someone recently KO'd → likely inside distance. Do NOT force a call you can't support — 'unsure' is correct often.`;
+  const msg = await anthropic.messages.create({
+    model, max_tokens: 4000,
+    output_config: { format: { type: 'json_schema', schema: PROPS_SCHEMA } },
+    system: sys,
+    messages: [{ role: 'user', content: `GROUND TRUTH:\n\n${ctx}\n\nPredict method + distance for every fight.` }],
+  });
+  const block = msg.content.find((b) => b.type === 'text');
+  const out = block ? JSON.parse(block.text).fights : [];
+  log(`🎯 Generated outcome props for ${out.length} fights`);
+  return out;
+}
+
+// Turn one fight's predicted outcome into display props — only the
+// confident calls (medium/high); coin-flips are dropped.
+function combatPropItems(outcome) {
+  if (!outcome) return [];
+  const items = [];
+  if (outcome.method && outcome.method !== 'unsure' && outcome.method_confidence !== 'low') {
+    items.push({ label: 'How it ends', value: outcome.method, hint: `${outcome.method_confidence} confidence` });
+  }
+  if (outcome.distance && outcome.distance !== 'unsure' && outcome.distance_confidence !== 'low') {
+    items.push({ label: 'Rounds', value: outcome.distance, hint: `${outcome.distance_confidence} confidence` });
+  }
+  return items;
+}
+
+// Team sports: confident props derived deterministically from the model's
+// projected score (no extra AI). Total + winning margin, framed as
+// projections. Returns [] when there's no usable score.
+function teamBettingProps({ predictedScore, homeTeam, awayTeam, pick, sport }) {
+  if (!predictedScore || !/^\d{1,3}-\d{1,3}$/.test(predictedScore.trim())) return [];
+  const [h, a] = predictedScore.trim().split('-').map(Number);
+  const total = h + a;
+  const margin = Math.abs(h - a);
+  const winner = h === a ? null : (h > a ? homeTeam : awayTeam);
+  const items = [{ label: 'Projected total', value: `${total}`, hint: totalHint(sport) }];
+  if (winner && margin > 0) {
+    items.push({ label: 'Winning margin', value: `${winner} by ${margin}`, hint: null });
+  }
+  return items;
+}
+
+function totalHint(sport) {
+  switch (sport) {
+    case 'basketball': return 'combined points';
+    case 'baseball': return 'combined runs';
+    case 'hockey': return 'combined goals';
+    case 'football': return 'combined points';
+    case 'soccer': return 'combined goals';
+    default: return 'combined';
+  }
+}
+const shortName = (n) => (n || '').split(/\s+/).slice(-1)[0];
+
 module.exports = {
   fetchUpcomingCard,
   resolveFighterId,
@@ -441,6 +533,9 @@ module.exports = {
   fighterTale,
   buildTaleOfTape,
   combatComparisonFacts,
+  generateCombatProps,
+  combatPropItems,
+  teamBettingProps,
 };
 
 // ── CLI test: `node combat.js test` ──────────────────────────────────
