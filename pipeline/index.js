@@ -757,13 +757,13 @@ async function savePicks(league, picks) {
     // NOT NULL column.
     matchup_facts: Array.isArray(p.matchup_facts) ? p.matchup_facts : [],
     // Real consensus market odds for the picked outcome. Sanity-banded
-    // (1.01–25), AND dropped when our probability disagrees with the
+    // (1.01–25), AND dropped when our probability disagrees with the implied
     // implied probability by >20 pts — that large a gap almost always
     // means a stale/wrong web-searched quote, not real edge, so we'd
     // rather show no odds than a fabricated "value".
     market_odds: ((m) => {
       if (typeof m !== 'number' || m < 1.01 || m > 25) return null;
-      if (Math.abs(p.probability - 100 / m) > 20) return null;
+      if (Math.abs(p.probability - 100 / m) > 15) return null;
       return m;
     })(p.market_odds),
     odds_source: (typeof p.odds_source === 'string' && p.odds_source.trim())
