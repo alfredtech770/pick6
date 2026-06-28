@@ -1554,7 +1554,7 @@ struct SportFilter: View {
     /// Tapping a sport with no picks today shows the empty state — better
     /// discovery than hiding the chip.
     private var visibleSports: [String] {
-        ["soccer", "baseball", "golf", "f1", "combat", "cricket", "basketball", "hockey"]
+        ["soccer", "baseball", "golf", "f1", "combat", "cricket", "football", "basketball", "hockey"]
     }
 
     /// Carousel label — uses the SPORT category name (Basketball, Soccer)
@@ -1565,7 +1565,7 @@ struct SportFilter: View {
     private func sportLabel(_ sport: String) -> String {
         switch sport {
         case "basketball": return "Basketball"
-        case "football":   return "Football"
+        case "football":   return "NFL"
         case "soccer":     return "Soccer"
         case "baseball":   return "MLB"
         case "golf":       return "Golf"
