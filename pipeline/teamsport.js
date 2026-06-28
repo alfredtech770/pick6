@@ -130,18 +130,52 @@ function comparisonFacts(comp) {
   return rows.slice(0, 6);
 }
 
+// Head-to-head: map each scoreboard matchup → its ESPN event id (both
+// orderings), so we can pull the season series per pick.
+async function fetchEvents(league) {
+  const d = await getJSON(`${SITE}/${PATHS[league]}/scoreboard`);
+  const map = new Map();
+  for (const e of d?.events || []) {
+    const cs = e.competitions?.[0]?.competitors || [];
+    const home = cs.find((c) => c.homeAway === 'home')?.team?.displayName;
+    const away = cs.find((c) => c.homeAway === 'away')?.team?.displayName;
+    if (home && away) {
+      map.set(`${normKey(home)}|${normKey(away)}`, e.id);
+      map.set(`${normKey(away)}|${normKey(home)}`, e.id);
+    }
+  }
+  return map;
+}
+
+// Real H2H string from ESPN's event summary, e.g. "CIN leads series 2-0".
+async function seriesForEvent(league, eventId) {
+  const d = await getJSON(`${SITE}/${PATHS[league]}/summary?event=${eventId}`);
+  const ss = (d?.seasonseries || [])[0];
+  return ss?.summary || null;
+}
+
 // Batch-enrich picks for a league: fetch once, rebuild facts + store the
 // structured comparison (mirrors soccer.enrichPicks).
 async function enrichPicks(league, picks) {
   if (!isSupported(league) || !picks?.length) return picks || [];
-  const [standings, probables] = await Promise.all([fetchStandings(league), fetchProbables(league)]);
+  const [standings, probables, events] = await Promise.all([
+    fetchStandings(league), fetchProbables(league), fetchEvents(league),
+  ]);
   for (const p of picks) {
     const home = teamProfile(p.home_team, standings, probables);
     const away = teamProfile(p.away_team, standings, probables);
     if (!home.found && !away.found) continue;
     const comp = { league, home, away };
     const facts = comparisonFacts(comp);
-    if (facts.length) { p.matchup_facts = facts; p.team_comparison = comp; }
+    // Grounded head-to-head (current season series) when ESPN has it.
+    const eventId = events.get(`${normKey(p.home_team)}|${normKey(p.away_team)}`);
+    if (eventId) {
+      try {
+        const series = await seriesForEvent(league, eventId);
+        if (series) facts.push({ label: 'Head-to-head', value: series });
+      } catch {}
+    }
+    if (facts.length) { p.matchup_facts = facts.slice(0, 7); p.team_comparison = comp; }
   }
   return picks;
 }
