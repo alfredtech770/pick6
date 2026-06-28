@@ -316,17 +316,6 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                // VALUE BOARD — today's biggest model-vs-market edges across
-                // every sport. Hidden when no real market edges exist.
-                if !vm.valuePlays.isEmpty {
-                    // Edges are visible to everyone (the hook); free users
-                    // hit the paywall on tap, Pro users open the detail.
-                    ValueBoard(picks: vm.valuePlays, isPro: isPro,
-                               onTap: { isPro ? onTapPick($0) : onUnlock() })
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                }
-
                 // Summer Football banner — sits between the stats row
                 // and the sport filter, exactly per the design
                 // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
@@ -340,6 +329,18 @@ struct HomeHiFiContent: View {
                     // pair and the sport carousel — was 4pt which made
                     // the chips feel glued to the tiles' bottom shadow.
                     .padding(.top, 22)
+
+                // VALUE BOARD — today's biggest model-vs-market edges, sits
+                // directly under the category chips. Hidden when no real
+                // market edges exist.
+                if !vm.valuePlays.isEmpty {
+                    // Edges visible to all (the hook); free users hit the
+                    // paywall on tap, Pro users open the detail.
+                    ValueBoard(picks: vm.valuePlays, isPro: isPro,
+                               onTap: { isPro ? onTapPick($0) : onUnlock() })
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                }
 
                 // Section header — title matches the design
                 // ("TODAY'S GAMES") with a SEE ALL → CTA. The CTA is
