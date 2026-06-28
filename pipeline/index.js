@@ -503,11 +503,11 @@ const PICK_SCHEMA = {
           },
           market_odds: {
             type: ['number', 'null'],
-            description: 'REAL current decimal odds for the PICKED outcome, found via web_search on Polymarket or a major sportsbook (DraftKings, FanDuel, bet365…). E.g. a -150 favorite is 1.67; Polymarket 60c is 1.0/0.60 ≈ 1.67. Must come from an actual market quote — null if you cannot find one. Never derive it from your own probability.',
+            description: 'Decimal odds for the PICKED outcome — the CONSENSUS across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle, Caesars), found via web_search; report the MEDIAN when books differ. Convert American to decimal (-150 → 1.67). USE ONLY REAL SPORTSBOOKS — NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, Covers, ATS.io, OddsShark tips, Tapology). If the books you find disagree wildly, you likely have a stale/bad quote — prefer null over a number you are unsure of. Null if no real sportsbook quote. Never derive it from your own probability.',
           },
           odds_source: {
             type: ['string', 'null'],
-            description: 'Name of the market the odds came from, e.g. "Polymarket", "DraftKings". Null when market_odds is null.',
+            description: 'The real sportsbook(s) the consensus came from, e.g. "DraftKings", "bet365/Pinnacle". Must be an actual sportsbook — never a tipster/media site. Null when market_odds is null.',
           },
           home_team: { type: 'string' },
           away_team: { type: 'string' },
@@ -578,7 +578,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       ...header,
       `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
       'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
-      'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
+      'For each pick, look up the CURRENT CONSENSUS odds for the picked outcome across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle) — report the MEDIAN as decimal odds in market_odds with the book(s) in odds_source. Use ONLY real sportsbooks, NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, etc.); null both if no real sportsbook quote is found.',
       ...(excludeMatchups.length
         ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
         : []),
@@ -756,11 +756,16 @@ async function savePicks(league, picks) {
     // Default to [] so a model that omits the field never nulls the
     // NOT NULL column.
     matchup_facts: Array.isArray(p.matchup_facts) ? p.matchup_facts : [],
-    // Real market odds for the picked outcome (Polymarket / books),
-    // sanity-banded: decimal odds outside 1.01–25 are junk quotes.
-    market_odds: (typeof p.market_odds === 'number'
-      && p.market_odds >= 1.01 && p.market_odds <= 25)
-      ? p.market_odds : null,
+    // Real consensus market odds for the picked outcome. Sanity-banded
+    // (1.01–25), AND dropped when our probability disagrees with the
+    // implied probability by >20 pts — that large a gap almost always
+    // means a stale/wrong web-searched quote, not real edge, so we'd
+    // rather show no odds than a fabricated "value".
+    market_odds: ((m) => {
+      if (typeof m !== 'number' || m < 1.01 || m > 25) return null;
+      if (Math.abs(p.probability - 100 / m) > 20) return null;
+      return m;
+    })(p.market_odds),
     odds_source: (typeof p.odds_source === 'string' && p.odds_source.trim())
       ? p.odds_source.trim() : null,
     // "<home>-<away>" only; anything else (prose, ranges) is dropped.
