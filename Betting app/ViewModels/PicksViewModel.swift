@@ -112,6 +112,19 @@ class PicksViewModel: ObservableObject {
         return upcomingEventPicks.filter { $0.sport == selectedSport }
     }
 
+    /// VALUE BOARD — every current pick (all sports, today + upcoming) where
+    /// our probability beats the market's implied probability by ≥4 points,
+    /// ranked by edge. Deliberately NOT filtered by the sport chip: it's a
+    /// global "today's best value" surface. Empty when no real market edges
+    /// exist (e.g. picks without captured odds) so the section can hide.
+    var valuePlays: [Pick] {
+        var seen = Set<UUID>()
+        let base = (todayPicks + upcomingEventPicks).filter { seen.insert($0.id).inserted }
+        return base
+            .filter { $0.isValuePlay }
+            .sorted { ($0.valueEdge ?? 0) > ($1.valueEdge ?? 0) }
+    }
+
     /// Yesterday's picks, filtered by `selectedSport`.
     var filteredYesterdayPicks: [Pick] {
         if selectedSport == "all" { return yesterdayPicks }

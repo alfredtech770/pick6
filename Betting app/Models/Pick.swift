@@ -106,6 +106,29 @@ struct Pick: Identifiable, Codable {
     /// Profit %, if this pick hit, on a unit stake — e.g. +83 for 1.83x.
     var potentialReturnPercent: Int { Int(((decimalOdds - 1.0) * 100).rounded()) }
 
+    /// Market-implied win probability from the captured market line. Nil
+    /// when there's no real quote — only real markets power the value calc.
+    var impliedProbability: Double? {
+        guard let m = marketOdds, m > 1.0 else { return nil }
+        return 100.0 / m
+    }
+
+    /// Edge in percentage points: our probability minus the market's
+    /// implied probability. Positive = we rate it higher than the market.
+    var valueEdge: Double? {
+        guard let imp = impliedProbability else { return nil }
+        return probability - imp
+    }
+
+    /// A "value play" = a real market line AND we beat it by a CREDIBLE
+    /// margin (4–12 points). The upper cap matters: edges above ~12 almost
+    /// always mean stale/bad web-searched odds, not real value, so we omit
+    /// them rather than flash an inflated "+22%". Pending picks only.
+    var isValuePlay: Bool {
+        guard isPending, let e = valueEdge else { return false }
+        return e >= 4 && e <= 12
+    }
+
     /// Refund-guarantee eligibility: any pick the AI calls at 85%+
     /// carries the "we refund it if it loses" tag. Fulfillment is
     /// out-of-band (user submits a claim form; honored as a

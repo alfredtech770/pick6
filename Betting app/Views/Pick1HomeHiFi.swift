@@ -316,6 +316,17 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
+                // VALUE BOARD — today's biggest model-vs-market edges across
+                // every sport. Hidden when no real market edges exist.
+                if !vm.valuePlays.isEmpty {
+                    // Edges are visible to everyone (the hook); free users
+                    // hit the paywall on tap, Pro users open the detail.
+                    ValueBoard(picks: vm.valuePlays, isPro: isPro,
+                               onTap: { isPro ? onTapPick($0) : onUnlock() })
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                }
+
                 // Summer Football banner — sits between the stats row
                 // and the sport filter, exactly per the design
                 // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
@@ -1621,6 +1632,111 @@ struct HiFiSportChip: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Value Board
+
+/// Today's biggest model-vs-market edges, across every sport. Each row is
+/// a pick where our probability beats the market's implied probability;
+/// ranked by edge. Tapping opens the pick's detail. Framed as a
+/// prediction — never "bet to win money".
+struct ValueBoard: View {
+    let picks: [Pick]
+    let isPro: Bool
+    let onTap: (Pick) -> Void
+
+    private var top: [Pick] { Array(picks.prefix(4)) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "diamond.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(Color(hex: "#D4FF3A"))
+                Text("BEST VALUE TODAY")
+                    .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
+                    .foregroundColor(Color(hex: "#F5F3EE"))
+                Spacer()
+                Text("WE BEAT THE MARKET")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+            }
+            .padding(.bottom, 12)
+
+            ForEach(Array(top.enumerated()), id: \.element.id) { idx, pick in
+                Button { Haptics.tap(); onTap(pick) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: sportIcon(pick.sport))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                            .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(teamShortName(pick.pick, sport: pick.sport).uppercased())
+                                .font(.archivo(13, weight: .bold))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
+                                .lineLimit(1)
+                            Text(matchupLabel(pick))
+                                .font(.archivoNarrow(9, weight: .bold)).tracking(0.6)
+                                .foregroundColor(Color(hex: "#6E6F75"))
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        if !isPro {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Color(hex: "#6E6F75"))
+                        }
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("+\(edgePts(pick))%")
+                                .font(.anton(16))
+                                .foregroundColor(Color(hex: "#D4FF3A"))
+                            Text("us \(Int(pick.probability))% · mkt \(impliedPct(pick))%")
+                                .font(.archivoNarrow(8, weight: .bold)).tracking(0.4)
+                                .foregroundColor(Color(hex: "#6E6F75"))
+                        }
+                    }
+                    .padding(.vertical, 9)
+                    .overlay(alignment: .top) {
+                        if idx > 0 { Rectangle().fill(Color(hex: "#1F2126")).frame(height: 1) }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text("AI PROJECTION · NOT A GUARANTEE")
+                .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
+                .foregroundColor(Color(hex: "#4A4B50"))
+                .padding(.top, 10)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: "#101114"))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color(hex: "#D4FF3A").opacity(0.18), lineWidth: 1))
+        )
+    }
+
+    private func edgePts(_ p: Pick) -> Int { Int((p.valueEdge ?? 0).rounded()) }
+    private func impliedPct(_ p: Pick) -> Int { Int((p.impliedProbability ?? 0).rounded()) }
+    private func matchupLabel(_ p: Pick) -> String {
+        if p.sport == "f1" || p.sport == "golf" { return p.homeTeam.uppercased() }
+        return "\(teamShortName(p.homeTeam, sport: p.sport)) vs \(teamShortName(p.awayTeam, sport: p.sport))".uppercased()
+    }
+    private func sportIcon(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "basketball.fill"
+        case "football":   return "football.fill"
+        case "soccer":     return "soccerball"
+        case "baseball":   return "baseball.fill"
+        case "hockey":     return "hockey.puck.fill"
+        case "combat":     return "figure.boxing"
+        case "f1":         return "car.fill"
+        case "golf":       return "figure.golf"
+        case "cricket":    return "figure.cricket"
+        default:           return "circle"
+        }
     }
 }
 
