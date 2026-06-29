@@ -16,6 +16,7 @@ private enum AuthFlowStep: Equatable {
     case auth              // delegates to AuthView (signup/signin + OTP)
     case pickSports
     case notifications
+    case code              // optional referral / creator code
     case success
     case paywall
 
@@ -23,7 +24,7 @@ private enum AuthFlowStep: Equatable {
         switch self {
         case .welcome, .auth, .success: return false
         case .value(let i): return i > 0
-        case .pickSports, .notifications, .paywall: return true
+        case .pickSports, .notifications, .code, .paywall: return true
         }
     }
 }
@@ -68,6 +69,7 @@ struct Pick1AuthFlow: View {
         case "auth", "signup", "otp": return .auth
         case "sports": return .pickSports
         case "notif", "notifications": return .notifications
+        case "code": return .code
         case "success": return .success
         case "paywall": return .paywall
         default: return nil
@@ -129,6 +131,12 @@ struct Pick1AuthFlow: View {
         case .notifications:
             OBNotificationsScreen(
                 onBack: { back(to: .pickSports) },
+                onContinue: { advance(to: .code) }
+            )
+
+        case .code:
+            OBCodeScreen(
+                onBack: { back(to: .notifications) },
                 onContinue: { advance(to: .success) }
             )
 
@@ -180,6 +188,7 @@ struct Pick1AuthFlow: View {
         case .auth: return "auth"
         case .pickSports: return "sports"
         case .notifications: return "notif"
+        case .code: return "code"
         case .success: return "success"
         case .paywall: return "paywall"
         }
@@ -838,7 +847,7 @@ struct OBPickSportsScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            OBTopBar(step: 1, total: 3)
+            OBTopBar(step: 1, total: 4)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
 
@@ -971,7 +980,7 @@ struct OBNotificationsScreen: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                OBTopBar(canGoBack: true, step: 2, total: 3, onBack: onBack)
+                OBTopBar(canGoBack: true, step: 2, total: 4, onBack: onBack)
                     .padding(.top, 8)
                     .padding(.bottom, 12)
 
@@ -1201,6 +1210,118 @@ struct OTPBox: View {
 }
 
 // MARK: - 09 · Success
+
+// MARK: - Onboarding · Code step
+//
+// Optional referral / creator-code entry, surfaced in the signup flow so
+// a user who downloaded the app off a creator's call-to-action enters the
+// code right here (instead of digging into Profile → Invite Friends).
+// Reuses the same redeem_referral RPC, which now accepts creator codes.
+struct OBCodeScreen: View {
+    let onBack: () -> Void
+    let onContinue: () -> Void
+
+    @StateObject private var referral = ReferralManager.shared
+    @EnvironmentObject private var subs: SubscriptionManager
+    @State private var entered: String = ""
+    @State private var redeeming = false
+    @State private var done = false
+    @State private var banner: (text: String, ok: Bool)? = nil
+    @FocusState private var focused: Bool
+
+    private var trimmed: String { entered.trimmingCharacters(in: .whitespaces) }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            OBTopBar(canGoBack: true, step: 3, total: 4, canSkip: true,
+                     onBack: onBack, onSkip: onContinue)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    OBKicker(text: "STEP 4 · BONUS")
+                        .padding(.bottom, 14)
+                    OBTitle("GOT A", "", emphasis: "CODE?", size: 56)
+                    Text("Have a referral or creator code? Drop it in for free Pro days.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.p1Ink2)
+                        .padding(.top, 12)
+
+                    TextField("", text: $entered,
+                              prompt: Text("ENTER CODE").foregroundColor(.p1Ink2))
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .focused($focused)
+                        .font(.custom("BarlowCondensed-Bold", size: 22))
+                        .kerning(3)
+                        .foregroundColor(.p1Foreground)
+                        .disabled(done)
+                        .padding(.horizontal, 16)
+                        .frame(height: 58)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.p1Panel))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(done ? Color.p1Lime : Color.p1Line, lineWidth: 1))
+                        .padding(.top, 24)
+
+                    if let banner {
+                        Text(banner.text)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(banner.ok ? .p1Lime : Color(hex: "#FF5A5A"))
+                            .padding(.top, 12)
+                    }
+                }
+                .padding(.horizontal, 22)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                Button(action: { if done { onContinue() } else { Task { await redeem() } } }) {
+                    Text(done ? "CONTINUE" : (redeeming ? "CHECKING…" : "APPLY CODE"))
+                        .font(.custom("BarlowCondensed-Bold", size: 17)).kerning(1.5)
+                        .foregroundColor(.p1LimeInk)
+                        .frame(maxWidth: .infinity).frame(height: 54)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.p1Lime))
+                }
+                .buttonStyle(.plain)
+                .disabled(redeeming || (!done && trimmed.isEmpty))
+                .opacity((redeeming || (!done && trimmed.isEmpty)) ? 0.5 : 1)
+
+                if !done {
+                    Button(action: onContinue) {
+                        Text("I don't have a code")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.p1Ink2)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 22)
+            .padding(.bottom, 20)
+        }
+    }
+
+    private func redeem() async {
+        focused = false
+        redeeming = true; banner = nil
+        let outcome = await referral.redeem(trimmed)
+        redeeming = false
+        switch outcome {
+        case .success:
+            done = true
+            banner = ("Code applied — enjoy your free Pro days!", true)
+            Haptics.success()
+            await subs.refreshCompAccess()
+        case .invalid, .ownCode:
+            banner = ("That code isn't valid.", false)
+        case .alreadyUsed:
+            banner = ("You've already used a code.", false)
+        case .error:
+            banner = ("Something went wrong — try again.", false)
+        }
+    }
+}
 
 struct OBSuccessScreen: View {
     let sportsCount: Int
