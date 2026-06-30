@@ -196,6 +196,22 @@ class PicksViewModel: ObservableObject {
     var totalLosses: Int { filteredHistoryPicks.filter { $0.isLoss }.count }
     var totalPending: Int { filteredHistoryPicks.filter { $0.isPending }.count }
 
+    /// Confidence floor for the headline ACCURACY tile. Lower-confidence game
+    /// cards still appear everywhere in the app (each shows its own % and is
+    /// fully tappable) — they just don't define the headline hit rate. Scoping
+    /// the stat to our high-confidence calls is honest *because* confidence is
+    /// well-calibrated: ≥60% picks hit ~61%+, while <60% hover at coin-flip and
+    /// only drag the number down. The tile is labeled "60%+ CALLS" so users
+    /// know exactly what it measures. Weak sports stay honest even gated.
+    static let accuracyConfidenceFloor: Double = 60
+
+    /// History picks behind the ACCURACY tile — sport-filtered AND scoped to
+    /// high-confidence calls. Distinct from `filteredHistoryPicks`, which still
+    /// backs the full browsable history (every settled pick, ungated).
+    var accuracyHistoryPicks: [Pick] {
+        filteredHistoryPicks.filter { $0.probability >= Self.accuracyConfidenceFloor }
+    }
+
     // MARK: - Accuracy (home-screen "ACCURACY" tile)
     //
     // Sport-aware: when a sport chip is selected the tile reflects only
@@ -205,7 +221,7 @@ class PicksViewModel: ObservableObject {
     /// AI hit rate over settled picks for the selected sport (every sport
     /// on "ALL"). Drives the big number on the AccuracyTile.
     var accuracyAll: Double {
-        let settled = filteredHistoryPicks.filter { !$0.isPending }
+        let settled = accuracyHistoryPicks.filter { !$0.isPending }
         guard !settled.isEmpty else { return 0 }
         let wins = settled.filter { $0.isWin }.count
         return Double(wins) / Double(settled.count) * 100
@@ -215,7 +231,7 @@ class PicksViewModel: ObservableObject {
     /// + delta vs the prior N. Default N = 10 → "9-1 LAST 10".
     func recentSettled(_ n: Int = 10) -> [Pick] {
         Array(
-            filteredHistoryPicks
+            accuracyHistoryPicks
                 .filter { !$0.isPending }
                 .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                         > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
@@ -243,7 +259,7 @@ class PicksViewModel: ObservableObject {
     /// points. Positive when the AI is heating up, negative when cooling.
     /// Nil if either window is empty.
     func accuracyDelta(window: Int = 10) -> Double? {
-        let settled = filteredHistoryPicks
+        let settled = accuracyHistoryPicks
             .filter { !$0.isPending }
             .sorted { ($0.gameDate, $0.createdAt ?? Date.distantPast)
                     > ($1.gameDate, $1.createdAt ?? Date.distantPast) }
@@ -277,7 +293,7 @@ class PicksViewModel: ObservableObject {
     static let minSampleForAccuracy = 10
 
     var accuracyMood: AccuracyMood {
-        let settled = filteredHistoryPicks.filter { !$0.isPending }
+        let settled = accuracyHistoryPicks.filter { !$0.isPending }
         guard settled.count >= Self.minSampleForAccuracy else { return .empty }
         switch accuracyAll {
         case 80...:  return .bullish

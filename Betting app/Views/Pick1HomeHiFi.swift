@@ -1401,7 +1401,11 @@ struct AccuracyTile: View {
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                 } else {
-                    Text("\(record.wins)-\(record.losses) LAST \(record.wins + record.losses)")
+                    // Scoped to high-confidence picks (PicksViewModel
+                    // .accuracyConfidenceFloor) — labeled so the headline % is
+                    // honest about what it measures. Lower-confidence cards
+                    // still show throughout the app, just not in this record.
+                    Text("\(record.wins)-\(record.losses) · 60%+ CALLS")
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                         .lineLimit(1)
