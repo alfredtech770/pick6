@@ -325,6 +325,10 @@ struct MatchDetailView: View {
 
         }
         .preferredColorScheme(.dark)
+        // Engagement signal → PostHog (pick_viewed) + Meta (ViewContent,
+        // content_type = league). Fires once whenever a pick detail opens,
+        // from any screen that presents MatchDetailView.
+        .onAppear { Analytics.pickViewed(league: pick.league) }
     }
 
     private var detailTopNav: some View {

@@ -109,8 +109,18 @@ enum Analytics {
         track("onboarding_completed")
         AppEvents.shared.logEvent(.completedRegistration)
     }
-    static func paywallViewed() { track("paywall_viewed") }
-    static func pickViewed(league: String) { track("pick_viewed", ["league": league]) }
+    static func paywallViewed() {
+        track("paywall_viewed")
+        // Meta: purchase-intent signal — a step above install, below trial.
+        // Gives AEM another event to prioritize between registration and trial.
+        AppEvents.shared.logEvent(.initiatedCheckout)
+    }
+    static func pickViewed(league: String) {
+        track("pick_viewed", ["league": league])
+        // Meta: engagement / content-view signal, tagged with the league so
+        // Meta can see which sports drive the most activation.
+        AppEvents.shared.logEvent(.viewedContent, parameters: [.contentType: league])
+    }
     static func trialStarted(productId: String) {
         track("trial_started", ["product": productId])
         AppEvents.shared.logEvent(.startTrial)
