@@ -270,9 +270,15 @@ class PicksViewModel: ObservableObject {
         case empty      // no settled picks yet
     }
 
+    /// Minimum settled picks before we'll show a hit rate for a sport. A
+    /// "67%" built on 3 graded picks is noise, not a track record — below this
+    /// floor the tile reads "BUILDING TRACK RECORD" instead of a misleading
+    /// number. (Newer sports with zero settled picks already land here too.)
+    static let minSampleForAccuracy = 10
+
     var accuracyMood: AccuracyMood {
         let settled = filteredHistoryPicks.filter { !$0.isPending }
-        guard !settled.isEmpty else { return .empty }
+        guard settled.count >= Self.minSampleForAccuracy else { return .empty }
         switch accuracyAll {
         case 80...:  return .bullish
         case 60..<80: return .strong

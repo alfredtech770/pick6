@@ -1393,7 +1393,11 @@ struct AccuracyTile: View {
             Spacer(minLength: 0)
             HStack {
                 if mood == .empty || (record.wins + record.losses) == 0 {
-                    Text("AWAITING RESULTS")
+                    // Shown for sports with no settled picks yet AND those
+                    // below the meaningful-sample floor (PicksViewModel
+                    // .minSampleForAccuracy) — reads as a positive "give it
+                    // time" rather than implying a bad/zero record.
+                    Text("BUILDING TRACK RECORD")
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                 } else {
