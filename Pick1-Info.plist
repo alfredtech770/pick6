@@ -47,6 +47,26 @@
 			<string>n38lu8286q.skadnetwork</string>
 		</dict>
 	</array>
+	<key>FacebookAppID</key>
+	<string>1750424039461325</string>
+	<key>FacebookClientToken</key>
+	<string>e89e5a741c0d9b92f24a536d3632d33e</string>
+	<key>FacebookDisplayName</key>
+	<string>Pick1</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1750424039461325</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

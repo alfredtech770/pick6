@@ -28,6 +28,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Settings.shared.appID       = Analytics.metaAppID
         Settings.shared.clientToken = Analytics.metaClientToken
         Settings.shared.displayName = "Pick1"
+        // Auto-log the install/activation event + collect IDFA/IDFV so Meta can
+        // attribute installs and optimize on value. ATT (requestATTIfNeeded)
+        // gates whether the advertiser ID is actually usable for tracking.
+        Settings.shared.isAutoLogAppEventsEnabled      = true
+        Settings.shared.isAdvertiserIDCollectionEnabled = true
         ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
         return true
     }
