@@ -137,6 +137,7 @@ enum EnglishStrings {
         .referral_enter:              "Enter code",
         .referral_redeem:             "Redeem",
         .referral_redeemed:           "🎉 1 month of Pro unlocked!",
+        .code_applied:                "✓ Code applied!",
         .referral_err_invalid:        "That code isn't valid.",
         .referral_err_used:           "You've already redeemed a code.",
         .referral_share_msg:          "Get Pick1 — AI sports predictions. Use my code %@ for a free month: %@",

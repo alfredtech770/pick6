@@ -44,11 +44,14 @@ struct OBPaywallScreen: View {
     @Environment(LocalizationManager.self) private var loc
     @ObservedObject private var perf = PerformanceStats.shared
 
-    /// "Access Free" skip button reveals 7 seconds after the paywall opens.
+    /// Dismiss (✕) skip control reveals 17 seconds after the paywall opens.
     /// Lets users dismiss the paywall without subscribing — required for
-    /// good UX (and several App Review precedents).
+    /// good UX (and several App Review precedents). Kept deliberately quiet
+    /// (a small ✕, not a labeled "Access Free" pill) and delayed longer so
+    /// more users see the value prop before the out appears — lifts trial
+    /// conversion without trapping users or risking a "can't dismiss" reject.
     @State private var skipUnlocked: Bool = false
-    private let skipDelay: Double = 7.0
+    private let skipDelay: Double = 17.0
 
     /// Terms / Privacy sheets — required by App Review guideline 3.1.2
     /// to be reachable on the paywall itself, not just from Profile.
@@ -160,26 +163,22 @@ struct OBPaywallScreen: View {
 
             Spacer()
 
-            // Right slot: 38pt placeholder until the 7s skip-delay elapses,
-            // then fades in as an "Access Free" pill that dismisses the
-            // paywall via onSkip().
+            // Right slot: 38pt placeholder until the 17s skip-delay elapses,
+            // then fades in as a quiet ✕ that dismisses the paywall via
+            // onSkip(). Subtle by design — present enough to satisfy App
+            // Review's "must be dismissible" bar, but not an inviting CTA.
             ZStack {
-                Color.clear.frame(width: 96, height: 38)
+                Color.clear.frame(width: 38, height: 38)
                 if skipUnlocked {
                     Button(action: onSkip) {
-                        HStack(spacing: 4) {
-                            Text("Access Free")
-                                .font(.system(size: 12, weight: .semibold))
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 10, weight: .heavy))
-                        }
-                        .foregroundColor(.p1Ink2)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule().fill(Color.p1Panel)
-                                .overlay(Capsule().stroke(Color.p1Line, lineWidth: 1))
-                        )
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.p1Mute)
+                            .frame(width: 30, height: 30)
+                            .background(
+                                Circle().fill(Color.p1Panel)
+                                    .overlay(Circle().stroke(Color.p1Line, lineWidth: 1))
+                            )
                     }
                     .buttonStyle(.plain)
                     .transition(.opacity.combined(with: .scale(scale: 0.94)))

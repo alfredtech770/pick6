@@ -136,6 +136,7 @@ enum ItalianStrings {
         .referral_enter:              "Inserisci il codice",
         .referral_redeem:             "Riscatta",
         .referral_redeemed:           "🎉 1 mese di Pro sbloccato!",
+        .code_applied:                "✓ Codice applicato!",
         .referral_err_invalid:        "Questo codice non è valido.",
         .referral_err_used:           "Hai già riscattato un codice.",
         .referral_share_msg:          "Scopri Pick1 — pronostici sportivi IA. Usa il mio codice %@ per un mese gratis: %@",

@@ -136,6 +136,7 @@ enum SpanishStrings {
         .referral_enter:              "Introduce el código",
         .referral_redeem:             "Canjear",
         .referral_redeemed:           "🎉 ¡1 mes de Pro desbloqueado!",
+        .code_applied:                "✓ ¡Código aplicado!",
         .referral_err_invalid:        "Ese código no es válido.",
         .referral_err_used:           "Ya has canjeado un código.",
         .referral_share_msg:          "Descubre Pick1 — predicciones deportivas con IA. Usa mi código %@ para un mes gratis: %@",

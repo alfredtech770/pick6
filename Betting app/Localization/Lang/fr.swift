@@ -136,6 +136,7 @@ enum FrenchStrings {
         .referral_enter:              "Saisis le code",
         .referral_redeem:             "Valider",
         .referral_redeemed:           "🎉 1 mois de Pro débloqué !",
+        .code_applied:                "✓ Code appliqué !",
         .referral_err_invalid:        "Ce code n'est pas valide.",
         .referral_err_used:           "Tu as déjà utilisé un code.",
         .referral_share_msg:          "Découvre Pick1 — pronostics sportifs IA. Utilise mon code %@ pour un mois gratuit : %@",

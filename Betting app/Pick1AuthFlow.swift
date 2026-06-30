@@ -1243,7 +1243,7 @@ struct OBCodeScreen: View {
                     OBKicker(text: "STEP 4 · BONUS")
                         .padding(.bottom, 14)
                     OBTitle("GOT A", "", emphasis: "CODE?", size: 56)
-                    Text("Have a referral or creator code? Drop it in for free Pro days.")
+                    Text("Got a referral or creator code? Add it here.")
                         .font(.system(size: 14))
                         .foregroundColor(.p1Ink2)
                         .padding(.top, 12)
@@ -1308,9 +1308,10 @@ struct OBCodeScreen: View {
         let outcome = await referral.redeem(trimmed)
         redeeming = false
         switch outcome {
-        case .success:
+        case .success(let grantedPro):
             done = true
-            banner = ("Code applied — enjoy your free Pro days!", true)
+            banner = (grantedPro ? "Code applied — your free month is unlocked! 🎉"
+                                 : "Code applied — you're all set! ✓", true)
             Haptics.success()
             await subs.refreshCompAccess()
         case .invalid, .ownCode:

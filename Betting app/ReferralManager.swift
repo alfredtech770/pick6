@@ -32,24 +32,28 @@ final class ReferralManager: ObservableObject {
     }
 
     enum RedeemOutcome: Equatable {
-        case success
+        /// `grantedPro` is true for friend referral codes (both sides get +1
+        /// month) and false for creator/affiliate codes (attribution only,
+        /// no free Pro) — lets the UI show an accurate banner.
+        case success(grantedPro: Bool)
         case invalid
         case alreadyUsed
         case ownCode
         case error
     }
 
-    /// Redeem a friend's code. On success both sides get +1 month Pro.
+    /// Redeem a code. Friend codes grant +1 month Pro to both sides; creator
+    /// codes (type == "creator") only record attribution and grant nothing.
     func redeem(_ raw: String) async -> RedeemOutcome {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         guard !trimmed.isEmpty else { return .invalid }
-        struct Resp: Decodable { let ok: Bool; let error: String? }
+        struct Resp: Decodable { let ok: Bool; let error: String?; let type: String? }
         do {
             let resp: Resp = try await SupabaseManager.client
                 .rpc("redeem_referral", params: ["p_code": trimmed])
                 .execute()
                 .value
-            if resp.ok { return .success }
+            if resp.ok { return .success(grantedPro: resp.type != "creator") }
             switch resp.error {
             case "invalid_code":     return .invalid
             case "already_redeemed": return .alreadyUsed

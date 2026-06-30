@@ -179,6 +179,7 @@ enum L10nKey: String, CaseIterable {
     case referral_enter
     case referral_redeem
     case referral_redeemed
+    case code_applied                      // creator/affiliate code: attribution only, no Pro
     case referral_err_invalid
     case referral_err_used
     case referral_share_msg                // "...code %@ ... %@" (code, url)

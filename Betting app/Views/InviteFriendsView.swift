@@ -161,8 +161,8 @@ struct InviteFriendsView: View {
         let outcome = await referral.redeem(entered)
         redeeming = false
         switch outcome {
-        case .success:
-            banner = (loc.t(.referral_redeemed), true)
+        case .success(let grantedPro):
+            banner = (loc.t(grantedPro ? .referral_redeemed : .code_applied), true)
             entered = ""
             Haptics.success()
             await subs.refreshCompAccess()   // unlock immediately (on comp-enabled builds)

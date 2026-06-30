@@ -137,6 +137,7 @@ enum ArabicStrings {
         .referral_enter:              "أدخل الرمز",
         .referral_redeem:             "استبدال",
         .referral_redeemed:           "🎉 تم فتح شهر من Pro!",
+        .code_applied:                "✓ تم تطبيق الرمز!",
         .referral_err_invalid:        "هذا الرمز غير صالح.",
         .referral_err_used:           "لقد استبدلت رمزًا بالفعل.",
         .referral_share_msg:          "جرّب Pick1 — توقّعات رياضية بالذكاء الاصطناعي. استخدم رمزي %@ لشهر مجاني: %@",

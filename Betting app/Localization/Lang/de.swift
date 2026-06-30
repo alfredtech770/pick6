@@ -136,6 +136,7 @@ enum GermanStrings {
         .referral_enter:              "Code eingeben",
         .referral_redeem:             "Einlösen",
         .referral_redeemed:           "🎉 1 Monat Pro freigeschaltet!",
+        .code_applied:                "✓ Code angewendet!",
         .referral_err_invalid:        "Dieser Code ist ungültig.",
         .referral_err_used:           "Du hast bereits einen Code eingelöst.",
         .referral_share_msg:          "Hol dir Pick1 — KI-Sporttipps. Nutze meinen Code %@ für einen Gratismonat: %@",
