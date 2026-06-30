@@ -271,6 +271,17 @@ final class SubscriptionManager: ObservableObject {
                 // The trial is now consumed — reflect ineligibility so a
                 // later visit to the paywall shows full-price copy.
                 await refreshIntroEligibility()
+                // NOTE (Meta value optimization — pickup when we move from
+                // install-optimized to ROAS/value-optimized campaigns):
+                // This logs the FULL product.price as the Meta Purchase value
+                // even at a free-trial START (monthly has a 3-day trial), i.e.
+                // before any money is collected. That's fine for install
+                // optimization, but for VALUE/ROAS it over-credits trial-starts.
+                // To fix: detect the trial via `transaction.offer?.type ==
+                // .introductory` and log amount 0 (or the intro price) at trial
+                // start, then log the real Purchase value on the first PAID
+                // renewal (via Transaction.updates / refreshEntitlements). Until
+                // then we optimize on StartTrial, not Purchase value.
                 Analytics.subscribed(
                     amount: NSDecimalNumber(decimal: product.price).doubleValue,
                     currency: product.priceFormatStyle.currencyCode,
