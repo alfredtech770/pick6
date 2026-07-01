@@ -118,19 +118,16 @@ struct Pick1OnboardingFunnel: View {
     // MARK: Chrome (progress bar + back)
 
     private var chrome: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button(action: back) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .heavy))
-                        .foregroundColor(Fnl.ink2)
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(Fnl.panel).overlay(Circle().stroke(Fnl.line, lineWidth: 1)))
-                }
-                .opacity(index > 0 ? 1 : 0)
-                Spacer()
+        HStack(spacing: 14) {
+            Button(action: back) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundColor(Fnl.ink2)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Fnl.panel).overlay(Circle().stroke(Fnl.line, lineWidth: 1)))
             }
-            // Progress bar
+            .opacity(index > 0 ? 1 : 0)
+            // Progress bar — same row as the back button.
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.08))
@@ -138,9 +135,9 @@ struct Pick1OnboardingFunnel: View {
                         .frame(width: max(4, geo.size.width * CGFloat(progress)))
                         .shadow(color: Fnl.lime.opacity(0.6), radius: 6)
                 }
+                .frame(maxHeight: .infinity, alignment: .center)
             }
-            .frame(height: 4)
-            .padding(.top, 6)
+            .frame(height: 40)
         }
         .padding(.horizontal, 30)
         .padding(.top, 8)
@@ -233,15 +230,37 @@ struct FnlHeadline: View {
     let parts: [(String, Bool)]
     var accent: Color = Fnl.lime
     var size: CGFloat = 56
+    var center: Bool = false
+
+    /// Split the (text, emphasized) segments into lines on "\n", preserving
+    /// each segment's color so a lime tail can sit mid-line. Rendering each
+    /// line as its own Text lets a negative VStack spacing pull the lines
+    /// together — SwiftUI clamps `lineSpacing` at 0, so it can't tighten
+    /// Anton's tall line-height on a single multi-line Text.
+    private var lines: [[(String, Bool)]] {
+        var out: [[(String, Bool)]] = [[]]
+        for (text, emph) in parts {
+            let pieces = text.components(separatedBy: "\n")
+            for (i, piece) in pieces.enumerated() {
+                if i > 0 { out.append([]) }
+                if !piece.isEmpty { out[out.count - 1].append((piece, emph)) }
+            }
+        }
+        return out
+    }
 
     var body: some View {
-        parts.reduce(Text("")) { acc, part in
-            acc + Text(part.0).foregroundColor(part.1 ? accent : Fnl.white)
+        VStack(alignment: center ? .center : .leading, spacing: -size * 0.2) {
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                line.reduce(Text("")) { acc, seg in
+                    acc + Text(seg.0).foregroundColor(seg.1 ? accent : Fnl.white)
+                }
+                .font(.anton(size))
+                .kerning(0.2)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .font(.anton(size))
-        .kerning(0.2)
-        .lineSpacing(-6)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: center ? .infinity : nil, alignment: center ? .center : .leading)
     }
 }
 
@@ -325,7 +344,7 @@ private struct WelcomeScreen: View {
                 FnlLockup().padding(.top, 24)
                 Spacer()
                 VStack(spacing: 18) {
-                    FnlHeadline(parts: [("WIN\n", false), ("SMARTER.\n", false), ("NOT HARDER.", true)], size: 70)
+                    FnlHeadline(parts: [("WIN\n", false), ("SMARTER.\n", false), ("NOT HARDER.", true)], size: 70, center: true)
                         .multilineTextAlignment(.center)
                     FnlLead(text: "The AI that calls one game a day across 9 sports — and logs every result in public.")
                         .multilineTextAlignment(.center)
@@ -688,7 +707,7 @@ private struct SuccessScreen: View {
                 Spacer()
                 VStack(spacing: 18) {
                     Text("🎉").font(.system(size: 70))
-                    FnlHeadline(parts: [("YOU'RE IN.\n", false), ("LET'S ", false), ("WIN.", true)], accent: Fnl.win, size: 60)
+                    FnlHeadline(parts: [("YOU'RE IN.\n", false), ("LET'S ", false), ("WIN.", true)], accent: Fnl.win, size: 60, center: true)
                         .multilineTextAlignment(.center)
                     FnlLead(text: "Welcome to Pick1 Pro. Your first daily pick drops tomorrow at 6:30 AM.")
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
@@ -883,7 +902,7 @@ private struct RatingScreen: View {
                 Spacer()
                 VStack(spacing: 16) {
                     FnlKick(text: "Help us grow").frame(maxWidth: .infinity)
-                    FnlHeadline(parts: [("LOVE ", false), ("PICK1?", true)]).multilineTextAlignment(.center)
+                    FnlHeadline(parts: [("LOVE ", false), ("PICK1?", true)], center: true)
                     FnlLead(text: "Rate us on the App Store — it takes 5 seconds and unlocks a reward.")
                         .multilineTextAlignment(.center).frame(maxWidth: 300)
                     Text("★★★★★").font(.system(size: 40)).foregroundColor(Color(hex: "#ffd84d")).padding(.top, 14)
@@ -926,7 +945,7 @@ private struct TimeToWinScreen: View {
                 Spacer()
                 VStack(spacing: 20) {
                     FnlKick(text: "You're all set", tone: .win).frame(maxWidth: .infinity)
-                    FnlHeadline(parts: [("NOW IT'S\n", false), ("TIME TO\n", false), ("WIN.", true)], accent: Fnl.win, size: 60)
+                    FnlHeadline(parts: [("NOW IT'S\n", false), ("TIME TO\n", false), ("WIN.", true)], accent: Fnl.win, size: 60, center: true)
                         .multilineTextAlignment(.center)
                     FnlLead(text: "Your personalized daily pick is ready. One tap away.")
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
