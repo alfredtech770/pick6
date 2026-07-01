@@ -264,9 +264,12 @@ struct FnlGlow: View {
         let c: Color = tone == .red ? Fnl.hot : (tone == .win ? Fnl.win : Fnl.lime)
         return RadialGradient(colors: [c.opacity(tone == .lime ? 0.16 : 0.21), .clear],
                               center: .init(x: tone == .lime ? 0.8 : 0.5, y: 0.0),
-                              startRadius: 0, endRadius: 320)
-            .frame(height: 340)
+                              startRadius: 0, endRadius: 340)
+            .frame(height: 400)
             .frame(maxWidth: .infinity, alignment: .top)
+            // Bleed under the Dynamic Island so the glow starts at the true top
+            // of the screen — no seam/line at the safe-area edge.
+            .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
     }
 }
