@@ -285,7 +285,7 @@ struct FnlScreen<C: View, B: View>: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) { content() }
                         .padding(.horizontal, 30)
-                        .padding(.top, 88)
+                        .padding(.top, 64)
                         .padding(.bottom, 24)
                 }
                 VStack(spacing: 0) { bottom() }
@@ -544,7 +544,7 @@ private struct QuizScreen: View {
             }
         }
         .padding(.horizontal, 30)
-        .padding(.top, 88)
+        .padding(.top, 64)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
@@ -907,7 +907,7 @@ private struct RatingScreen: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30).padding(.top, 88).padding(.bottom, 40)
+            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 40)
         }
     }
 }
@@ -932,7 +932,7 @@ private struct TimeToWinScreen: View {
                 FnlCTA(title: "SEE MY PLAN →", action: onNext)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30).padding(.top, 88).padding(.bottom, 40)
+            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 40)
         }
     }
 }
