@@ -2802,10 +2802,13 @@ struct LimeGlassSurface: View {
             // iOS 26 Liquid Glass texture overlay. Sits on top of the
             // lime so the surface gets the refractive depth +
             // specular highlights of Apple's glass material while the
-            // lime color still drives the chroma.
+            // lime color still drives the chroma. Kept LOW — at higher
+            // opacity the glass composites the dark backdrop through and
+            // muddies the lime toward olive (visibly darker than the
+            // brand #D4FF3A on buttons).
             Color.clear
                 .glassCompat(in: shape, interactive: true)
-                .opacity(0.55)
+                .opacity(0.18)
                 .allowsHitTesting(false)
 
             // Iridescent shimmer — violet-to-cyan ramp at low alpha so
