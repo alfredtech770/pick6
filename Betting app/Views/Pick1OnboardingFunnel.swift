@@ -150,13 +150,15 @@ struct Pick1OnboardingFunnel: View {
         else { onFinish([]) }
     }
     private func back() { if index > 0 { index -= 1 } }
+    /// Jump straight to the account step (Welcome's "Sign in" link).
+    private func jumpToSignup() { if let i = steps.firstIndex(of: .signup) { index = i } }
 
     // MARK: Screen router
 
     @ViewBuilder
     private func screen(for step: FunnelStep) -> some View {
         switch step {
-        case .welcome:   WelcomeScreen(onNext: next)
+        case .welcome:   WelcomeScreen(onNext: next, onSignIn: jumpToSignup)
         case .features:  FeaturesScreen(onNext: next)
         case .signup:    SignupScreen(onNext: next)
         case .quiz(let i):
@@ -335,6 +337,7 @@ struct FnlLockup: View {
 
 private struct WelcomeScreen: View {
     let onNext: () -> Void
+    var onSignIn: () -> Void = {}
     var body: some View {
         ZStack(alignment: .top) {
             FnlGlow()
@@ -351,10 +354,13 @@ private struct WelcomeScreen: View {
                 Spacer()
                 VStack(spacing: 0) {
                     FnlCTA(title: "GET STARTED →", action: onNext)
-                    (Text("Already a member? ").foregroundColor(Fnl.mute)
-                     + Text("Sign in").foregroundColor(Fnl.lime))
-                        .font(.mono(11, weight: .bold))
-                        .padding(.top, 14)
+                    Button(action: onSignIn) {
+                        (Text("Already a member? ").foregroundColor(Fnl.mute)
+                         + Text("Sign in").foregroundColor(Fnl.lime))
+                            .font(.mono(11, weight: .bold))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 14)
                 }
             }
             .frame(maxWidth: .infinity)
