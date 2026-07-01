@@ -293,8 +293,8 @@ struct FnlGlow: View {
     }
 }
 
-/// Standard screen scaffold: optional glow, scrollable body with the design's
-/// 88pt top inset, and a pinned bottom CTA area.
+/// Standard screen scaffold: optional glow, a non-scrolling body (everything
+/// fits on one screen) with the design's top inset, and a pinned bottom CTA.
 struct FnlScreen<C: View, B: View>: View {
     var glow: FnlKick.Tone? = .lime
     @ViewBuilder var content: () -> C
@@ -304,12 +304,10 @@ struct FnlScreen<C: View, B: View>: View {
         ZStack(alignment: .top) {
             if let glow { FnlGlow(tone: glow) }
             VStack(alignment: .leading, spacing: 0) {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) { content() }
-                        .padding(.horizontal, 30)
-                        .padding(.top, 64)
-                        .padding(.bottom, 24)
-                }
+                VStack(alignment: .leading, spacing: 0) { content() }
+                    .padding(.horizontal, 30)
+                    .padding(.top, 64)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 0) { bottom() }
                     .padding(.horizontal, 30)
                     .padding(.bottom, 12)
