@@ -22,6 +22,8 @@ import SwiftUI
 import AuthenticationServices
 import StoreKit
 import Supabase
+import UserNotifications
+import UIKit
 
 // MARK: - Design tokens (from the funnel :root)
 
@@ -53,6 +55,7 @@ enum FunnelStep: Hashable {
     case social
     case compare
     case goals
+    case notifications
     case referral
     case rating
     case timeToWin
@@ -65,9 +68,32 @@ enum FunnelStep: Hashable {
         s.append(.analysis)
         s += (0..<4).map { .red($0) }
         s += (0..<3).map { .green($0) }
-        s += [.social, .compare, .goals, .referral, .rating, .timeToWin, .paywall, .success]
+        s += [.social, .compare, .goals, .notifications, .referral, .rating, .timeToWin, .paywall, .success]
         return s
     }()
+
+    /// Analytics name — drives the per-step funnel events, so drop-off is
+    /// measurable screen by screen.
+    var analyticsName: String {
+        switch self {
+        case .welcome: return "welcome"
+        case .features: return "features"
+        case .signup: return "signup"
+        case .quiz(let i): return "quiz_\(i + 1)"
+        case .analysis: return "analysis"
+        case .red(let i): return "hard_truth_\(i + 1)"
+        case .green(let i): return "fix_\(i + 1)"
+        case .social: return "social_proof"
+        case .compare: return "compare"
+        case .goals: return "goals"
+        case .notifications: return "notifications"
+        case .referral: return "referral"
+        case .rating: return "rating"
+        case .timeToWin: return "time_to_win"
+        case .paywall: return "paywall"
+        case .success: return "success"
+        }
+    }
 
     /// Whether the top progress bar + back button show on this step.
     var showsChrome: Bool {
@@ -123,8 +149,15 @@ struct Pick1OnboardingFunnel: View {
         }
         .preferredColorScheme(.dark)
         .animation(.spring(response: 0.4, dampingFraction: 0.86), value: index)
-        .onAppear(perform: restoreProgress)
-        .onChange(of: index) { _, i in savedIndex = i }
+        .onAppear {
+            restoreProgress()
+            Analytics.track("funnel_step_viewed", ["step": step.analyticsName, "index": index])
+        }
+        .onChange(of: index) { _, i in
+            savedIndex = i
+            // Per-step funnel event — the drop-off map for all 21 screens.
+            Analytics.track("funnel_step_viewed", ["step": steps[i].analyticsName, "index": i])
+        }
     }
 
     /// Restore the saved step on a fresh launch. Signed-out users can't
@@ -196,14 +229,24 @@ struct Pick1OnboardingFunnel: View {
         case .signup:    SignupScreen(onNext: next)
         case .quiz(let i):
             QuizScreen(index: i, selected: quizAnswers[i]) { opt in
-                quizAnswers[i] = opt; next()
+                quizAnswers[i] = opt
+                Analytics.track("funnel_quiz_answer", ["question": i + 1, "answer": opt])
+                next()
             }
         case .analysis:  AnalysisScreen(onDone: next)
         case .red(let i):    RedScreen(index: i, onNext: next)
         case .green(let i):  GreenScreen(index: i, onNext: next)
         case .social:    SocialProofScreen(onNext: next)
         case .compare:   CompareScreen(onNext: next)
-        case .goals:     GoalsScreen(selected: $selectedGoal, onNext: next)
+        case .goals:
+            GoalsScreen(selected: $selectedGoal) {
+                if let g = selectedGoal {
+                    Analytics.track("funnel_goal_selected", ["goal": g])
+                    UserDefaults.standard.set(g, forKey: "userGoal")
+                }
+                next()
+            }
+        case .notifications: NotificationsScreen(onNext: next)
         case .referral:  ReferralScreen(onNext: next)
         case .rating:    RatingScreen(onNext: next)
         case .timeToWin: TimeToWinScreen(onNext: next)
@@ -656,15 +699,19 @@ private struct AnalysisScreen: View {
             .padding(.horizontal, 30)
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 2.6)) { pct = 100 }
+            // ~7s of "work" — the genre-standard beat. The old 3.2s version
+            // finished before the checklist even registered, which read as
+            // fake and undersold the moment of personalized value.
+            let ringDuration = 5.6
+            withAnimation(.easeOut(duration: ringDuration)) { pct = 100 }
             // tick the counter + light rows
             for i in 1...100 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.6 * Double(i) / 100) { pct = i }
+                DispatchQueue.main.asyncAfter(deadline: .now() + ringDuration * Double(i) / 100) { pct = i }
             }
             for i in 0..<rows.count {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * 0.6) { litRows = i + 1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7 + Double(i) * 1.3) { litRows = i + 1 }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) { onDone() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6.9) { onDone() }
         }
     }
 }
@@ -992,6 +1039,66 @@ private struct GoalsScreen: View {
     }
 }
 
+// MARK: - Screen: Notifications (push permission — the old flow had this;
+// dropping it silently killed push for every new user, since nothing else in
+// the app ever calls requestAuthorization.)
+
+private struct NotificationsScreen: View {
+    let onNext: () -> Void
+    @State private var busy = false
+    private let perks: [(String, String)] = [
+        ("⚡️", "Your daily pick, the second it drops"),
+        ("🔴", "Live score alerts on your games"),
+        ("🏆", "Instant results — wins AND losses"),
+    ]
+    var body: some View {
+        FnlScreen {
+            FnlKick(text: "Never miss a call").padding(.bottom, 14)
+            FnlHeadline(parts: [("YOUR PICK.\n", false), ("THE SECOND\n", false), ("IT DROPS.", true)])
+            FnlLead(text: "Picks land every morning at 6:30 AM. Turn on alerts so the edge never slips past you.")
+                .padding(.top, 14)
+            VStack(spacing: 12) {
+                ForEach(Array(perks.enumerated()), id: \.offset) { _, p in
+                    HStack(spacing: 14) {
+                        Text(p.0).font(.system(size: 22))
+                            .frame(width: 44, height: 44)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Fnl.lime.opacity(0.1))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
+                        Text(p.1).font(.archivo(14, weight: .bold)).foregroundColor(Fnl.white)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Fnl.panel)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Fnl.line, lineWidth: 1)))
+                }
+            }
+            .padding(.top, 20)
+        } bottom: {
+            VStack(spacing: 10) {
+                FnlCTA(title: busy ? "…" : "TURN ON ALERTS →") { enable() }
+                FnlCTA(title: "Not now", style: .ghost, action: onNext)
+            }
+        }
+    }
+
+    private func enable() {
+        busy = true
+        UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                DispatchQueue.main.async {
+                    Analytics.track("funnel_push_permission", ["granted": granted])
+                    if granted {
+                        // Ask APNs for a device token so the backend can
+                        // actually deliver what we just promised.
+                        UIApplication.shared.registerForRemoteNotifications()
+                    }
+                    busy = false
+                    onNext()
+                }
+            }
+    }
+}
+
 // MARK: - Screen: Referral (code = free week of Pro)
 
 private struct ReferralScreen: View {
@@ -1165,7 +1272,10 @@ private struct PaywallScreen: View {
                     Button("Terms") { showTerms = true }
                     Button("Privacy") { showPrivacy = true }
                     if skipUnlocked && !subs.isPro {
-                        Button(action: onDone) {
+                        Button {
+                            Analytics.track("funnel_paywall_skipped")
+                            onDone()
+                        } label: {
                             Text("Continue free →").foregroundColor(Fnl.ink2)
                         }
                         .transition(.opacity)
@@ -1180,12 +1290,26 @@ private struct PaywallScreen: View {
         .sheet(isPresented: $showTerms) { LegalSheet(doc: .terms, isOpen: $showTerms) }
         .sheet(isPresented: $showPrivacy) { LegalSheet(doc: .privacy, isOpen: $showPrivacy) }
         .onChange(of: subs.isPro) { _, v in if v { onDone() } }
+        .onChange(of: subs.products.count) { _, _ in alignSelection() }
         .onAppear {
+            Analytics.paywallViewed()
+            alignSelection()
             guard !skipUnlocked else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.skipDelay) {
                 withAnimation(.easeOut(duration: 0.35)) { skipUnlocked = true }
             }
         }
+    }
+
+    /// The default selection is Lifetime — but until that product exists in
+    /// App Store Connect, StoreKit won't return it, leaving NO card visually
+    /// selected while the CTA silently bought the first product. Align the
+    /// selection to what's actually available (prefer Lifetime when present).
+    private func alignSelection() {
+        guard !subs.products.isEmpty,
+              !subs.products.contains(where: { $0.id == selected }) else { return }
+        selected = subs.products.first(where: { $0.id == SubscriptionManager.lifetimeProductId })?.id
+            ?? subs.products.first!.id
     }
 
     @ViewBuilder private func planCard(_ p: Product) -> some View {
