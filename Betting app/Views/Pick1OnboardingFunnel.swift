@@ -943,7 +943,7 @@ private struct TimeToWinScreen: View {
                 Spacer()
                 VStack(spacing: 20) {
                     FnlKick(text: "You're all set", tone: .win).frame(maxWidth: .infinity)
-                    FnlHeadline(parts: [("NOW IT'S\n", false), ("TIME TO\n", false), ("WIN.", true)], accent: Fnl.win, size: 60, center: true)
+                    FnlHeadline(parts: [("NOW IT'S\n", false), ("TIME TO\n", false), ("WIN.", true)], accent: Fnl.win, size: 76, center: true)
                         .multilineTextAlignment(.center)
                     FnlLead(text: "Your personalized daily pick is ready. One tap away.")
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
