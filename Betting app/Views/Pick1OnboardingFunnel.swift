@@ -425,7 +425,7 @@ private struct SignupScreen: View {
     var body: some View {
         FnlScreen {
             FnlKick(text: otpSent ? "Check your email" : "Create account").padding(.bottom, 14)
-            FnlHeadline(parts: otpSent ? [("ENTER\n", false), ("YOUR CODE.", true)] : [("JOIN THE\n", false), ("1,000+.", true)])
+            FnlHeadline(parts: otpSent ? [("ENTER\n", false), ("YOUR CODE.", true)] : [("JOIN A\n", false), ("COMMUNITY\n", false), ("OF ", false), ("WINNERS.", true)])
 
             if !otpSent {
                 SignInWithAppleButton(.signUp) { req in
