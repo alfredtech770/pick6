@@ -110,12 +110,20 @@ final class SubscriptionManager: ObservableObject {
 
     // MARK: - Product IDs
 
-    /// All Pick1 Pro product identifiers, in display order.
-    /// These match the bundle identifier `com.pick1.app`. Configure both
-    /// in App Store Connect → My App → Subscriptions → "Pick1 Pro" group.
+    /// Lifetime = a one-time Non-Consumable IAP (not part of the auto-renewing
+    /// "Pick1 Pro" subscription group). The entitlement check already treats a
+    /// transaction with no expirationDate as active Pro, so no other changes are
+    /// needed once this product exists in App Store Connect.
+    static let lifetimeProductId = "com.pick1.app.pro.lifetime"
+
+    /// All Pick1 Pro product identifiers, in display order (weekly → monthly →
+    /// lifetime). Configure the two subscriptions in App Store Connect → My App
+    /// → Subscriptions → "Pick1 Pro" group, and Lifetime under In-App Purchases
+    /// as a Non-Consumable.
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
+        lifetimeProductId,
     ]
 
     // MARK: - Lifecycle

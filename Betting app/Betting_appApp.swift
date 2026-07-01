@@ -49,13 +49,16 @@ struct Betting_appApp: App {
                     Pick1SplashLoader()
                         .preferredColorScheme(.dark)
                 } else if !authManager.isAuthenticated || !hasFinishedOnboarding {
-                    // The single source of truth for everything pre-main:
-                    // welcome → value carousel → auth/OTP → sports → notifications → success → paywall.
-                    Pick1AuthFlow(authManager: authManager) { sports in
+                    // 20-screen marketing funnel — the single pre-main flow:
+                    // welcome → features → sign up (Apple/OTP) → quiz → analysis
+                    // → hard-truth → the-fix → social → compare → goals → referral
+                    // → rating → paywall (Weekly/Monthly/Lifetime) → success.
+                    Pick1OnboardingFunnel { sports in
                         selectedSports = sports.sorted().joined(separator: ",")
                         hasFinishedOnboarding = true
                         Analytics.onboardingCompleted()
                     }
+                    .preferredColorScheme(.dark)
                 } else {
                     Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
