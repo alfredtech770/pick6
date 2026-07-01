@@ -252,7 +252,7 @@ struct FnlHeadline: View {
     }
 
     var body: some View {
-        VStack(alignment: center ? .center : .leading, spacing: -size * 0.27) {
+        VStack(alignment: center ? .center : .leading, spacing: -size * 0.33) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 line.reduce(Text("")) { acc, seg in
                     acc + Text(seg.0).foregroundColor(seg.1 ? accent : Fnl.white)
