@@ -3658,43 +3658,70 @@ struct ProfileView: View {
     /// (radial gradient + ink shadow) so the upsell feels consistent
     /// with the home-screen unlock affordance.
     private var profileUpgradeCard: some View {
-        Button(action: onShowPaywall) {
-            HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "diamond.fill")
-                            .font(.system(size: 11, weight: .heavy))
-                        Text("PICK1 PRO")
-                            .font(.archivoNarrow(10, weight: .bold))
-                            .tracking(2.4)
+        let ink = Color(hex: "#0A0B0D")
+        // Benefit-led conversion card: concrete value checklist + price anchor
+        // instead of a bare "UPGRADE" ask. NOTE: no trial copy — the 3-day
+        // trial is gone (trial now only via referral/creator codes).
+        return Button(action: onShowPaywall) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "diamond.fill")
+                                .font(.system(size: 11, weight: .heavy))
+                            Text("PICK1 PRO")
+                                .font(.archivoNarrow(10, weight: .bold))
+                                .tracking(2.4)
+                        }
+                        .foregroundColor(ink.opacity(0.7))
+
+                        VStack(alignment: .leading, spacing: -7) {
+                            Text("UNLOCK")
+                            Text("EVERY PICK.")
+                        }
+                        .font(.anton(28))
+                        .foregroundColor(ink)
                     }
-                    .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
+                    Spacer(minLength: 8)
+                    // Trailing chevron pill — visually identical to the
+                    // home unlock card's "→" affordance.
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(ink))
+                }
 
-                    Text("UPGRADE")
-                        .font(.anton(34))
-                        .lineSpacing(-6)
-                        .foregroundColor(Color(hex: "#0A0B0D"))
-
-                    HStack(spacing: 5) {
-                        Text("All picks · all sports")
-                            .font(.archivo(12, weight: .bold))
-                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
-                        Text("·")
-                            .font(.archivo(12, weight: .bold))
-                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.4))
-                        Text("3-day trial")
-                            .font(.archivo(12, weight: .bold))
-                            .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
+                // Scannable value checklist — the "what you actually get."
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(["Every pick, all 9 sports",
+                             "The reasoning behind each call",
+                             "Best line across 6 sportsbooks"], id: \.self) { b in
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 9, weight: .heavy))
+                                .foregroundColor(Color(hex: "#D4FF3A"))
+                                .frame(width: 17, height: 17)
+                                .background(Circle().fill(ink))
+                            Text(b)
+                                .font(.archivo(13, weight: .bold))
+                                .foregroundColor(ink.opacity(0.9))
+                        }
                     }
                 }
-                Spacer(minLength: 8)
-                // Trailing chevron pill — visually identical to the
-                // home unlock card's "→" affordance.
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .heavy))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(hex: "#0A0B0D")))
+
+                // Price anchor + friction-killer.
+                HStack(spacing: 8) {
+                    Text("FROM $14.99/WK")
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .tracking(1.6)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Capsule().fill(ink))
+                    Text("Cancel anytime")
+                        .font(.archivo(11, weight: .semibold))
+                        .foregroundColor(ink.opacity(0.55))
+                }
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
