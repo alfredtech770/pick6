@@ -293,7 +293,7 @@ struct FnlScreen<C: View, B: View>: View {
                 }
                 VStack(spacing: 0) { bottom() }
                     .padding(.horizontal, 30)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 12)
             }
         }
     }
@@ -343,7 +343,7 @@ private struct WelcomeScreen: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 30)
             .padding(.top, 60)
-            .padding(.bottom, 40)
+            .padding(.bottom, 20)
         }
     }
 }
@@ -697,7 +697,7 @@ private struct SuccessScreen: View {
                 FnlCTA(title: "START YOUR JOURNEY →", action: onFinish)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30).padding(.top, 60).padding(.bottom, 40)
+            .padding(.horizontal, 30).padding(.top, 60).padding(.bottom, 20)
         }
     }
 }
@@ -910,7 +910,7 @@ private struct RatingScreen: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 40)
+            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 20)
         }
     }
 }
@@ -935,7 +935,7 @@ private struct TimeToWinScreen: View {
                 FnlCTA(title: "SEE MY PLAN →", action: onNext)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 40)
+            .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 20)
         }
     }
 }
