@@ -105,9 +105,20 @@ enum Analytics {
     static func reset() { PostHogSDK.shared.reset() }
 
     // MARK: - Funnel events (PostHog + Meta standard event)
+
+    /// Fires the moment auth succeeds inside onboarding. Meta's
+    /// CompleteRegistration belongs HERE (account creation) — not at the end
+    /// of the funnel, which now sits past the paywall and would skew the ad
+    /// funnel toward payers only.
+    static func signupCompleted() {
+        track("signup_completed")
+        AppEvents.shared.logEvent(.completedRegistration)
+    }
+
+    /// End of the whole onboarding funnel (post-paywall). PostHog only —
+    /// the Meta registration event already fired at signup.
     static func onboardingCompleted() {
         track("onboarding_completed")
-        AppEvents.shared.logEvent(.completedRegistration)
     }
     static func paywallViewed() {
         track("paywall_viewed")

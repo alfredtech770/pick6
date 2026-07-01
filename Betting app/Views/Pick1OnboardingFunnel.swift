@@ -93,6 +93,16 @@ struct Pick1OnboardingFunnel: View {
     @State private var quizAnswers: [Int: Int] = [:]   // question → option
     @State private var selectedGoal: Int? = nil
 
+    /// Resume point — backgrounding (or iOS killing the process) used to
+    /// restart the funnel from Welcome, losing the user's place mid-signup or
+    /// even mid-purchase. Persist the step and restore it on relaunch,
+    /// clamped so we never resume past the auth gate while signed out.
+    @AppStorage("funnelResumeIndex") private var savedIndex: Int = 0
+    /// When the restore had to clamp back to sign-up (no session yet), this
+    /// remembers the user's real place so we jump forward again right after
+    /// they re-authenticate — no redoing the quiz/marketing screens.
+    @State private var resumeAfterAuth: Int? = nil
+
     private var steps: [FunnelStep] { FunnelStep.ordered }
     private var step: FunnelStep { steps[index] }
     private var progress: Double { Double(index) / Double(steps.count - 1) }
@@ -113,6 +123,22 @@ struct Pick1OnboardingFunnel: View {
         }
         .preferredColorScheme(.dark)
         .animation(.spring(response: 0.4, dampingFraction: 0.86), value: index)
+        .onAppear(perform: restoreProgress)
+        .onChange(of: index) { _, i in savedIndex = i }
+    }
+
+    /// Restore the saved step on a fresh launch. Signed-out users can't
+    /// resume past sign-up (steps after it assume a session); nobody resumes
+    /// past the paywall (success assumes a completed purchase/skip).
+    private func restoreProgress() {
+        guard index == 0, savedIndex > 0 else { return }
+        var target = min(savedIndex, steps.count - 1)
+        if let paywallIdx = steps.firstIndex(of: .paywall) { target = min(target, paywallIdx) }
+        if !authManager.isAuthenticated, let signupIdx = steps.firstIndex(of: .signup) {
+            if target > signupIdx { resumeAfterAuth = target }
+            target = min(target, signupIdx)
+        }
+        index = target
     }
 
     // MARK: Chrome (progress bar + back)
@@ -146,8 +172,15 @@ struct Pick1OnboardingFunnel: View {
     // MARK: Navigation
 
     private func next() {
+        // Resuming user who just re-authenticated at the sign-up step: jump
+        // straight back to where they left off instead of replaying the funnel.
+        if let target = resumeAfterAuth, step == .signup, authManager.isAuthenticated {
+            resumeAfterAuth = nil
+            index = min(target, steps.count - 1)
+            return
+        }
         if index < steps.count - 1 { index += 1 }
-        else { onFinish([]) }
+        else { savedIndex = 0; onFinish([]) }   // clear the resume point on completion
     }
     private func back() { if index > 0 { index -= 1 } }
     /// Jump straight to the account step (Welcome's "Sign in" link).
@@ -175,7 +208,7 @@ struct Pick1OnboardingFunnel: View {
         case .rating:    RatingScreen(onNext: next)
         case .timeToWin: TimeToWinScreen(onNext: next)
         case .paywall:   PaywallScreen(onDone: next)
-        case .success:   SuccessScreen(onFinish: { onFinish([]) })
+        case .success:   SuccessScreen(onFinish: { savedIndex = 0; onFinish([]) })
         }
     }
 }
@@ -468,10 +501,18 @@ private struct SignupScreen: View {
                 }
             }
         }
-        .onChange(of: auth.isAuthenticated) { _, v in if v { onNext() } }
+        .onChange(of: auth.isAuthenticated) { _, v in
+            if v {
+                // Meta CompleteRegistration fires at account creation — not
+                // at the end of the funnel (which sits past the paywall).
+                Analytics.signupCompleted()
+                onNext()
+            }
+        }
         // Returning user who's already signed in but hasn't finished the
         // funnel — skip the account step rather than trapping them on it
-        // (isAuthenticated is already true, so onChange never fires).
+        // (isAuthenticated is already true, so onChange never fires; no
+        // registration event for an existing session).
         .onAppear { if auth.isAuthenticated { onNext() } }
     }
 
@@ -685,16 +726,107 @@ private struct GreenScreen: View {
             }.padding(.bottom, 14)
             FnlKick(text: d.kick, tone: .win).padding(.bottom, 14)
             FnlHeadline(parts: d.head, accent: Fnl.win)
-            FnlLead(text: d.lead).padding(.top, 16)
-            // Phone-in-phone app preview placeholder (fleshed out in Phase 2 polish)
-            RoundedRectangle(cornerRadius: 24).fill(Fnl.panel)
-                .overlay(RoundedRectangle(cornerRadius: 24).stroke(Fnl.line, lineWidth: 1))
-                .frame(height: 230)
-                .overlay(Image(systemName: "iphone").font(.system(size: 44)).foregroundColor(Fnl.mute))
-                .padding(.top, 24)
+            FnlLead(text: d.lead).padding(.top, 14)
+            // In-app preview card — the design's "appframe" mockups. These
+            // depict real product features (confidence ring, reasoning list,
+            // public ledger); the specific matchups are illustrative.
+            preview
+                .padding(18)
+                .frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 24).fill(Fnl.panel)
+                    .overlay(RoundedRectangle(cornerRadius: 24).stroke(Fnl.line, lineWidth: 1)))
+                .padding(.top, 18)
         } bottom: {
             FnlCTA(title: d.cta, action: onNext)
         }
+    }
+
+    @ViewBuilder private var preview: some View {
+        switch index {
+        case 0: pickPreview
+        case 1: reasoningPreview
+        default: ledgerPreview
+        }
+    }
+
+    /// Fix 1 — today's top pick with the confidence ring.
+    private var pickPreview: some View {
+        VStack(spacing: 8) {
+            previewPill("★ Today's top pick")
+            (Text("CELTICS\n").foregroundColor(Fnl.white) + Text("OVER LAKERS").foregroundColor(Fnl.lime))
+                .font(.anton(22)).multilineTextAlignment(.center)
+            Text("NBA · TONIGHT 7:30 PM ET").font(.mono(10, weight: .bold)).kerning(1.2).foregroundColor(Fnl.mute)
+            ZStack {
+                Circle().stroke(Fnl.line, lineWidth: 8)
+                Circle().trim(from: 0, to: 0.81)
+                    .stroke(Fnl.lime, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text("81%").font(.anton(24)).foregroundColor(Fnl.lime)
+            }
+            .frame(width: 84, height: 84)
+            .padding(.top, 4)
+            Text("AI CONFIDENCE").font(.archivoNarrow(10, weight: .bold)).kerning(1.8).foregroundColor(Fnl.mute)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Fix 2 — the "why" behind a pick.
+    private var reasoningPreview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            previewPill("▸ Why the AI likes it")
+            (Text("SPURS ML ").foregroundColor(Fnl.white) + Text("84.8% CONF").foregroundColor(Fnl.lime))
+                .font(.anton(19))
+            ForEach(Array([
+                "#2 vs #6 seed — SAS dominated",
+                "Series opener · home rhythm edge",
+                "11-2 ATS as a Game 1 favorite",
+                "Pace gap +4.2 possessions",
+            ].enumerated()), id: \.offset) { i, reason in
+                HStack(spacing: 10) {
+                    Text("\(i + 1)").font(.anton(13)).foregroundColor(Fnl.ink)
+                        .frame(width: 22, height: 22).background(Circle().fill(Fnl.lime))
+                    Text(reason).font(.archivo(13, weight: .medium)).foregroundColor(Fnl.ink2)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Fix 3 — the public ledger, losses included.
+    private var ledgerPreview: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            previewPill("▸ Public ledger")
+            (Text("EVERY ").foregroundColor(Fnl.white) + Text("RESULT.").foregroundColor(Fnl.lime))
+                .font(.anton(19))
+            ForEach(Array([
+                ("SPURS −5", "84.8%", true), ("KNICKS ML", "71.5%", true),
+                ("RANGERS ML", "59.9%", false), ("CELTICS −7.5", "82.1%", true),
+            ].enumerated()), id: \.offset) { _, row in
+                HStack {
+                    Text(row.0).font(.archivo(13, weight: .bold)).foregroundColor(Fnl.white)
+                    Spacer()
+                    Text(row.1).font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute)
+                    Text(row.2 ? "WON" : "LOSS")
+                        .font(.archivoNarrow(10, weight: .bold)).kerning(1.2)
+                        .foregroundColor(row.2 ? Fnl.ink : Fnl.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(row.2 ? Fnl.win : Fnl.hot.opacity(0.85)))
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func previewPill(_ label: String) -> some View {
+        Text(label)
+            .font(.archivoNarrow(11, weight: .bold)).kerning(1.4)
+            .foregroundColor(Fnl.lime)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(Capsule().fill(Fnl.lime.opacity(0.1))
+                .overlay(Capsule().stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -702,6 +834,7 @@ private struct GreenScreen: View {
 
 private struct SuccessScreen: View {
     let onFinish: () -> Void
+    @EnvironmentObject private var subs: SubscriptionManager
     var body: some View {
         ZStack(alignment: .top) {
             FnlGlow(tone: .win)
@@ -712,7 +845,11 @@ private struct SuccessScreen: View {
                     Text("🎉").font(.system(size: 70))
                     FnlHeadline(parts: [("YOU'RE IN.\n", false), ("LET'S ", false), ("WIN.", true)], accent: Fnl.win, size: 60, center: true)
                         .multilineTextAlignment(.center)
-                    FnlLead(text: "Welcome to Pick1 Pro. Your first daily pick drops tomorrow at 6:30 AM.")
+                    // Copy is honest about tier — "Pro" only when they actually
+                    // have it (purchase or comp); free-skip users get neutral copy.
+                    FnlLead(text: subs.isPro
+                        ? "Welcome to Pick1 Pro. Your first daily pick drops tomorrow at 6:30 AM."
+                        : "Welcome to Pick1. Your first daily pick drops tomorrow at 6:30 AM.")
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
                 }
                 Spacer()
@@ -728,39 +865,47 @@ private struct SuccessScreen: View {
 
 private struct SocialProofScreen: View {
     let onNext: () -> Void
-    private let tsts: [(av: String, name: String, sub: String, won: String, quote: String)] = [
-        ("M", "Marcus B.", "@marcus_b · Chicago", "+$10.4K", "Followed Pick1 blind for 3 weeks. Up almost eleven grand. The calibration is unreal."),
-        ("S", "Sara L.", "@sara_l · 11–2 ATS", "+$4.2K", "I stopped betting parlays and just take the daily pick. Best decision I made."),
-        ("A", "Alex K.", "@alexk · $50→$2.4K", "+$2.4K", "Turned $50 into $2,400 in a month. The public ledger sold me — no hiding losses."),
+    // REAL numbers from the picks ledger (results table) — every stat here is
+    // verifiable in the app's own public win/loss log. Do NOT replace these
+    // with invented testimonials or earnings claims: fabricated "$X won"
+    // figures are false-advertising exposure in a betting-adjacent app and an
+    // App Review "misleading content" risk. Refresh the figures per release.
+    private let stats: [(emoji: String, big: String, title: String, sub: String)] = [
+        ("🧾", "296", "Picks graded in public", "Every call logged before kickoff — wins AND losses, on the record."),
+        ("🎯", "74%", "High-confidence soccer hit rate", "Our 60%+ confidence soccer calls have landed 74% of the time."),
+        ("📊", "62%", "Across all 60%+ confidence calls", "145 high-conviction picks graded — measured, not promised."),
     ]
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Real members · real wins").padding(.bottom, 14)
-            FnlHeadline(parts: [("$289K WON\n", false), ("THIS ", false), ("SEASON.", true)])
+            FnlKick(text: "The record speaks").padding(.bottom, 14)
+            FnlHeadline(parts: [("NOTHING\n", false), ("TO ", false), ("HIDE.", true)])
             VStack(spacing: 12) {
-                ForEach(Array(tsts.enumerated()), id: \.offset) { _, t in
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 12) {
-                            Text(t.av).font(.anton(18)).foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Circle().fill(LinearGradient(colors: [Color(hex: "#6b46c1"), Color(hex: "#ec4899")], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(t.name).font(.archivo(14, weight: .bold)).foregroundColor(Fnl.white)
-                                Text(t.sub).font(.mono(11)).foregroundColor(Fnl.mute)
+                ForEach(Array(stats.enumerated()), id: \.offset) { _, s in
+                    HStack(spacing: 14) {
+                        Text(s.emoji).font(.system(size: 24))
+                            .frame(width: 48, height: 48)
+                            .background(RoundedRectangle(cornerRadius: 13).fill(Fnl.lime.opacity(0.1))
+                                .overlay(RoundedRectangle(cornerRadius: 13).stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(s.big).font(.anton(26)).foregroundColor(Fnl.lime)
+                                Text(s.title).font(.archivo(14, weight: .bold)).foregroundColor(Fnl.white)
+                                    .lineLimit(2).minimumScaleFactor(0.8)
                             }
-                            Spacer(minLength: 0)
-                            Text(t.won).font(.anton(24)).foregroundColor(Fnl.win)
+                            Text(s.sub).font(.archivo(12.5)).foregroundColor(Fnl.ink2).lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        Text("\"\(t.quote)\"").font(.archivo(14)).italic().foregroundColor(Fnl.ink2).lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text("★★★★★").font(.system(size: 15)).foregroundColor(Color(hex: "#ffd84d"))
+                        Spacer(minLength: 0)
                     }
-                    .padding(20)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 18).fill(Fnl.panel).overlay(RoundedRectangle(cornerRadius: 18).stroke(Fnl.line, lineWidth: 1)))
                 }
             }
-            .padding(.top, 24)
+            .padding(.top, 22)
+            Text("Past performance doesn't guarantee future results.")
+                .font(.mono(10, weight: .medium)).foregroundColor(Fnl.mute)
+                .padding(.top, 12)
         } bottom: {
             FnlCTA(title: "I WANT IN →", action: onNext)
         }
@@ -969,6 +1114,11 @@ private struct PaywallScreen: View {
     @EnvironmentObject private var subs: SubscriptionManager
     @State private var selected: String = SubscriptionManager.lifetimeProductId
     @State private var busy = false
+    @State private var showTerms = false
+    @State private var showPrivacy = false
+    /// Free-tier skip reveals after the same delay as the in-app paywall.
+    @State private var skipUnlocked = false
+    static let skipDelay: Double = 26.0
 
     private let feats = [
         "Daily AI pick across 9 sports", "Calibrated confidence + reasoning",
@@ -1004,11 +1154,38 @@ private struct PaywallScreen: View {
                     Task { await act() }
                 }
                 Text("NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT")
-                    .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 14)
+                    .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 12)
                     .multilineTextAlignment(.center)
+                // App Review 3.1.2 requirements: restore + legal links. The
+                // free-tier skip fades in after the same delay the in-app
+                // paywall uses — keeps the paywall pressure without hard-gating
+                // the app (the App Store listing promises a free tier).
+                HStack(spacing: 18) {
+                    Button("Restore") { Task { await subs.restorePurchases() } }
+                    Button("Terms") { showTerms = true }
+                    Button("Privacy") { showPrivacy = true }
+                    if skipUnlocked && !subs.isPro {
+                        Button(action: onDone) {
+                            Text("Continue free →").foregroundColor(Fnl.ink2)
+                        }
+                        .transition(.opacity)
+                    }
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Fnl.mute)
+                .buttonStyle(.plain)
+                .padding(.top, 10)
             }
         }
+        .sheet(isPresented: $showTerms) { LegalSheet(doc: .terms, isOpen: $showTerms) }
+        .sheet(isPresented: $showPrivacy) { LegalSheet(doc: .privacy, isOpen: $showPrivacy) }
         .onChange(of: subs.isPro) { _, v in if v { onDone() } }
+        .onAppear {
+            guard !skipUnlocked else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.skipDelay) {
+                withAnimation(.easeOut(duration: 0.35)) { skipUnlocked = true }
+            }
+        }
     }
 
     @ViewBuilder private func planCard(_ p: Product) -> some View {
