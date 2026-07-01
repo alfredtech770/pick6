@@ -252,7 +252,7 @@ struct FnlHeadline: View {
     }
 
     var body: some View {
-        VStack(alignment: center ? .center : .leading, spacing: -size * 0.2) {
+        VStack(alignment: center ? .center : .leading, spacing: -size * 0.27) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 line.reduce(Text("")) { acc, seg in
                     acc + Text(seg.0).foregroundColor(seg.1 ? accent : Fnl.white)
@@ -376,10 +376,10 @@ private struct WelcomeScreen: View {
 private struct FeaturesScreen: View {
     let onNext: () -> Void
     private let feats: [(String, String, String)] = [
-        ("star.fill", "One daily AI pick", "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis & Cricket."),
-        ("chart.line.uptrend.xyaxis", "Calibrated confidence", "When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\""),
-        ("rectangle.split.2x1", "Public results ledger", "Every call logged before kickoff. Wins AND losses, on the record forever."),
-        ("checkmark.seal", "Best line, 6 books", "Pick1 finds the best price across 6 sportsbooks — you decide where to play."),
+        ("🎯", "One daily AI pick", "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis & Cricket."),
+        ("📊", "Calibrated confidence", "When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\""),
+        ("🧾", "Public results ledger", "Every call logged before kickoff. Wins AND losses, on the record forever."),
+        ("💰", "Best line, 6 books", "Pick1 finds the best price across 6 sportsbooks — you decide where to play."),
     ]
     var body: some View {
         FnlScreen {
@@ -388,9 +388,8 @@ private struct FeaturesScreen: View {
             VStack(spacing: 0) {
                 ForEach(Array(feats.enumerated()), id: \.offset) { i, f in
                     HStack(alignment: .top, spacing: 16) {
-                        Image(systemName: f.0)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(Fnl.lime)
+                        Text(f.0)
+                            .font(.system(size: 24))
                             .frame(width: 48, height: 48)
                             .background(RoundedRectangle(cornerRadius: 13).fill(Fnl.lime.opacity(0.1))
                                 .overlay(RoundedRectangle(cornerRadius: 13).stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
