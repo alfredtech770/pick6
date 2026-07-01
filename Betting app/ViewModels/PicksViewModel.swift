@@ -63,7 +63,22 @@ class PicksViewModel: ObservableObject {
 
     private let decoder: JSONDecoder = {
         let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
+        // Postgres timestamptz comes back as ISO8601 in TWO shapes: WITH
+        // fractional seconds (updated_at → "…19:24:03.557+00:00") and WITHOUT
+        // (start_time → "…20:00:00+00:00"). Foundation's `.iso8601` strategy
+        // rejects the fractional form — which silently dropped EVERY realtime
+        // live_scores insert/update (decodeRecord + `try?` → nil), so live
+        // scores loaded once and never updated. Parse both forms.
+        let withFrac = ISO8601DateFormatter()
+        withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        d.dateDecodingStrategy = .custom { dec in
+            let s = try dec.singleValueContainer().decode(String.self)
+            if let date = withFrac.date(from: s) ?? plain.date(from: s) { return date }
+            throw DecodingError.dataCorrupted(.init(codingPath: dec.codingPath,
+                debugDescription: "Unparseable ISO8601 date: \(s)"))
+        }
         return d
     }()
 
@@ -526,12 +541,15 @@ class PicksViewModel: ObservableObject {
 
     private func fetchLiveScoresInner() async -> [LiveScore] {
         do {
-            let resp: [LiveScore] = try await supabase
+            // Decode with our own date-tolerant decoder (not the client
+            // default) so the initial load handles the same mixed timestamp
+            // formats the realtime path does.
+            let data = try await supabase
                 .from("live_scores")
                 .select()
                 .execute()
-                .value
-            return resp
+                .data
+            return try decoder.decode([LiveScore].self, from: data)
         } catch {
             return []
         }
