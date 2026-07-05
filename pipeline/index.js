@@ -470,6 +470,7 @@ STYLE — write like a professional analyst's desk note (The Athletic / Bloomber
 - When the edge is thin, say so plainly ("thin edge", "priced about right"). The probability carries the conviction — adjectives don't.
 - Matchup facts: 3–5 short {label, value} pairs of REAL, current supporting data (recent form, head-to-head, key injury, a decisive stat) verified via web_search. These power the in-app MATCHUP card, so they must be factual and specific — NEVER invented. Omit any fact you can't confirm rather than guessing; tailor labels to the sport.
 
+For BASEBALL (MLB): the edge lives in the starting-pitcher matchup — weigh the probable starters (provided in the feed) above season records. Yesterday's result means almost nothing across a 162-game season. NEVER pick an underdog below 65% probability; on a 15-game slate return only your 1–3 strongest calls, not filler at 55-57%.
 For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
 For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
 For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick). CALIBRATION: "probability" is the realistic chance this driver WINS the race — even a dominant championship leader rarely exceeds ~35%. It MUST match the picked driver's field_odds win %, and for field events it may fall well below the usual 55% floor (the floor does NOT apply to F1/golf).
@@ -721,8 +722,28 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     log(`Claude ${league}: dropped ${dropped.length} picks: ${dropped.slice(0, 5).join(' ')}`);
   }
 
-  log(`Generated ${picks.length} picks for ${league}${useResearch ? ' (research mode)' : ''}.`);
-  return picks;
+  // MLB DISCIPLINE — measured on 194 graded picks: sub-60% MLB picks hit
+  // 45.7% and underdog picks (market_odds ≥ 1.9) hit 22%. Publishing those
+  // loses users money. Keep only ≥60% non-dog picks; if that empties an
+  // active slate, keep the single strongest pick ≥58 so MLB never goes
+  // silent (free tier shows one pick per sport).
+  let kept = picks;
+  if (league === 'MLB') {
+    const strong = picks.filter((p) =>
+      p.probability >= 60 && !(typeof p.market_odds === 'number' && p.market_odds >= 1.9));
+    if (strong.length) {
+      kept = strong;
+    } else {
+      const best = [...picks].sort((a, b) => b.probability - a.probability)[0];
+      kept = best && best.probability >= 58 ? [best] : [];
+    }
+    if (kept.length !== picks.length) {
+      log(`MLB discipline: ${picks.length} → ${kept.length} picks (dropped low-conviction/dogs).`);
+    }
+  }
+
+  log(`Generated ${kept.length} picks for ${league}${useResearch ? ' (research mode)' : ''}.`);
+  return kept;
 }
 
 // ════════════════════════════════════════════════════════════════
