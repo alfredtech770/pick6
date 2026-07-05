@@ -62,10 +62,15 @@ enum FunnelStep: Hashable {
     case paywall
     case success
 
+    /// Ordering note: the quiz + analysis run BEFORE account creation — the
+    /// Cal-AI-style pattern. Users invest (answer questions, watch their
+    /// "analysis" build) before being asked to commit; sign-up then reads as
+    /// "save your results" instead of a cold gate at screen 3. Everything
+    /// after sign-up assumes a session (referral redeem, rating grant, paywall).
     static let ordered: [FunnelStep] = {
-        var s: [FunnelStep] = [.welcome, .features, .signup]
+        var s: [FunnelStep] = [.welcome, .features]
         s += (0..<5).map { .quiz($0) }
-        s.append(.analysis)
+        s += [.analysis, .signup]
         s += (0..<4).map { .red($0) }
         s += (0..<3).map { .green($0) }
         s += [.social, .compare, .goals, .notifications, .referral, .rating, .timeToWin, .paywall, .success]
@@ -500,7 +505,9 @@ private struct SignupScreen: View {
 
     var body: some View {
         FnlScreen {
-            FnlKick(text: otpSent ? "Check your email" : "Create account").padding(.bottom, 14)
+            // Post-analysis context: the account ask is framed as saving the
+            // results they just watched build, not a cold registration wall.
+            FnlKick(text: otpSent ? "Check your email" : "Analysis ready · save your results").padding(.bottom, 14)
             FnlHeadline(parts: otpSent ? [("ENTER\n", false), ("YOUR CODE.", true)] : [("JOIN A\n", false), ("COMMUNITY\n", false), ("OF ", false), ("WINNERS.", true)])
 
             if !otpSent {

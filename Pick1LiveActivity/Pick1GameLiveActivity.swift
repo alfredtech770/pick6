@@ -111,7 +111,13 @@ struct LockScreenView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
+            HStack(spacing: 6) {
+                // P1 brand mark — ties the Lock Screen card to the app.
+                Text("P1")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundColor(ink)
+                    .padding(.horizontal, 4).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(lime))
                 Text(context.attributes.league.uppercased())
                     .font(.system(size: 10, weight: .bold)).tracking(1.4)
                     .foregroundColor(.gray)
