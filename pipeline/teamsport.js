@@ -72,7 +72,12 @@ async function fetchStandings(league) {
   return map;
 }
 
-// matchup key → { home: pitcher, away: pitcher } for baseball
+// normalized team name → probable starter WITH stat line for baseball,
+// e.g. "Noah Cameron (4-6, 4.95 ERA)". ESPN's scoreboard carries the
+// starter's season W/L/ERA inline — no extra requests needed. The stat
+// line matters twice: it goes into the MODEL's game feed (the pitcher
+// matchup is MLB's dominant variable, and the model can't weigh what it
+// can't see) and into the in-app "Probable SP" matchup fact.
 async function fetchProbables(league) {
   const out = new Map();
   if (league !== 'MLB') return out;
@@ -80,11 +85,31 @@ async function fetchProbables(league) {
   for (const ev of d?.events || []) {
     for (const c of ev.competitions?.[0]?.competitors || []) {
       const team = c.team?.displayName;
-      const p = (c.probables || [])[0]?.athlete;
-      if (team && p?.displayName) out.set(normKey(team), p.displayName);
+      const p = (c.probables || [])[0];
+      const name = p?.athlete?.displayName;
+      if (!team || !name) continue;
+      const stat = (abbr) => (p.statistics || []).find((s) => s.abbreviation === abbr)?.displayValue;
+      const w = stat('W'), l = stat('L'), era = stat('ERA');
+      out.set(normKey(team), (w != null && era != null) ? `${name} (${w}-${l}, ${era} ERA)` : name);
     }
   }
   return out;
+}
+
+// Overwrite the feed's name-only home_starter/away_starter with the ESPN
+// stat lines so the generation prompt sees real pitcher quality.
+async function enrichStarters(league, games) {
+  if (league !== 'MLB' || !games?.length) return games;
+  try {
+    const probables = await fetchProbables(league);
+    for (const g of games) {
+      const h = probables.get(normKey(g.home_team));
+      const a = probables.get(normKey(g.away_team));
+      if (h) g.home_starter = h;
+      if (a) g.away_starter = a;
+    }
+  } catch { /* best-effort — name-only starters still work */ }
+  return games;
 }
 
 // Scoring label is sport-specific (runs vs points vs goals).
@@ -180,7 +205,7 @@ async function enrichPicks(league, picks) {
   return picks;
 }
 
-module.exports = { isSupported, fetchStandings, fetchProbables, buildComparison, comparisonFacts, enrichPicks, PATHS };
+module.exports = { isSupported, fetchStandings, fetchProbables, enrichStarters, buildComparison, comparisonFacts, enrichPicks, PATHS };
 
 // CLI: node teamsport.js test MLB "New York Yankees" "Boston Red Sox"
 if (require.main === module && process.argv[2] === 'test') {

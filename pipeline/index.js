@@ -36,7 +36,7 @@ const f1 = require('./f1');            // grounded F1 facts (ESPN driver champio
 const golf = require('./golf');        // grounded PGA golf facts (ESPN tournament + leaderboard)
 
 // ─── Config ────────────────────────────────────────────────────
-const ANTHROPIC_MODEL = 'claude-opus-4-7';
+const ANTHROPIC_MODEL = 'claude-opus-4-8';
 const TZ = 'America/New_York';
 
 const anthropic = new Anthropic({
@@ -383,7 +383,7 @@ async function getPerformanceStats(league, days = 30) {
   const since = daysAgoISO(days);
   const { data, error } = await supabase
     .from('picks')
-    .select('probability, result, game_date')
+    .select('probability, result, game_date, market_odds')
     .eq('league', league)
     .neq('result', 'pending')
     .gte('game_date', since);
@@ -404,10 +404,19 @@ async function getPerformanceStats(league, days = 30) {
   };
   const avg = (xs) => (xs.length ? +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : null);
 
+  // Underdog record — the historically catastrophic slice (22% in MLB).
+  const dogSlice = data.filter((p) => typeof p.market_odds === 'number' && p.market_odds >= 1.9);
+  const dogs = dogSlice.length >= 5
+    ? { total: dogSlice.length,
+        winRate: +((dogSlice.filter((p) => p.result === 'win').length / dogSlice.length) * 100).toFixed(1) }
+    : null;
+
   return {
     league, days, total, wins, losses, winRate,
     high: tier(80),
     medium: tier(65, 80),
+    low: tier(55, 65),   // the band where losses actually live — must be visible
+    dogs,
     avgProbOnWins: avg(data.filter((p) => p.result === 'win').map((p) => p.probability)),
     avgProbOnLosses: avg(data.filter((p) => p.result === 'loss').map((p) => p.probability)),
   };
@@ -423,6 +432,8 @@ function performanceContext(stats30, stats7) {
     stats7 && `- Last 7 days: ${stats7.wins}W / ${stats7.losses}L (${stats7.winRate}% win rate, n=${stats7.total})`,
     stats30.high && `- 80%+ confidence picks: ${stats30.high.winRate}% win rate (n=${stats30.high.total})`,
     stats30.medium && `- 65–79% confidence picks: ${stats30.medium.winRate}% win rate (n=${stats30.medium.total})`,
+    stats30.low && `- 55–64% confidence picks: ${stats30.low.winRate}% win rate (n=${stats30.low.total})`,
+    stats30.dogs && `- Underdog picks (odds ≥ 1.9): ${stats30.dogs.winRate}% win rate (n=${stats30.dogs.total})`,
     stats30.avgProbOnWins != null && `- Avg stated probability on wins: ${stats30.avgProbOnWins}%`,
     stats30.avgProbOnLosses != null && `- Avg stated probability on losses: ${stats30.avgProbOnLosses}%`,
   ].filter(Boolean);
@@ -431,6 +442,8 @@ function performanceContext(stats30, stats7) {
   if (stats30.winRate < 60) adj.push('Recent win rate is below 60% — be MORE SELECTIVE. Skip coin flips.');
   else if (stats30.winRate >= 75) adj.push('Win rate is strong; maintain standards.');
   if (stats30.high && stats30.high.winRate < 70) adj.push(`Your 80%+ picks only hit ${stats30.high.winRate}% — you are OVERCONFIDENT. Lower probabilities on picks you'd rate 80%+.`);
+  if (stats30.low && stats30.low.total >= 10 && stats30.low.winRate < 52) adj.push(`Your 55–64% picks hit only ${stats30.low.winRate}% — these are coin flips dressed as edges. Skip them entirely; return fewer picks instead.`);
+  if (stats30.dogs && stats30.dogs.winRate < 40) adj.push(`Your underdog picks (odds ≥ 1.9) hit only ${stats30.dogs.winRate}% — do NOT back underdogs unless the case is overwhelming and specific.`);
   if (stats7 && stats7.total >= 5 && stats7.winRate < 50) adj.push(`Cold streak this week (${stats7.winRate}%). Be extra conservative today.`);
   if (adj.length) {
     lines.push('', 'Calibration adjustments to apply:');
@@ -450,6 +463,7 @@ Required reasoning before committing to a pick:
 2. Sport-specific context (home advantage, weather, fatigue, surface, circuit, weight class…).
 3. Personnel: injuries, scratches, rest, probable starters/lineups. USE web_search to verify late-breaking news.
 4. Calibration: if you say 70%, you should win 70% of the time long-run.
+5. MARKET PRIOR: the sportsbook consensus is the base rate. Convert the real odds you find to an implied win % and ANCHOR your probability there. Deviate only when you can NAME specific information the market may not have fully priced (a late scratch, travel/rest spot, confirmed lineup news) — and if you deviate by more than 8 points, state that reason explicitly in the reasoning. Never assert a big edge over the market on general "form" or "class" arguments; the market already knows those.
 
 Hard rules:
 - For ANY league with multiple matchups today, you MUST return AT LEAST ONE pick — pick the strongest opportunity even if your edge is modest.
@@ -720,6 +734,40 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   });
   if (dropped.length) {
     log(`Claude ${league}: dropped ${dropped.length} picks: ${dropped.slice(0, 5).join(' ')}`);
+  }
+
+  // MARKET-PRIOR BLEND — the consensus line is the best single predictor of
+  // any game; our historical losses come from the model drifting above it
+  // (55-59% picks hit 45.7%, dogs hit 22%). When a real sportsbook quote
+  // exists, pull the stated probability 65% of the way to market-implied.
+  // The model's read still moves the number (its informational edge —
+  // injuries, rest — survives), but it can no longer assert 62% on a
+  // matchup the market prices at 45%. Race/field events are exempt (their
+  // probabilities are already calibrated to field_odds).
+  if (cfg.promptMode !== 'race') {
+    for (const p of picks) {
+      const mo = p.market_odds;
+      if (typeof mo !== 'number' || mo < 1.01 || mo > 25) continue;
+      const implied = 100 / mo;
+      const blended = Math.round(0.65 * implied + 0.35 * p.probability);
+      if (blended !== p.probability) {
+        log(`${league}: market blend ${p.pick} ${p.probability}%→${blended}% (implied ${implied.toFixed(0)}%)`);
+        p.probability = Math.max(30, Math.min(97, blended));
+      }
+    }
+    // Post-blend, a pick under 55% has no defensible edge — drop it. Never
+    // silence a league entirely: keep the single strongest pick if the
+    // blend emptied the slate (free tier shows one pick per sport).
+    const withEdge = picks.filter((p) => p.probability >= 55);
+    if (withEdge.length < picks.length) {
+      log(`${league}: dropped ${picks.length - withEdge.length} no-edge picks post-blend.`);
+    }
+    if (withEdge.length) {
+      picks.length = 0; picks.push(...withEdge);
+    } else if (picks.length > 1) {
+      const best = [...picks].sort((a, b) => b.probability - a.probability)[0];
+      picks.length = 0; picks.push(best);
+    }
   }
 
   // MLB DISCIPLINE — measured on 194 graded picks: sub-60% MLB picks hit
@@ -1072,6 +1120,10 @@ async function runPipeline() {
         if (scheduled.length) {
           // Primary path: we have scheduled events from the feed.
           games = scheduled.map(cfg.normalizer);
+          // MLB: swap name-only probable starters for ESPN stat lines
+          // ("Cameron (4-6, 4.95 ERA)") so the model can actually weigh
+          // the pitcher matchup it's told is the dominant variable.
+          games = await teamsport.enrichStarters(league, games);
           // De-dup against already-saved picks, today OR future —
           // event leagues (F1) carry future-dated picks that must not
           // regenerate on every run.
