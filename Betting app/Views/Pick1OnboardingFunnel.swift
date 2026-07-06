@@ -713,7 +713,7 @@ private struct QuizScreen: View {
 
 private struct AnalysisScreen: View {
     let onDone: () -> Void
-    @State private var pct: Int = 0
+    @State private var progress: Double = 0   // 0…1 — the single animation driver
     @State private var litRows = 0
     private var rows: [String] { [t(.funnel_analysis_row1), t(.funnel_analysis_row2), t(.funnel_analysis_row3), t(.funnel_analysis_row4)] }
 
@@ -724,10 +724,12 @@ private struct AnalysisScreen: View {
                 FnlKick(text: t(.funnel_analysis_kicker)).frame(maxWidth: .infinity)
                 ZStack {
                     Circle().stroke(Color(hex: "#22252b"), lineWidth: 7)
-                    Circle().trim(from: 0, to: CGFloat(pct) / 100)
+                    Circle().trim(from: 0, to: progress)
                         .stroke(Fnl.lime, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                    Text("\(pct)%").font(.anton(56)).foregroundColor(Fnl.lime)
+                    // Animatable readout — interpolates off the SAME eased
+                    // transaction as the ring, so number and arc stay locked.
+                    AnimatedPercent(value: progress * 100)
                 }
                 .frame(width: 180, height: 180)
                 .padding(.top, 30)
@@ -750,20 +752,42 @@ private struct AnalysisScreen: View {
             .padding(.horizontal, 30)
         }
         .onAppear {
-            // ~7s of "work" — the genre-standard beat. The old 3.2s version
-            // finished before the checklist even registered, which read as
-            // fake and undersold the moment of personalized value.
-            let ringDuration = 5.6
-            withAnimation(.easeOut(duration: ringDuration)) { pct = 100 }
-            // tick the counter + light rows
-            for i in 1...100 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + ringDuration * Double(i) / 100) { pct = i }
-            }
+            // ONE smooth eased driver moves progress 0→1; the ring trim and
+            // the % readout both interpolate off it in a single transaction,
+            // so they can't desync or stutter (the old version fought a
+            // withAnimation against 100 discrete linear timers, which is what
+            // read as janky). The gentle deceleration curve makes the count
+            // finish with a premium "settle" rather than a hard stop.
+            let ringDuration = 3.0
+            withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: ringDuration)) { progress = 1 }
+            // Light the checklist rows evenly across the run, each with its
+            // own soft fade-in — they land as the analysis "completes".
+            let rowSlot = (ringDuration - 0.5) / Double(rows.count)
             for i in 0..<rows.count {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7 + Double(i) * 1.3) { litRows = i + 1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4 + Double(i) * rowSlot) {
+                    withAnimation(.easeOut(duration: 0.35)) { litRows = i + 1 }
+                }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 6.9) { onDone() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + ringDuration + 0.7) { onDone() }
         }
+    }
+}
+
+/// Percent readout that animates smoothly with its driving value. Because it
+/// conforms to Animatable, a single withAnimation on `value` re-renders the
+/// number every frame — no per-tick timers — staying in lockstep with the
+/// ring trimmed by the same progress.
+private struct AnimatedPercent: View, Animatable {
+    var value: Double   // 0…100
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+    var body: some View {
+        Text("\(Int(value.rounded()))%")
+            .font(.anton(56))
+            .foregroundColor(Fnl.lime)
+            .monospacedDigit()
     }
 }
 
