@@ -8,5 +8,6 @@ import SwiftUI
 struct Pick1LiveActivityBundle: WidgetBundle {
     var body: some Widget {
         Pick1GameLiveActivity()
+        Pick1PickWidget()
     }
 }

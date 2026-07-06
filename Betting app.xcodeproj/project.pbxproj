@@ -11,6 +11,7 @@
 		55CF5C516834A8BB97B4453C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B77D68716597CD0B884AFEB3 /* Foundation.framework */; };
 		59D5EC591CB0D92E9E60085C /* Pick1LiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4F7DA48F3E033BDFF8FC82AC /* Pick1LiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9D7042DEE0A511CABB2E27CA /* Pick1GameLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC73DC8EFD6485D076BD2B3 /* Pick1GameLiveActivity.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* Pick1PickWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1E2D3C4B5A69788796A5B4 /* Pick1PickWidget.swift */; };
 		AA0E99192F76DB0D0098E4C5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA7812A12F5F8400009C4993 /* Supabase */; };
 		AAA198C22FC39D8200D9D024 /* FacebookAEM in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C12FC39D8200D9D024 /* FacebookAEM */; };
 		AAA198C42FC39D8200D9D024 /* FacebookBasics in Frameworks */ = {isa = PBXBuildFile; productRef = AAA198C32FC39D8200D9D024 /* FacebookBasics */; };
@@ -54,6 +55,7 @@
 		AA7812922F5F83C3009C4993 /* Betting app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Betting app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B77D68716597CD0B884AFEB3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		DDC73DC8EFD6485D076BD2B3 /* Pick1GameLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Pick1GameLiveActivity.swift; sourceTree = "<group>"; };
+		0F1E2D3C4B5A69788796A5B4 /* Pick1PickWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Pick1PickWidget.swift; sourceTree = "<group>"; };
 		FF41D235F160E343FC969D2B /* Pick1GameAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Pick1GameAttributes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -144,6 +146,7 @@
 			children = (
 				791C9D065F30F9D2F69C6C52 /* Pick1LiveActivityBundle.swift */,
 				DDC73DC8EFD6485D076BD2B3 /* Pick1GameLiveActivity.swift */,
+				0F1E2D3C4B5A69788796A5B4 /* Pick1PickWidget.swift */,
 				5D8145D3A4D3130EA49728D1 /* Info.plist */,
 			);
 			name = Pick1LiveActivity;
@@ -274,6 +277,7 @@
 			files = (
 				4269B91D9702EAD93D00AC5B /* Pick1LiveActivityBundle.swift in Sources */,
 				9D7042DEE0A511CABB2E27CA /* Pick1GameLiveActivity.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* Pick1PickWidget.swift in Sources */,
 				B182E647BD8D1E33E9D033A2 /* Pick1GameAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

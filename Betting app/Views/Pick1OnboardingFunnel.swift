@@ -236,6 +236,10 @@ struct Pick1OnboardingFunnel: View {
             QuizScreen(index: i, selected: quizAnswers[i]) { opt in
                 quizAnswers[i] = opt
                 Analytics.track("funnel_quiz_answer", ["question": i + 1, "answer": opt])
+                // Persist so the answers survive the funnel for later
+                // personalization (feed ordering, tailored push).
+                UserDefaults.standard.set(quizAnswers.map { ["q": $0.key, "a": $0.value] },
+                                          forKey: "funnelQuizAnswers")
                 next()
             }
         case .analysis:  AnalysisScreen(onDone: next)
@@ -1239,10 +1243,29 @@ private struct PaywallScreen: View {
         "Public ledger, live tracking & ROI", "Best line across 6 sportsbooks",
     ]
 
+    /// Echo the goal the user picked on the Goals screen so the paywall
+    /// reads as tailored to them, not generic. Nil if they skipped it.
+    private var goalEcho: String? {
+        guard UserDefaults.standard.object(forKey: "userGoal") != nil else { return nil }
+        switch UserDefaults.standard.integer(forKey: "userGoal") {
+        case 0: return "You want to grow your bankroll steadily — here's the edge that does it."
+        case 1: return "You want to beat the sportsbooks — Pro puts every calibrated pick in your hands."
+        case 2: return "You want to bet smarter and lose less — this is how."
+        case 3: return "You're going for full-time — go Pro and track every call like a pro."
+        default: return nil
+        }
+    }
+
     var body: some View {
         FnlScreen {
             FnlKick(text: "Go Pro").padding(.bottom, 14)
             FnlHeadline(parts: [("UNLOCK\n", false), ("EVERY ", false), ("PICK.", true)])
+            if let echo = goalEcho {
+                Text(echo)
+                    .font(.archivo(14, weight: .medium)).foregroundColor(Fnl.lime)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 14)
+            }
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(feats, id: \.self) { f in
                     HStack(spacing: 10) {
