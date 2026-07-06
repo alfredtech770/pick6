@@ -223,6 +223,217 @@ enum L10nKey: String, CaseIterable {
     case live_section_upcoming
     case live_empty_title
     case live_empty_sub
+
+    // ─── Onboarding funnel ────────────────────────────────────────
+    // Welcome
+    case funnel_welcome_headline          // "WIN\nSMARTER.\n*NOT HARDER.*"
+    case funnel_welcome_lead              // hero subhead
+    case funnel_welcome_cta               // "GET STARTED →"
+    case funnel_welcome_member            // "Already a member? "
+    case funnel_welcome_signin            // "Sign in"
+    // Features
+    case funnel_feat_kicker               // "Meet Pick1"
+    case funnel_feat_headline             // "ONE APP.\nEVERY *EDGE.*"
+    case funnel_feat1_title
+    case funnel_feat1_body
+    case funnel_feat2_title
+    case funnel_feat2_body
+    case funnel_feat3_title
+    case funnel_feat3_body
+    case funnel_feat4_title
+    case funnel_feat4_body
+    case funnel_continue_cta              // "CONTINUE →"
+    // Signup
+    case funnel_signup_kicker             // "Analysis ready · save your results"
+    case funnel_signup_kicker_otp         // "Check your email"
+    case funnel_signup_headline           // "JOIN A\nCOMMUNITY\nOF *WINNERS.*"
+    case funnel_signup_headline_otp       // "ENTER\n*YOUR CODE.*"
+    case funnel_signup_or                 // "OR"
+    case funnel_signup_email_label        // "Email"
+    case funnel_signup_email_ph           // "you@email.com"
+    case funnel_signup_otp_sent           // "We sent a 6-digit code to {email}. Enter it to finish signing in."
+    case funnel_signup_code_label         // "Verification code"
+    case funnel_signup_code_ph            // "123456"
+    case funnel_signup_diff_email         // "Use a different email"
+    case funnel_signup_cta_verify         // "VERIFY →"
+    case funnel_signup_cta_email          // "CONTINUE WITH EMAIL →"
+    case funnel_signup_terms              // "BY JOINING YOU AGREE TO OUR TERMS · 21+"
+    // Quiz
+    case funnel_quiz_progress             // "Question {n} of 5"
+    case funnel_quiz1_q
+    case funnel_quiz1_opt1
+    case funnel_quiz1_opt2
+    case funnel_quiz1_opt3
+    case funnel_quiz1_opt4
+    case funnel_quiz2_q
+    case funnel_quiz2_opt1
+    case funnel_quiz2_opt2
+    case funnel_quiz2_opt3
+    case funnel_quiz2_opt4
+    case funnel_quiz3_q
+    case funnel_quiz3_opt1
+    case funnel_quiz3_opt2
+    case funnel_quiz3_opt3
+    case funnel_quiz3_opt4
+    case funnel_quiz4_q
+    case funnel_quiz4_opt1
+    case funnel_quiz4_opt2
+    case funnel_quiz4_opt3
+    case funnel_quiz4_opt4
+    case funnel_quiz5_q
+    case funnel_quiz5_opt1
+    case funnel_quiz5_opt2
+    case funnel_quiz5_opt3
+    case funnel_quiz5_opt4
+    // Analysis
+    case funnel_analysis_kicker           // "Analyzing your answers"
+    case funnel_analysis_row1
+    case funnel_analysis_row2
+    case funnel_analysis_row3
+    case funnel_analysis_row4
+    // Red "hard truth"
+    case funnel_red_kicker                // "The hard truth · {n} of 4"
+    case funnel_red1_headline
+    case funnel_red1_lead
+    case funnel_red1_ct
+    case funnel_red1_cb
+    case funnel_red1_cta
+    case funnel_red2_headline
+    case funnel_red2_lead
+    case funnel_red2_ct
+    case funnel_red2_cb
+    case funnel_red2_cta
+    case funnel_red3_headline
+    case funnel_red3_unit                 // "records"
+    case funnel_red3_lead
+    case funnel_red3_ct
+    case funnel_red3_cb
+    case funnel_red3_cta
+    case funnel_red4_headline
+    case funnel_red4_unit                 // "%/bet"
+    case funnel_red4_lead
+    case funnel_red4_ct
+    case funnel_red4_cb
+    case funnel_red4_cta
+    // Green "the fix"
+    case funnel_green1_kicker
+    case funnel_green1_headline
+    case funnel_green1_lead
+    case funnel_green1_cta
+    case funnel_green2_kicker
+    case funnel_green2_headline
+    case funnel_green2_lead
+    case funnel_green2_cta
+    case funnel_green3_kicker
+    case funnel_green3_headline
+    case funnel_green3_lead
+    case funnel_green3_cta
+    // Green preview cards
+    case funnel_green_pill_pick           // "★ Today's top pick"
+    case funnel_green_ai_conf             // "AI CONFIDENCE"
+    case funnel_green_pill_why            // "▸ Why the AI likes it"
+    case funnel_green_pill_ledger         // "▸ Public ledger"
+    case funnel_green_won                 // "WON"
+    case funnel_green_loss                // "LOSS"
+    // Social proof
+    case funnel_social_kicker             // "The record speaks"
+    case funnel_social_headline           // "NOTHING\nTO *HIDE.*"
+    case funnel_social1_title
+    case funnel_social1_sub
+    case funnel_social2_title
+    case funnel_social2_sub
+    case funnel_social3_title
+    case funnel_social3_sub
+    case funnel_social_disclaimer         // "Past performance doesn't guarantee future results."
+    case funnel_social_cta                // "I WANT IN →"
+    // Compare
+    case funnel_compare_kicker            // "Why Pick1 wins"
+    case funnel_compare_headline          // "THE *DIFFERENCE.*"
+    case funnel_compare_col_feature       // "FEATURE"
+    case funnel_compare_col_others        // "OTHERS"
+    case funnel_compare_col_pick1         // "PICK1"
+    case funnel_compare_row1
+    case funnel_compare_row2
+    case funnel_compare_row3
+    case funnel_compare_row4
+    case funnel_compare_row5
+    case funnel_compare_row6
+    // Goals
+    case funnel_goals_kicker              // "Set your target"
+    case funnel_goals_headline            // "WHAT'S YOUR\n*GOAL?*"
+    case funnel_goals_lead
+    case funnel_goal1
+    case funnel_goal2
+    case funnel_goal3
+    case funnel_goal4
+    // Notifications
+    case funnel_notif_kicker              // "Never miss a call"
+    case funnel_notif_headline            // "YOUR PICK.\nTHE SECOND\n*IT DROPS.*"
+    case funnel_notif_lead
+    case funnel_notif_perk1
+    case funnel_notif_perk2
+    case funnel_notif_perk3
+    case funnel_notif_cta                 // "TURN ON ALERTS →"
+    case funnel_notif_skip                // "Not now"
+    // Referral
+    case funnel_ref_kicker                // "Got a code?"
+    case funnel_ref_headline              // "UNLOCK\nYOUR *BONUS.*"
+    case funnel_ref_lead
+    case funnel_ref_field_label           // "Referral code (optional)"
+    case funnel_ref_field_ph              // "PICK1-XXXX"
+    case funnel_ref_cta                   // "CONTINUE →"
+    case funnel_ref_skip                  // "Skip for now"
+    case funnel_ref_ok_pro                // "🎉 Code applied — a free week of Pro is on us!"
+    case funnel_ref_ok                    // "✓ Code applied!"
+    case funnel_ref_err_invalid           // "That code isn't valid."
+    case funnel_ref_err_used              // "You've already used a code."
+    case funnel_ref_err_generic           // "Something went wrong — try again."
+    // Rating
+    case funnel_rating_kicker             // "Help us grow"
+    case funnel_rating_headline           // "LOVE *PICK1?*"
+    case funnel_rating_lead
+    case funnel_rating_bonus_title        // "+3 DAYS"
+    case funnel_rating_bonus_sub
+    case funnel_rating_cta                // "RATE & CLAIM →"
+    case funnel_rating_skip               // "Maybe later"
+    // Time to win
+    case funnel_ttw_kicker                // "You're all set"
+    case funnel_ttw_headline              // "NOW IT'S\nTIME TO\n*WIN.*"
+    case funnel_ttw_lead
+    case funnel_ttw_cta                   // "SEE MY PLAN →"
+    // Paywall
+    case funnel_paywall_kicker            // "Go Pro"
+    case funnel_paywall_headline          // "UNLOCK\nEVERY *PICK.*"
+    case funnel_paywall_feat1
+    case funnel_paywall_feat2
+    case funnel_paywall_feat3
+    case funnel_paywall_feat4
+    case funnel_paywall_loading           // "Loading plans…"
+    case funnel_paywall_cta_continue      // "CONTINUE →"
+    case funnel_paywall_cta_unlock        // "UNLOCK PICK1 PRO →"
+    case funnel_paywall_fineprint         // "NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT"
+    case funnel_paywall_restore           // "Restore"
+    case funnel_paywall_terms             // "Terms"
+    case funnel_paywall_privacy           // "Privacy"
+    case funnel_paywall_continue_free     // "Continue free →"
+    case funnel_paywall_plan_weekly       // "WEEKLY"
+    case funnel_paywall_plan_monthly      // "MONTHLY"
+    case funnel_paywall_plan_lifetime     // "LIFETIME"
+    case funnel_paywall_unit_wk           // "/wk"
+    case funnel_paywall_unit_mo           // "/mo"
+    case funnel_paywall_best_value        // "BEST VALUE"
+    case funnel_paywall_sub_lifetime      // "One-time · yours forever"
+    case funnel_paywall_sub_weekly        // "Billed weekly · cancel anytime"
+    case funnel_paywall_sub_monthly       // "Billed monthly · cancel anytime"
+    case funnel_paywall_goal1             // goalEcho variants
+    case funnel_paywall_goal2
+    case funnel_paywall_goal3
+    case funnel_paywall_goal4
+    // Success
+    case funnel_success_headline          // "YOU'RE IN.\nLET'S *WIN.*"
+    case funnel_success_body_pro
+    case funnel_success_body_free
+    case funnel_success_cta               // "START YOUR JOURNEY →"
 }
 
 // MARK: - Manager

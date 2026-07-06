@@ -319,6 +319,42 @@ struct FnlHeadline: View {
     var size: CGFloat = 56
     var center: Bool = false
 
+    /// Localized convenience init. Takes a single translated string using a
+    /// tiny markup convention so word order can move freely across languages:
+    ///   • `\n` — a line break.
+    ///   • `*...*` — the accented (lime/red/green) run.
+    /// e.g. `"WIN\nSMARTER.\n*NOT HARDER.*"`. We parse it into `parts` so the
+    /// existing renderer (which splits on "\n" itself) works unchanged.
+    init(text: String, accent: Color = Fnl.lime, size: CGFloat = 56, center: Bool = false) {
+        self.accent = accent
+        self.size = size
+        self.center = center
+        // Walk the string, toggling emphasis on each `*`. Newlines are kept
+        // inline within a segment — the renderer's `lines` computed property
+        // re-splits them, so we don't need to break segments here.
+        var segs: [(String, Bool)] = []
+        var emph = false
+        var buf = ""
+        for ch in text {
+            if ch == "*" {
+                if !buf.isEmpty { segs.append((buf, emph)); buf = "" }
+                emph.toggle()
+            } else {
+                buf.append(ch)
+            }
+        }
+        if !buf.isEmpty { segs.append((buf, emph)) }
+        self.parts = segs
+    }
+
+    /// Segment-based init (kept for callers that build `parts` from data).
+    init(parts: [(String, Bool)], accent: Color = Fnl.lime, size: CGFloat = 56, center: Bool = false) {
+        self.parts = parts
+        self.accent = accent
+        self.size = size
+        self.center = center
+    }
+
     /// Split the (text, emphasized) segments into lines on "\n", preserving
     /// each segment's color so a lime tail can sit mid-line. Rendering each
     /// line as its own Text lets a negative VStack spacing pull the lines
@@ -430,18 +466,18 @@ private struct WelcomeScreen: View {
                 FnlLockup().padding(.top, 24)
                 Spacer()
                 VStack(spacing: 18) {
-                    FnlHeadline(parts: [("WIN\n", false), ("SMARTER.\n", false), ("NOT HARDER.", true)], size: 70, center: true)
+                    FnlHeadline(text: t(.funnel_welcome_headline), size: 70, center: true)
                         .multilineTextAlignment(.center)
-                    FnlLead(text: "The AI that calls one game a day across 9 sports — and logs every result in public.")
+                    FnlLead(text: t(.funnel_welcome_lead))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 300)
                 }
                 Spacer()
                 VStack(spacing: 0) {
-                    FnlCTA(title: "GET STARTED →", action: onNext)
+                    FnlCTA(title: t(.funnel_welcome_cta), action: onNext)
                     Button(action: onSignIn) {
-                        (Text("Already a member? ").foregroundColor(Fnl.mute)
-                         + Text("Sign in").foregroundColor(Fnl.lime))
+                        (Text(t(.funnel_welcome_member)).foregroundColor(Fnl.mute)
+                         + Text(t(.funnel_welcome_signin)).foregroundColor(Fnl.lime))
                             .font(.mono(11, weight: .bold))
                     }
                     .buttonStyle(.plain)
@@ -460,16 +496,18 @@ private struct WelcomeScreen: View {
 
 private struct FeaturesScreen: View {
     let onNext: () -> Void
-    private let feats: [(String, String, String)] = [
-        ("🎯", "One daily AI pick", "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis & Cricket."),
-        ("📊", "Calibrated confidence", "When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\""),
-        ("🧾", "Public results ledger", "Every call logged before kickoff. Wins AND losses, on the record forever."),
-        ("💰", "Best line, 6 books", "Pick1 finds the best price across 6 sportsbooks — you decide where to play."),
-    ]
+    private var feats: [(String, String, String)] {
+        [
+            ("🎯", t(.funnel_feat1_title), t(.funnel_feat1_body)),
+            ("📊", t(.funnel_feat2_title), t(.funnel_feat2_body)),
+            ("🧾", t(.funnel_feat3_title), t(.funnel_feat3_body)),
+            ("💰", t(.funnel_feat4_title), t(.funnel_feat4_body)),
+        ]
+    }
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Meet Pick1").padding(.bottom, 14)
-            FnlHeadline(parts: [("ONE APP.\n", false), ("EVERY ", false), ("EDGE.", true)])
+            FnlKick(text: t(.funnel_feat_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_feat_headline))
             VStack(spacing: 0) {
                 ForEach(Array(feats.enumerated()), id: \.offset) { i, f in
                     HStack(alignment: .top, spacing: 16) {
@@ -491,7 +529,7 @@ private struct FeaturesScreen: View {
             }
             .padding(.top, 26)
         } bottom: {
-            FnlCTA(title: "CONTINUE →", action: onNext)
+            FnlCTA(title: t(.funnel_continue_cta), action: onNext)
         }
     }
 }
@@ -511,8 +549,8 @@ private struct SignupScreen: View {
         FnlScreen {
             // Post-analysis context: the account ask is framed as saving the
             // results they just watched build, not a cold registration wall.
-            FnlKick(text: otpSent ? "Check your email" : "Analysis ready · save your results").padding(.bottom, 14)
-            FnlHeadline(parts: otpSent ? [("ENTER\n", false), ("YOUR CODE.", true)] : [("JOIN A\n", false), ("COMMUNITY\n", false), ("OF ", false), ("WINNERS.", true)])
+            FnlKick(text: otpSent ? t(.funnel_signup_kicker_otp) : t(.funnel_signup_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: otpSent ? t(.funnel_signup_headline_otp) : t(.funnel_signup_headline))
 
             if !otpSent {
                 SignInWithAppleButton(.signUp) { req in
@@ -527,17 +565,17 @@ private struct SignupScreen: View {
 
                 HStack(spacing: 12) {
                     Rectangle().fill(Fnl.line).frame(height: 1)
-                    Text("OR").font(.archivoNarrow(10, weight: .bold)).kerning(2).foregroundColor(Fnl.mute)
+                    Text(t(.funnel_signup_or)).font(.archivoNarrow(10, weight: .bold)).kerning(2).foregroundColor(Fnl.mute)
                     Rectangle().fill(Fnl.line).frame(height: 1)
                 }
                 .padding(.vertical, 18)
-                fnlField(label: "Email", text: $email, placeholder: "you@email.com")
+                fnlField(label: t(.funnel_signup_email_label), text: $email, placeholder: t(.funnel_signup_email_ph))
                     .textInputAutocapitalization(.never).keyboardType(.emailAddress).autocorrectionDisabled()
             } else {
-                FnlLead(text: "We sent a 6-digit code to \(email). Enter it to finish signing in.").padding(.top, 22)
-                fnlField(label: "Verification code", text: $code, placeholder: "123456")
+                FnlLead(text: t(.funnel_signup_otp_sent).replacingOccurrences(of: "{email}", with: email)).padding(.top, 22)
+                fnlField(label: t(.funnel_signup_code_label), text: $code, placeholder: t(.funnel_signup_code_ph))
                     .keyboardType(.numberPad)
-                Button("Use a different email") { otpSent = false; code = "" }
+                Button(t(.funnel_signup_diff_email)) { otpSent = false; code = "" }
                     .font(.archivo(13, weight: .medium)).foregroundColor(Fnl.lime)
             }
 
@@ -546,11 +584,11 @@ private struct SignupScreen: View {
             }
         } bottom: {
             VStack(spacing: 0) {
-                FnlCTA(title: busy ? "…" : (otpSent ? "VERIFY →" : "CONTINUE WITH EMAIL →")) {
+                FnlCTA(title: busy ? "…" : (otpSent ? t(.funnel_signup_cta_verify) : t(.funnel_signup_cta_email))) {
                     Task { await primary() }
                 }
                 if !otpSent {
-                    Text("BY JOINING YOU AGREE TO OUR TERMS · 21+")
+                    Text(t(.funnel_signup_terms))
                         .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 14)
                 }
             }
@@ -621,18 +659,20 @@ private struct QuizScreen: View {
     let selected: Int?
     let onPick: (Int) -> Void
 
-    static let questions: [(String, [(String, String)])] = [
-        ("How often do you bet on sports?", [("📅","Every day"),("🗓️","A few times a week"),("🎲","Weekends only"),("🆕","Just getting started")]),
-        ("How do you pick your bets today?", [("🧠","Gut feeling"),("📰","News & headlines"),("📊","Some stats"),("🤷","Honestly? Random")]),
-        ("Are you up or down this year?", [("📉","Down money"),("➖","About even"),("📈","Slightly up"),("🤔","No idea — I don't track")]),
-        ("What frustrates you most?", [("😤","Losing on 'sure things'"),("🎰","Chasing parlays"),("🕳️","No idea what works"),("⏱️","Too much time researching")]),
-        ("How much do you bet per week?", [("💵","Under $50"),("💰","$50–$200"),("💸","$200–$500"),("🏦","$500+")]),
-    ]
+    static var questions: [(String, [(String, String)])] {
+        [
+            (t(.funnel_quiz1_q), [("📅",t(.funnel_quiz1_opt1)),("🗓️",t(.funnel_quiz1_opt2)),("🎲",t(.funnel_quiz1_opt3)),("🆕",t(.funnel_quiz1_opt4))]),
+            (t(.funnel_quiz2_q), [("🧠",t(.funnel_quiz2_opt1)),("📰",t(.funnel_quiz2_opt2)),("📊",t(.funnel_quiz2_opt3)),("🤷",t(.funnel_quiz2_opt4))]),
+            (t(.funnel_quiz3_q), [("📉",t(.funnel_quiz3_opt1)),("➖",t(.funnel_quiz3_opt2)),("📈",t(.funnel_quiz3_opt3)),("🤔",t(.funnel_quiz3_opt4))]),
+            (t(.funnel_quiz4_q), [("😤",t(.funnel_quiz4_opt1)),("🎰",t(.funnel_quiz4_opt2)),("🕳️",t(.funnel_quiz4_opt3)),("⏱️",t(.funnel_quiz4_opt4))]),
+            (t(.funnel_quiz5_q), [("💵",t(.funnel_quiz5_opt1)),("💰",t(.funnel_quiz5_opt2)),("💸",t(.funnel_quiz5_opt3)),("🏦",t(.funnel_quiz5_opt4))]),
+        ]
+    }
 
     var body: some View {
         let q = Self.questions[index]
         return VStack(alignment: .leading, spacing: 0) {
-            Text("Question \(index + 1) of 5")
+            Text(t(.funnel_quiz_progress, count: index + 1))
                 .font(.mono(13, weight: .bold)).kerning(1.9).foregroundColor(Fnl.lime)
                 .padding(.bottom, 10)
             Text(q.0.uppercased())
@@ -675,13 +715,13 @@ private struct AnalysisScreen: View {
     let onDone: () -> Void
     @State private var pct: Int = 0
     @State private var litRows = 0
-    private let rows = ["Scanning your betting habits…", "Measuring your edge vs the books…", "Finding where you lose money…", "Building your Pick1 plan…"]
+    private var rows: [String] { [t(.funnel_analysis_row1), t(.funnel_analysis_row2), t(.funnel_analysis_row3), t(.funnel_analysis_row4)] }
 
     var body: some View {
         ZStack(alignment: .top) {
             FnlGlow()
             VStack(spacing: 0) {
-                FnlKick(text: "Analyzing your answers").frame(maxWidth: .infinity)
+                FnlKick(text: t(.funnel_analysis_kicker)).frame(maxWidth: .infinity)
                 ZStack {
                     Circle().stroke(Color(hex: "#22252b"), lineWidth: 7)
                     Circle().trim(from: 0, to: CGFloat(pct) / 100)
@@ -732,11 +772,14 @@ private struct AnalysisScreen: View {
 private struct RedScreen: View {
     let index: Int
     let onNext: () -> Void
-    static let data: [(head: [(String, Bool)], stat: String, statSmall: String, lead: String, ct: String, cb: String, cta: String)] = [
-        ([("YOU BET ON\n", false), ("EMOTION.", true)], "55", "%", "Gut picks lose ~55% of the time long-term. Your favorite team isn't a strategy.", "No system = no edge", "Without a model, you're just guessing against people who aren't.", "NEXT →"),
-        ([("PARLAYS ARE\n", false), ("KILLING YOU.", true)], "-32", "%", "The average multi-leg parlay returns -32% to the bettor. The house loves them for a reason.", "Chasing the big hit", "Every extra leg multiplies the house edge against you.", "NEXT →"),
-        ([("YOU DON'T\n", false), ("TRACK IT.", true)], "0", "records", "You can't fix what you don't measure. Most bettors have no idea if they're actually up or down.", "Flying blind", "No log means no learning — you repeat the same losing bets.", "NEXT →"),
-        ([("BAD LINES\n", false), ("DRAIN YOU.", true)], "-5", "%/bet", "Taking the first line you see leaves 3–5% on the table every single bet. It compounds fast.", "Overpaying the vig", "You never shop for the best price across books — so you always overpay.", "SHOW ME THE FIX →"),
+    // Localized. `head/lead/ct/cb/cta` are L10n keys; `stat` stays as-is
+    // (numeric), `statSmall` is a key (units like "records"/"%/bet" translate,
+    // "%" stays literal).
+    static let data: [(head: L10nKey, stat: String, statSmall: L10nKey?, statSmallRaw: String?, lead: L10nKey, ct: L10nKey, cb: L10nKey, cta: L10nKey)] = [
+        (.funnel_red1_headline, "55", nil, "%", .funnel_red1_lead, .funnel_red1_ct, .funnel_red1_cb, .funnel_red1_cta),
+        (.funnel_red2_headline, "-32", nil, "%", .funnel_red2_lead, .funnel_red2_ct, .funnel_red2_cb, .funnel_red2_cta),
+        (.funnel_red3_headline, "0", .funnel_red3_unit, nil, .funnel_red3_lead, .funnel_red3_ct, .funnel_red3_cb, .funnel_red3_cta),
+        (.funnel_red4_headline, "-5", .funnel_red4_unit, nil, .funnel_red4_lead, .funnel_red4_ct, .funnel_red4_cb, .funnel_red4_cta),
     ]
     var body: some View {
         let d = Self.data[index]
@@ -744,16 +787,16 @@ private struct RedScreen: View {
             HStack(spacing: 6) {
                 ForEach(0..<4) { i in Capsule().fill(i <= index ? Fnl.hot : Fnl.line).frame(width: 22, height: 4) }
             }.padding(.bottom, 14)
-            FnlKick(text: "The hard truth · \(index + 1) of 4", tone: .red).padding(.bottom, 14)
-            FnlHeadline(parts: d.head, accent: Fnl.hot)
+            FnlKick(text: t(.funnel_red_kicker, count: index + 1), tone: .red).padding(.bottom, 14)
+            FnlHeadline(text: t(d.head), accent: Fnl.hot)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(d.stat).font(.anton(72)).foregroundColor(Fnl.hot)
-                Text(d.statSmall).font(.archivo(18, weight: .bold)).foregroundColor(Fnl.ink2)
+                Text(d.statSmall.map(t) ?? d.statSmallRaw ?? "").font(.archivo(18, weight: .bold)).foregroundColor(Fnl.ink2)
             }.padding(.top, 24)
-            FnlLead(text: d.lead).padding(.top, 8)
+            FnlLead(text: t(d.lead)).padding(.top, 8)
             VStack(alignment: .leading, spacing: 4) {
-                Text(d.ct).font(.archivo(15, weight: .bold)).foregroundColor(Fnl.white)
-                Text(d.cb).font(.archivo(12.5)).foregroundColor(Fnl.ink2)
+                Text(t(d.ct)).font(.archivo(15, weight: .bold)).foregroundColor(Fnl.white)
+                Text(t(d.cb)).font(.archivo(12.5)).foregroundColor(Fnl.ink2)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -761,7 +804,7 @@ private struct RedScreen: View {
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Fnl.hot.opacity(0.28), lineWidth: 1)))
             .padding(.top, 20)
         } bottom: {
-            FnlCTA(title: d.cta, action: onNext)
+            FnlCTA(title: t(d.cta), action: onNext)
         }
     }
 }
@@ -771,10 +814,10 @@ private struct RedScreen: View {
 private struct GreenScreen: View {
     let index: Int
     let onNext: () -> Void
-    static let data: [(kick: String, head: [(String, Bool)], lead: String, cta: String)] = [
-        ("The Pick1 fix · 1 of 3", [("DATA, NOT\n", false), ("EMOTION.", true)], "One AI-calculated pick a day — the single highest-edge call across 9 sports.", "NEXT →"),
-        ("The Pick1 fix · 2 of 3", [("SEE THE\n", false), ("REASONING.", true)], "Calibrated confidence + the \"why\" behind every pick. When it says 73%, it hits ≈73%.", "NEXT →"),
-        ("The Pick1 fix · 3 of 3", [("TRACK\n", false), ("EVERYTHING.", true)], "Every call logged in public — wins and losses. Live tracking and a full ROI dashboard.", "CONTINUE →"),
+    static let data: [(kick: L10nKey, head: L10nKey, lead: L10nKey, cta: L10nKey)] = [
+        (.funnel_green1_kicker, .funnel_green1_headline, .funnel_green1_lead, .funnel_green1_cta),
+        (.funnel_green2_kicker, .funnel_green2_headline, .funnel_green2_lead, .funnel_green2_cta),
+        (.funnel_green3_kicker, .funnel_green3_headline, .funnel_green3_lead, .funnel_green3_cta),
     ]
     var body: some View {
         let d = Self.data[index]
@@ -782,9 +825,9 @@ private struct GreenScreen: View {
             HStack(spacing: 6) {
                 ForEach(0..<3) { i in Capsule().fill(i <= index ? Fnl.win : Fnl.line).frame(width: 22, height: 4) }
             }.padding(.bottom, 14)
-            FnlKick(text: d.kick, tone: .win).padding(.bottom, 14)
-            FnlHeadline(parts: d.head, accent: Fnl.win)
-            FnlLead(text: d.lead).padding(.top, 14)
+            FnlKick(text: t(d.kick), tone: .win).padding(.bottom, 14)
+            FnlHeadline(text: t(d.head), accent: Fnl.win)
+            FnlLead(text: t(d.lead)).padding(.top, 14)
             // In-app preview card — the design's "appframe" mockups. These
             // depict real product features (confidence ring, reasoning list,
             // public ledger); the specific matchups are illustrative.
@@ -795,7 +838,7 @@ private struct GreenScreen: View {
                     .overlay(RoundedRectangle(cornerRadius: 24).stroke(Fnl.line, lineWidth: 1)))
                 .padding(.top, 18)
         } bottom: {
-            FnlCTA(title: d.cta, action: onNext)
+            FnlCTA(title: t(d.cta), action: onNext)
         }
     }
 
@@ -810,7 +853,7 @@ private struct GreenScreen: View {
     /// Fix 1 — today's top pick with the confidence ring.
     private var pickPreview: some View {
         VStack(spacing: 8) {
-            previewPill("★ Today's top pick")
+            previewPill(t(.funnel_green_pill_pick))
             (Text("CELTICS\n").foregroundColor(Fnl.white) + Text("OVER LAKERS").foregroundColor(Fnl.lime))
                 .font(.anton(22)).multilineTextAlignment(.center)
             Text("NBA · TONIGHT 7:30 PM ET").font(.mono(10, weight: .bold)).kerning(1.2).foregroundColor(Fnl.mute)
@@ -823,7 +866,7 @@ private struct GreenScreen: View {
             }
             .frame(width: 84, height: 84)
             .padding(.top, 4)
-            Text("AI CONFIDENCE").font(.archivoNarrow(10, weight: .bold)).kerning(1.8).foregroundColor(Fnl.mute)
+            Text(t(.funnel_green_ai_conf)).font(.archivoNarrow(10, weight: .bold)).kerning(1.8).foregroundColor(Fnl.mute)
         }
         .frame(maxWidth: .infinity)
     }
@@ -831,7 +874,7 @@ private struct GreenScreen: View {
     /// Fix 2 — the "why" behind a pick.
     private var reasoningPreview: some View {
         VStack(alignment: .leading, spacing: 10) {
-            previewPill("▸ Why the AI likes it")
+            previewPill(t(.funnel_green_pill_why))
             (Text("SPURS ML ").foregroundColor(Fnl.white) + Text("84.8% CONF").foregroundColor(Fnl.lime))
                 .font(.anton(19))
             ForEach(Array([
@@ -854,7 +897,7 @@ private struct GreenScreen: View {
     /// Fix 3 — the public ledger, losses included.
     private var ledgerPreview: some View {
         VStack(alignment: .leading, spacing: 8) {
-            previewPill("▸ Public ledger")
+            previewPill(t(.funnel_green_pill_ledger))
             (Text("EVERY ").foregroundColor(Fnl.white) + Text("RESULT.").foregroundColor(Fnl.lime))
                 .font(.anton(19))
             ForEach(Array([
@@ -865,7 +908,7 @@ private struct GreenScreen: View {
                     Text(row.0).font(.archivo(13, weight: .bold)).foregroundColor(Fnl.white)
                     Spacer()
                     Text(row.1).font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute)
-                    Text(row.2 ? "WON" : "LOSS")
+                    Text(row.2 ? t(.funnel_green_won) : t(.funnel_green_loss))
                         .font(.archivoNarrow(10, weight: .bold)).kerning(1.2)
                         .foregroundColor(row.2 ? Fnl.ink : Fnl.white)
                         .padding(.horizontal, 8).padding(.vertical, 3)
@@ -901,17 +944,17 @@ private struct SuccessScreen: View {
                 Spacer()
                 VStack(spacing: 18) {
                     Text("🎉").font(.system(size: 70))
-                    FnlHeadline(parts: [("YOU'RE IN.\n", false), ("LET'S ", false), ("WIN.", true)], accent: Fnl.win, size: 60, center: true)
+                    FnlHeadline(text: t(.funnel_success_headline), accent: Fnl.win, size: 60, center: true)
                         .multilineTextAlignment(.center)
                     // Copy is honest about tier — "Pro" only when they actually
                     // have it (purchase or comp); free-skip users get neutral copy.
                     FnlLead(text: subs.isPro
-                        ? "Welcome to Pick1 Pro. Your first daily pick drops tomorrow at 6:30 AM."
-                        : "Welcome to Pick1. Your first daily pick drops tomorrow at 6:30 AM.")
+                        ? t(.funnel_success_body_pro)
+                        : t(.funnel_success_body_free))
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
                 }
                 Spacer()
-                FnlCTA(title: "START YOUR JOURNEY →", action: onFinish)
+                FnlCTA(title: t(.funnel_success_cta), action: onFinish)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 30).padding(.top, 60).padding(.bottom, 20)
@@ -928,15 +971,17 @@ private struct SocialProofScreen: View {
     // with invented testimonials or earnings claims: fabricated "$X won"
     // figures are false-advertising exposure in a betting-adjacent app and an
     // App Review "misleading content" risk. Refresh the figures per release.
-    private let stats: [(emoji: String, big: String, title: String, sub: String)] = [
-        ("🧾", "296", "Picks graded in public", "Every call logged before kickoff — wins AND losses, on the record."),
-        ("🎯", "74%", "High-confidence soccer hit rate", "Our 60%+ confidence soccer calls have landed 74% of the time."),
-        ("📊", "62%", "Across all 60%+ confidence calls", "145 high-conviction picks graded — measured, not promised."),
-    ]
+    private var stats: [(emoji: String, big: String, title: String, sub: String)] {
+        [
+            ("🧾", "296", t(.funnel_social1_title), t(.funnel_social1_sub)),
+            ("🎯", "74%", t(.funnel_social2_title), t(.funnel_social2_sub)),
+            ("📊", "62%", t(.funnel_social3_title), t(.funnel_social3_sub)),
+        ]
+    }
     var body: some View {
         FnlScreen {
-            FnlKick(text: "The record speaks").padding(.bottom, 14)
-            FnlHeadline(parts: [("NOTHING\n", false), ("TO ", false), ("HIDE.", true)])
+            FnlKick(text: t(.funnel_social_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_social_headline))
             VStack(spacing: 12) {
                 ForEach(Array(stats.enumerated()), id: \.offset) { _, s in
                     HStack(spacing: 14) {
@@ -961,11 +1006,11 @@ private struct SocialProofScreen: View {
                 }
             }
             .padding(.top, 22)
-            Text("Past performance doesn't guarantee future results.")
+            Text(t(.funnel_social_disclaimer))
                 .font(.mono(10, weight: .medium)).foregroundColor(Fnl.mute)
                 .padding(.top, 12)
         } bottom: {
-            FnlCTA(title: "I WANT IN →", action: onNext)
+            FnlCTA(title: t(.funnel_social_cta), action: onNext)
         }
     }
 }
@@ -974,17 +1019,17 @@ private struct SocialProofScreen: View {
 
 private struct CompareScreen: View {
     let onNext: () -> Void
-    private let rows = ["Calibrated %", "Public win/loss log", "Logged before kickoff", "Best-line finder", "No \"guaranteed locks\"", "9 sports, one call"]
+    private var rows: [String] { [t(.funnel_compare_row1), t(.funnel_compare_row2), t(.funnel_compare_row3), t(.funnel_compare_row4), t(.funnel_compare_row5), t(.funnel_compare_row6)] }
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Why Pick1 wins").padding(.bottom, 14)
-            FnlHeadline(parts: [("THE ", false), ("DIFFERENCE.", true)])
+            FnlKick(text: t(.funnel_compare_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_compare_headline))
             VStack(spacing: 0) {
                 HStack {
-                    Text("FEATURE").font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.mute)
+                    Text(t(.funnel_compare_col_feature)).font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.mute)
                     Spacer()
-                    Text("OTHERS").font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.mute).frame(width: 70)
-                    Text("PICK1").font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.lime).frame(width: 70)
+                    Text(t(.funnel_compare_col_others)).font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.mute).frame(width: 70)
+                    Text(t(.funnel_compare_col_pick1)).font(.archivoNarrow(11, weight: .bold)).kerning(1.9).foregroundColor(Fnl.lime).frame(width: 70)
                 }
                 .padding(.horizontal, 18).padding(.vertical, 16)
                 .background(Fnl.panel2)
@@ -1004,7 +1049,7 @@ private struct CompareScreen: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
             .padding(.top, 24)
         } bottom: {
-            FnlCTA(title: "CONTINUE →", action: onNext)
+            FnlCTA(title: t(.funnel_continue_cta), action: onNext)
         }
     }
 }
@@ -1014,15 +1059,17 @@ private struct CompareScreen: View {
 private struct GoalsScreen: View {
     @Binding var selected: Int?
     let onNext: () -> Void
-    private let goals: [(String, String)] = [
-        ("💸", "Grow my bankroll steadily"), ("🎯", "Beat the sportsbooks"),
-        ("📈", "Bet smarter, lose less"), ("🏆", "Go pro / full-time"),
-    ]
+    private var goals: [(String, String)] {
+        [
+            ("💸", t(.funnel_goal1)), ("🎯", t(.funnel_goal2)),
+            ("📈", t(.funnel_goal3)), ("🏆", t(.funnel_goal4)),
+        ]
+    }
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Set your target").padding(.bottom, 14)
-            FnlHeadline(parts: [("WHAT'S YOUR\n", false), ("GOAL?", true)])
-            FnlLead(text: "We'll tailor your daily picks around it.").padding(.top, 16)
+            FnlKick(text: t(.funnel_goals_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_goals_headline))
+            FnlLead(text: t(.funnel_goals_lead)).padding(.top, 16)
             VStack(spacing: 12) {
                 ForEach(Array(goals.enumerated()), id: \.offset) { i, g in
                     Button { selected = i } label: {
@@ -1045,7 +1092,7 @@ private struct GoalsScreen: View {
             }
             .padding(.top, 22)
         } bottom: {
-            FnlCTA(title: "CONTINUE →", action: onNext)
+            FnlCTA(title: t(.funnel_continue_cta), action: onNext)
         }
     }
 }
@@ -1057,16 +1104,18 @@ private struct GoalsScreen: View {
 private struct NotificationsScreen: View {
     let onNext: () -> Void
     @State private var busy = false
-    private let perks: [(String, String)] = [
-        ("⚡️", "Your daily pick, the second it drops"),
-        ("🔴", "Live score alerts on your games"),
-        ("🏆", "Instant results — wins AND losses"),
-    ]
+    private var perks: [(String, String)] {
+        [
+            ("⚡️", t(.funnel_notif_perk1)),
+            ("🔴", t(.funnel_notif_perk2)),
+            ("🏆", t(.funnel_notif_perk3)),
+        ]
+    }
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Never miss a call").padding(.bottom, 14)
-            FnlHeadline(parts: [("YOUR PICK.\n", false), ("THE SECOND\n", false), ("IT DROPS.", true)])
-            FnlLead(text: "Picks land every morning at 6:30 AM. Turn on alerts so the edge never slips past you.")
+            FnlKick(text: t(.funnel_notif_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_notif_headline))
+            FnlLead(text: t(.funnel_notif_lead))
                 .padding(.top, 14)
             VStack(spacing: 12) {
                 ForEach(Array(perks.enumerated()), id: \.offset) { _, p in
@@ -1086,8 +1135,8 @@ private struct NotificationsScreen: View {
             .padding(.top, 20)
         } bottom: {
             VStack(spacing: 10) {
-                FnlCTA(title: busy ? "…" : "TURN ON ALERTS →") { enable() }
-                FnlCTA(title: "Not now", style: .ghost, action: onNext)
+                FnlCTA(title: busy ? "…" : t(.funnel_notif_cta)) { enable() }
+                FnlCTA(title: t(.funnel_notif_skip), style: .ghost, action: onNext)
             }
         }
     }
@@ -1121,10 +1170,10 @@ private struct ReferralScreen: View {
 
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Got a code?").padding(.bottom, 14)
-            FnlHeadline(parts: [("UNLOCK\n", false), ("YOUR ", false), ("BONUS.", true)])
-            FnlLead(text: "Enter a friend's or creator's code — unlock a free week of Pro.").padding(.top, 16)
-            fnlField(label: "Referral code (optional)", text: $code, placeholder: "PICK1-XXXX")
+            FnlKick(text: t(.funnel_ref_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_ref_headline))
+            FnlLead(text: t(.funnel_ref_lead)).padding(.top, 16)
+            fnlField(label: t(.funnel_ref_field_label), text: $code, placeholder: t(.funnel_ref_field_ph))
                 .textInputAutocapitalization(.characters).autocorrectionDisabled()
                 .padding(.top, 22)
             if let b = banner {
@@ -1132,8 +1181,8 @@ private struct ReferralScreen: View {
             }
         } bottom: {
             VStack(spacing: 10) {
-                FnlCTA(title: busy ? "…" : "CONTINUE →") { Task { await apply() } }
-                FnlCTA(title: "Skip for now", style: .ghost, action: onNext)
+                FnlCTA(title: busy ? "…" : t(.funnel_ref_cta)) { Task { await apply() } }
+                FnlCTA(title: t(.funnel_ref_skip), style: .ghost, action: onNext)
             }
         }
     }
@@ -1146,12 +1195,12 @@ private struct ReferralScreen: View {
         switch outcome {
         case .success(let grantedPro):
             await subs.refreshCompAccess()
-            banner = (grantedPro ? "🎉 Code applied — a free week of Pro is on us!" : "✓ Code applied!", true)
+            banner = (grantedPro ? t(.funnel_ref_ok_pro) : t(.funnel_ref_ok), true)
             try? await Task.sleep(nanoseconds: 700_000_000)
             onNext()
-        case .invalid, .ownCode: banner = ("That code isn't valid.", false)
-        case .alreadyUsed: banner = ("You've already used a code.", false)
-        case .error: banner = ("Something went wrong — try again.", false)
+        case .invalid, .ownCode: banner = (t(.funnel_ref_err_invalid), false)
+        case .alreadyUsed: banner = (t(.funnel_ref_err_used), false)
+        case .error: banner = (t(.funnel_ref_err_generic), false)
         }
     }
 }
@@ -1167,14 +1216,14 @@ private struct RatingScreen: View {
             VStack(spacing: 0) {
                 Spacer()
                 VStack(spacing: 16) {
-                    FnlKick(text: "Help us grow").frame(maxWidth: .infinity)
-                    FnlHeadline(parts: [("LOVE ", false), ("PICK1?", true)], center: true)
-                    FnlLead(text: "Rate us on the App Store — it takes 5 seconds and unlocks a reward.")
+                    FnlKick(text: t(.funnel_rating_kicker)).frame(maxWidth: .infinity)
+                    FnlHeadline(text: t(.funnel_rating_headline), center: true)
+                    FnlLead(text: t(.funnel_rating_lead))
                         .multilineTextAlignment(.center).frame(maxWidth: 300)
                     Text("★★★★★").font(.system(size: 40)).foregroundColor(Color(hex: "#ffd84d")).padding(.top, 14)
                     VStack(spacing: 4) {
-                        Text("+3 DAYS").font(.anton(28)).foregroundColor(Fnl.lime)
-                        Text("Bonus Pro access, on us — just for rating.").font(.archivo(13)).foregroundColor(Fnl.ink2)
+                        Text(t(.funnel_rating_bonus_title)).font(.anton(28)).foregroundColor(Fnl.lime)
+                        Text(t(.funnel_rating_bonus_sub)).font(.archivo(13)).foregroundColor(Fnl.ink2)
                     }
                     .padding(18)
                     .frame(maxWidth: .infinity)
@@ -1182,7 +1231,7 @@ private struct RatingScreen: View {
                 }
                 Spacer()
                 VStack(spacing: 10) {
-                    FnlCTA(title: "RATE & CLAIM →") {
+                    FnlCTA(title: t(.funnel_rating_cta)) {
                         RatingsPrompt.maybeRequest(hasPositiveSignal: true)
                         Task {
                             // +3 days comp grant (idempotent, server-side).
@@ -1191,7 +1240,7 @@ private struct RatingScreen: View {
                         }
                         onNext()
                     }
-                    FnlCTA(title: "Maybe later", style: .ghost, action: onNext)
+                    FnlCTA(title: t(.funnel_rating_skip), style: .ghost, action: onNext)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1210,14 +1259,14 @@ private struct TimeToWinScreen: View {
             VStack(spacing: 0) {
                 Spacer()
                 VStack(spacing: 20) {
-                    FnlKick(text: "You're all set", tone: .win).frame(maxWidth: .infinity)
-                    FnlHeadline(parts: [("NOW IT'S\n", false), ("TIME TO\n", false), ("WIN.", true)], accent: Fnl.win, size: 76, center: true)
+                    FnlKick(text: t(.funnel_ttw_kicker), tone: .win).frame(maxWidth: .infinity)
+                    FnlHeadline(text: t(.funnel_ttw_headline), accent: Fnl.win, size: 76, center: true)
                         .multilineTextAlignment(.center)
-                    FnlLead(text: "Your personalized daily pick is ready. One tap away.")
+                    FnlLead(text: t(.funnel_ttw_lead))
                         .multilineTextAlignment(.center).frame(maxWidth: 290)
                 }
                 Spacer()
-                FnlCTA(title: "SEE MY PLAN →", action: onNext)
+                FnlCTA(title: t(.funnel_ttw_cta), action: onNext)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 30).padding(.top, 64).padding(.bottom, 20)
@@ -1238,28 +1287,27 @@ private struct PaywallScreen: View {
     @State private var skipUnlocked = false
     static let skipDelay: Double = 26.0
 
-    private let feats = [
-        "Daily AI pick across 9 sports", "Calibrated confidence + reasoning",
-        "Public ledger, live tracking & ROI", "Best line across 6 sportsbooks",
-    ]
+    private var feats: [String] {
+        [t(.funnel_paywall_feat1), t(.funnel_paywall_feat2), t(.funnel_paywall_feat3), t(.funnel_paywall_feat4)]
+    }
 
     /// Echo the goal the user picked on the Goals screen so the paywall
     /// reads as tailored to them, not generic. Nil if they skipped it.
     private var goalEcho: String? {
         guard UserDefaults.standard.object(forKey: "userGoal") != nil else { return nil }
         switch UserDefaults.standard.integer(forKey: "userGoal") {
-        case 0: return "You want to grow your bankroll steadily — here's the edge that does it."
-        case 1: return "You want to beat the sportsbooks — Pro puts every calibrated pick in your hands."
-        case 2: return "You want to bet smarter and lose less — this is how."
-        case 3: return "You're going for full-time — go Pro and track every call like a pro."
+        case 0: return t(.funnel_paywall_goal1)
+        case 1: return t(.funnel_paywall_goal2)
+        case 2: return t(.funnel_paywall_goal3)
+        case 3: return t(.funnel_paywall_goal4)
         default: return nil
         }
     }
 
     var body: some View {
         FnlScreen {
-            FnlKick(text: "Go Pro").padding(.bottom, 14)
-            FnlHeadline(parts: [("UNLOCK\n", false), ("EVERY ", false), ("PICK.", true)])
+            FnlKick(text: t(.funnel_paywall_kicker)).padding(.bottom, 14)
+            FnlHeadline(text: t(.funnel_paywall_headline))
             if let echo = goalEcho {
                 Text(echo)
                     .font(.archivo(14, weight: .medium)).foregroundColor(Fnl.lime)
@@ -1281,16 +1329,16 @@ private struct PaywallScreen: View {
                     planCard(p)
                 }
                 if subs.products.isEmpty {
-                    Text("Loading plans…").font(.archivo(13)).foregroundColor(Fnl.mute).padding(.vertical, 20)
+                    Text(t(.funnel_paywall_loading)).font(.archivo(13)).foregroundColor(Fnl.mute).padding(.vertical, 20)
                 }
             }
             .padding(.top, 18)
         } bottom: {
             VStack(spacing: 0) {
-                FnlCTA(title: busy ? "…" : (subs.isPro ? "CONTINUE →" : "UNLOCK PICK1 PRO →")) {
+                FnlCTA(title: busy ? "…" : (subs.isPro ? t(.funnel_paywall_cta_continue) : t(.funnel_paywall_cta_unlock))) {
                     Task { await act() }
                 }
-                Text("NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT")
+                Text(t(.funnel_paywall_fineprint))
                     .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 12)
                     .multilineTextAlignment(.center)
                 // App Review 3.1.2 requirements: restore + legal links. The
@@ -1298,15 +1346,15 @@ private struct PaywallScreen: View {
                 // paywall uses — keeps the paywall pressure without hard-gating
                 // the app (the App Store listing promises a free tier).
                 HStack(spacing: 18) {
-                    Button("Restore") { Task { await subs.restorePurchases() } }
-                    Button("Terms") { showTerms = true }
-                    Button("Privacy") { showPrivacy = true }
+                    Button(t(.funnel_paywall_restore)) { Task { await subs.restorePurchases() } }
+                    Button(t(.funnel_paywall_terms)) { showTerms = true }
+                    Button(t(.funnel_paywall_privacy)) { showPrivacy = true }
                     if skipUnlocked && !subs.isPro {
                         Button {
                             Analytics.track("funnel_paywall_skipped")
                             onDone()
                         } label: {
-                            Text("Continue free →").foregroundColor(Fnl.ink2)
+                            Text(t(.funnel_paywall_continue_free)).foregroundColor(Fnl.ink2)
                         }
                         .transition(.opacity)
                     }
@@ -1362,7 +1410,7 @@ private struct PaywallScreen: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(isSel ? Fnl.lime : Fnl.line, lineWidth: isSel ? 2 : 1)))
             .overlay(alignment: .topTrailing) {
                 if isLife {
-                    Text("BEST VALUE").font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
+                    Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
                 }
@@ -1372,19 +1420,19 @@ private struct PaywallScreen: View {
     }
 
     private func planName(_ p: Product) -> String {
-        if p.id.hasSuffix("weekly") { return "WEEKLY" }
-        if p.id.hasSuffix("monthly") { return "MONTHLY" }
-        if p.id == SubscriptionManager.lifetimeProductId { return "LIFETIME" }
+        if p.id.hasSuffix("weekly") { return t(.funnel_paywall_plan_weekly) }
+        if p.id.hasSuffix("monthly") { return t(.funnel_paywall_plan_monthly) }
+        if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_plan_lifetime) }
         return p.displayName.uppercased()
     }
     private func planUnit(_ p: Product) -> String {
-        if p.id.hasSuffix("weekly") { return "/wk" }
-        if p.id.hasSuffix("monthly") { return "/mo" }
+        if p.id.hasSuffix("weekly") { return t(.funnel_paywall_unit_wk) }
+        if p.id.hasSuffix("monthly") { return t(.funnel_paywall_unit_mo) }
         return ""
     }
     private func planSub(_ p: Product) -> String {
-        if p.id == SubscriptionManager.lifetimeProductId { return "One-time · yours forever" }
-        return "Billed \(p.id.hasSuffix("weekly") ? "weekly" : "monthly") · cancel anytime"
+        if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_sub_lifetime) }
+        return p.id.hasSuffix("weekly") ? t(.funnel_paywall_sub_weekly) : t(.funnel_paywall_sub_monthly)
     }
 
     private func act() async {
