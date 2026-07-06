@@ -527,6 +527,19 @@ const PICK_SCHEMA = {
             type: ['number', 'null'],
             description: 'Decimal odds for the PICKED outcome — the CONSENSUS across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle, Caesars), found via web_search; report the MEDIAN when books differ. Convert American to decimal (-150 → 1.67). USE ONLY REAL SPORTSBOOKS — NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, Covers, ATS.io, OddsShark tips, Tapology). If the books you find disagree wildly, you likely have a stale/bad quote — prefer null over a number you are unsure of. Null if no real sportsbook quote. Never derive it from your own probability.',
           },
+          odds_books: {
+            type: ['array', 'null'],
+            description: 'The individual sportsbook quotes behind market_odds — one entry per REAL book you actually found (max 4), decimal odds for the PICKED outcome. Same source rules as market_odds: real sportsbooks only, never tipster sites. Null if none found. This powers the in-app line-shopping table so users can see which book has the best price.',
+            items: {
+              type: 'object',
+              properties: {
+                book: { type: 'string', description: 'Sportsbook name, e.g. "DraftKings"' },
+                odds: { type: 'number', description: 'Decimal odds at that book for the picked outcome' },
+              },
+              required: ['book', 'odds'],
+              additionalProperties: false,
+            },
+          },
           odds_source: {
             type: ['string', 'null'],
             description: 'The real sportsbook(s) the consensus came from, e.g. "DraftKings", "bet365/Pinnacle". Must be an actual sportsbook — never a tipster/media site. Null when market_odds is null.',
@@ -556,7 +569,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_source', 'predicted_score', 'field_odds'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_books', 'odds_source', 'predicted_score', 'field_odds'],
         additionalProperties: false,
       },
     },
@@ -600,7 +613,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       ...header,
       `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
       'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
-      'For each pick, look up the CURRENT CONSENSUS odds for the picked outcome across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle) — report the MEDIAN as decimal odds in market_odds with the book(s) in odds_source. Use ONLY real sportsbooks, NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, etc.); null both if no real sportsbook quote is found.',
+      'For each pick, look up the CURRENT CONSENSUS odds for the picked outcome across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle) — report the MEDIAN as decimal odds in market_odds with the book(s) in odds_source, AND list each individual book quote you found in odds_books (per-book decimal odds — this powers the in-app best-line table). Use ONLY real sportsbooks, NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, etc.); null all odds fields if no real sportsbook quote is found.',
       ...(excludeMatchups.length
         ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
         : []),
@@ -844,6 +857,16 @@ async function savePicks(league, picks) {
     })(p.market_odds),
     odds_source: (typeof p.odds_source === 'string' && p.odds_source.trim())
       ? p.odds_source.trim() : null,
+    // Per-book quotes for the in-app line-shopping table. Same sanity band
+    // as market_odds; capped at 4 books, best price first.
+    odds_books: Array.isArray(p.odds_books) && p.odds_books.length
+      ? p.odds_books
+          .filter((b) => b && typeof b.book === 'string' && typeof b.odds === 'number'
+            && b.odds >= 1.01 && b.odds <= 25)
+          .map((b) => ({ book: b.book.trim(), odds: +b.odds.toFixed(2) }))
+          .sort((a, b) => b.odds - a.odds)
+          .slice(0, 4)
+      : null,
     // "<home>-<away>" only; anything else (prose, ranges) is dropped.
     predicted_score: (typeof p.predicted_score === 'string'
       && /^\d{1,3}-\d{1,3}$/.test(p.predicted_score.trim()))
@@ -1000,10 +1023,110 @@ async function gradePicks() {
   return graded;
 }
 
-// gradePicksViaResearch was removed: it used Claude web_search to grade
-// pending picks lacking a live_scores row. That hourly Claude burst was
-// a runaway cost vector. Grading now happens exclusively from sportsdata.io
-// final scores via gradePicks() — picks without a final score stay pending.
+// ── Research grading (bounded rebuild) ─────────────────────────────
+// The original gradePicksViaResearch ran HOURLY on Opus and was removed as a
+// runaway cost vector. But leagues with no score feed (KBO/NPB/IPL/etc.)
+// left picks pending FOREVER — 195 rows of "pending" in users' history reads
+// as broken or as hiding losses. This rebuild keeps the capability with hard
+// bounds: ONCE per daily run · Haiku (cheapest model) · only picks 1-10 days
+// old with no live_scores row · ≤15 picks per league per day · one API call
+// per league. Picks unresolvable after 14 days are deleted as noise (a pick
+// that can never grade is worse for trust than its absence).
+const RESEARCH_GRADE_MODEL = 'claude-haiku-4-5-20251001';
+
+async function gradeViaResearch() {
+  const { data: pending, error } = await supabase
+    .from('picks')
+    .select('id, game_id, league, home_team, away_team, pick, game_date')
+    .eq('result', 'pending')
+    .lt('game_date', todayISO())
+    .gte('game_date', daysAgoISO(14));
+  if (error || !pending?.length) return;
+
+  // Only picks whose game has no live_scores row (feed-covered leagues are
+  // graded by gradePicks; re-asking the model for those wastes searches).
+  const ids = [...new Set(pending.map((p) => p.game_id).filter(Boolean))];
+  const { data: scored } = await supabase.from('live_scores').select('game_id').in('game_id', ids);
+  const hasScore = new Set((scored || []).map((s) => s.game_id));
+  const stale = pending.filter((p) => p.game_date < daysAgoISO(10) && !hasScore.has(p.game_id));
+  const target = pending.filter((p) => !hasScore.has(p.game_id) && p.game_date >= daysAgoISO(10));
+
+  // Delete the unresolvable tail so history stops accumulating zombies.
+  if (stale.length) {
+    await supabase.from('picks').delete().in('id', stale.map((p) => p.id));
+    log(`Research-grade: deleted ${stale.length} unresolvable picks (>10d, no source).`);
+  }
+  if (!target.length) return;
+
+  const byLeague = {};
+  for (const p of target) (byLeague[p.league] ||= []).push(p);
+
+  const RESULT_SCHEMA = {
+    type: 'object',
+    properties: {
+      results: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            game_id: { type: 'string' },
+            status: { type: 'string', enum: ['final', 'not_found', 'postponed', 'canceled'] },
+            home_score: { type: ['integer', 'null'] },
+            away_score: { type: ['integer', 'null'] },
+          },
+          required: ['game_id', 'status', 'home_score', 'away_score'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['results'],
+    additionalProperties: false,
+  };
+
+  for (const [league, picksToGrade] of Object.entries(byLeague)) {
+    const batch = picksToGrade.slice(0, 15);
+    if (!checkWebSearchBudget(4)) { log(`💸 research-grade ${league}: budget reached.`); break; }
+    const listing = batch.map((p) =>
+      `- game_id=${p.game_id} | ${p.away_team} @ ${p.home_team} | played ${p.game_date}`).join('\n');
+    let final;
+    try {
+      const stream = anthropic.messages.stream({
+        model: RESEARCH_GRADE_MODEL,
+        max_tokens: 8000,
+        output_config: { format: { type: 'json_schema', schema: RESULT_SCHEMA } },
+        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
+        messages: [{
+          role: 'user',
+          content: `Find the FINAL scores of these completed ${league} games via web_search. ` +
+            `Report ONLY verified final scores — use status "not_found" when you cannot confirm one. ` +
+            `Cricket: report runs as scores; the winner is whoever won the match, so put the winner's runs higher only if that reflects the actual result — otherwise use home_score=1/away_score=0 style marker for the match winner.\n\n${listing}`,
+        }],
+      });
+      final = await stream.finalMessage();
+    } catch (e) { err(`research-grade ${league} failed:`, e.message); continue; }
+    let parsed;
+    try {
+      parsed = JSON.parse(final.content.filter((b) => b.type === 'text').map((b) => b.text).join(''));
+    } catch { err(`research-grade ${league}: unparseable response`); continue; }
+
+    let graded = 0;
+    for (const r of parsed.results || []) {
+      if (r.status !== 'final' || r.home_score == null || r.away_score == null) continue;
+      const p = batch.find((x) => x.game_id === r.game_id);
+      if (!p || r.home_score === r.away_score) continue;   // no draws in these leagues' picks
+      const homeWon = r.home_score > r.away_score;
+      const pickedHome = teamsMatch(p.pick, p.home_team);
+      const pickedAway = teamsMatch(p.pick, p.away_team);
+      if (!pickedHome && !pickedAway) continue;
+      const won = pickedHome === homeWon;
+      const { error: e3 } = await supabase.from('picks')
+        .update({ result: won ? 'win' : 'loss', home_score: r.home_score, away_score: r.away_score })
+        .eq('id', p.id);
+      if (!e3) { graded++; log(`${won ? '✅' : '❌'} research-grade ${league}: ${p.pick} (${r.home_score}-${r.away_score})`); }
+    }
+    log(`Research-grade ${league}: ${graded}/${batch.length} graded.`);
+  }
+}
 
 // ════════════════════════════════════════════════════════════════
 // PERFORMANCE SNAPSHOTS
@@ -1049,6 +1172,9 @@ async function runPipeline() {
     // sees the freshest performance stats. AI-free — uses whatever
     // sportsdata.io live polling has dropped into live_scores overnight.
     await gradePicks();
+    // Then the bounded research grader for feed-less leagues (KBO/NPB/IPL) —
+    // once per daily run only, never in the hourly ticks.
+    await gradeViaResearch().catch((e) => err('gradeViaResearch failed:', e.message));
 
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
