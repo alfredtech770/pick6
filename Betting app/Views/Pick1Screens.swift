@@ -240,6 +240,8 @@ struct MatchDetailView: View {
     enum Tab: String, CaseIterable { case summary, ourCall }
     @State private var tab: Tab = .summary
     @State private var showToast: Bool = false
+    @StateObject private var betTracker = BetTracker.shared
+    @State private var showTrackSheet = false
 
     /// Persistent favorites (drives the Wins/Picks tab list). Replaces
     /// the prior local `@State starred` flag — that flag was per-sheet
@@ -1694,6 +1696,39 @@ struct MatchDetailView: View {
                 }
             }
 
+            // 3b. Line shopping — where to get the best price. Only when the
+            // pipeline captured multiple real book quotes.
+            if let books = pick.oddsBooks, books.count >= 2 {
+                Text("BEST LINE · \(books.count) BOOKS")
+                    .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .padding(.top, 16).padding(.bottom, 4)
+                ForEach(Array(books.enumerated()), id: \.offset) { i, b in
+                    HStack {
+                        if i == 0 {
+                            Text("★").font(.system(size: 11)).foregroundColor(sportAccent)
+                        }
+                        Text(b.book.uppercased())
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(0.6)
+                            .foregroundColor(i == 0 ? Color(hex: "#F5F3EE") : Color(hex: "#9A9B9F"))
+                        Spacer()
+                        Text(String(format: "%.2f", b.odds))
+                            .font(.archivo(13, weight: .bold))
+                            .foregroundColor(i == 0 ? sportAccent : Color(hex: "#B9B7B0"))
+                        if i == 0 {
+                            Text("BEST").font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
+                                .foregroundColor(Color(hex: "#0A0B0D"))
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Capsule().fill(sportAccent))
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+                Text("You decide where to play — we don't take bets.")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
+                    .foregroundColor(Color(hex: "#4A4B50")).padding(.top, 2)
+            }
+
             // 4. Potential return
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -1708,6 +1743,33 @@ struct MatchDetailView: View {
             .padding(.top, 16)
             .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1).padding(.top, 8) }
 
+            // 5. Track this bet — turns our call into the user's own ledger.
+            Button {
+                if betTracker.isTracked(pick.id) {
+                    Task { await betTracker.untrack(pickId: pick.id) }
+                } else {
+                    showTrackSheet = true
+                }
+            } label: {
+                let tracked = betTracker.isTracked(pick.id)
+                HStack(spacing: 8) {
+                    Image(systemName: tracked ? "checkmark.circle.fill" : "plus.circle")
+                        .font(.system(size: 15, weight: .bold))
+                    Text(tracked ? "TRACKING THIS BET" : "TRACK THIS BET")
+                        .font(.archivoNarrow(12, weight: .bold)).tracking(1.4)
+                }
+                .foregroundColor(tracked ? sportAccent : Color(hex: "#0A0B0D"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(tracked ? Color(hex: "#16181D") : sportAccent)
+                        .overlay(RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(tracked ? sportAccent.opacity(0.5) : .clear, lineWidth: 1))
+                )
+            }
+            .padding(.top, 16)
+
             Text("Our prediction — not a guarantee, and not financial advice.")
                 .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
                 .foregroundColor(Color(hex: "#4A4B50"))
@@ -1716,6 +1778,13 @@ struct MatchDetailView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
+        .sheet(isPresented: $showTrackSheet) {
+            TrackBetSheet(pick: pick, accent: sportAccent) { stake in
+                Task { await betTracker.track(pick: pick, stake: stake) }
+            }
+            .presentationDetents([.height(360)])
+        }
+        .task { if !betTracker.loaded { await betTracker.load() } }
     }
 
     /// The value verdict pill: VALUE when our probability beats the market's
@@ -3549,6 +3618,9 @@ struct ProfileView: View {
                 profileUpgradeCard
             }
 
+            // ── MY BETS (personal P&L) ─────────────────────────────
+            MyBetsCard(picks: vm.picks)
+
             // ── ACCOUNT / PREFS ────────────────────────────────────
             VStack(alignment: .leading, spacing: 10) {
                 HubSectionHead(title: loc.t(.settings_account_section),
@@ -4219,6 +4291,12 @@ struct PredictionHistoryView: View {
             } else {
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 8) {
+                        // Proof-of-honesty: stated confidence vs actual hit
+                        // rate. Only on the ALL view so it isn't repeated.
+                        if filter == .all {
+                            CalibrationCard()
+                                .padding(.bottom, 4)
+                        }
                         ForEach(visiblePicks) { p in
                             historyRow(pick: p)
                         }

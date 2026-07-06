@@ -37,6 +37,9 @@ struct Pick: Identifiable, Codable {
     let marketOdds: Double?
     /// Where marketOdds came from ("Polymarket", "DraftKings", …).
     let oddsSource: String?
+    /// Per-sportsbook quotes for the picked outcome (best price first) —
+    /// powers the line-shopping table. Nil on older rows.
+    var oddsBooks: [OddsBook]? = nil
     /// The AI's most-likely final score, "<home>-<away>" (home-team
     /// perspective), e.g. "2-1". Nil for fights/races or older rows.
     let predictedScore: String?
@@ -74,6 +77,7 @@ struct Pick: Identifiable, Codable {
         case awayScore = "away_score"
         case marketOdds = "market_odds"
         case oddsSource = "odds_source"
+        case oddsBooks = "odds_books"
         case predictedScore = "predicted_score"
         case homeLogo = "home_logo"
         case awayLogo = "away_logo"
@@ -312,6 +316,13 @@ struct BettingProp: Codable, Identifiable, Hashable {
     var id: String { label + value }
 }
 
+/// One sportsbook's quote for the picked outcome — the line-shopping table.
+struct OddsBook: Codable, Identifiable, Hashable {
+    let book: String
+    let odds: Double
+    var id: String { book }
+}
+
 // MARK: - Tale of the Tape (combat)
 
 /// ESPN-sourced fight comparison data the pipeline attaches to combat
@@ -400,6 +411,7 @@ extension Pick {
         // migration (or junk values) just fall back to implied odds.
         marketOdds = (try? c.decodeIfPresent(Double.self, forKey: .marketOdds)) ?? nil
         oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
+        oddsBooks = (try? c.decodeIfPresent([OddsBook].self, forKey: .oddsBooks)) ?? nil
         predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
         homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
