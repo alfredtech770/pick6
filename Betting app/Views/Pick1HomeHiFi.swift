@@ -2738,6 +2738,10 @@ struct LiveNavItem: View {
 struct ProUnlockCard: View {
     let lockedCount: Int
     let onUnlock: () -> Void
+    /// Trial copy is eligibility-gated: Apple grants one intro offer per
+    /// Apple ID per group, so a returning subscriber must see straight
+    /// upgrade copy — never a "free trial" Apple won't honor at checkout.
+    @EnvironmentObject private var subs: SubscriptionManager
 
     var body: some View {
         Button(action: onUnlock) {
@@ -2756,7 +2760,7 @@ struct ProUnlockCard: View {
                     .foregroundColor(Color(hex: "#0A0B0D"))
 
                 HStack(spacing: 6) {
-                    Text("3-day free trial")
+                    Text(subs.introOfferEligible ? "3-day free trial" : "Go Pro from $14.99/wk")
                         .font(.archivo(12, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
                     Image(systemName: "arrow.right")

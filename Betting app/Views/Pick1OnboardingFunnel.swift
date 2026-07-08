@@ -9,7 +9,8 @@
 //        4× hard-truth (red) → 3× the-fix (green) → Social proof → Comparison
 //        → Goals → Referral → Rating → Time-to-win → Paywall → Success.
 //
-//  Pricing: Weekly / Monthly / Lifetime ($299). No free trial by default —
+//  Pricing: Weekly / Monthly / Lifetime ($299). Weekly carries a 3-day
+//  StoreKit free trial (intro offer, eligibility-gated per Apple ID); also
 //  a referral code grants a free week, rating grants +3 days (both server-side
 //  comp grants, not StoreKit intro offers).
 //
@@ -1359,10 +1360,11 @@ private struct PaywallScreen: View {
             .padding(.top, 18)
         } bottom: {
             VStack(spacing: 0) {
-                FnlCTA(title: busy ? "…" : (subs.isPro ? t(.funnel_paywall_cta_continue) : t(.funnel_paywall_cta_unlock))) {
+                FnlCTA(title: busy ? "…" : (subs.isPro ? t(.funnel_paywall_cta_continue)
+                    : (selectedTrialAvailable ? t(.funnel_paywall_cta_trial) : t(.funnel_paywall_cta_unlock)))) {
                     Task { await act() }
                 }
-                Text(t(.funnel_paywall_fineprint))
+                Text(t(subs.products.contains(where: trialAvailable) ? .funnel_paywall_fineprint_trial : .funnel_paywall_fineprint))
                     .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 12)
                     .multilineTextAlignment(.center)
                 // App Review 3.1.2 requirements: restore + legal links. The
@@ -1414,6 +1416,16 @@ private struct PaywallScreen: View {
             ?? subs.products.first!.id
     }
 
+    /// True when this product carries a StoreKit free-trial intro offer AND
+    /// this Apple ID hasn't burned its one-per-group trial yet. Gates every
+    /// piece of trial copy so we never advertise a trial Apple won't honor.
+    private func trialAvailable(_ p: Product) -> Bool {
+        p.subscription?.introductoryOffer?.paymentMode == .freeTrial && subs.introOfferEligible
+    }
+    private var selectedTrialAvailable: Bool {
+        subs.products.first(where: { $0.id == selected }).map(trialAvailable) ?? false
+    }
+
     @ViewBuilder private func planCard(_ p: Product) -> some View {
         let isSel = selected == p.id
         let isLife = p.id == SubscriptionManager.lifetimeProductId
@@ -1437,6 +1449,10 @@ private struct PaywallScreen: View {
                     Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
+                } else if trialAvailable(p) {
+                    Text(t(.funnel_paywall_trial_badge)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(Fnl.win)).offset(x: -12, y: -8)
                 }
             }
         }

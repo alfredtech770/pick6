@@ -411,7 +411,10 @@ enum L10nKey: String, CaseIterable {
     case funnel_paywall_loading           // "Loading plans…"
     case funnel_paywall_cta_continue      // "CONTINUE →"
     case funnel_paywall_cta_unlock        // "UNLOCK PICK1 PRO →"
-    case funnel_paywall_fineprint         // "NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT"
+    case funnel_paywall_fineprint         // "NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT" (shown when trial not available/eligible)
+    case funnel_paywall_fineprint_trial   // "3-DAY FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT"
+    case funnel_paywall_trial_badge       // "3 DAYS FREE" (weekly plan card badge)
+    case funnel_paywall_cta_trial         // "START 3-DAY FREE TRIAL →"
     case funnel_paywall_restore           // "Restore"
     case funnel_paywall_terms             // "Terms"
     case funnel_paywall_privacy           // "Privacy"

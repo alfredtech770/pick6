@@ -3349,6 +3349,10 @@ struct ProfileView: View {
     /// language as soon as they pick one — no app restart.
     @Environment(LocalizationManager.self) private var loc
 
+    /// Trial-aware upgrade copy (chip shows "3 DAYS FREE" only while this
+    /// Apple ID is still intro-offer eligible).
+    @EnvironmentObject private var subs: SubscriptionManager
+
     @State private var showEditProfile: Bool = false
     @State private var showDeleteAccountConfirm: Bool = false
     @Environment(\.openURL) private var openURL
@@ -3732,8 +3736,8 @@ struct ProfileView: View {
     private var profileUpgradeCard: some View {
         let ink = Color(hex: "#0A0B0D")
         // Benefit-led conversion card: concrete value checklist + price anchor
-        // instead of a bare "UPGRADE" ask. NOTE: no trial copy — the 3-day
-        // trial is gone (trial now only via referral/creator codes).
+        // instead of a bare "UPGRADE" ask. Weekly carries a 3-day StoreKit
+        // intro-offer trial again (2026-07); trial copy is eligibility-gated.
         return Button(action: onShowPaywall) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 14) {
@@ -3782,9 +3786,10 @@ struct ProfileView: View {
                     }
                 }
 
-                // Price anchor + friction-killer.
+                // Price anchor + friction-killer. Leads with the trial when
+                // this Apple ID is still eligible for it.
                 HStack(spacing: 8) {
-                    Text("FROM $14.99/WK")
+                    Text(subs.introOfferEligible ? "3 DAYS FREE · THEN $14.99/WK" : "FROM $14.99/WK")
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.6)
                         .foregroundColor(Color(hex: "#D4FF3A"))
