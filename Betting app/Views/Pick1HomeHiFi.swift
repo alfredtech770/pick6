@@ -427,7 +427,7 @@ struct HomeHiFiContent: View {
                         // Latest wins rail (proof) → locked full slate
                         // (tease) → gold Premium upsell (close). The hero
                         // above is the one free pick of the day.
-                        LatestWinsRail(vm: vm)
+                        LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
                             .padding(.top, 12)
                         FreeSlateSection(vm: vm,
                                          topPickId: topPick?.id,
@@ -1624,6 +1624,8 @@ struct SparklineView: View {
 /// sell. Header carries the last-30-days record ("AI 24-6 L30").
 struct LatestWinsRail: View {
     @ObservedObject var vm: PicksViewModel
+    /// Tap (header or any card) → the full graded-results ledger.
+    var onSeeAll: (() -> Void)? = nil
     private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
 
     /// Settled picks from the PAST 3 DAYS in a deliberate ~80/20 win-loss
@@ -1669,13 +1671,31 @@ struct LatestWinsRail: View {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                Text("LATEST WINS")
-                    .font(.anton(22)).foregroundColor(.white)
-                    .padding(.horizontal, 4)
+                HStack(alignment: .firstTextBaseline) {
+                    Text("LATEST WINS")
+                        .font(.anton(22)).foregroundColor(.white)
+                    Spacer()
+                    if onSeeAll != nil {
+                        Text("SEE ALL →")
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
+                            .foregroundColor(win)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .onTapGesture { Haptics.tap(); onSeeAll?() }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(results) { p in WinReceiptCard(pick: p) }
+                        ForEach(results) { p in
+                            Button {
+                                Haptics.tap()
+                                onSeeAll?()
+                            } label: {
+                                WinReceiptCard(pick: p).pressableScale(0.98)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.horizontal, 4)
                 }

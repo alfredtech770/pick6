@@ -237,8 +237,8 @@ struct MatchDetailView: View {
     // and odds. The old LINEUPS / H2H tabs were hardcoded placeholder
     // rosters and fake past-game results — removed rather than ship
     // fabricated content in a sports app.
-    enum Tab: String, CaseIterable { case summary, ourCall }
-    @State private var tab: Tab = .summary
+    enum Tab: String, CaseIterable { case ourCall, summary, stats }
+    @State private var tab: Tab = .ourCall
     @State private var showToast: Bool = false
     @StateObject private var betTracker = BetTracker.shared
     @State private var showTrackSheet = false
@@ -252,8 +252,16 @@ struct MatchDetailView: View {
 
     private func tabLabel(_ t: Tab) -> String {
         switch t {
-        case .summary: return "AI ANALYSIS"
         case .ourCall: return "OUR CALL"
+        case .summary: return "AI ANALYSIS"
+        case .stats:
+            // Sport-adaptive stats label.
+            switch pick.sport {
+            case "combat": return "FIGHTERS"
+            case "f1", "golf": return "FIELD"
+            case "tennis": return "PLAYERS"
+            default: return "TEAM STATS"
+            }
         }
     }
 
@@ -308,22 +316,29 @@ struct MatchDetailView: View {
                     tabsRow
                     Group {
                         switch tab {
+                        case .ourCall:
+                            ourCallPanel
                         case .summary:
                             VStack(spacing: 14) {
                                 summaryPanel
                                 projectionPanel
+                            }
+                        case .stats:
+                            // Sport-adaptive stats: race podium (F1/golf),
+                            // tale of the tape (MMA), form guide (soccer),
+                            // grounded matchup facts (everything else).
+                            VStack(spacing: 14) {
                                 if isRaceEvent, let drivers = pick.fieldOdds, !drivers.isEmpty {
                                     racePodiumPanel(drivers)
                                 } else if pick.sport == "combat", pick.taleOfTape != nil {
                                     taleOfTapePanel
                                 } else if pick.sport == "soccer", pick.soccerComparison != nil {
                                     formGuidePanel
+                                    matchupPanel
                                 } else {
                                     matchupPanel
                                 }
                             }
-                        case .ourCall:
-                            ourCallPanel
                         }
                     }
                     .padding(.horizontal, 16)
