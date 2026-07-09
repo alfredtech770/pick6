@@ -412,27 +412,24 @@ struct MatchDetailView: View {
                     Haptics.selection()
                 }
             } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(starred ? Color(hex: "#D4FF3A").opacity(0.08)
-                                       : Color(hex: "#101114"))
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(starred ? Color(hex: "#D4FF3A").opacity(0.30)
-                                         : Color(hex: "#22252B"),
-                                lineWidth: 1)
+                // Labeled capsule — same "TRACK YOUR PICK" affordance as the
+                // free tease detail, so the action reads identically on
+                // every detail page (star fills + lime when tracking).
+                HStack(spacing: 6) {
                     Image(systemName: starred ? "star.fill" : "star")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(starred ? Color(hex: "#D4FF3A")
-                                                  : Color(hex: "#F5F3EE"))
-                        // Tiny scale pulse when starring so the
-                        // glyph swap doesn't look like a static swap.
+                        .font(.system(size: 13, weight: .bold))
                         .scaleEffect(starred ? 1.0 : 0.92)
                         .animation(Pick1Springs.bouncy, value: starred)
+                    Text(starred ? "TRACKING" : "TRACK YOUR PICK")
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                 }
-                .frame(width: 38, height: 38)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .pressableScale(0.92)
+                .foregroundColor(starred ? Color(hex: "#0A0B0D") : Color(hex: "#D4FF3A"))
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .background(Capsule().fill(starred ? Color(hex: "#D4FF3A") : Color(hex: "#101114"))
+                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(starred ? 0 : 0.5), lineWidth: 1)))
+                .contentShape(Capsule())
+                .pressableScale(0.95)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(starred ? "Remove from favorites" : "Add to favorites")
