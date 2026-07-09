@@ -1279,6 +1279,7 @@ async function runPipeline() {
     await gradeViaResearch().catch((e) => err('gradeViaResearch failed:', e.message));
 
     for (const [league, cfg] of Object.entries(LEAGUES)) {
+      try {
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
 
       // GROUNDED COMBAT PATH — facts come from ESPN, not the model's memory.
@@ -1397,6 +1398,11 @@ async function runPipeline() {
         catch (e) { log(`   golf grounding failed: ${e.message}`); }
       }
       await savePicks(league, picks);
+      } catch (e) {
+        // One league's failure (API overload, bad feed) must never kill the
+        // rest of the run — the 7/9 crash died on UFC and never reached WC.
+        err(`${league} failed — continuing with remaining leagues:`, e.message);
+      }
     }
 
     // Second grade pass: catches anything sportsdata.io flipped to Final

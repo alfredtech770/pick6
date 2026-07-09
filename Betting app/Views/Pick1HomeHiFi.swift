@@ -2142,9 +2142,13 @@ struct SportDropdown: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
+            // Every row reads as a real button — filled surface + border on
+            // all lines, lime treatment on the active one.
             .background(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(active ? lime.opacity(0.10) : .clear)
+                    .fill(active ? lime.opacity(0.12) : Color(hex: "#16181D"))
+                    .overlay(RoundedRectangle(cornerRadius: 13)
+                        .stroke(active ? lime.opacity(0.55) : Color.white.opacity(0.08), lineWidth: 1))
             )
         }
         .buttonStyle(.plain)
