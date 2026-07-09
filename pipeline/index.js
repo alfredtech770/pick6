@@ -136,6 +136,11 @@ const supabase = createClient(
 function todayISO() {
   return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
 }
+function tomorrowISO() {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toLocaleDateString('en-CA', { timeZone: TZ });
+}
 function daysAgoISO(n) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - n);
@@ -166,11 +171,18 @@ async function sdFetch(path) {
   }
 }
 
-const fetchNBA = () => sdFetch(`nba/scores/json/GamesByDate/${todayISO()}`);
-const fetchNHL = () => sdFetch(`nhl/scores/json/GamesByDate/${todayISO()}`);
-const fetchNFL = () => sdFetch(`nfl/scores/json/GamesByDate/${todayISO()}`);
-const fetchMLB = () => sdFetch(`mlb/scores/json/GamesByDate/${todayISO()}`);
-const fetchEPL = () => sdFetch(`soccer/scores/json/GamesByDate/EPL/${todayISO()}`);
+// 48-HOUR SLATE: each team-league fetch covers today AND tomorrow so the
+// app's feed always has the next ~48h of games (an evening user sees
+// tonight's board plus tomorrow's slate, not a dead end-of-day screen).
+const sdFetch2Days = async (pathFor) => {
+  const [a, b] = await Promise.all([sdFetch(pathFor(todayISO())), sdFetch(pathFor(tomorrowISO()))]);
+  return [...a, ...b];
+};
+const fetchNBA = () => sdFetch2Days((d) => `nba/scores/json/GamesByDate/${d}`);
+const fetchNHL = () => sdFetch2Days((d) => `nhl/scores/json/GamesByDate/${d}`);
+const fetchNFL = () => sdFetch2Days((d) => `nfl/scores/json/GamesByDate/${d}`);
+const fetchMLB = () => sdFetch2Days((d) => `mlb/scores/json/GamesByDate/${d}`);
+const fetchEPL = () => sdFetch2Days((d) => `soccer/scores/json/GamesByDate/EPL/${d}`);
 
 // MMA: sportsdata.io exposes fights by date. Each row is one bout.
 const fetchUFC = () => sdFetch(`mma/scores/json/FightsByDate/${todayISO()}`);
@@ -484,7 +496,7 @@ STYLE — write like a professional analyst's desk note (The Athletic / Bloomber
 - When the edge is thin, say so plainly ("thin edge", "priced about right"). The probability carries the conviction — adjectives don't.
 - Matchup facts: 3–5 short {label, value} pairs of REAL, current supporting data (recent form, head-to-head, key injury, a decisive stat) verified via web_search. These power the in-app MATCHUP card, so they must be factual and specific — NEVER invented. Omit any fact you can't confirm rather than guessing; tailor labels to the sport.
 
-For BASEBALL (MLB): the edge lives in the starting-pitcher matchup — weigh the probable starters (provided in the feed) above season records. Yesterday's result means almost nothing across a 162-game season. NEVER pick an underdog below 65% probability; on a 15-game slate return only your 1–3 strongest calls, not filler at 55-57%.
+For BASEBALL (MLB): the edge lives in the starting-pitcher matchup — weigh the probable starters (provided in the feed) above season records. Yesterday's result means almost nothing across a 162-game season. COVER THE SLATE: return a pick for every game where you can name a real edge (typically most games); NEVER pick an underdog below 65% probability, and skip only true coin flips.
 For SOCCER (EPL): if every realistic outcome is a draw, you may skip — but on most matchdays at least one fixture has a side worth backing.
 For COMBAT (UFC): treat each fight as independent. The main card almost always has at least one decisive matchup.
 For F1: home_team is the race name, away_team is "Field"; "pick" is the predicted winning driver's full name (NOT one of home_team/away_team — for F1 only, return the driver's name as the pick). CALIBRATION: "probability" is the realistic chance this driver WINS the race — even a dominant championship leader rarely exceeds ~35%. It MUST match the picked driver's field_odds win %, and for field events it may fall well below the usual 55% floor (the floor does NOT apply to F1/golf).
@@ -608,7 +620,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       league === 'WC' ? `today's and tomorrow's ${sportPlural}`
       : league === 'UFC' ? 'the next upcoming UFC event within the next 14 days (today included) — cover its main-card fights'
       : league === 'F1' ? 'the next upcoming Grand Prix within the next 21 days (today included)'
-      : `today's ${sportPlural}`;
+      : `today's and tomorrow's ${sportPlural} (the next 48 hours, US Eastern Time)`;
     return [
       ...header,
       `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
@@ -623,7 +635,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
   }
   return [
     ...header,
-    `Today's ${cfg.promptMode === 'race' ? 'upcoming race(s)' : 'scheduled events'} for ${league}:`,
+    `${cfg.promptMode === 'race' ? "Today's upcoming race(s)" : 'Scheduled events for the next 48 hours (today + tomorrow, US Eastern Time)'} for ${league}:`,
     JSON.stringify(games, null, 2),
     '',
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
@@ -783,23 +795,18 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     }
   }
 
-  // MLB DISCIPLINE — measured on 194 graded picks: sub-60% MLB picks hit
-  // 45.7% and underdog picks (market_odds ≥ 1.9) hit 22%. Publishing those
-  // loses users money. Keep only ≥60% non-dog picks; if that empties an
-  // active slate, keep the single strongest pick ≥58 so MLB never goes
-  // silent (free tier shows one pick per sport).
+  // MLB DISCIPLINE (v2, 2026-07) — coverage over curation, guarded by the
+  // market-prior blend above. The original gate (≥60% + max 3) came from
+  // 194 pre-blend picks where sub-60s hit 45.7% and dogs hit 22%; the
+  // blend now anchors every number to the market, so the remaining
+  // house rule is just NO UNDERDOGS (odds ≥ 1.9 hit 22% — never publish).
+  // Everything else the blend passed (≥55, market-anchored) ships, so the
+  // app carries the full slate instead of 1-3 games.
   let kept = picks;
   if (league === 'MLB') {
-    const strong = picks.filter((p) =>
-      p.probability >= 60 && !(typeof p.market_odds === 'number' && p.market_odds >= 1.9));
-    if (strong.length) {
-      kept = strong;
-    } else {
-      const best = [...picks].sort((a, b) => b.probability - a.probability)[0];
-      kept = best && best.probability >= 58 ? [best] : [];
-    }
+    kept = picks.filter((p) => !(typeof p.market_odds === 'number' && p.market_odds >= 1.9));
     if (kept.length !== picks.length) {
-      log(`MLB discipline: ${picks.length} → ${kept.length} picks (dropped low-conviction/dogs).`);
+      log(`MLB discipline: ${picks.length} → ${kept.length} picks (dropped dogs).`);
     }
   }
 

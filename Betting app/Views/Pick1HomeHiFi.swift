@@ -343,16 +343,9 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                // Summer Football banner — sits between the stats row
-                // and the sport filter, exactly per the design
-                // (`Pick6 Home HiFi.html` → .wc-banner). Tapping opens
-                // the full Summer Football hub.
-                SummerFootballBanner(onTap: { showSummerFootball = true })
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
-                // (Sport chip carousel removed 2026-07 — filtering moved to
-                // the SportDropdown overlaid on the hero's top-right.)
+                // (Summer Football banner + sport chip carousel removed
+                // 2026-07 — WC games live in the normal feed; filtering
+                // moved to the SportDropdown on the hero's top-right.)
 
                 // VALUE BOARD — today's biggest model-vs-market edges, sits
                 // directly under the category chips. Hidden when no real
@@ -453,32 +446,9 @@ struct HomeHiFiContent: View {
                         }
                     }
 
-                    // Upcoming events — future-dated picks (next F1 Grand
-                    // Prix, next UFC card, tournament fixtures), each card
-                    // carrying its real event date. Daily picks above stay
-                    // the headline; this section previews what's next.
-                    let upcoming = vm.filteredUpcomingEventPicks
-                    if !upcoming.isEmpty {
-                        SectionHeader(title: "UPCOMING EVENTS", cta: nil, onTapCTA: nil)
-                            .padding(.top, 18)
-                            .padding(.bottom, 2)
-                        ForEach(upcoming.prefix(6), id: \.id) { pick in
-                            Button {
-                                Haptics.tap()
-                                // Free users can't open a future prediction —
-                                // the card is locked and tapping prompts Pro.
-                                if isPro { onTapPick(pick) } else { onUnlock() }
-                            } label: {
-                                GameCard(pick: pick,
-                                         isLive: false,
-                                         score: liveScore(for: pick),
-                                         isRefundGuarantee: isPro && pick.isRefundEligible,
-                                         concealPick: !isPro)
-                                    .pressableScale(0.985)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                    // (UPCOMING EVENTS section removed 2026-07 — the feed
+                    // now spans the next 48h directly, so near-term games
+                    // appear in the main slate instead of a separate rail.)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 120)
@@ -1735,8 +1705,17 @@ struct FreeSlateSection: View {
                 }
                 .padding(.horizontal, 4)
 
-                ForEach(slate) { p in
+                // Featured + 3 teasers — enough to show the board is deep
+                // without giving the whole slate's matchups away.
+                ForEach(slate.prefix(3)) { p in
                     LockedSlateCard(pick: p, onUnlock: onUnlock)
+                }
+                if slate.count > 3 {
+                    Text("+ \(slate.count - 3) MORE PICKS INSIDE")
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
+                        .foregroundColor(Color(hex: "#E8C64A").opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 2)
                 }
             }
             .padding(.top, 8)

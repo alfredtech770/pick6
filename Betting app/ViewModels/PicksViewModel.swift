@@ -113,11 +113,11 @@ class PicksViewModel: ObservableObject {
     // "UPCOMING" feed section — kept out of effectiveTodayPicks so the
     // today slate, free-tier gating, and Lock of the Day stay daily.
 
-    /// Pending picks dated after today (ET), soonest event first.
+    /// Pending picks dated beyond the 48h feed window (ET), soonest first.
     var upcomingEventPicks: [Pick] {
-        let today = Self.dateString(daysAgo: 0)
+        let tomorrow = Self.dateString(daysAgo: -1)
         return historyPicks
-            .filter { $0.isPending && $0.gameDate > today }
+            .filter { $0.isPending && $0.gameDate > tomorrow }
             .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
     }
 
@@ -486,7 +486,11 @@ class PicksViewModel: ObservableObject {
     func loadAll() async {
         isLoading = true
         errorMessage = nil
-        async let today    = fetchPicks(forDate: Self.dateString(daysAgo: 0))
+        // 48-hour slate: today + tomorrow (ET dates). Evening users see
+        // tonight's board AND tomorrow's early games instead of a thin
+        // end-of-day feed.
+        async let today    = fetchPicks(from: Self.dateString(daysAgo: 0),
+                                        to: Self.dateString(daysAgo: -1))
         async let yest     = fetchPicks(forDate: Self.dateString(daysAgo: 1))
         async let history  = fetchPicks(sinceDaysAgo: 30)
         async let scores   = fetchLiveScoresInner()
@@ -504,6 +508,23 @@ class PicksViewModel: ObservableObject {
         // card ever flashes a placeholder.
         TeamLogoStore.register(picks: t + y + h)
         LogoPrefetch.warm(picks: t + y + h)
+    }
+
+    private func fetchPicks(from startDate: String, to endDate: String) async -> [Pick] {
+        do {
+            let resp: [Pick] = try await supabase
+                .from("picks")
+                .select()
+                .gte("game_date", value: startDate)
+                .lte("game_date", value: endDate)
+                .order("probability", ascending: false)
+                .execute()
+                .value
+            return resp
+        } catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
     }
 
     private func fetchPicks(forDate dateString: String) async -> [Pick] {
@@ -555,9 +576,10 @@ class PicksViewModel: ObservableObject {
         }
     }
 
-    // Convenience for older callers.
+    // Convenience for older callers. Same 48h window as loadAll.
     func fetchTodayPicks() async {
-        let resp = await fetchPicks(forDate: Self.dateString(daysAgo: 0))
+        let resp = await fetchPicks(from: Self.dateString(daysAgo: 0),
+                                    to: Self.dateString(daysAgo: -1))
         self.todayPicks = resp
     }
 
