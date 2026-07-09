@@ -1194,7 +1194,9 @@ async function gradeViaResearch() {
         model: RESEARCH_GRADE_MODEL,
         max_tokens: 8000,
         output_config: { format: { type: 'json_schema', schema: RESULT_SCHEMA } },
-        tools: [{ type: 'web_search_20260209', name: 'web_search' }],
+        // allowed_callers: Haiku rejects tools that default to programmatic
+        // calling — pin direct invocation (400 otherwise).
+        tools: [{ type: 'web_search_20260209', name: 'web_search', allowed_callers: ['direct'] }],
         messages: [{
           role: 'user',
           content: `Find the FINAL scores of these completed ${league} games via web_search. ` +

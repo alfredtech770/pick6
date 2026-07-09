@@ -91,46 +91,13 @@ struct FreeMatchDetailView: View {
         .padding(.top, 14)
     }
 
-    // ── Matchup header card ──────────────────────────────────────────
-    private var matchupCard: some View {
-        VStack(spacing: 14) {
-            Text("\(pick.league.uppercased()) · \(dayLabel)")
-                .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
-                .foregroundColor(Color(hex: "#8FA7E8"))
-            HStack(alignment: .top, spacing: 26) {
-                teamColumn(pick.awayTeam)
-                Text("VS")
-                    .font(.anton(20)).foregroundColor(Color.white.opacity(0.35))
-                    .padding(.top, 26)
-                teamColumn(pick.homeTeam)
-            }
-            Text(pick.startTimeDisplay.map { "\(dayLabel) · \($0) ET" } ?? dayLabel)
-                .font(.mono(11, weight: .bold)).tracking(1.2)
-                .foregroundColor(Color(hex: "#9AA4B8"))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: "#101524"), Color(hex: "#0C0F18")],
-                                     startPoint: .top, endPoint: .bottom))
-                .overlay(RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color(hex: "#26304A"), lineWidth: 1))
-        )
-    }
+    // ── Matchup header card (shared component) ───────────────────────
+    private var matchupCard: some View { MatchupHeaderCard(pick: pick) }
 
-    private func teamColumn(_ team: String) -> some View {
-        VStack(spacing: 10) {
-            TeamLogo(sport: pick.sport, team: team, size: .big)
-            Text(short(team))
-                .font(.anton(18)).foregroundColor(.white)
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .frame(maxWidth: 120)
-        }
-    }
+    // ── RECENT FORM (shared section body) ────────────────────────────
+    private var recentForm: some View { RecentFormSection(pick: pick, chip: "FREE") }
 
-    // ── RECENT FORM (free) ───────────────────────────────────────────
-    private var recentForm: some View {
+    private var recentFormLegacyBody: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHead("RECENT FORM", chip: "FREE", chipColor: lime, chipInk: Color(hex: "#0A0B0D"))
             if let sc = pick.soccerComparison,
@@ -355,5 +322,141 @@ struct FreeMatchDetailView: View {
         case "cricket": return "🏏"; case "tennis": return "🎾"
         default: return "🎯"
         }
+    }
+}
+
+
+// MARK: - Shared matchup components (free tease + premium detail)
+
+/// The blue-tinted matchup header: league · day kicker, big team marks with
+/// names under each, VS between, day + real kickoff line.
+struct MatchupHeaderCard: View {
+    let pick: Pick
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("\(pick.league.uppercased()) · \(dayLabel)")
+                .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
+                .foregroundColor(Color(hex: "#8FA7E8"))
+            HStack(alignment: .top, spacing: 26) {
+                column(pick.awayTeam)
+                Text("VS")
+                    .font(.anton(20)).foregroundColor(Color.white.opacity(0.35))
+                    .padding(.top, 26)
+                column(pick.homeTeam)
+            }
+            Text(pick.startTimeDisplay.map { "\(dayLabel) · \($0) ET" } ?? dayLabel)
+                .font(.mono(11, weight: .bold)).tracking(1.2)
+                .foregroundColor(Color(hex: "#9AA4B8"))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 22)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(LinearGradient(colors: [Color(hex: "#101524"), Color(hex: "#0C0F18")],
+                                     startPoint: .top, endPoint: .bottom))
+                .overlay(RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(hex: "#26304A"), lineWidth: 1))
+        )
+    }
+
+    private func column(_ team: String) -> some View {
+        VStack(spacing: 10) {
+            TeamLogo(sport: pick.sport, team: team, size: .big)
+            Text(teamShortName(team, sport: pick.sport).uppercased())
+                .font(.anton(18)).foregroundColor(.white)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .frame(maxWidth: 120)
+        }
+    }
+
+    private var dayLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "America/New_York")
+        let today = f.string(from: Date())
+        if pick.gameDate == today { return "TODAY" }
+        let tomorrow = f.string(from: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
+        return pick.gameDate == tomorrow ? "TOMORROW" : pick.gameDate
+    }
+}
+
+/// RECENT FORM: soccer W/D/L badges from grounded records, or the real
+/// matchup facts for every other sport. `chip` labels the section (FREE on
+/// the tease, hidden when nil on premium).
+struct RecentFormSection: View {
+    let pick: Pick
+    var chip: String? = nil
+    private let lime = Color(hex: "#D4FF3A")
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("RECENT FORM").font(.anton(19)).foregroundColor(.white)
+                Spacer()
+                if let chip {
+                    Text(chip)
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .background(Capsule().fill(lime))
+                }
+            }
+            if let sc = pick.soccerComparison,
+               let a = badges(sc.away?.record), let h = badges(sc.home?.record) {
+                row(team: pick.awayTeam, badges: a)
+                row(team: pick.homeTeam, badges: h)
+            } else if let facts = pick.matchupFacts, !facts.isEmpty {
+                ForEach(facts.prefix(3)) { f in
+                    HStack {
+                        Text(f.label.uppercased())
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(0.8)
+                            .foregroundColor(Color(hex: "#9A9B9F"))
+                        Spacer(minLength: 12)
+                        Text(f.value)
+                            .font(.archivo(13, weight: .bold)).foregroundColor(.white)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+                }
+            }
+        }
+    }
+
+    private func badges(_ record: String?) -> [Character]? {
+        guard let record else { return nil }
+        let parts = record.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, parts.reduce(0, +) > 0 else { return nil }
+        var out: [Character] = []
+        out.append(contentsOf: Array(repeating: "W", count: parts[0]))
+        out.append(contentsOf: Array(repeating: "D", count: parts[1]))
+        out.append(contentsOf: Array(repeating: "L", count: parts[2]))
+        return Array(out.prefix(5))
+    }
+
+    private func row(team: String, badges: [Character]) -> some View {
+        HStack(spacing: 12) {
+            TeamLogo(sport: pick.sport, team: team, size: .small)
+            Text(teamShortName(team, sport: pick.sport).capitalized)
+                .font(.archivo(15, weight: .bold)).foregroundColor(.white)
+            Spacer(minLength: 10)
+            HStack(spacing: 5) {
+                ForEach(Array(badges.enumerated()), id: \.offset) { _, c in
+                    Text(String(c))
+                        .font(.archivoNarrow(11, weight: .bold))
+                        .foregroundColor(c == "L" ? .white : Color(hex: "#0A0B0D"))
+                        .frame(width: 22, height: 22)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(
+                            c == "W" ? Color(hex: "#34D26B")
+                            : c == "D" ? Color(hex: "#3A3D44")
+                            : Color(hex: "#E8563F")))
+                }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
     }
 }

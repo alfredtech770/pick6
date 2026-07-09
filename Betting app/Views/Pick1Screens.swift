@@ -278,7 +278,16 @@ struct MatchDetailView: View {
                     // fabricated stat tiles (the old statIconRow showed
                     // fake per-stat splits for every game, even upcoming
                     // ones — removed).
-                    scoreHeader
+                    // Pre-game: the shared tease-style matchup header (blue
+                    // card, big marks, real kickoff). Live/settled games keep
+                    // the score header — the score is the story then.
+                    if pick.isPending && !(liveScore?.isLive ?? false) {
+                        MatchupHeaderCard(pick: pick)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 6)
+                    } else {
+                        scoreHeader
+                    }
                     // "What is this league" descriptor — only shows for
                     // leagues whose code isn't self-explanatory (KBO, NPB,
                     // EuroLeague, …), so users know what they're looking at.
@@ -288,6 +297,12 @@ struct MatchDetailView: View {
                             .foregroundColor(Color(hex: "#8A8D94"))
                             .frame(maxWidth: .infinity)
                             .padding(.bottom, 12)
+                    }
+                    if pick.isPending {
+                        RecentFormSection(pick: pick, chip: nil)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 10)
+                            .padding(.bottom, 16)
                     }
                     // PICK1'S CALL · ✓ UNLOCKED — the premium mirror of the
                     // free tease's locked section.
