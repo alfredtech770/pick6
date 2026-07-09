@@ -472,6 +472,13 @@ struct HomeHiFiContent: View {
                 let activeSport: String? =
                     (isPro && vm.selectedSport != "all") ? vm.selectedSport : nil
                 if isPro {
+                    // Proof first — the Latest Wins rail leads, exactly
+                    // like the free home, with today's slate below it.
+                    // (Outside the slate's LazyVStack, so it needs the
+                    // list's 16pt side inset applied by hand.)
+                    LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
                     SectionHeader(
                         title: "TODAY'S GAMES",
                         cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
@@ -535,10 +542,6 @@ struct HomeHiFiContent: View {
                                     value: visible.count
                                 )
                             }
-                            // Proof surface for members too — same Latest
-                            // Wins rail the free home leads with.
-                            LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
-                                .padding(.top, 16)
                         }
                     }
 
