@@ -1007,10 +1007,9 @@ struct MatchDetailView: View {
                     colors: [Color(hex: "#14161A"), Color(hex: "#0d0e11")],
                     startPoint: .top, endPoint: .bottom
                 ))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                )
+                // Accent glow FIRST, then clip everything to the card shape
+                // (the old .clipped() only trimmed to the circle's square
+                // frame, letting the glow bleed past the rounded corner)…
                 .overlay(alignment: .topTrailing) {
                     Circle()
                         .fill(RadialGradient(
@@ -1021,8 +1020,13 @@ struct MatchDetailView: View {
                         ))
                         .frame(width: 180, height: 180)
                         .offset(x: 60, y: -60)
-                        .clipped()
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                // …stroke last so the border isn't half-clipped.
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                )
         )
     }
 
