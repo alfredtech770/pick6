@@ -1940,7 +1940,7 @@ struct PremiumUpsellCard: View {
                 VStack(alignment: .leading, spacing: 9) {
                     checkRow("Unlock all 6–12 daily picks")
                     checkRow("Full confidence & reasoning")
-                    checkRow("World Cup 2026 full slate")
+                    checkRow("Summer Football 2026 full slate")
                     checkRow("Track record & streak rewards")
                 }
                 .padding(.top, 2)
@@ -2101,11 +2101,10 @@ struct SportDropdown: View {
                     .font(.archivo(14, weight: active ? .bold : .medium))
                     .foregroundColor(active ? .white : Color(hex: "#C9CBCF"))
                 Spacer(minLength: 0)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.mono(11, weight: .bold))
-                        .foregroundColor(active ? lime : Color(hex: "#6E6F75"))
-                }
+                Text("\(count)")
+                    .font(.mono(11, weight: .bold))
+                    .foregroundColor(count == 0 ? Color(hex: "#3A3D44")
+                                     : (active ? lime : Color(hex: "#6E6F75")))
                 if active {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .heavy))
