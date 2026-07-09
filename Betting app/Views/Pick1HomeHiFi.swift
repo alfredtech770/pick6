@@ -285,14 +285,23 @@ struct HomeHiFiContent: View {
     @State private var showHistory = false
     /// The hero's sport-filter dropdown (replaces the chip carousel).
     @State private var showSportMenu = false
+    /// Free-tier locked-card tap → tease detail sheet (FreeMatchDetailView).
+    @State private var freeDetailPick: Pick?
 
-    /// DEBUG screenshot hook: `-openSportMenu` pops the dropdown shortly
-    /// after launch (design review on the sim). Compiled out of Release.
+    /// DEBUG screenshot hooks (design review on the sim; compiled out of
+    /// Release): `-openSportMenu` pops the dropdown, `-openFreeDetail`
+    /// opens the free tease detail for the first locked game.
     private func debugAutoOpenMenu() {
         #if DEBUG
-        guard CommandLine.arguments.contains("-openSportMenu") else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(Pick1Springs.smooth) { showSportMenu = true }
+        if CommandLine.arguments.contains("-openSportMenu") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(Pick1Springs.smooth) { showSportMenu = true }
+            }
+        }
+        if CommandLine.arguments.contains("-openFreeDetail") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                freeDetailPick = vm.effectiveTodayPicks.first(where: { $0.id != topPick?.id })
+            }
         }
         #endif
     }
@@ -398,7 +407,8 @@ struct HomeHiFiContent: View {
                             .padding(.top, 12)
                         FreeSlateSection(vm: vm,
                                          topPickId: topPick?.id,
-                                         onUnlock: onUnlock)
+                                         onUnlock: onUnlock,
+                                         onOpen: { freeDetailPick = $0 })
                         PremiumUpsellCard(onUnlock: onUnlock)
                             .padding(.top, 6)
                     } else {
@@ -458,6 +468,12 @@ struct HomeHiFiContent: View {
         }
         .sheet(isPresented: $showHistory) {
             PredictionHistoryView(vm: vm)
+        }
+        .sheet(item: $freeDetailPick) { p in
+            FreeMatchDetailView(pick: p, onUnlock: {
+                freeDetailPick = nil
+                onUnlock()
+            })
         }
         .task {
             // Ask for an App Store rating only at a genuine high point —
@@ -1692,6 +1708,9 @@ struct FreeSlateSection: View {
     @ObservedObject var vm: PicksViewModel
     let topPickId: UUID?
     let onUnlock: () -> Void
+    /// When set, tapping a locked card opens the free tease detail
+    /// instead of jumping straight to the paywall.
+    var onOpen: ((Pick) -> Void)? = nil
     private let gold = Color(hex: "#E8C64A")
 
     private var slate: [Pick] {
@@ -1719,7 +1738,9 @@ struct FreeSlateSection: View {
                 // Featured + 3 teasers — enough to show the board is deep
                 // without giving the whole slate's matchups away.
                 ForEach(slate.prefix(3)) { p in
-                    LockedSlateCard(pick: p, onUnlock: onUnlock)
+                    LockedSlateCard(pick: p, onUnlock: {
+                        if let onOpen { onOpen(p) } else { onUnlock() }
+                    })
                 }
                 if slate.count > 3 {
                     Text("+ \(slate.count - 3) MORE PICKS INSIDE")
