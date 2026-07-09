@@ -60,6 +60,14 @@ struct Pick1HomeHiFi: View {
     @State private var detailPick: Pick?           // game-card tap → detail sheet
     @State private var sportHub: String?           // sport-chip tap → hub sheet
     @State private var showPaywall: Bool = false
+
+    /// DEBUG: `-openPaywall` presents the paywall after launch (sim review).
+    private func debugAutoOpenPaywall() {
+        #if DEBUG
+        guard CommandLine.arguments.contains("-openPaywall") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showPaywall = true }
+        #endif
+    }
     @State private var showWins: Bool = false
     @StateObject private var vm = PicksViewModel()
     @StateObject private var updateChecker = UpdateChecker()
@@ -234,14 +242,28 @@ struct Pick1HomeHiFi: View {
         }
         // (SportHub is now a full-page push inside the Home tab — see the
         // `.home` branch of the tab switch above. No sheet needed.)
-        .sheet(isPresented: $showPaywall) {
-            OBPaywallScreen(
-                onBack: { showPaywall = false },
-                onSubscribe: { _ in showPaywall = false },
-                onSkip: { showPaywall = false }
-            )
-            .presentationDragIndicator(.visible)
-            .presentationContentInteraction(.scrolls)
+        .onAppear { debugAutoOpenPaywall() }
+        // The funnel's PaywallScreen is the single paywall everywhere —
+        // full-screen so the plan cards + 5s free-skip render exactly as
+        // they do in onboarding.
+        .fullScreenCover(isPresented: $showPaywall) {
+            ZStack(alignment: .topTrailing) {
+                Color(hex: "#0A0B0D").ignoresSafeArea()
+                PaywallScreen(onDone: { showPaywall = false })
+                Button {
+                    Haptics.tap()
+                    showPaywall = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color(hex: "#16181D")))
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 18)
+                .padding(.top, 14)
+            }
         }
         .sheet(isPresented: $showWins) {
             WinsView(vm: vm,

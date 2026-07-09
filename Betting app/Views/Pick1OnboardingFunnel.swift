@@ -1312,7 +1312,10 @@ private struct TimeToWinScreen: View {
 
 // MARK: - Screen: Paywall (Weekly / Monthly / Lifetime · no trial)
 
-private struct PaywallScreen: View {
+/// The ONE paywall. Built for the onboarding funnel, reused in-app for
+/// every upgrade entry point (home locked cards, premium card, profile) so
+/// pricing/trial/Day-Pass presentation never drifts between surfaces.
+struct PaywallScreen: View {
     let onDone: () -> Void
     @EnvironmentObject private var subs: SubscriptionManager
     @State private var selected: String = "com.pick1.app.pro.weekly"
