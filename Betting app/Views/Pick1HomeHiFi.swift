@@ -308,9 +308,11 @@ struct HomeHiFiContent: View {
 
     var body: some View {
         ScrollView {
-            // Zero-height anchor for the DEBUG auto-open hook.
-            Color.clear.frame(height: 0).onAppear { debugAutoOpenMenu() }
             VStack(spacing: 0) {
+                // Zero-height anchor for the DEBUG auto-open hook (kept
+                // INSIDE the stack — as a sibling it added the ScrollView's
+                // implicit ~8pt spacing above the hero card).
+                Color.clear.frame(height: 0).onAppear { debugAutoOpenMenu() }
                 Button(action: {
                     if let t = topPick {
                         Haptics.tap()
@@ -546,8 +548,11 @@ struct HeroCard: View {
             // wash. Dark ink at the top fading into rich lime at the
             // bottom right, anchored by a soft pulsing lime glow.
             // Reads as a sports-broadcast scoreboard rather than a
-            // candy-bright tile.
+            // candy-bright tile. The surface ignores the top safe area
+            // so the card paints to the physical top edge — no dark
+            // sliver behind the status bar.
             heroSurface
+                .ignoresSafeArea(edges: .top)
                 .clipShape(BottomRoundedShape(radius: 32))
 
             // Single bright top sheen — keeps the glassy specular
