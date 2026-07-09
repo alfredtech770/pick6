@@ -586,6 +586,14 @@ struct HeroCard: View {
             // slow enough to feel atmospheric).
             AcidBorder(shape: BottomRoundedShape(radius: 32),
                        period: 14)
+                // Fade the traced border out toward the top of the card —
+                // no lime glow line under the status bar; the accent lives
+                // on the sides and bottom edge only.
+                .mask(
+                    LinearGradient(colors: [.clear, .clear, .white],
+                                   startPoint: .top,
+                                   endPoint: UnitPoint(x: 0.5, y: 0.45))
+                )
                 .allowsHitTesting(false)
         }
         // Plain charcoal drop shadow — same as the other panel
