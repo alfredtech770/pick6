@@ -682,12 +682,22 @@ struct HeroCard: View {
                 if pick.sport == "f1" || pick.sport == "golf" {
                     TeamLogo(sport: pick.sport, team: pick.pick, size: .big)
                 } else {
-                    HStack(spacing: 14) {
-                        TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
-                        Text("VS")
-                            .font(.archivoNarrow(13, weight: .bold)).tracking(1.8)
-                            .foregroundColor(Color.white.opacity(0.45))
-                        TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 14) {
+                            TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
+                            Text("VS")
+                                .font(.archivoNarrow(13, weight: .bold)).tracking(1.8)
+                                .foregroundColor(Color.white.opacity(0.45))
+                            TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
+                        }
+                        (Text(teamShortName(pick.awayTeam, sport: pick.sport).uppercased())
+                            .foregroundColor(.white)
+                         + Text("  VS  ")
+                            .foregroundColor(Color.white.opacity(0.4))
+                         + Text(teamShortName(pick.homeTeam, sport: pick.sport).uppercased())
+                            .foregroundColor(.white))
+                            .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
+                            .lineLimit(1).minimumScaleFactor(0.6)
                     }
                 }
             }
@@ -1576,6 +1586,9 @@ struct LatestWinsRail: View {
         let cutoff = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
         let settled = vm.historyPicks
             .filter { !$0.isPending }
+            // Follow the sport dropdown: a filtered home shows that
+            // sport's wins, not a mixed rail.
+            .filter { vm.selectedSport == "all" || $0.sport == vm.selectedSport }
             .sorted { ($0.gameDate, $0.createdAt ?? .distantPast) > ($1.gameDate, $1.createdAt ?? .distantPast) }
         let recent = settled.filter { ($0.createdAt ?? .distantPast) > cutoff }
         var winPool = recent.filter(\.isWin)
@@ -1688,7 +1701,9 @@ struct FreeSlateSection: View {
     private let gold = Color(hex: "#E8C64A")
 
     private var slate: [Pick] {
-        vm.effectiveTodayPicks.filter { $0.id != topPickId }
+        vm.effectiveTodayPicks.filter {
+            $0.id != topPickId && (vm.selectedSport == "all" || $0.sport == vm.selectedSport)
+        }
     }
 
     var body: some View {

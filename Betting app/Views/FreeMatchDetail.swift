@@ -27,14 +27,30 @@ struct FreeMatchDetailView: View {
                     recentForm
                     pick1sCall
                     whyBreakdown
-                    unlockCTA
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 14)
-                .padding(.bottom, 30)
+                // Clear the sticky CTA bar so the last section never hides.
+                .padding(.bottom, 130)
             }
         }
         .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        // Sticky unlock bar — pinned while the page scrolls, with a fade
+        // into the content above.
+        .overlay(alignment: .bottom) {
+            unlockCTA
+                .padding(.horizontal, 18)
+                .padding(.top, 26)
+                .padding(.bottom, 14)
+                .background(
+                    LinearGradient(colors: [Color(hex: "#0A0B0D").opacity(0),
+                                            Color(hex: "#0A0B0D").opacity(0.94),
+                                            Color(hex: "#0A0B0D")],
+                                   startPoint: .top, endPoint: .bottom)
+                        .ignoresSafeArea(edges: .bottom)
+                        .allowsHitTesting(false)
+                )
+        }
     }
 
     // ── Top bar ──────────────────────────────────────────────────────
