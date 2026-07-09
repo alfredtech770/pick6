@@ -387,68 +387,68 @@ struct HomeHiFiContent: View {
                 //      isn't the ALL chip, which is just the default).
                 let activeSport: String? =
                     (isPro && vm.selectedSport != "all") ? vm.selectedSport : nil
-                SectionHeader(
-                    title: isPro ? "TODAY'S GAMES" : "FREE PICKS · TOP PER SPORT",
-                    cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
-                    onTapCTA: activeSport.map { sport in
-                        {
-                            Haptics.tap()
-                            onTapSport(sport)
+                if isPro {
+                    SectionHeader(
+                        title: "TODAY'S GAMES",
+                        cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
+                        onTapCTA: activeSport.map { sport in
+                            {
+                                Haptics.tap()
+                                onTapSport(sport)
+                            }
                         }
-                    }
-                )
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .animation(Pick1Springs.snappy, value: vm.selectedSport)
-                .animation(Pick1Springs.snappy, value: isPro)
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .animation(Pick1Springs.snappy, value: vm.selectedSport)
+                }
 
                 LazyVStack(spacing: 10) {
-                    let visible = vm.visiblePicks(isPro: isPro)
-                    if vm.isLoading && visible.isEmpty {
-                        ProgressView().tint(Color(hex: "#D4FF3A"))
-                            .padding(.top, 40)
-                    } else if visible.isEmpty {
-                        EmptyTodayState()
-                            .padding(.top, 40)
+                    if !isPro {
+                        // ── FREE TIER (2026-07 redesign) ────────────────
+                        // Latest wins rail (proof) → locked full slate
+                        // (tease) → gold Premium upsell (close). The hero
+                        // above is the one free pick of the day.
+                        LatestWinsRail(vm: vm)
+                            .padding(.top, 12)
+                        FreeSlateSection(vm: vm,
+                                         topPickId: topPick?.id,
+                                         onUnlock: onUnlock)
+                        PremiumUpsellCard(onUnlock: onUnlock)
+                            .padding(.top, 6)
                     } else {
-                        ForEach(Array(visible.enumerated()), id: \.element.id) { idx, pick in
-                            Button {
-                                Haptics.tap()
-                                onTapPick(pick)
-                            } label: {
-                                GameCard(pick: pick,
-                                         isLive: isLive(pick),
-                                         score: liveScore(for: pick),
-                                         isRefundGuarantee: pick.isRefundEligible)
-                                    .pressableScale(0.985)
-                            }
-                            .buttonStyle(.plain)
-                            // Stagger each card's appearance so the list
-                            // cascades in over ~250ms instead of popping.
-                            // Reads as "curated" rather than "dumped".
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom)
-                                    .combined(with: .opacity),
-                                removal: .opacity
-                            ))
-                            .animation(
-                                Pick1Springs.smooth.delay(Double(idx) * 0.05),
-                                value: visible.count
-                            )
-                        }
-                        // Free tier: show locked picks beneath as Pro upsell
-                        if !isPro && !vm.lockedTodayPicks.isEmpty {
-                            ProUnlockCard(lockedCount: vm.lockedTodayPicks.count,
-                                          onUnlock: onUnlock)
-                            ForEach(vm.lockedTodayPicks.prefix(3), id: \.id) { pick in
-                                LockedPickCard(pick: pick, onUnlock: onUnlock)
-                            }
-                            if vm.lockedTodayPicks.count > 3 {
-                                Text("+ \(vm.lockedTodayPicks.count - 3) more locked")
-                                    .font(.archivoNarrow(10, weight: .bold))
-                                    .tracking(2)
-                                    .foregroundColor(Color(hex: "#6E6F75"))
-                                    .padding(.top, 4)
+                        let visible = vm.visiblePicks(isPro: true)
+                        if vm.isLoading && visible.isEmpty {
+                            ProgressView().tint(Color(hex: "#D4FF3A"))
+                                .padding(.top, 40)
+                        } else if visible.isEmpty {
+                            EmptyTodayState()
+                                .padding(.top, 40)
+                        } else {
+                            ForEach(Array(visible.enumerated()), id: \.element.id) { idx, pick in
+                                Button {
+                                    Haptics.tap()
+                                    onTapPick(pick)
+                                } label: {
+                                    GameCard(pick: pick,
+                                             isLive: isLive(pick),
+                                             score: liveScore(for: pick),
+                                             isRefundGuarantee: pick.isRefundEligible)
+                                        .pressableScale(0.985)
+                                }
+                                .buttonStyle(.plain)
+                                // Stagger each card's appearance so the list
+                                // cascades in over ~250ms instead of popping.
+                                // Reads as "curated" rather than "dumped".
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom)
+                                        .combined(with: .opacity),
+                                    removal: .opacity
+                                ))
+                                .animation(
+                                    Pick1Springs.smooth.delay(Double(idx) * 0.05),
+                                    value: visible.count
+                                )
                             }
                         }
                     }
@@ -1603,6 +1603,329 @@ struct SparklineView: View {
                                                    lineCap: .round,
                                                    lineJoin: .round))
             }
+        }
+    }
+}
+
+// MARK: - Free tier home (Latest Wins → Full Slate → Premium)
+
+/// Horizontal rail of the most recent GRADED WINS — receipts before the
+/// sell. Header carries the last-30-days record ("AI 24-6 L30").
+struct LatestWinsRail: View {
+    @ObservedObject var vm: PicksViewModel
+    private let win = Color(hex: "#34D26B")
+
+    private var wins: [Pick] {
+        vm.historyPicks.filter { $0.isWin }
+            .sorted { ($0.gameDate, $0.createdAt ?? .distantPast) > ($1.gameDate, $1.createdAt ?? .distantPast) }
+            .prefix(10).map { $0 }
+    }
+    private var l30: (w: Int, l: Int) {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let settled = vm.historyPicks.filter {
+            ($0.isWin || $0.isLoss) && ($0.createdAt ?? .distantPast) > cutoff
+        }
+        return (settled.filter(\.isWin).count, settled.filter(\.isLoss).count)
+    }
+
+    var body: some View {
+        if wins.isEmpty {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("LATEST WINS")
+                        .font(.anton(22)).foregroundColor(.white)
+                    Spacer()
+                    Text("AI \(l30.w)-\(l30.l) L30")
+                        .font(.mono(11, weight: .bold)).tracking(0.8)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                }
+                .padding(.horizontal, 4)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(wins) { p in WinReceiptCard(pick: p) }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .scrollClipDisabled()
+            }
+            .padding(.bottom, 10)
+        }
+    }
+}
+
+/// One graded win: "✓ WON · NBA / CELTICS / W 118-104   81%".
+struct WinReceiptCard: View {
+    let pick: Pick
+    private let win = Color(hex: "#34D26B")
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 12)).foregroundColor(win)
+                Text("WON · \(pick.league.uppercased())")
+                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                    .foregroundColor(win)
+            }
+            Text(teamShortName(pick.pick, sport: pick.sport).uppercased())
+                .font(.anton(23)).foregroundColor(.white)
+                .lineLimit(1).minimumScaleFactor(0.6)
+            HStack {
+                Text(scoreLine)
+                    .font(.mono(12, weight: .semibold))
+                    .foregroundColor(Color(hex: "#8A8D94"))
+                Spacer(minLength: 10)
+                Text("\(Int(pick.probability.rounded()))%")
+                    .font(.archivo(13, weight: .bold)).foregroundColor(win)
+            }
+        }
+        .padding(14)
+        .frame(width: 186, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: "#0F1310"))
+                .overlay(
+                    LinearGradient(colors: [win.opacity(0.14), .clear],
+                                   startPoint: .topLeading, endPoint: .center)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                )
+                .overlay(RoundedRectangle(cornerRadius: 18)
+                    .stroke(win.opacity(0.30), lineWidth: 1))
+        )
+    }
+
+    private var scoreLine: String {
+        if let h = pick.homeScore, let a = pick.awayScore {
+            return "W \(max(h, a))-\(min(h, a))"
+        }
+        return "WON"
+    }
+}
+
+/// The locked remainder of today's board for free users: matchup visible,
+/// the AI's side hidden behind a gold UNLOCK.
+struct FreeSlateSection: View {
+    @ObservedObject var vm: PicksViewModel
+    let topPickId: UUID?
+    let onUnlock: () -> Void
+    private let gold = Color(hex: "#E8C64A")
+
+    private var slate: [Pick] {
+        vm.effectiveTodayPicks.filter { $0.id != topPickId }
+    }
+
+    var body: some View {
+        if slate.isEmpty {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("FULL SLATE")
+                        .font(.anton(22)).foregroundColor(.white)
+                    Spacer()
+                    HStack(spacing: 5) {
+                        Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
+                        Text("PREMIUM")
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
+                    }
+                    .foregroundColor(gold)
+                }
+                .padding(.horizontal, 4)
+
+                ForEach(slate) { p in
+                    LockedSlateCard(pick: p, onUnlock: onUnlock)
+                }
+            }
+            .padding(.top, 8)
+        }
+    }
+}
+
+/// One locked game row — sport-tinted card, matchup + "AI PICK HIDDEN",
+/// gold UNLOCK button. Tap anywhere → paywall.
+struct LockedSlateCard: View {
+    let pick: Pick
+    let onUnlock: () -> Void
+    private let gold = Color(hex: "#E8C64A")
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            onUnlock()
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("\(sportEmoji) \(pick.league.uppercased())")
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                    Spacer()
+                    Text(timeText)
+                        .font(.mono(11, weight: .bold))
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                }
+                HStack(spacing: 12) {
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                    VStack(alignment: .leading, spacing: 5) {
+                        (Text(short(pick.awayTeam)).foregroundColor(.white)
+                         + Text("  VS  ").foregroundColor(gold.opacity(0.8))
+                         + Text(short(pick.homeTeam)).foregroundColor(.white))
+                            .font(.anton(17))
+                            .lineLimit(1).minimumScaleFactor(0.55)
+                        HStack(spacing: 5) {
+                            Image(systemName: "lock.fill").font(.system(size: 8, weight: .bold))
+                            Text("AI PICK HIDDEN")
+                                .font(.archivoNarrow(10, weight: .bold)).tracking(1.4)
+                        }
+                        .foregroundColor(gold)
+                    }
+                    Spacer(minLength: 8)
+                    VStack(spacing: 3) {
+                        Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
+                        Text("UNLOCK")
+                            .font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
+                    }
+                    .foregroundColor(gold)
+                    .padding(.horizontal, 13).padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 12)
+                        .stroke(gold.opacity(0.65), lineWidth: 1.2))
+                }
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(hex: "#0F1114"))
+                    .overlay(
+                        LinearGradient(colors: [tint.opacity(0.22), .clear],
+                                       startPoint: .leading,
+                                       endPoint: UnitPoint(x: 0.55, y: 0.5))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 18)
+                        .stroke(tint.opacity(0.30), lineWidth: 1))
+            )
+            .pressableScale(0.985)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func short(_ team: String) -> String {
+        teamShortName(team, sport: pick.sport).uppercased()
+    }
+    private var timeText: String {
+        guard let d = pick.createdAt else { return "" }
+        let f = DateFormatter(); f.dateFormat = "h:mm a"
+        return f.string(from: d)
+    }
+    private var sportEmoji: String {
+        switch pick.sport {
+        case "basketball": return "🏀"; case "baseball": return "⚾️"
+        case "hockey": return "🏒"; case "football": return "🏈"
+        case "soccer": return "⚽️"; case "combat": return "🥊"
+        case "f1": return "🏎️"; case "golf": return "⛳️"
+        case "cricket": return "🏏"; case "tennis": return "🎾"
+        default: return "🎯"
+        }
+    }
+    /// Per-sport edge tint (the design's colored card washes).
+    private var tint: Color {
+        switch pick.sport {
+        case "basketball": return Color(hex: "#2FA85B")
+        case "soccer":     return Color(hex: "#3563C7")
+        case "football":   return Color(hex: "#C73535")
+        case "baseball":   return Color(hex: "#C7852F")
+        case "hockey":     return Color(hex: "#35AEC7")
+        case "combat":     return Color(hex: "#C74A2F")
+        case "f1":         return Color(hex: "#C72F49")
+        case "golf":       return Color(hex: "#3E9E4E")
+        case "cricket":    return Color(hex: "#2FA89B")
+        default:           return Color(hex: "#6E6F75")
+        }
+    }
+}
+
+/// The gold closer: PICK1 PREMIUM pill, EVERY PICK. EVERY SPORT., value
+/// checklist, trial-aware CTA. Trial copy is eligibility-gated (Apple
+/// grants one intro offer per Apple ID) so we never advertise a trial
+/// checkout won't honor.
+struct PremiumUpsellCard: View {
+    let onUnlock: () -> Void
+    @EnvironmentObject private var subs: SubscriptionManager
+    private let gold = Color(hex: "#E8C64A")
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            onUnlock()
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("🙌 PICK1 PREMIUM")
+                    .font(.archivoNarrow(11, weight: .bold)).tracking(1.8)
+                    .foregroundColor(Color(hex: "#14110A"))
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(gold))
+
+                (Text("EVERY PICK.\nEVERY ").foregroundColor(.white)
+                 + Text("SPORT.").foregroundColor(gold))
+                    .font(.anton(34))
+
+                Text("You get 1 free pick a day. Members unlock the entire daily slate, all leagues, and full AI confidence breakdowns.")
+                    .font(.archivo(13.5)).foregroundColor(Color(hex: "#B9B7B0"))
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 9) {
+                    checkRow("Unlock all 6–12 daily picks")
+                    checkRow("Full confidence & reasoning")
+                    checkRow("World Cup 2026 full slate")
+                    checkRow("Track record & streak rewards")
+                }
+                .padding(.top, 2)
+
+                VStack(spacing: 9) {
+                    Text(subs.introOfferEligible ? "START 3 DAYS FREE →" : "UNLOCK PREMIUM →")
+                        .font(.anton(17)).kerning(0.4)
+                        .foregroundColor(Color(hex: "#14110A"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(RoundedRectangle(cornerRadius: 14)
+                            .fill(LinearGradient(colors: [Color(hex: "#F2D468"), gold],
+                                                 startPoint: .top, endPoint: .bottom)))
+                    Text(subs.introOfferEligible
+                         ? "then $14.99/wk · day passes from $2.99 · cancel anytime"
+                         : "plans from $2.99 · cancel anytime")
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                }
+                .padding(.top, 4)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(LinearGradient(colors: [Color(hex: "#1A160A"), Color(hex: "#0F0D07")],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(
+                        RadialGradient(colors: [gold.opacity(0.16), .clear],
+                                       center: UnitPoint(x: 0.9, y: 0.1),
+                                       startRadius: 10, endRadius: 260)
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 22)
+                        .stroke(gold.opacity(0.40), lineWidth: 1))
+            )
+            .pressableScale(0.99)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func checkRow(_ s: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 11, weight: .heavy)).foregroundColor(gold)
+            Text(s).font(.archivo(13.5, weight: .medium)).foregroundColor(.white)
         }
     }
 }
