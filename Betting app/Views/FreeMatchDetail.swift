@@ -77,7 +77,7 @@ struct FreeMatchDetailView: View {
                     .padding(.top, 26)
                 teamColumn(pick.homeTeam)
             }
-            Text("\(dayLabel) · \(timeText) ET")
+            Text(pick.startTimeDisplay.map { "\(dayLabel) · \($0) ET" } ?? dayLabel)
                 .font(.mono(11, weight: .bold)).tracking(1.2)
                 .foregroundColor(Color(hex: "#9AA4B8"))
         }
@@ -309,12 +309,6 @@ struct FreeMatchDetailView: View {
     }
     private func short(_ team: String) -> String {
         teamShortName(team, sport: pick.sport).uppercased()
-    }
-    private var timeText: String {
-        guard let d = pick.createdAt else { return "TBD" }
-        let f = DateFormatter(); f.dateFormat = "h:mm a"
-        f.timeZone = TimeZone(identifier: "America/New_York")
-        return f.string(from: d)
     }
     private var dayLabel: String {
         let todayFmt = DateFormatter()

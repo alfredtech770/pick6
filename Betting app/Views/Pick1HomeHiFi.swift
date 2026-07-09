@@ -666,30 +666,16 @@ struct HeroCard: View {
     // Big flags + a huge probability number — clear at a glance.
     private var heroBody: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // 1. Pill row
-            HStack {
-                HStack(spacing: 7) {
-                    Text("★").font(.system(size: 12, weight: .heavy))
-                    Text("PICK OF THE DAY")
-                        .font(.archivoNarrow(11, weight: .bold)).tracking(2.2)
-                }
-                .foregroundColor(Color(hex: "#D4FF3A"))
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
-
-                Spacer(minLength: 8)
-
-                HStack(spacing: 7) {
-                    Text(heroSportEmoji).font(.system(size: 12))
-                    Text(heroLeagueTime)
-                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
-                        .foregroundColor(Color(hex: "#C9CBCF"))
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                }
-                .padding(.horizontal, 13).padding(.vertical, 8)
-                .background(Capsule().fill(Color(hex: "#0A0B0D").opacity(0.85))
-                    .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1)))
+            // 1. Pill row — just the kicker (the league/time pill was
+            // removed 2026-07; it showed pick-creation time, not kickoff)
+            HStack(spacing: 7) {
+                Text("★").font(.system(size: 12, weight: .heavy))
+                Text("PICK OF THE DAY")
+                    .font(.archivoNarrow(11, weight: .bold)).tracking(2.2)
             }
+            .foregroundColor(Color(hex: "#D4FF3A"))
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
 
             // 2. Big matchup marks
             if let pick {
@@ -741,22 +727,6 @@ struct HeroCard: View {
         return teamShortName(pick.pick, sport: pick.sport).uppercased()
     }
 
-    private var heroSportEmoji: String {
-        switch pick?.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
-
-    /// "WC 2026 · 8:00 PM" — league tag + start time.
-    private var heroLeagueTime: String {
-        guard let pick else { return "TODAY" }
-        return "\(pick.league.uppercased()) · \(timeText)"
-    }
 
     private var headlineText: String {
         guard let pick = pick else { return "NO PICKS\nYET" }
@@ -1825,10 +1795,10 @@ struct LockedSlateCard: View {
     private func short(_ team: String) -> String {
         teamShortName(team, sport: pick.sport).uppercased()
     }
+    /// Real kickoff ("5 PM" / "7:35 PM" ET) — empty when unknown; never
+    /// the pick-creation timestamp.
     private var timeText: String {
-        guard let d = pick.createdAt else { return "" }
-        let f = DateFormatter(); f.dateFormat = "h:mm a"
-        return f.string(from: d)
+        pick.startTimeDisplay.map { "\($0) ET" } ?? ""
     }
     private var sportEmoji: String {
         switch pick.sport {

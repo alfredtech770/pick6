@@ -40,6 +40,8 @@ struct Pick: Identifiable, Codable {
     /// Per-sportsbook quotes for the picked outcome (best price first) —
     /// powers the line-shopping table. Nil on older rows.
     var oddsBooks: [OddsBook]? = nil
+    /// Scheduled start, 24h "HH:mm" US Eastern. Nil on older rows / unknown.
+    var startTime: String? = nil
     /// The AI's most-likely final score, "<home>-<away>" (home-team
     /// perspective), e.g. "2-1". Nil for fights/races or older rows.
     let predictedScore: String?
@@ -78,6 +80,7 @@ struct Pick: Identifiable, Codable {
         case marketOdds = "market_odds"
         case oddsSource = "odds_source"
         case oddsBooks = "odds_books"
+        case startTime = "start_time"
         case predictedScore = "predicted_score"
         case homeLogo = "home_logo"
         case awayLogo = "away_logo"
@@ -417,6 +420,7 @@ extension Pick {
         marketOdds = (try? c.decodeIfPresent(Double.self, forKey: .marketOdds)) ?? nil
         oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
         oddsBooks = (try? c.decodeIfPresent([OddsBook].self, forKey: .oddsBooks)) ?? nil
+        startTime = (try? c.decodeIfPresent(String.self, forKey: .startTime)) ?? nil
         predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
         homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil
@@ -424,6 +428,21 @@ extension Pick {
         taleOfTape = (try? c.decodeIfPresent(TaleOfTape.self, forKey: .taleOfTape)) ?? nil
         bettingProps = (try? c.decodeIfPresent([BettingProp].self, forKey: .bettingProps)) ?? nil
         soccerComparison = (try? c.decodeIfPresent(SoccerComparison.self, forKey: .soccerComparison)) ?? nil
+    }
+}
+
+extension Pick {
+    /// Kickoff for display — "5 PM" (minutes shown only when non-zero,
+    /// e.g. "7:35 PM"). ET as stored. Nil when the row predates start_time
+    /// or the time is unknown — callers hide the time instead of showing
+    /// the old (wrong) pick-creation timestamp.
+    var startTimeDisplay: String? {
+        guard let t = startTime else { return nil }
+        let parts = t.split(separator: ":").compactMap { Int($0) }
+        guard parts.count == 2, (0...23).contains(parts[0]) else { return nil }
+        let h12 = parts[0] % 12 == 0 ? 12 : parts[0] % 12
+        let ampm = parts[0] < 12 ? "AM" : "PM"
+        return parts[1] == 0 ? "\(h12) \(ampm)" : "\(h12):\(String(format: "%02d", parts[1])) \(ampm)"
     }
 }
 
