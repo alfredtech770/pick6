@@ -1659,9 +1659,10 @@ struct WinReceiptCard: View {
             HStack(spacing: 6) {
                 Image(systemName: pick.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: 12)).foregroundColor(accent)
-                Text("\(pick.isWin ? "WON" : "LOST") · \(pick.league.uppercased())")
-                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                Text("\(pick.isWin ? "CONFIRMED WIN" : "MISSED WIN") · \(pick.league.uppercased())")
+                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                     .foregroundColor(accent)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             Text(teamShortName(pick.pick, sport: pick.sport).uppercased())
                 .font(.anton(23)).foregroundColor(.white)
@@ -1673,6 +1674,13 @@ struct WinReceiptCard: View {
                 Spacer(minLength: 10)
                 Text("\(Int(pick.probability.rounded()))%")
                     .font(.archivo(13, weight: .bold)).foregroundColor(accent)
+            }
+            // What a \$100 backer took home (wins) — same hypothetical
+            // framing as the hero/detail return rows.
+            if pick.isWin {
+                Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                    .font(.mono(12, weight: .bold))
+                    .foregroundColor(accent)
             }
         }
         .padding(14)
