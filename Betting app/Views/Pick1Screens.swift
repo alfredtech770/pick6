@@ -298,12 +298,7 @@ struct MatchDetailView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.bottom, 12)
                     }
-                    if pick.isPending {
-                        RecentFormSection(pick: pick, chip: nil)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 10)
-                            .padding(.bottom, 16)
-                    }
+                    // (RECENT FORM lives in the TEAM STATS tab — not repeated here.)
                     // PICK1'S CALL · ✓ UNLOCKED — the premium mirror of the
                     // free tease's locked section.
                     HStack {
@@ -1121,13 +1116,14 @@ struct MatchDetailView: View {
     }
 
     /// "1.83x" — the payout multiplier on the picked outcome.
+    /// "$100 → $165" — the number users actually feel. Leads the box.
     private var payoutMultiplierText: String {
-        String(format: "%.2fx", decimalOdds)
+        "$100 → $\(Int((100 * decimalOdds).rounded()))"
     }
 
-    /// "$100 returns $183 if it hits" — concrete, no jargon.
+    /// Multiplier demoted to the support line.
     private var payoutSubText: String {
-        "$100 returns $\(Int((100 * decimalOdds).rounded())) if it hits"
+        String(format: "%.2fx odds · if the pick hits", decimalOdds)
     }
 
     /// Where the multiplier comes from — a real market or our estimate.
@@ -1728,43 +1724,52 @@ struct MatchDetailView: View {
                 Text("MORE PREDICTIONS · \(props.count)")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                    .padding(.top, 16).padding(.bottom, 4)
-                ForEach(Array(props.enumerated()), id: \.offset) { i, prop in
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(alignment: .firstTextBaseline) {
+                    .padding(.top, 16).padding(.bottom, 6)
+                // Big, unmissable market cards: WHAT to bet (the call, in
+                // display type), HOW confident we are, and WHAT $100 turns
+                // into — the three things a bettor needs to act.
+                VStack(spacing: 10) {
+                    ForEach(Array(props.enumerated()), id: \.offset) { _, prop in
+                        VStack(alignment: .leading, spacing: 8) {
                             Text(prop.label.uppercased())
-                                .font(.archivoNarrow(11, weight: .bold)).tracking(0.6)
+                                .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
                                 .foregroundColor(Color(hex: "#9A9B9F"))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if let prob = prop.probability {
-                                Text("\(prob)%")
-                                    .font(.archivo(12, weight: .bold))
-                                    .foregroundColor(sportAccent)
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text(prop.value.uppercased())
+                                    .font(.anton(24))
+                                    .foregroundColor(Color(hex: "#F5F3EE"))
+                                    .lineLimit(1).minimumScaleFactor(0.55)
+                                Spacer(minLength: 8)
+                                if let prob = prop.probability {
+                                    Text("\(prob)%")
+                                        .font(.anton(24))
+                                        .foregroundColor(sportAccent)
+                                }
                             }
-                            Text(prop.value)
-                                .font(.archivo(13, weight: .bold)).foregroundColor(Color(hex: "#F5F3EE"))
-                        }
-                        if prop.hint != nil || prop.odds != nil {
                             HStack(spacing: 8) {
                                 if let hint = prop.hint {
                                     Text(hint)
-                                        .font(.archivo(11)).foregroundColor(Color(hex: "#6E6F75"))
+                                        .font(.archivo(11.5)).foregroundColor(Color(hex: "#8A8D94"))
                                         .lineLimit(2)
                                 }
                                 Spacer(minLength: 6)
                                 if let odds = prop.odds {
                                     Text("$100 → $\(Int((odds * 100).rounded()))")
-                                        .font(.mono(10, weight: .bold))
-                                        .foregroundColor(sportAccent.opacity(0.9))
-                                        .padding(.horizontal, 7).padding(.vertical, 3)
-                                        .background(Capsule().fill(sportAccent.opacity(0.10)))
+                                        .font(.mono(12, weight: .bold))
+                                        .foregroundColor(Color(hex: "#0A0B0D"))
+                                        .padding(.horizontal, 9).padding(.vertical, 5)
+                                        .background(Capsule().fill(sportAccent))
                                 }
                             }
                         }
-                    }
-                    .padding(.vertical, 8)
-                    if i < props.count - 1 {
-                        Rectangle().fill(Color(hex: "#1C1F25")).frame(height: 1)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(sportAccent.opacity(0.05))
+                                .overlay(RoundedRectangle(cornerRadius: 16)
+                                    .stroke(sportAccent.opacity(0.22), lineWidth: 1))
+                        )
                     }
                 }
             }
