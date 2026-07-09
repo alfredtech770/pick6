@@ -666,17 +666,6 @@ struct HeroCard: View {
     // Big flags + a huge probability number — clear at a glance.
     private var heroBody: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // 1. Pill row — just the kicker (the league/time pill was
-            // removed 2026-07; it showed pick-creation time, not kickoff)
-            HStack(spacing: 7) {
-                Text("★").font(.system(size: 12, weight: .heavy))
-                Text("PICK OF THE DAY")
-                    .font(.archivoNarrow(11, weight: .bold)).tracking(2.2)
-            }
-            .foregroundColor(Color(hex: "#D4FF3A"))
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
-
             // 2. Big matchup marks
             if let pick {
                 if pick.sport == "f1" || pick.sport == "golf" {
@@ -691,13 +680,12 @@ struct HeroCard: View {
                             TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
                         }
                         (Text(teamShortName(pick.awayTeam, sport: pick.sport).uppercased())
-                            .foregroundColor(.white)
+                            .font(.anton(26)).foregroundColor(.white)
                          + Text("  VS  ")
-                            .foregroundColor(Color.white.opacity(0.4))
+                            .font(.anton(15)).foregroundColor(Color.white.opacity(0.4))
                          + Text(teamShortName(pick.homeTeam, sport: pick.sport).uppercased())
-                            .foregroundColor(.white))
-                            .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
-                            .lineLimit(1).minimumScaleFactor(0.6)
+                            .font(.anton(26)).foregroundColor(.white))
+                            .lineLimit(1).minimumScaleFactor(0.55)
                     }
                 }
             }
