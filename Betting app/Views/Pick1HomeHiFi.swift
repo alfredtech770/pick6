@@ -1656,13 +1656,17 @@ struct WinReceiptCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 6) {
-                Image(systemName: pick.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 12)).foregroundColor(accent)
-                Text("\(pick.isWin ? "CONFIRMED WIN" : "MISSED WIN") · \(pick.league.uppercased())")
-                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
-                    .foregroundColor(accent)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+            // Wins carry no header — the lime tint + payout say it all.
+            // Losses keep an explicit MISSED WIN tag so they read honestly.
+            if !pick.isWin {
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 12)).foregroundColor(accent)
+                    Text("MISSED WIN · \(pick.league.uppercased())")
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
+                        .foregroundColor(accent)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
             }
             Text(teamShortName(pick.pick, sport: pick.sport).uppercased())
                 .font(.anton(23)).foregroundColor(.white)
