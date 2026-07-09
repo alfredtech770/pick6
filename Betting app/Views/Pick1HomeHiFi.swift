@@ -692,28 +692,32 @@ struct HeroCard: View {
                 }
             }
 
-            // 3. The call + the number
-            HStack(alignment: .bottom, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
+            // 3. The call + the number — team name and probability share
+            // one baseline so they read as a single statement.
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
                     Text("AI PICKS")
                         .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
                         .foregroundColor(Color(hex: "#8A8D94"))
+                    Spacer(minLength: 8)
+                    if pick != nil {
+                        Text("WIN PROB.")
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                    }
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(heroPickName)
                         .font(.anton(46)).tracking(-0.5)
                         .foregroundColor(Color(hex: "#D4FF3A"))
                         .lineLimit(1).minimumScaleFactor(0.45)
                         .allowsTightening(true)
-                }
-                Spacer(minLength: 8)
-                if let pick {
-                    VStack(alignment: .trailing, spacing: 2) {
+                    Spacer(minLength: 8)
+                    if let pick {
                         Text("\(Int(pick.probability.rounded()))%")
-                            .font(.anton(64)).tracking(-1)
+                            .font(.anton(46)).tracking(-0.5)
                             .foregroundColor(Color(hex: "#D4FF3A"))
                             .lineLimit(1).minimumScaleFactor(0.6)
-                        Text("WIN PROB.")
-                            .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
-                            .foregroundColor(Color(hex: "#8A8D94"))
                     }
                 }
             }

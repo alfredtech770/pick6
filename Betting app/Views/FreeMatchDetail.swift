@@ -12,6 +12,8 @@ struct FreeMatchDetailView: View {
     let onUnlock: () -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var subs: SubscriptionManager
+    /// Star → the same favorites rail as the pro detail ("Track your Pick").
+    @EnvironmentObject private var favorites: FavoritesStore
 
     private let gold = Color(hex: "#E8C64A")
     private let lime = Color(hex: "#D4FF3A")
@@ -51,14 +53,23 @@ struct FreeMatchDetailView: View {
                 .font(.archivoNarrow(12, weight: .bold)).tracking(2.2)
                 .foregroundColor(.white)
             Spacer()
-            ShareLink(item: URL(string: "https://apps.apple.com/app/id6761689331")!,
-                      message: Text("Pick1's AI has a call on \(short(pick.awayTeam)) vs \(short(pick.homeTeam)) 👀")) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(hex: "#16181D")))
+            Button {
+                Haptics.tap()
+                _ = favorites.toggle(pick.id)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: favorites.contains(pick.id) ? "star.fill" : "star")
+                        .font(.system(size: 13, weight: .bold))
+                    Text(favorites.contains(pick.id) ? "TRACKING" : "TRACK YOUR PICK")
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
+                }
+                .foregroundColor(favorites.contains(pick.id) ? Color(hex: "#0A0B0D") : lime)
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(Capsule().fill(favorites.contains(pick.id) ? lime : Color(hex: "#16181D"))
+                    .overlay(Capsule().stroke(lime.opacity(favorites.contains(pick.id) ? 0 : 0.5), lineWidth: 1)))
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .padding(.top, 14)
