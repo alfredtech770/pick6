@@ -1491,7 +1491,7 @@ private struct PaywallScreen: View {
             }
             Spacer()
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("$4.99").font(.anton(22)).foregroundColor(Fnl.white)
+                Text("$2.99").font(.anton(22)).foregroundColor(Fnl.white)
                 Text(t(.funnel_paywall_unit_day)).font(.archivo(12)).foregroundColor(Fnl.ink2)
             }
         }
