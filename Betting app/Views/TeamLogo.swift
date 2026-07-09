@@ -959,6 +959,9 @@ private let directLogoURLs: [String: String] = [
     "kairat almaty":         "https://r2.thesportsdb.com/images/media/team/badge/sz5y1m1579285078.png",
     "sutjeska":              "https://r2.thesportsdb.com/images/media/team/badge/jgxq3z1565903948.png",
     "universitatea craiova": "https://r2.thesportsdb.com/images/media/team/badge/1jdz2y1579793710.png",
+    // Not in ESPN or SportsDB — Wikipedia-hosted crest (stable hotlink).
+    "ml vitebsk": "https://upload.wikimedia.org/wikipedia/en/c/c3/FC_Vitebsk_Logo.png",
+    "vitebsk":    "https://upload.wikimedia.org/wikipedia/en/c/c3/FC_Vitebsk_Logo.png",
 ]
 
 private let nbaAbbrevs: [String: String] = [

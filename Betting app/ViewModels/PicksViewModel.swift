@@ -499,6 +499,26 @@ class PicksViewModel: ObservableObject {
         self.yesterdayPicks  = y
         self.historyPicks    = h
         self.liveScores      = s
+        #if DEBUG
+        // `-mockLive`: fabricate an in-play score for the top pending
+        // pick so the Live surfaces can be design-reviewed on the sim
+        // without waiting for a real game (local only — never written
+        // to the shared live_scores table).
+        if CommandLine.arguments.contains("-mockLive"),
+           let p = t.first(where: { $0.isPending && $0.gameId != nil }) {
+            // REPLACE the feed's real row (usually "Scheduled") — lookups
+            // take the first gameId match, so an appended duplicate at
+            // the tail would never be seen.
+            liveScores.removeAll { $0.gameId == p.gameId }
+            liveScores.insert(LiveScore(
+                id: UUID(), gameId: p.gameId!, sport: p.sport,
+                homeTeam: p.homeTeam, awayTeam: p.awayTeam,
+                homeScore: 54, awayScore: 61,
+                status: "InProgress", quarter: "3",
+                startTime: Date().addingTimeInterval(-70 * 60),
+                updatedAt: Date()), at: 0)
+        }
+        #endif
         isLoading = false
         // Warm the logo cache for EVERYTHING the user can reach — the
         // today slate, yesterday's results, the 30-day history, and

@@ -99,6 +99,16 @@ struct Pick1HomeHiFi: View {
     @EnvironmentObject private var subs: SubscriptionManager
     @EnvironmentObject private var favorites: FavoritesStore
     @Environment(AuthManager.self) private var auth
+
+    /// Real entitlement, with a DEBUG-only `-forcePro` launch arg for
+    /// sim design review of the Pro surfaces (compiled out of Release —
+    /// can never grant Pro to a real user).
+    private var effectiveIsPro: Bool {
+        #if DEBUG
+        if CommandLine.arguments.contains("-forcePro") { return true }
+        #endif
+        return subs.isPro
+    }
     // Drives the foreground-refresh: when the user returns to the app
     // we re-pull the slate and rebind realtime if the ET day rolled
     // over. Without this, an app left open overnight shows a frozen
@@ -145,14 +155,14 @@ struct Pick1HomeHiFi: View {
                         SportHubView(
                             sport: id,
                             vm: vm,
-                            isPro: subs.isPro,
+                            isPro: effectiveIsPro,
                             onClose: { sportHub = nil },
                             onTapPick: { detailPick = $0 },
                             onUnlock: { showPaywall = true }
                         )
                     } else {
                         HomeHiFiContent(vm: vm,
-                                        isPro: subs.isPro,
+                                        isPro: effectiveIsPro,
                                         onTapPick: { detailPick = $0 },
                                         onTapSport: { sportHub = $0 },
                                         onUnlock: { showPaywall = true })
@@ -168,12 +178,12 @@ struct Pick1HomeHiFi: View {
                              onTapPick: { detailPick = $0 })
                 case .live:
                     LiveView(vm: vm,
-                             isPro: subs.isPro,
+                             isPro: effectiveIsPro,
                              onTapPick: { detailPick = $0 },
                              onUnlock: { showPaywall = true })
                 case .profile:
                     ProfileView(vm: vm,
-                                isPro: subs.isPro,
+                                isPro: effectiveIsPro,
                                 onShowPaywall: { showPaywall = true },
                                 onSignOut: {
                                     // Sign out FIRST — it clears local
@@ -505,10 +515,10 @@ struct HomeHiFiContent: View {
                                     Haptics.tap()
                                     onTapPick(pick)
                                 } label: {
-                                    GameCard(pick: pick,
-                                             isLive: isLive(pick),
-                                             score: liveScore(for: pick),
-                                             isRefundGuarantee: pick.isRefundEligible)
+                                    // 2026-07 redesign: same tinted slate
+                                    // rows as the free home, unlocked.
+                                    ProSlateCard(pick: pick,
+                                                 liveScore: liveScore(for: pick))
                                         .pressableScale(0.985)
                                 }
                                 .buttonStyle(.plain)
@@ -525,6 +535,10 @@ struct HomeHiFiContent: View {
                                     value: visible.count
                                 )
                             }
+                            // Proof surface for members too — same Latest
+                            // Wins rail the free home leads with.
+                            LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
+                                .padding(.top, 16)
                         }
                     }
 
@@ -1967,6 +1981,135 @@ struct LockedSlateCard: View {
         }
     }
     /// Per-sport edge tint (the design's colored card washes).
+    private var tint: Color {
+        switch pick.sport {
+        case "basketball": return Color(hex: "#2FA85B")
+        case "soccer":     return Color(hex: "#3563C7")
+        case "football":   return Color(hex: "#C73535")
+        case "baseball":   return Color(hex: "#C7852F")
+        case "hockey":     return Color(hex: "#35AEC7")
+        case "combat":     return Color(hex: "#C74A2F")
+        case "f1":         return Color(hex: "#C72F49")
+        case "golf":       return Color(hex: "#3E9E4E")
+        case "cricket":    return Color(hex: "#2FA89B")
+        default:           return Color(hex: "#6E6F75")
+        }
+    }
+}
+
+/// Premium slate row — the unlocked twin of LockedSlateCard. Identical
+/// sport-tinted frame + matchup line, but the AI's side, win probability
+/// and the possible return are visible instead of the gold lock. Live
+/// games swap the kickoff time for a live chip + score; settled games
+/// show the outcome chip. Replaced the legacy GameCard on the Pro home
+/// (2026-07 redesign — one card language everywhere).
+struct ProSlateCard: View {
+    let pick: Pick
+    let liveScore: LiveScore?
+    private let lime = Color(hex: "#D4FF3A")
+
+    var body: some View {
+        let state = pick.renderState(liveScore: liveScore)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("\(sportEmoji) \(pick.league.uppercased())")
+                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                    .foregroundColor(Color(hex: "#8A8D94"))
+                Spacer()
+                topTrailing(state)
+            }
+            HStack(spacing: 12) {
+                TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                VStack(alignment: .leading, spacing: 5) {
+                    (Text(short(pick.awayTeam)).foregroundColor(.white)
+                     + Text("  VS  ").foregroundColor(lime.opacity(0.75))
+                     + Text(short(pick.homeTeam)).foregroundColor(.white))
+                        .font(.anton(17))
+                        .lineLimit(1).minimumScaleFactor(0.55)
+                    HStack(spacing: 6) {
+                        Text("AI PICKS")
+                            .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                        Text(pick.shortDisplayPick.uppercased())
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
+                            .foregroundColor(lime)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("\(Int(pick.probability.rounded()))%")
+                        .font(.anton(24))
+                        .foregroundColor(lime)
+                    Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: "#0F1114"))
+                .overlay(
+                    LinearGradient(colors: [tint.opacity(0.22), .clear],
+                                   startPoint: .leading,
+                                   endPoint: UnitPoint(x: 0.55, y: 0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                )
+                .overlay(RoundedRectangle(cornerRadius: 18)
+                    .stroke(tint.opacity(0.30), lineWidth: 1))
+        )
+    }
+
+    /// Top-right slot: kickoff time (upcoming), live chip + score
+    /// (in play), or the W/L outcome chip (settled).
+    @ViewBuilder
+    private func topTrailing(_ state: PickRenderState) -> some View {
+        switch state {
+        case .live:
+            HStack(spacing: 5) {
+                Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
+                if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
+                    Text("LIVE · \(a)–\(h)")
+                        .font(.mono(10, weight: .bold))
+                } else {
+                    Text("LIVE").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                }
+            }
+            .foregroundColor(Color(hex: "#FF5A36"))
+        case .won:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark").font(.system(size: 8, weight: .heavy))
+                Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+            }
+            .foregroundColor(lime)
+        case .lost:
+            HStack(spacing: 4) {
+                Image(systemName: "xmark").font(.system(size: 8, weight: .heavy))
+                Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+            }
+            .foregroundColor(Color(hex: "#FF5A5A"))
+        case .awaitingResult, .upcoming:
+            Text(pick.startTimeDisplay.map { "\($0) ET" } ?? "")
+                .font(.mono(11, weight: .bold))
+                .foregroundColor(Color(hex: "#8A8D94"))
+        }
+    }
+
+    private func short(_ team: String) -> String {
+        teamShortName(team, sport: pick.sport).uppercased()
+    }
+    private var sportEmoji: String {
+        switch pick.sport {
+        case "basketball": return "🏀"; case "baseball": return "⚾️"
+        case "hockey": return "🏒"; case "football": return "🏈"
+        case "soccer": return "⚽️"; case "combat": return "🥊"
+        case "f1": return "🏎️"; case "golf": return "⛳️"
+        case "cricket": return "🏏"; case "tennis": return "🎾"
+        default: return "🎯"
+        }
+    }
     private var tint: Color {
         switch pick.sport {
         case "basketball": return Color(hex: "#2FA85B")

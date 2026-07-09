@@ -902,7 +902,14 @@ async function savePicks(league, picks) {
     probability: p.probability,
     confidence: p.confidence,
     reasoning: p.reasoning,
-    key_factor: p.key_factor,
+    // Reject junk key factors ("x", "-", "n/a") — the app falls back to
+    // the league label when this is null, which reads better than noise.
+    key_factor: ((k) => {
+      if (typeof k !== 'string') return null;
+      const t = k.trim();
+      if (t.length < 4 || /^n\/?a$/i.test(t)) return null;
+      return t;
+    })(p.key_factor),
     // Phase 2: real, web-search-backed supporting facts → MATCHUP card.
     // Default to [] so a model that omits the field never nulls the
     // NOT NULL column.
