@@ -78,6 +78,11 @@ struct Pick1HomeHiFi: View {
         #endif
     }
     @State private var showWins: Bool = false
+    /// Boot gate: the splash loader (same view the auth gate shows, so the
+    /// hand-off is seamless) stays up until the FIRST slate load finishes,
+    /// then fades out over a fully-populated home. Without this the home
+    /// shell rendered instantly and picks/logos popped in a beat later.
+    @State private var splashDone = false
     @StateObject private var vm = PicksViewModel()
     @StateObject private var updateChecker = UpdateChecker()
     /// Dismissed for this session only — the banner returns next launch
@@ -214,7 +219,41 @@ struct Pick1HomeHiFi: View {
             }
         }
         .animation(Pick1Springs.smooth, value: updateChecker.updateAvailable)
-        .task { await vm.startLiveSession() }
+        // Splash stays above EVERYTHING (tabs, nav, banners) until the
+        // first load lands — the reveal is a fade over an already-complete
+        // board, never a skeleton.
+        .overlay {
+            if !splashDone {
+                Pick1SplashLoader()
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
+        }
+        .task {
+            // Load the slate BEFORE revealing home, holding the splash a
+            // minimum beat so it reads as a loader (not a flash) on fast
+            // networks. Realtime subscriptions attach after the reveal —
+            // they're not needed for first paint.
+            let start = Date()
+            await vm.loadAll()
+            let minSplash: TimeInterval = 1.4
+            let remaining = minSplash - Date().timeIntervalSince(start)
+            if remaining > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            }
+            withAnimation(.easeOut(duration: 0.5)) { splashDone = true }
+            await vm.subscribeToPickUpdates()
+            await vm.subscribeToLiveScores()
+        }
+        // Watchdog: never strand the user on the splash. If the network is
+        // crawling (or down), reveal home after 8s anyway — cached logos +
+        // the fallback slate render, and content streams in when it lands.
+        .task {
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            if !splashDone {
+                withAnimation(.easeOut(duration: 0.5)) { splashDone = true }
+            }
+        }
         .task { await updateChecker.check() }
         // Drive Live Activities off the live-score feed: start/update/end
         // a Lock-Screen + Dynamic Island card for each favorited game that's
