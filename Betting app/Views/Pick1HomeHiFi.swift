@@ -461,6 +461,9 @@ struct HomeHiFiContent: View {
         // the same loadAll() path that runs on `.task`.
         // Pull-to-refresh removed — a manual refresh re-ran loadAll and briefly
         // emptied the slate. Realtime + the .task load keep picks fresh.
+        // Hero bleeds to the physical top of the screen (its 68pt top
+        // padding keeps the logo row clear of the Dynamic Island).
+        .ignoresSafeArea(edges: .top)
         .fullScreenCover(isPresented: $showSummerFootball) {
             SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false },
                                   isPro: isPro,
