@@ -284,7 +284,7 @@ struct MatchDetailView: View {
                     if pick.isPending && !(liveScore?.isLive ?? false) {
                         MatchupHeaderCard(pick: pick)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 6)
+                            .padding(.bottom, 26)
                     } else {
                         scoreHeader
                     }
@@ -317,11 +317,11 @@ struct MatchDetailView: View {
                     .padding(.bottom, 10)
                     pickHeroCard
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 14)
+                        .padding(.bottom, 28)
                     if let factors = pick.factors, !factors.isEmpty {
                         whyFactorsPanel(factors)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 14)
+                            .padding(.bottom, 28)
                     }
                     tabsRow
                     Group {
