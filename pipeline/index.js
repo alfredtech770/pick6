@@ -546,6 +546,20 @@ const PICK_SCHEMA = {
               additionalProperties: false,
             },
           },
+          factors: {
+            type: ['array', 'null'],
+            description: 'The 3-5 factors behind your call, for the WHY breakdown meters. label = short factor name (e.g. "Form & momentum", "Expected goals edge", "Pitching matchup", "Squad availability"); value = the short REAL data point backing it (e.g. "+0.7 xG", "W-W-D-W", "FULL", "Cole 2.1 ERA") — never invented; strength = how much this factor drives your pick, 0-100. Only include factors you verified.',
+            items: {
+              type: 'object',
+              properties: {
+                label: { type: 'string' },
+                value: { type: 'string' },
+                strength: { type: 'integer' },
+              },
+              required: ['label', 'value', 'strength'],
+              additionalProperties: false,
+            },
+          },
           start_time: {
             type: ['string', 'null'],
             description: 'Scheduled start time of the game in US Eastern Time, 24h "HH:mm" (e.g. "17:00" for 5 PM ET). Copy it from the feed\'s start_time when provided; for research picks use the kickoff time you confirmed via web_search. Null only if genuinely unknown.',
@@ -616,7 +630,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_books', 'odds_source', 'start_time', 'props', 'predicted_score', 'field_odds'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_books', 'odds_source', 'start_time', 'factors', 'props', 'predicted_score', 'field_odds'],
         additionalProperties: false,
       },
     },
@@ -914,6 +928,15 @@ async function savePicks(league, picks) {
           .map((b) => ({ book: b.book.trim(), odds: +b.odds.toFixed(2) }))
           .sort((a, b) => b.odds - a.odds)
           .slice(0, 4)
+      : null,
+    // WHY-breakdown factors (label + real data point + 0-100 strength).
+    factors: Array.isArray(p.factors) && p.factors.length
+      ? p.factors
+          .filter((f) => f && typeof f.label === 'string' && typeof f.value === 'string'
+            && Number.isFinite(f.strength))
+          .map((f) => ({ label: f.label.trim().slice(0, 40), value: f.value.trim().slice(0, 30),
+                         strength: Math.max(0, Math.min(100, Math.round(f.strength))) }))
+          .slice(0, 5)
       : null,
     // Scheduled start, ET "HH:mm". Accepts bare "HH:mm" or a full ISO
     // stamp (extracts the clock). Anything else → null (app hides time).

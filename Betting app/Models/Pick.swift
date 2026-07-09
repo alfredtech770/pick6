@@ -42,6 +42,9 @@ struct Pick: Identifiable, Codable {
     var oddsBooks: [OddsBook]? = nil
     /// Scheduled start, 24h "HH:mm" US Eastern. Nil on older rows / unknown.
     var startTime: String? = nil
+    /// WHY-breakdown factors (label + real data point + 0-100 strength) —
+    /// powers the meter rows on the premium detail. Nil on older rows.
+    var factors: [PickFactor]? = nil
     /// The AI's most-likely final score, "<home>-<away>" (home-team
     /// perspective), e.g. "2-1". Nil for fights/races or older rows.
     let predictedScore: String?
@@ -81,6 +84,7 @@ struct Pick: Identifiable, Codable {
         case oddsSource = "odds_source"
         case oddsBooks = "odds_books"
         case startTime = "start_time"
+        case factors
         case predictedScore = "predicted_score"
         case homeLogo = "home_logo"
         case awayLogo = "away_logo"
@@ -324,6 +328,15 @@ struct BettingProp: Codable, Identifiable, Hashable {
     var id: String { label + value }
 }
 
+/// One WHY-breakdown factor: a real data point + the model's 0-100 read on
+/// how much it drives the pick (renders as a meter row).
+struct PickFactor: Codable, Identifiable, Hashable {
+    let label: String
+    let value: String
+    let strength: Int
+    var id: String { label }
+}
+
 /// One sportsbook's quote for the picked outcome — the line-shopping table.
 struct OddsBook: Codable, Identifiable, Hashable {
     let book: String
@@ -421,6 +434,7 @@ extension Pick {
         oddsSource = (try? c.decodeIfPresent(String.self, forKey: .oddsSource)) ?? nil
         oddsBooks = (try? c.decodeIfPresent([OddsBook].self, forKey: .oddsBooks)) ?? nil
         startTime = (try? c.decodeIfPresent(String.self, forKey: .startTime)) ?? nil
+        factors = (try? c.decodeIfPresent([PickFactor].self, forKey: .factors)) ?? nil
         predictedScore = (try? c.decodeIfPresent(String.self, forKey: .predictedScore)) ?? nil
         homeLogo = (try? c.decodeIfPresent(String.self, forKey: .homeLogo)) ?? nil
         awayLogo = (try? c.decodeIfPresent(String.self, forKey: .awayLogo)) ?? nil

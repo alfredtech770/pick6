@@ -281,9 +281,30 @@ struct MatchDetailView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.bottom, 12)
                     }
+                    // PICK1'S CALL · ✓ UNLOCKED — the premium mirror of the
+                    // free tease's locked section.
+                    HStack {
+                        Text("PICK1'S CALL").font(.anton(19)).foregroundColor(.white)
+                        Spacer()
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy))
+                            Text("UNLOCKED")
+                                .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                        }
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
                     pickHeroCard
                         .padding(.horizontal, 16)
                         .padding(.bottom, 14)
+                    if let factors = pick.factors, !factors.isEmpty {
+                        whyFactorsPanel(factors)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 14)
+                    }
                     tabsRow
                     Group {
                         switch tab {
@@ -822,50 +843,42 @@ struct MatchDetailView: View {
     ///   4. Pick row — three stat columns (ODDS / EDGE / TIPOFF), divided
     private var pickHeroCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Head (kicker · conf badge)
+            // Mock layout: AI PICKS label → NAME + WIN% on one baseline →
+            // divider → LOGGED time · Confidence tier.
             HStack {
-                Text(pickKicker)
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.4)
-                    .foregroundColor(sportAccent)
+                Text("AI PICKS")
+                    .font(.archivoNarrow(10, weight: .bold)).tracking(2.4)
+                    .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
-                Text("\(Int(pick.probability))% CONF")
-                    .font(.mono(11, weight: .bold))
-                    .foregroundColor(sportAccent)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule().fill(sportAccent.opacity(0.10))
-                    )
-                    .overlay(
-                        Capsule().stroke(sportAccent.opacity(0.30), lineWidth: 1)
-                    )
             }
-            .padding(.bottom, 10)
-
-            // Title — first segment in ink, second in lime accent.
-            // Strong negative VStack spacing collapses the two Anton
-            // lines onto each other so the head and tail read as a
-            // single condensed block — matches the design's
-            // `.pick-title-xl { line-height: 0.92 }` and how Anton
-            // looks in the static prototype with the lime tail glued
-            // directly under the white head.
-            VStack(alignment: .leading, spacing: -14) {
-                Text(pickTitleHead)
-                    .font(.anton(40))
-                    .tracking(-0.4)
-                    .foregroundColor(Color(hex: "#F5F3EE"))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.45)
-                if !pickTitleTail.isEmpty {
-                    Text(pickTitleTail)
-                        .font(.anton(40))
-                        .tracking(-0.4)
-                        .foregroundColor(sportAccent)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.45)
+            .padding(.bottom, 2)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(pick.shortDisplayPick.uppercased())
+                    .font(.anton(40)).tracking(-0.4)
+                    .foregroundColor(sportAccent)
+                    .lineLimit(1).minimumScaleFactor(0.45)
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: -2) {
+                    Text("\(Int(pick.probability))%")
+                        .font(.anton(40)).tracking(-0.4)
+                        .foregroundColor(Color(hex: "#F5F3EE"))
+                    Text("WIN PROB.")
+                        .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                        .foregroundColor(Color(hex: "#6E6F75"))
                 }
             }
+            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                .padding(.top, 12)
+            HStack {
+                Text("LOGGED \(loggedTimeText)")
+                    .font(.mono(10, weight: .bold)).tracking(1.2)
+                    .foregroundColor(Color(hex: "#8A8D94"))
+                Spacer()
+                (Text("Confidence: ").foregroundColor(Color(hex: "#8A8D94"))
+                 + Text(pick.confidence.capitalized).foregroundColor(sportAccent))
+                    .font(.mono(11, weight: .bold))
+            }
+            .padding(.top, 10)
             .padding(.top, 4)
 
             // Potential payout — the number users actually understand:
@@ -1815,6 +1828,58 @@ struct MatchDetailView: View {
             .presentationDetents([.height(360)])
         }
         .task { if !betTracker.loaded { await betTracker.load() } }
+    }
+
+    /// "6:30 AM" — when the pipeline logged this pick (ET).
+    private var loggedTimeText: String {
+        guard let d = pick.createdAt else { return "PRE-GAME" }
+        let f = DateFormatter(); f.dateFormat = "h:mm a"
+        f.timeZone = TimeZone(identifier: "America/New_York")
+        return f.string(from: d)
+    }
+
+    /// WHY {TEAM} · BREAKDOWN — meter rows from the pipeline's factor
+    /// ratings (real data points; strength is the model's own 0-100 read).
+    private func whyFactorsPanel(_ factors: [PickFactor]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("WHY \(pick.shortDisplayPick.uppercased())")
+                    .font(.anton(19)).foregroundColor(.white)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                Spacer()
+                Text("BREAKDOWN")
+                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                    .foregroundColor(sportAccent)
+                    .padding(.horizontal, 11).padding(.vertical, 6)
+                    .background(Capsule().stroke(sportAccent.opacity(0.5), lineWidth: 1.2))
+            }
+            .padding(.horizontal, 4)
+            VStack(spacing: 14) {
+                ForEach(factors) { f in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(f.label.uppercased())
+                                .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
+                                .foregroundColor(Color(hex: "#C9CBCF"))
+                            Spacer(minLength: 10)
+                            Text(f.value.uppercased())
+                                .font(.archivo(12, weight: .bold))
+                                .foregroundColor(Color(hex: "#F5F3EE"))
+                        }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color(hex: "#22252B")).frame(height: 7)
+                                Capsule().fill(sportAccent)
+                                    .frame(width: geo.size.width * CGFloat(f.strength) / 100.0, height: 7)
+                            }
+                        }
+                        .frame(height: 7)
+                    }
+                }
+            }
+            .padding(16)
+            .background(cardBackground)
+        }
     }
 
     /// The value verdict pill: VALUE when our probability beats the market's
