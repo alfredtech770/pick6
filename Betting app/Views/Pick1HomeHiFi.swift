@@ -338,7 +338,7 @@ struct HomeHiFiContent: View {
                     SportDropdown(vm: vm, isOpen: $showSportMenu,
                                   onLongPress: { onTapSport($0) })
                         .padding(.trailing, 22)
-                        .padding(.top, 64)
+                        .padding(.top, 82)
                 }
                 .zIndex(showSportMenu ? 100 : 0)
 
@@ -557,10 +557,12 @@ struct HeroCard: View {
 
             // Single bright top sheen — keeps the glassy specular
             // edge without piling on shimmer/stripes.
+            // Flat, even gray top — the old white top-shine read as a
+            // washed band under the status bar.
             LinearGradient(
-                colors: [Color.white.opacity(0.18), .clear],
+                colors: [Color.white.opacity(0.05), .clear],
                 startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.12)
+                endPoint: UnitPoint(x: 0.5, y: 0.10)
             )
             .clipShape(BottomRoundedShape(radius: 32))
             .allowsHitTesting(false)
