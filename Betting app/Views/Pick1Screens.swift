@@ -380,13 +380,13 @@ struct MatchDetailView: View {
     }
 
     private var detailTopNav: some View {
+        // No title — just the return arrow (leading) and TRACK YOUR PICK
+        // (trailing overlay below). The matchup card right under carries
+        // all the context.
         TopNavBar(
-            crumb: displayLeague(pick.league) + " · ",
-            crumbAccent: scheduledOrLiveLabel,
-            // Only the in-progress state should show the red LIVE pulse
-            // — past-pending picks read as AWAITING via the crumb, not
-            // as a live game that never ended.
-            live: state == .live,
+            crumb: "",
+            crumbAccent: "",
+            live: false,
             onBack: onClose
         )
         .overlay(alignment: .trailing) {
@@ -1750,12 +1750,21 @@ struct MatchDetailView: View {
                                         .lineLimit(2)
                                 }
                                 Spacer(minLength: 6)
+                                // Return on EVERY market: real book odds get the
+                                // solid pill; otherwise an estimate implied from
+                                // our own probability, labeled EST.
                                 if let odds = prop.odds {
                                     Text("$100 → $\(Int((odds * 100).rounded()))")
                                         .font(.mono(12, weight: .bold))
                                         .foregroundColor(Color(hex: "#0A0B0D"))
                                         .padding(.horizontal, 9).padding(.vertical, 5)
                                         .background(Capsule().fill(sportAccent))
+                                } else if let prob = prop.probability, prob > 0 {
+                                    Text("$100 → $\(Int((100.0 / Double(prob) * 100).rounded())) EST.")
+                                        .font(.mono(11, weight: .bold))
+                                        .foregroundColor(sportAccent)
+                                        .padding(.horizontal, 9).padding(.vertical, 5)
+                                        .background(Capsule().stroke(sportAccent.opacity(0.5), lineWidth: 1))
                                 }
                             }
                         }

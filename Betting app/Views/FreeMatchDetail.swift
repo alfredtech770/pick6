@@ -65,10 +65,6 @@ struct FreeMatchDetailView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("\(sportEmoji) \(pick.league.uppercased())")
-                .font(.archivoNarrow(12, weight: .bold)).tracking(2.2)
-                .foregroundColor(.white)
-            Spacer()
             Button {
                 Haptics.tap()
                 _ = favorites.toggle(pick.id)
