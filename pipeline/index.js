@@ -53,6 +53,21 @@ const anthropic = new Anthropic({
   timeout: 120_000,
 });
 
+
+// ─── Prop-market menus per sport ─────────────────────────────────────
+// The "More predictions" system: beyond the main pick, the model fills
+// props[] from its sport's menu. Only markets with a genuine lean; odds
+// only when a real book quote surfaced in the searches it already ran.
+const PROP_MENUS = {
+  soccer: 'exact final score; both teams to score (yes/no); over/under goals (pick the sharpest line among 1.5/2.5/3.5); halftime/fulltime double result; winning margin (by 1 / by 2 / by 3+); clean sheet for the favorite (yes/no); total corners bracket (0-8 / 9-11 / 12+); total cards over/under + red card in match (yes/no); penalty awarded in match (yes/no); first-goal minute bracket (1-15 / 16-30 / 31-45 / 46-60 / 61+); first goalscorer and anytime goalscorer (ONLY if you verified likely starters in your searches)',
+  basketball: 'winning margin bracket (1-5 / 6-10 / 11+); total points over/under at a realistic line; star player points over/under; star player rebounds or assists over/under; a player 3-pointers made over/under; any triple-double in the game (yes/no); team leading at halftime; top scorer of the match (player name)',
+  football: 'winner + spread bracket; total points over/under; first TD scorer (only with verified starters); QB passing yards over/under; total turnovers over/under; both teams score 20+ points (yes/no)',
+  tennis: 'exact set score (2-0 / 2-1 / 0-2 / 1-2); tiebreak in the match (yes/no); total games over/under; a player aces over/under',
+  baseball: 'total runs over/under at a realistic line; a specific player home run (yes/no, verified lineup only); starting pitcher strikeouts over/under; winning margin bracket (1 / 2-3 / 4+)',
+  hockey: 'total goals over/under; both teams score 2+ (yes/no); winning margin bracket',
+  cricket: 'top team batter; total sixes over/under; winning margin bracket',
+};
+
 // ─── Daily web_search budget ─────────────────────────────────────────
 // Cost ceiling for the agentic web_search tool across one UTC day.
 // Each search ≈ $0.01 and each thinking-step around a search can add
@@ -531,6 +546,22 @@ const PICK_SCHEMA = {
               additionalProperties: false,
             },
           },
+          props: {
+            type: ['array', 'null'],
+            description: 'Additional market predictions for THIS game beyond the main pick — the in-app "More predictions" list. 5-10 entries from the sport menu given in the prompt. Only markets where you have a genuine lean; skip coin flips. Null for events where props make no sense.',
+            items: {
+              type: 'object',
+              properties: {
+                label: { type: 'string', description: 'The market, e.g. "Both teams to score", "Total points O/U 224.5", "First goalscorer"' },
+                value: { type: 'string', description: 'Your call, e.g. "YES", "OVER 224.5", "2-1", "Mbappé"' },
+                probability: { type: 'integer', description: 'Your honest calibrated probability (50-95) that this call hits' },
+                odds: { type: ['number', 'null'], description: 'Decimal odds for THIS selection ONLY if you saw a real sportsbook quote during your existing searches (do NOT run extra searches for props). Null otherwise. Same real-books-only rule as market_odds.' },
+                hint: { type: ['string', 'null'], description: 'One short stat-first reason, e.g. "BTTS hit in 7 of Spain\'s last 8"' },
+              },
+              required: ['label', 'value', 'probability', 'odds', 'hint'],
+              additionalProperties: false,
+            },
+          },
           predicted_score: {
             type: ['string', 'null'],
             description: 'Your single most-likely FINAL SCORE for this matchup, formatted "<home>-<away>" from the home team\'s perspective (e.g. "2-1" for soccer, "112-104" for NBA, "5-3" for MLB). Null for events where a score makes no sense (fights, races).',
@@ -581,7 +612,7 @@ const PICK_SCHEMA = {
             },
           },
         },
-        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_books', 'odds_source', 'predicted_score', 'field_odds'],
+        required: ['game_id', 'game_date', 'home_team', 'away_team', 'pick', 'probability', 'confidence', 'reasoning', 'key_factor', 'matchup_facts', 'market_odds', 'odds_books', 'odds_source', 'props', 'predicted_score', 'field_odds'],
         additionalProperties: false,
       },
     },
@@ -626,6 +657,9 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
       `MODE: research. There is no curated feed available for ${league} today. Use web_search to find ${searchTarget}, then return a pick for EVERY matchup you can confirm in that window — full coverage, not just the best games. For each game pick the stronger side with your honest calibrated probability. Use the structured output schema. Empty array is only correct if literally zero games are scheduled in that window.`,
       'Set game_date on every pick to the REAL calendar date (US Eastern Time) the match is played, formatted YYYY-MM-DD.',
       'For each pick, look up the CURRENT CONSENSUS odds for the picked outcome across 2-3 MAJOR sportsbooks (DraftKings, FanDuel, bet365, Pinnacle) — report the MEDIAN as decimal odds in market_odds with the book(s) in odds_source, AND list each individual book quote you found in odds_books (per-book decimal odds — this powers the in-app best-line table). Use ONLY real sportsbooks, NEVER tipster/media/prediction sites (FreeTips, ClutchPoints, Kalshi, Forebet, etc.); null all odds fields if no real sportsbook quote is found.',
+    ...(PROP_MENUS[cfg.sport] ? [
+      `PROPS — fill the props array with 5-10 additional market predictions per game from this ${cfg.sport} menu: ${PROP_MENUS[cfg.sport]}. For each: label = the market (include the line, e.g. "Total goals O/U 2.5"), value = your call, probability = honest calibrated % (50-95 — skip any market where you'd say 50/50), odds = decimal odds for that selection ONLY if a real sportsbook quote appeared in searches you already ran (never run extra searches for props; null otherwise), hint = one stat-first reason. Player props (scorers, player points, HRs, aces) ONLY when you verified the player is expected to start/play.`,
+    ] : []),
       ...(excludeMatchups.length
         ? [`Already covered — do NOT return picks for these matchups: ${excludeMatchups.join('; ')}.`]
         : []),
@@ -641,6 +675,9 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
     'Set game_date on every pick to the REAL calendar date (US Eastern Time) the event is played — for future events (e.g. an upcoming Grand Prix) use the event\'s date from the feed above, formatted YYYY-MM-DD.',
     'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
+    ...(PROP_MENUS[cfg.sport] ? [
+      `PROPS — fill the props array with 5-10 additional market predictions per game from this ${cfg.sport} menu: ${PROP_MENUS[cfg.sport]}. For each: label = the market (include the line, e.g. "Total goals O/U 2.5"), value = your call, probability = honest calibrated % (50-95 — skip any market where you'd say 50/50), odds = decimal odds for that selection ONLY if a real sportsbook quote appeared in searches you already ran (never run extra searches for props; null otherwise), hint = one stat-first reason. Player props (scorers, player points, HRs, aces) ONLY when you verified the player is expected to start/play.`,
+    ] : []),
   ].join('\n');
 }
 
@@ -892,11 +929,31 @@ async function savePicks(league, picks) {
     tale_of_tape: p.tale_of_tape || null,
     soccer_comparison: p.soccer_comparison || null,
     team_comparison: p.team_comparison || null,
-    // Confident betting props: combat method/distance (grounded path) or
-    // team total/margin (from projected score). Null when none qualify.
-    betting_props: (Array.isArray(p.betting_props) && p.betting_props.length)
-      ? p.betting_props
-      : (teamProps.length ? teamProps : null),
+    // "More predictions": model-generated per-sport prop markets (with
+    // probability + optional real odds), then combat grounded props, then
+    // the score-derived fallbacks. Deduped by label, capped at 12.
+    betting_props: (() => {
+      const modelProps = (Array.isArray(p.props) ? p.props : [])
+        .filter((x) => x && typeof x.label === 'string' && typeof x.value === 'string'
+          && Number.isFinite(x.probability) && x.probability >= 50 && x.probability <= 97)
+        .map((x) => ({
+          label: x.label.trim().slice(0, 60),
+          value: x.value.trim().slice(0, 40),
+          hint: (typeof x.hint === 'string' && x.hint.trim()) ? x.hint.trim().slice(0, 90) : null,
+          probability: Math.round(x.probability),
+          odds: (typeof x.odds === 'number' && x.odds >= 1.01 && x.odds <= 30) ? +x.odds.toFixed(2) : null,
+        }));
+      const legacy = (Array.isArray(p.betting_props) && p.betting_props.length)
+        ? p.betting_props : teamProps;
+      const seen = new Set();
+      const merged = [...modelProps, ...legacy].filter((x) => {
+        const k = x.label.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).slice(0, 12);
+      return merged.length ? merged : null;
+    })(),
     result: 'pending',
     };
   });

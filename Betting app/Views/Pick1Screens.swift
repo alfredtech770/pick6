@@ -1677,22 +1677,52 @@ struct MatchDetailView: View {
                     .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
             }
 
-            // 3. The confident props we already generate
+            // 3. More predictions — the per-sport prop markets (exact score,
+            // BTTS, player props, totals…). Newer rows carry probability +
+            // real odds → show the confidence % and a projected-return chip;
+            // legacy rows fall back to the plain label/value line.
             if let props = pick.bettingProps, !props.isEmpty {
-                Text("ALSO LIKELY")
+                Text("MORE PREDICTIONS · \(props.count)")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .padding(.top, 16).padding(.bottom, 4)
-                ForEach(Array(props.enumerated()), id: \.offset) { _, prop in
-                    HStack {
-                        Text(prop.label.uppercased())
-                            .font(.archivoNarrow(11, weight: .bold)).tracking(0.6)
-                            .foregroundColor(Color(hex: "#9A9B9F"))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(prop.value)
-                            .font(.archivo(13, weight: .bold)).foregroundColor(Color(hex: "#F5F3EE"))
+                ForEach(Array(props.enumerated()), id: \.offset) { i, prop in
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(prop.label.uppercased())
+                                .font(.archivoNarrow(11, weight: .bold)).tracking(0.6)
+                                .foregroundColor(Color(hex: "#9A9B9F"))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let prob = prop.probability {
+                                Text("\(prob)%")
+                                    .font(.archivo(12, weight: .bold))
+                                    .foregroundColor(sportAccent)
+                            }
+                            Text(prop.value)
+                                .font(.archivo(13, weight: .bold)).foregroundColor(Color(hex: "#F5F3EE"))
+                        }
+                        if prop.hint != nil || prop.odds != nil {
+                            HStack(spacing: 8) {
+                                if let hint = prop.hint {
+                                    Text(hint)
+                                        .font(.archivo(11)).foregroundColor(Color(hex: "#6E6F75"))
+                                        .lineLimit(2)
+                                }
+                                Spacer(minLength: 6)
+                                if let odds = prop.odds {
+                                    Text("$100 → $\(Int((odds * 100).rounded()))")
+                                        .font(.mono(10, weight: .bold))
+                                        .foregroundColor(sportAccent.opacity(0.9))
+                                        .padding(.horizontal, 7).padding(.vertical, 3)
+                                        .background(Capsule().fill(sportAccent.opacity(0.10)))
+                                }
+                            }
+                        }
                     }
                     .padding(.vertical, 8)
+                    if i < props.count - 1 {
+                        Rectangle().fill(Color(hex: "#1C1F25")).frame(height: 1)
+                    }
                 }
             }
 

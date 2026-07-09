@@ -313,6 +313,11 @@ struct BettingProp: Codable, Identifiable, Hashable {
     let label: String
     let value: String
     let hint: String?
+    /// Model's calibrated % for this call (newer rows; nil on legacy props).
+    var probability: Int? = nil
+    /// Real decimal odds for this selection when a book quote was found —
+    /// powers the "$100 → $X" projected-return chip. Nil otherwise.
+    var odds: Double? = nil
     var id: String { label + value }
 }
 
