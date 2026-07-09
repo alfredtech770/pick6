@@ -44,14 +44,12 @@ struct OBPaywallScreen: View {
     @Environment(LocalizationManager.self) private var loc
     @ObservedObject private var perf = PerformanceStats.shared
 
-    /// Dismiss (✕) skip control reveals 26 seconds after the paywall opens.
-    /// Lets users dismiss the paywall without subscribing — required for
-    /// good UX (and several App Review precedents). Kept deliberately quiet
-    /// (a small ✕, not a labeled "Access Free" pill) and delayed longer so
-    /// more users see the value prop before the out appears — lifts trial
-    /// conversion without trapping users or risking a "can't dismiss" reject.
+    /// Dismiss (✕) skip control reveals 5 seconds after the paywall opens
+    /// (product decision 2026-07: long delays read as trapping; a quick out
+    /// keeps trust while the value prop still gets first read). Kept
+    /// deliberately quiet — a small ✕, not a labeled "Access Free" pill.
     @State private var skipUnlocked: Bool = false
-    private let skipDelay: Double = 26.0
+    private let skipDelay: Double = 5.0
 
     /// Terms / Privacy sheets — required by App Review guideline 3.1.2
     /// to be reachable on the paywall itself, not just from Profile.

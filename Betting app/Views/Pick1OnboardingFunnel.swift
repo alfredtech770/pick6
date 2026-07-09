@@ -1310,7 +1310,7 @@ private struct PaywallScreen: View {
     @State private var showPrivacy = false
     /// Free-tier skip reveals after the same delay as the in-app paywall.
     @State private var skipUnlocked = false
-    static let skipDelay: Double = 26.0
+    static let skipDelay: Double = 5.0
 
     private var feats: [String] {
         [t(.funnel_paywall_feat1), t(.funnel_paywall_feat2), t(.funnel_paywall_feat3), t(.funnel_paywall_feat4)]
