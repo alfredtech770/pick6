@@ -336,7 +336,7 @@ struct HomeHiFiContent: View {
                     SportDropdown(vm: vm, isOpen: $showSportMenu,
                                   onLongPress: { onTapSport($0) })
                         .padding(.trailing, 22)
-                        .padding(.top, 52)
+                        .padding(.top, 64)
                 }
                 .zIndex(showSportMenu ? 100 : 0)
 
@@ -568,15 +568,16 @@ struct HeroCard: View {
             .clipShape(BottomRoundedShape(radius: 32))
             .allowsHitTesting(false)
 
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 10) {
                 if !embedded { heroTopBar }
                 heroBody
             }
             .padding(.horizontal, 22)
-            // Home bleeds under the status bar (56pt inset); embedded
-            // sits below a TopNavBar so it just needs normal padding.
-            .padding(.top, embedded ? 22 : 56)
-            .padding(.bottom, embedded ? 22 : 32)
+            // Home bleeds under the status bar; logo row sits lower (68pt)
+            // and the matchup content hugs it (10pt gap) so the card starts
+            // higher visually.
+            .padding(.top, embedded ? 22 : 68)
+            .padding(.bottom, embedded ? 22 : 26)
 
             // Animated acid-green border — a conic gradient stroked
             // around the card's perimeter, rotating slowly. The
@@ -710,6 +711,20 @@ struct HeroCard: View {
                             .foregroundColor(Color(hex: "#D4FF3A"))
                             .lineLimit(1).minimumScaleFactor(0.6)
                     }
+                }
+                // Hypothetical return — same framing + odds source as the
+                // detail page's POTENTIAL RETURN (App Review-proven).
+                if let pick {
+                    HStack {
+                        Text("POSSIBLE RETURN")
+                            .font(.archivoNarrow(10, weight: .bold)).tracking(1.8)
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                        Spacer(minLength: 8)
+                        Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                            .font(.mono(13, weight: .bold))
+                            .foregroundColor(Color(hex: "#D4FF3A").opacity(0.9))
+                    }
+                    .padding(.top, 6)
                 }
             }
         }
