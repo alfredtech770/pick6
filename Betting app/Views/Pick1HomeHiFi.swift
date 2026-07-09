@@ -1613,7 +1613,7 @@ struct SparklineView: View {
 /// sell. Header carries the last-30-days record ("AI 24-6 L30").
 struct LatestWinsRail: View {
     @ObservedObject var vm: PicksViewModel
-    private let win = Color(hex: "#34D26B")
+    private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
 
     private var wins: [Pick] {
         vm.historyPicks.filter { $0.isWin }
@@ -1659,7 +1659,7 @@ struct LatestWinsRail: View {
 /// One graded win: "✓ WON · NBA / CELTICS / W 118-104   81%".
 struct WinReceiptCard: View {
     let pick: Pick
-    private let win = Color(hex: "#34D26B")
+    private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
@@ -1686,7 +1686,7 @@ struct WinReceiptCard: View {
         .frame(width: 186, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(hex: "#0F1310"))
+                .fill(Color(hex: "#111309"))
                 .overlay(
                     LinearGradient(colors: [win.opacity(0.14), .clear],
                                    startPoint: .topLeading, endPoint: .center)
