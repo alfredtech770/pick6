@@ -674,13 +674,16 @@ struct HeroCard: View {
                 } else {
                     // Each name sits centered under its own flag — clean
                     // column pairing, VS floating between the marks.
-                    HStack(alignment: .top, spacing: 16) {
+                    // Hug-left, tight pairing: columns size to content so
+                    // the matchup reads as one unit on the leading edge.
+                    HStack(alignment: .top, spacing: 12) {
                         heroTeamColumn(pick.awayTeam, sport: pick.sport)
                         Text("VS")
-                            .font(.anton(15)).foregroundColor(Color.white.opacity(0.4))
-                            .padding(.top, 28)
+                            .font(.anton(14)).foregroundColor(Color.white.opacity(0.4))
+                            .padding(.top, 30)
                         heroTeamColumn(pick.homeTeam, sport: pick.sport)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
@@ -736,8 +739,8 @@ struct HeroCard: View {
             Text(teamShortName(team, sport: sport).uppercased())
                 .font(.anton(19)).foregroundColor(.white)
                 .lineLimit(1).minimumScaleFactor(0.5)
+                .frame(maxWidth: 96)
         }
-        .frame(maxWidth: 130)
     }
 
     /// The picked side, shortened + uppercased ("MEXICO", "CELTICS",
