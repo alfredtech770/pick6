@@ -42,27 +42,46 @@ struct Betting_appApp: App {
         Analytics.bootstrap()
     }
 
+    /// The real launch gate: splash while the session check runs, funnel for
+    /// signed-out / un-onboarded users, the app for everyone else.
+    @ViewBuilder private var gateContent: some View {
+        if authManager.isCheckingSession {
+            Pick1SplashLoader()
+                .preferredColorScheme(.dark)
+        } else if !authManager.isAuthenticated || !hasFinishedOnboarding {
+            // 21-screen marketing funnel — the single pre-main flow:
+            // welcome → features → quiz → analysis → sign up → hard-truth
+            // → the-fix → social → compare → goals → notifications →
+            // referral → rating → time-to-win → paywall → success.
+            Pick1OnboardingFunnel { sports in
+                selectedSports = sports.sorted().joined(separator: ",")
+                hasFinishedOnboarding = true
+                Analytics.onboardingCompleted()
+            }
+            .preferredColorScheme(.dark)
+        } else {
+            Pick1HomeHiFi()
+                .preferredColorScheme(.dark)
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
-                if authManager.isCheckingSession {
-                    Pick1SplashLoader()
-                        .preferredColorScheme(.dark)
-                } else if !authManager.isAuthenticated || !hasFinishedOnboarding {
-                    // 20-screen marketing funnel — the single pre-main flow:
-                    // welcome → features → sign up (Apple/OTP) → quiz → analysis
-                    // → hard-truth → the-fix → social → compare → goals → referral
-                    // → rating → paywall (Weekly/Monthly/Lifetime) → success.
-                    Pick1OnboardingFunnel { sports in
-                        selectedSports = sports.sorted().joined(separator: ",")
-                        hasFinishedOnboarding = true
-                        Analytics.onboardingCompleted()
-                    }
-                    .preferredColorScheme(.dark)
-                } else {
+                #if DEBUG
+                // Sim/dev hook: `-showHomeUnauthenticated` renders the main
+                // app without a session (public feeds work; account features
+                // show signed-out states). Screenshots + design review only —
+                // compiled out of Release.
+                if CommandLine.arguments.contains("-showHomeUnauthenticated") {
                     Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
+                } else {
+                    gateContent
                 }
+                #else
+                gateContent
+                #endif
             }
             .environment(authManager)
             .environment(localization)

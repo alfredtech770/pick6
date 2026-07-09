@@ -124,17 +124,23 @@ final class SubscriptionManager: ObservableObject {
     static let dayPassProductId = "com.pick1.app.pro.daypass"
 
     /// All Pick1 Pro product identifiers, in display order (weekly →
-    /// monthly → lifetime → day pass; the pass anchors the bottom as the
+    /// monthly → day pass; the pass anchors the bottom as the
     /// no-commitment option). Configure the two auto-renewables in App
-    /// Store Connect → Subscriptions → "Pick1 Pro" group; Lifetime
-    /// (Non-Consumable) and Day Pass (Non-Renewing Subscription) live under
-    /// In-App Purchases.
+    /// Store Connect → Subscriptions → "Pick1 Pro" group; the Day Pass
+    /// (Non-Renewing Subscription) lives under In-App Purchases.
+    ///
+    /// Lifetime was REMOVED from the lineup 2026-07 (also pulled from sale
+    /// in ASC). `lifetimeProductId` stays defined and the entitlement path
+    /// still honors it so any past purchaser keeps Pro forever.
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
-        lifetimeProductId,
         dayPassProductId,
     ]
+
+    /// Product ids the ENTITLEMENT check accepts — includes retired
+    /// products (Lifetime) that existing owners must keep.
+    static let entitledProductIds: [String] = productIds + [lifetimeProductId]
 
     // MARK: - Lifecycle
 
@@ -418,7 +424,7 @@ final class SubscriptionManager: ObservableObject {
                 let transaction = try Self.checkVerified(result)
                 // We only care about subscriptions in our product set,
                 // and only ones that are still inside their expiration.
-                guard Self.productIds.contains(transaction.productID) else { continue }
+                guard Self.entitledProductIds.contains(transaction.productID) else { continue }
                 if let exp = transaction.expirationDate, exp > Date() {
                     foundActive = transaction
                     break

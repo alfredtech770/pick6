@@ -1315,7 +1315,7 @@ private struct TimeToWinScreen: View {
 private struct PaywallScreen: View {
     let onDone: () -> Void
     @EnvironmentObject private var subs: SubscriptionManager
-    @State private var selected: String = SubscriptionManager.lifetimeProductId
+    @State private var selected: String = "com.pick1.app.pro.weekly"
     @State private var busy = false
     @State private var showTerms = false
     @State private var showPrivacy = false
@@ -1434,7 +1434,7 @@ private struct PaywallScreen: View {
     private func alignSelection() {
         guard !subs.products.isEmpty,
               !subs.products.contains(where: { $0.id == selected }) else { return }
-        selected = subs.products.first(where: { $0.id == SubscriptionManager.lifetimeProductId })?.id
+        selected = subs.products.first(where: { $0.id.hasSuffix("weekly") })?.id
             ?? subs.products.first!.id
     }
 
@@ -1467,7 +1467,9 @@ private struct PaywallScreen: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(isSel ? Fnl.lime.opacity(0.08) : Fnl.panel)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(isSel ? Fnl.lime : Fnl.line, lineWidth: isSel ? 2 : 1)))
             .overlay(alignment: .topTrailing) {
-                if isLife {
+                // BEST VALUE sits on Monthly (best per-week rate) now that
+                // Lifetime is retired; isLife kept for any cached product.
+                if isLife || p.id.hasSuffix("monthly") {
                     Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
