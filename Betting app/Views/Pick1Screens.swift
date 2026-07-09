@@ -890,7 +890,7 @@ struct MatchDetailView: View {
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
                 (Text("Confidence: ").foregroundColor(Color(hex: "#8A8D94"))
-                 + Text(pick.confidence.capitalized).foregroundColor(sportAccent))
+                 + Text(confidenceDisplay).foregroundColor(sportAccent))
                     .font(.mono(11, weight: .bold))
             }
             .padding(.top, 10)
@@ -1843,6 +1843,18 @@ struct MatchDetailView: View {
             .presentationDetents([.height(360)])
         }
         .task { if !betTracker.loaded { await betTracker.load() } }
+    }
+
+    /// Human confidence word — uses the stored value when it's a word,
+    /// else derives the tier from probability (legacy rows stored glyphs).
+    private var confidenceDisplay: String {
+        let raw = pick.confidence.lowercased()
+        if ["high", "medium", "low"].contains(raw) { return raw.capitalized }
+        switch pick.confidenceTier {
+        case .high: return "High"
+        case .medium: return "Medium"
+        case .low: return "Low"
+        }
     }
 
     /// "6:30 AM" — when the pipeline logged this pick (ET).

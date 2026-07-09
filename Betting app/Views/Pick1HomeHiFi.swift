@@ -61,11 +61,20 @@ struct Pick1HomeHiFi: View {
     @State private var sportHub: String?           // sport-chip tap → hub sheet
     @State private var showPaywall: Bool = false
 
-    /// DEBUG: `-openPaywall` presents the paywall after launch (sim review).
+    /// DEBUG: `-openPaywall` presents the paywall after launch;
+    /// `-openTopDetail` opens the top pick's full detail (sim review).
     private func debugAutoOpenPaywall() {
         #if DEBUG
-        guard CommandLine.arguments.contains("-openPaywall") else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showPaywall = true }
+        if CommandLine.arguments.contains("-openPaywall") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showPaywall = true }
+        }
+        if CommandLine.arguments.contains("-openTopDetail") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                detailPick = vm.effectiveTodayPicks.filter(\.isPending)
+                    .max(by: { $0.probability < $1.probability })
+                    ?? vm.effectiveTodayPicks.first
+            }
+        }
         #endif
     }
     @State private var showWins: Bool = false
