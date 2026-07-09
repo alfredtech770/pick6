@@ -331,17 +331,9 @@ struct HomeHiFiContent: View {
                 }
                 .zIndex(showSportMenu ? 100 : 0)
 
-                StatsRow(winsThisWeek: vm.winsThisWeek,
-                         gamesThisWeek: vm.gamesThisWeek,
-                         lossesThisWeek: vm.lossesThisWeek,
-                         accuracy: vm.accuracyAll,
-                         delta: vm.accuracyDelta(),
-                         record: vm.recentRecord(),
-                         mood: vm.accuracyMood,
-                         last10: vm.last10Results,
-                         onTap: { showHistory = true })
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
+                // (WINS / ACCURACY tile pair removed 2026-07 — the Latest
+                // Wins rail below is the home proof surface now; deep stats
+                // live in the Wins tab.)
 
                 // (Summer Football banner + sport chip carousel removed
                 // 2026-07 — WC games live in the normal feed; filtering
@@ -1585,37 +1577,43 @@ struct LatestWinsRail: View {
     @ObservedObject var vm: PicksViewModel
     private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
 
-    private var wins: [Pick] {
-        vm.historyPicks.filter { $0.isWin }
+    /// Settled picks from the PAST 3 DAYS in a deliberate ~80/20 win-loss
+    /// mix (up to 8 wins, up to 2 losses, losses interleaved) — recent,
+    /// mostly winning, but visibly honest.
+    private var results: [Pick] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
+        let recent = vm.historyPicks
+            .filter { (!$0.isPending) && (($0.createdAt ?? .distantPast) > cutoff) }
             .sorted { ($0.gameDate, $0.createdAt ?? .distantPast) > ($1.gameDate, $1.createdAt ?? .distantPast) }
-            .prefix(10).map { $0 }
-    }
-    private var l30: (w: Int, l: Int) {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        let settled = vm.historyPicks.filter {
-            ($0.isWin || $0.isLoss) && ($0.createdAt ?? .distantPast) > cutoff
+        let wins = recent.filter(\.isWin).prefix(8).map { $0 }
+        // ≤20% of the rail: 1 loss for 4-7 wins, 2 for 8 (0 when few wins)
+        let lossBudget = wins.count >= 8 ? 2 : (wins.count >= 4 ? 1 : 0)
+        let losses = recent.filter(\.isLoss).prefix(lossBudget).map { $0 }
+        // Interleave: a loss after the 3rd win and after the 7th.
+        var out: [Pick] = []
+        var li = 0
+        for (i, w) in wins.enumerated() {
+            out.append(w)
+            if (i == 2 || i == 6), li < losses.count {
+                out.append(losses[li]); li += 1
+            }
         }
-        return (settled.filter(\.isWin).count, settled.filter(\.isLoss).count)
+        out.append(contentsOf: losses[li...])
+        return out
     }
 
     var body: some View {
-        if wins.isEmpty {
+        if results.isEmpty {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("LATEST WINS")
-                        .font(.anton(22)).foregroundColor(.white)
-                    Spacer()
-                    Text("AI \(l30.w)-\(l30.l) L30")
-                        .font(.mono(11, weight: .bold)).tracking(0.8)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                }
-                .padding(.horizontal, 4)
+                Text("LATEST WINS")
+                    .font(.anton(22)).foregroundColor(.white)
+                    .padding(.horizontal, 4)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(wins) { p in WinReceiptCard(pick: p) }
+                        ForEach(results) { p in WinReceiptCard(pick: p) }
                     }
                     .padding(.horizontal, 4)
                 }
@@ -1630,15 +1628,18 @@ struct LatestWinsRail: View {
 struct WinReceiptCard: View {
     let pick: Pick
     private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
+    private let loss = Color(hex: "#FF5A5A")
+
+    private var accent: Color { pick.isWin ? win : loss }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12)).foregroundColor(win)
-                Text("WON · \(pick.league.uppercased())")
+                Image(systemName: pick.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 12)).foregroundColor(accent)
+                Text("\(pick.isWin ? "WON" : "LOST") · \(pick.league.uppercased())")
                     .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                    .foregroundColor(win)
+                    .foregroundColor(accent)
             }
             Text(teamShortName(pick.pick, sport: pick.sport).uppercased())
                 .font(.anton(23)).foregroundColor(.white)
@@ -1649,29 +1650,29 @@ struct WinReceiptCard: View {
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer(minLength: 10)
                 Text("\(Int(pick.probability.rounded()))%")
-                    .font(.archivo(13, weight: .bold)).foregroundColor(win)
+                    .font(.archivo(13, weight: .bold)).foregroundColor(accent)
             }
         }
         .padding(14)
         .frame(width: 186, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(hex: "#111309"))
+                .fill(Color(hex: pick.isWin ? "#111309" : "#130E0E"))
                 .overlay(
-                    LinearGradient(colors: [win.opacity(0.14), .clear],
+                    LinearGradient(colors: [accent.opacity(pick.isWin ? 0.14 : 0.10), .clear],
                                    startPoint: .topLeading, endPoint: .center)
                         .clipShape(RoundedRectangle(cornerRadius: 18))
                 )
                 .overlay(RoundedRectangle(cornerRadius: 18)
-                    .stroke(win.opacity(0.30), lineWidth: 1))
+                    .stroke(accent.opacity(pick.isWin ? 0.30 : 0.22), lineWidth: 1))
         )
     }
 
     private var scoreLine: String {
         if let h = pick.homeScore, let a = pick.awayScore {
-            return "W \(max(h, a))-\(min(h, a))"
+            return pick.isWin ? "W \(max(h, a))-\(min(h, a))" : "L \(min(h, a))-\(max(h, a))"
         }
-        return "WON"
+        return pick.isWin ? "WON" : "LOST"
     }
 }
 
