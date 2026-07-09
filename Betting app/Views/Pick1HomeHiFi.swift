@@ -652,63 +652,104 @@ struct HeroCard: View {
         }
     }
 
+    // "Pick of the Day" layout (2026-07 redesign to the approved mock):
+    //   ★ PICK OF THE DAY          ⚽ WC 2026 · 8:00 PM
+    //   [big away flag]  VS  [big home flag]
+    //   AI PICKS                              78%
+    //   MEXICO                            WIN PROB.
+    // Big flags + a huge probability number — clear at a glance.
     private var heroBody: some View {
-        HStack(alignment: .bottom, spacing: 16) {
-            VStack(alignment: .leading, spacing: 14) {
-                // Lime kicker — pops against the dark surface much
-                // harder than the previous black-on-lime treatment.
-                Text("★ TOP PICK · TONIGHT")
-                    .font(.archivoNarrow(11, weight: .bold))
-                    .tracking(2.4)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
-                    .padding(.bottom, -8)
+        VStack(alignment: .leading, spacing: 20) {
+            // 1. Pill row
+            HStack {
+                HStack(spacing: 7) {
+                    Text("★").font(.system(size: 12, weight: .heavy))
+                    Text("PICK OF THE DAY")
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(2.2)
+                }
+                .foregroundColor(Color(hex: "#D4FF3A"))
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
 
-                // Two-line headline — predicted team in lime, "OVER
-                // OTHER" in white. Reads "ADESANYA / over VOLKANOVSKI"
-                // at a glance: the lime line is the call, the white
-                // line is the opponent.
-                // Consistent line spacing whether or not there's a pick.
-                // Previously the empty "NO PICKS / YET" state used -28
-                // (cramped) vs -7 for a real pick, so the featured frame
-                // jumped between layouts. One value everywhere.
-                VStack(alignment: .leading, spacing: -7) {
-                    ForEach(Array(headlineLines.enumerated()), id: \.offset) { idx, line in
-                        Text(line)
-                            .font(.anton(50))
-                            .tracking(-0.7)
-                            .foregroundColor(idx == 0
-                                             ? Color(hex: "#D4FF3A")
-                                             : Color.white)
-                            .lineLimit(1)
-                            // 0.45 floor: long national-team names
-                            // ("OVER HERZEGOVINA") shrink to fit
-                            // instead of ellipsizing — same rule as
-                            // the detail-page title.
-                            .minimumScaleFactor(0.45)
-                            .allowsTightening(true)
+                Spacer(minLength: 8)
+
+                HStack(spacing: 7) {
+                    Text(heroSportEmoji).font(.system(size: 12))
+                    Text(heroLeagueTime)
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
+                        .foregroundColor(Color(hex: "#C9CBCF"))
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+                .padding(.horizontal, 13).padding(.vertical, 8)
+                .background(Capsule().fill(Color(hex: "#0A0B0D").opacity(0.85))
+                    .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1)))
+            }
+
+            // 2. Big matchup marks
+            if let pick {
+                if pick.sport == "f1" || pick.sport == "golf" {
+                    TeamLogo(sport: pick.sport, team: pick.pick, size: .big)
+                } else {
+                    HStack(spacing: 14) {
+                        TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
+                        Text("VS")
+                            .font(.archivoNarrow(13, weight: .bold)).tracking(1.8)
+                            .foregroundColor(Color.white.opacity(0.45))
+                        TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
                     }
                 }
-
-                HeroMetaPill(time: timeText, channel: channelText)
             }
 
-            Spacer(minLength: 0)
-
-            VStack(spacing: 12) {
-                // Lime ring on dark — much higher contrast than the
-                // dark-on-lime version.
-                HiFiConfidenceRing(percent: pick?.probability ?? 0,
-                                   color: Color(hex: "#D4FF3A"),
-                                   trackColor: Color.white.opacity(0.12),
-                                   size: 110,
-                                   stroke: 6,
-                                   numberColor: Color.white)
-                CrestPair(home: pick?.homeTeam, away: pick?.awayTeam,
-                          sport: pick?.sport ?? "",
-                          soloName: (pick?.sport == "f1" || pick?.sport == "golf") ? pick?.pick : nil)
+            // 3. The call + the number
+            HStack(alignment: .bottom, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AI PICKS")
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
+                        .foregroundColor(Color(hex: "#8A8D94"))
+                    Text(heroPickName)
+                        .font(.anton(46)).tracking(-0.5)
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .lineLimit(1).minimumScaleFactor(0.45)
+                        .allowsTightening(true)
+                }
+                Spacer(minLength: 8)
+                if let pick {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(Int(pick.probability.rounded()))%")
+                            .font(.anton(64)).tracking(-1)
+                            .foregroundColor(Color(hex: "#D4FF3A"))
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                        Text("WIN PROB.")
+                            .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                    }
+                }
             }
-            .frame(width: 130)
         }
+    }
+
+    /// The picked side, shortened + uppercased ("MEXICO", "CELTICS",
+    /// "ANTONELLI"). Falls back to the empty-state line.
+    private var heroPickName: String {
+        guard let pick else { return "NO PICKS YET" }
+        return teamShortName(pick.pick, sport: pick.sport).uppercased()
+    }
+
+    private var heroSportEmoji: String {
+        switch pick?.sport {
+        case "basketball": return "🏀"; case "baseball": return "⚾️"
+        case "hockey": return "🏒"; case "football": return "🏈"
+        case "soccer": return "⚽️"; case "combat": return "🥊"
+        case "f1": return "🏎️"; case "golf": return "⛳️"
+        case "cricket": return "🏏"; case "tennis": return "🎾"
+        default: return "🎯"
+        }
+    }
+
+    /// "WC 2026 · 8:00 PM" — league tag + start time.
+    private var heroLeagueTime: String {
+        guard let pick else { return "TODAY" }
+        return "\(pick.league.uppercased()) · \(timeText)"
     }
 
     private var headlineText: String {
