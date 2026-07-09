@@ -671,21 +671,14 @@ struct HeroCard: View {
                 if pick.sport == "f1" || pick.sport == "golf" {
                     TeamLogo(sport: pick.sport, team: pick.pick, size: .big)
                 } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 14) {
-                            TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
-                            Text("VS")
-                                .font(.archivoNarrow(13, weight: .bold)).tracking(1.8)
-                                .foregroundColor(Color.white.opacity(0.45))
-                            TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
-                        }
-                        (Text(teamShortName(pick.awayTeam, sport: pick.sport).uppercased())
-                            .font(.anton(26)).foregroundColor(.white)
-                         + Text("  VS  ")
+                    // Each name sits centered under its own flag — clean
+                    // column pairing, VS floating between the marks.
+                    HStack(alignment: .top, spacing: 16) {
+                        heroTeamColumn(pick.awayTeam, sport: pick.sport)
+                        Text("VS")
                             .font(.anton(15)).foregroundColor(Color.white.opacity(0.4))
-                         + Text(teamShortName(pick.homeTeam, sport: pick.sport).uppercased())
-                            .font(.anton(26)).foregroundColor(.white))
-                            .lineLimit(1).minimumScaleFactor(0.55)
+                            .padding(.top, 28)
+                        heroTeamColumn(pick.homeTeam, sport: pick.sport)
                     }
                 }
             }
@@ -720,6 +713,16 @@ struct HeroCard: View {
                 }
             }
         }
+    }
+
+    private func heroTeamColumn(_ team: String, sport: String) -> some View {
+        VStack(spacing: 8) {
+            TeamLogo(sport: sport, team: team, size: .big)
+            Text(teamShortName(team, sport: sport).uppercased())
+                .font(.anton(19)).foregroundColor(.white)
+                .lineLimit(1).minimumScaleFactor(0.5)
+        }
+        .frame(maxWidth: 130)
     }
 
     /// The picked side, shortened + uppercased ("MEXICO", "CELTICS",
