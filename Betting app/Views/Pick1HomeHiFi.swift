@@ -75,6 +75,14 @@ struct Pick1HomeHiFi: View {
                     ?? vm.effectiveTodayPicks.first
             }
         }
+        // Tab jumps for sim review (seed favorites via the UserDefaults
+        // argument domain: -pick1.favoriteMatchIds.v1 '("<uuid>", …)').
+        if CommandLine.arguments.contains("-openPicksTab") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { tab = .picks }
+        }
+        if CommandLine.arguments.contains("-openLiveTab") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { tab = .live }
+        }
         #endif
     }
     @State private var showWins: Bool = false

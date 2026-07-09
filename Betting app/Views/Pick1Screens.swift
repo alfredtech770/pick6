@@ -202,6 +202,37 @@ private var cardBackground: some View {
         .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
 }
 
+/// State-tinted "receipt" frame — the 2026-07 home-redesign card
+/// language (see WinReceiptCard / LockedSlateCard): tinted dark fill +
+/// accent wash from the top-left + accent stroke. Used by the tracking
+/// (Picks) and Live pages so their frames match the new home.
+private func receiptCardBackground(accent: Color, fill: String) -> some View {
+    RoundedRectangle(cornerRadius: 18, style: .continuous)
+        .fill(Color(hex: fill))
+        .overlay(
+            LinearGradient(colors: [accent.opacity(0.13), .clear],
+                           startPoint: .topLeading, endPoint: .center)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
+        )
+}
+
+/// Per-state receipt frame: won = brand lime, lost = red, live =
+/// orange. Upcoming / awaiting rows keep the quiet scoreboard card so
+/// settled outcomes pop against them.
+@ViewBuilder
+func stateCardBackground(_ state: PickRenderState) -> some View {
+    switch state {
+    case .won:  receiptCardBackground(accent: Color(hex: "#D4FF3A"), fill: "#111309")
+    case .lost: receiptCardBackground(accent: Color(hex: "#FF5A5A"), fill: "#130E0E")
+    case .live: receiptCardBackground(accent: Color(hex: "#FF5A36"), fill: "#130F0C")
+    case .awaitingResult, .upcoming: cardBackground
+    }
+}
+
 /// "TODAY · 7:30 PM" / "TOMORROW · 12:30 AM" / "FRI · 8:20 PM" —
 /// kickoff label used in score-areas of cards when the game hasn't
 /// started yet. Module-level so both CompactPickCard and
@@ -4281,7 +4312,8 @@ struct WinsView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
-            // Footer with dashed top border, AI PICK label, key factor + remove X.
+            // Footer with dashed top border, AI PICK label, money line
+            // (wins) or key factor + remove X.
             HStack(spacing: 8) {
                 Text("AI PICK")
                     .font(.archivoNarrow(9, weight: .bold))
@@ -4290,10 +4322,17 @@ struct WinsView: View {
                 Text(pick.displayPick.uppercased())
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
-                Text("· \(pick.keyFactor ?? pick.league.uppercased())")
-                    .font(.mono(10))
-                    .foregroundColor(Color(hex: "#6E6F75"))
-                    .lineLimit(1)
+                if state == .won {
+                    // Same hypothetical money framing as Latest Wins.
+                    Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                } else {
+                    Text("· \(pick.keyFactor ?? pick.league.uppercased())")
+                        .font(.mono(10))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .lineLimit(1)
+                }
                 Spacer()
                 Button {
                     favorites.toggle(pick)   // un-favorite
@@ -4316,7 +4355,7 @@ struct WinsView: View {
             }
         }
         .padding(14)
-        .background(cardBackground)
+        .background(stateCardBackground(state))
     }
 
     /// Outcome badge — colored capsule pinned right of the top tag
@@ -4343,10 +4382,10 @@ struct WinsView: View {
                 Text("WON")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#4ade80"))
+            .foregroundColor(Color(hex: "#D4FF3A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#4ade80").opacity(0.1))
-            .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#D4FF3A").opacity(0.1))
+            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .lost:
             HStack(spacing: 5) {
@@ -4355,10 +4394,10 @@ struct WinsView: View {
                 Text("LOST")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#FF5A36"))
+            .foregroundColor(Color(hex: "#FF5A5A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#FF5A36").opacity(0.10))
-            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#FF5A5A").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A5A").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .awaitingResult:
             // Past kickoff, pipeline hasn't graded yet. Amber so
@@ -4660,14 +4699,7 @@ struct PredictionHistoryView: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(hex: "#101114"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color(hex: "#1B1D22"), lineWidth: 1)
-                )
-        )
+        .background(stateCardBackground(won ? .won : .lost))
     }
 
     @ViewBuilder
@@ -4678,35 +4710,30 @@ struct PredictionHistoryView: View {
             Text(won ? "WON" : "LOST")
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
         }
-        .foregroundColor(won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36"))
+        .foregroundColor(won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A"))
         .padding(.horizontal, 8).padding(.vertical, 3)
-        .background((won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36")).opacity(0.1))
-        .overlay(Capsule().stroke((won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36")).opacity(0.3), lineWidth: 1))
+        .background((won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A")).opacity(0.1))
+        .overlay(Capsule().stroke((won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A")).opacity(0.3), lineWidth: 1))
         .clipShape(Capsule())
     }
 
-    /// The money tag the user asked for: a win shows the payout it
-    /// returned in green ("+83%"); a loss shows the same potential
-    /// return it would have paid, in red, so the cost of the miss is
+    /// The money tag in the redesign's dollars-first framing: a win
+    /// shows what a $100 backer took home (solid lime); a loss shows
+    /// the same hypothetical return outlined in red — the missed win,
     /// explicit.
     @ViewBuilder
     private func payoutTag(pick: Pick, won: Bool) -> some View {
-        let pct = pick.potentialReturnPercent
-        HStack(spacing: 4) {
-            Image(systemName: won ? "arrow.up.right" : "arrow.down.right")
-                .font(.system(size: 9, weight: .heavy))
-            Text("\(pct >= 0 ? "+" : "")\(pct)%")
-                .font(.archivoNarrow(11, weight: .heavy))
-                .tracking(0.5)
-        }
-        .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#FF5A36"))
-        .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(
-            Capsule().fill(won ? Color(hex: "#4ade80") : Color(hex: "#FF5A36").opacity(0.12))
-        )
-        .overlay(
-            Capsule().stroke(won ? Color.clear : Color(hex: "#FF5A36").opacity(0.35), lineWidth: 1)
-        )
+        let dollars = Int((pick.decimalOdds * 100).rounded())
+        Text("$100 → $\(dollars)")
+            .font(.mono(11, weight: .bold))
+            .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#FF5A5A"))
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .background(
+                Capsule().fill(won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A").opacity(0.12))
+            )
+            .overlay(
+                Capsule().stroke(won ? Color.clear : Color(hex: "#FF5A5A").opacity(0.35), lineWidth: 1)
+            )
     }
 
     /// "TODAY", "YESTERDAY", "N DAYS AGO" — local copy so the view is
@@ -4736,7 +4763,14 @@ struct LiveView: View {
     /// Single filter on the Live page: everything live (default) vs
     /// just the user's starred picks. The old MY PICKS / ALL LIVE
     /// segmented tabs were cut — one FAVORITES toggle is the whole UI.
-    @State private var favoritesOnly = false
+    @State private var favoritesOnly: Bool = {
+        #if DEBUG
+        // Sim review: land on the FAVORITES sub-view directly.
+        return CommandLine.arguments.contains("-liveFavs")
+        #else
+        return false
+        #endif
+    }()
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -5170,18 +5204,9 @@ struct LiveView: View {
             }
         }
         .padding(14)
-        .background(cardBackground)
-        .overlay(alignment: .leading) {
-            // Full-height 3pt rail with red glow — NOT clipped to a
-            // rounded rect (was clipping to RoundedRect 16 which
-            // rounded the rail's top corners and killed the look).
-            // The outer card already clips to its own corner radius,
-            // so the rail rides the rounded edge naturally.
-            Rectangle()
-                .fill(Color(hex: "#FF5A36"))
-                .frame(width: 3)
-                .shadow(color: Color(hex: "#FF5A36").opacity(0.6), radius: 6)
-        }
+        // 2026-07 redesign: the tinted receipt frame replaces the old
+        // flat card + glowing side rail — same language as Latest Wins.
+        .background(stateCardBackground(.live))
     }
 
     /// Approximates how far through the game we are (0.0 → 1.0). For
@@ -6377,10 +6402,16 @@ struct SettledOutcomeCard: View {
                     .font(.archivo(11, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()
-                Text(pick.keyFactor ?? pick.league.uppercased())
-                    .font(.mono(10, weight: .medium))
-                    .foregroundColor(Color(hex: "#6E6F75"))
-                    .lineLimit(1)
+                if state == .won {
+                    Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                        .font(.mono(10, weight: .bold))
+                        .foregroundColor(Color(hex: "#D4FF3A"))
+                } else {
+                    Text(pick.keyFactor ?? pick.league.uppercased())
+                        .font(.mono(10, weight: .medium))
+                        .foregroundColor(Color(hex: "#6E6F75"))
+                        .lineLimit(1)
+                }
             }
             .padding(.top, 10)
             .overlay(alignment: .top) {
@@ -6391,16 +6422,7 @@ struct SettledOutcomeCard: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
-                    startPoint: .top, endPoint: .bottom))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
-                )
-        )
+        .background(stateCardBackground(state))
     }
 
     @ViewBuilder
@@ -6421,20 +6443,20 @@ struct SettledOutcomeCard: View {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
                 Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#4ade80"))
+            .foregroundColor(Color(hex: "#D4FF3A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#4ade80").opacity(0.10))
-            .overlay(Capsule().stroke(Color(hex: "#4ade80").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#D4FF3A").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .lost:
             HStack(spacing: 5) {
                 Image(systemName: "xmark").font(.system(size: 9, weight: .heavy))
                 Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#FF5A36"))
+            .foregroundColor(Color(hex: "#FF5A5A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#FF5A36").opacity(0.10))
-            .overlay(Capsule().stroke(Color(hex: "#FF5A36").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#FF5A5A").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#FF5A5A").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .awaitingResult:
             // Past kickoff, pipeline hasn't graded yet. Mute amber
