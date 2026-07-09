@@ -4462,6 +4462,11 @@ struct PredictionHistoryView: View {
         var byId: [UUID: Pick] = [:]
         for p in vm.historyPicks where p.isWin || p.isLoss { byId[p.id] = p }
         for p in vm.yesterdayPicks where p.isWin || p.isLoss { byId[p.id] = p }
+        // Follow the home sport filter: a sport-filtered home opens a
+        // sport-filtered record; ALL shows everything.
+        if vm.selectedSport != "all" {
+            byId = byId.filter { $0.value.sport == vm.selectedSport }
+        }
         return byId.values.sorted {
             ($0.gameDate, $0.createdAt ?? Date.distantPast)
                 > ($1.gameDate, $1.createdAt ?? Date.distantPast)
@@ -4496,7 +4501,7 @@ struct PredictionHistoryView: View {
                     .font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
                 + Text(" RECORD.")
                     .font(.anton(26)).foregroundColor(Color(hex: "#D4FF3A"))
-                Text("\(wonCount)–\(lostCount) ON GRADED PICKS")
+                Text("\(wonCount)–\(lostCount) ON GRADED \(vm.selectedSport == "all" ? "PICKS" : "\(vm.selectedSport.uppercased()) PICKS")")
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
