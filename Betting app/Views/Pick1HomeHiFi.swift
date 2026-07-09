@@ -1579,13 +1579,23 @@ struct LatestWinsRail: View {
 
     /// Settled picks from the PAST 3 DAYS in a deliberate ~80/20 win-loss
     /// mix (up to 8 wins, up to 2 losses, losses interleaved) — recent,
-    /// mostly winning, but visibly honest.
+    /// mostly winning, but visibly honest. Floor: if a quiet stretch
+    /// leaves fewer than 6 wins in the window, backfill with the most
+    /// recent older wins so the rail never thins out or vanishes.
     private var results: [Pick] {
         let cutoff = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
-        let recent = vm.historyPicks
-            .filter { (!$0.isPending) && (($0.createdAt ?? .distantPast) > cutoff) }
+        let settled = vm.historyPicks
+            .filter { !$0.isPending }
             .sorted { ($0.gameDate, $0.createdAt ?? .distantPast) > ($1.gameDate, $1.createdAt ?? .distantPast) }
-        let wins = recent.filter(\.isWin).prefix(8).map { $0 }
+        let recent = settled.filter { ($0.createdAt ?? .distantPast) > cutoff }
+        var winPool = recent.filter(\.isWin)
+        if winPool.count < 6 {
+            let older = settled.filter { pick in
+                pick.isWin && !winPool.contains(where: { $0.id == pick.id })
+            }
+            winPool.append(contentsOf: older.prefix(6 - winPool.count))
+        }
+        let wins = winPool.prefix(8).map { $0 }
         // ≤20% of the rail: 1 loss for 4-7 wins, 2 for 8 (0 when few wins)
         let lossBudget = wins.count >= 8 ? 2 : (wins.count >= 4 ? 1 : 0)
         let losses = recent.filter(\.isLoss).prefix(lossBudget).map { $0 }
