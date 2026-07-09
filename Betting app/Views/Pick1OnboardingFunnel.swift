@@ -170,6 +170,17 @@ struct Pick1OnboardingFunnel: View {
     /// resume past sign-up (steps after it assume a session); nobody resumes
     /// past the paywall (success assumes a completed purchase/skip).
     private func restoreProgress() {
+        #if DEBUG
+        // Screenshot/dev hook: `-forcePaywallStep` jumps straight to the
+        // paywall on a Debug build (no auth needed) — used to capture App
+        // Store review screenshots of IAP products from the simulator.
+        // Compiled out of Release entirely.
+        if CommandLine.arguments.contains("-forcePaywallStep"),
+           let pw = steps.firstIndex(of: .paywall) {
+            index = pw
+            return
+        }
+        #endif
         guard index == 0, savedIndex > 0 else { return }
         var target = min(savedIndex, steps.count - 1)
         if let paywallIdx = steps.firstIndex(of: .paywall) { target = min(target, paywallIdx) }
@@ -1356,6 +1367,17 @@ private struct PaywallScreen: View {
                 if subs.products.isEmpty {
                     Text(t(.funnel_paywall_loading)).font(.archivo(13)).foregroundColor(Fnl.mute).padding(.vertical, 20)
                 }
+                #if DEBUG
+                // App Store review screenshots only: `-mockDayPassCard` renders
+                // the Day Pass card with static copy when sandbox StoreKit
+                // can't vend the product yet (a new IAP needs a screenshot to
+                // leave MISSING_METADATA but won't load until it does —
+                // chicken-and-egg). Same layout as the real card.
+                if CommandLine.arguments.contains("-mockDayPassCard"),
+                   !subs.products.contains(where: { $0.id == SubscriptionManager.dayPassProductId }) {
+                    mockDayPassCard
+                }
+                #endif
             }
             .padding(.top, 18)
         } bottom: {
@@ -1459,18 +1481,41 @@ private struct PaywallScreen: View {
         .buttonStyle(.plain)
     }
 
+    #if DEBUG
+    /// Static twin of planCard for the Day Pass — screenshot use only.
+    private var mockDayPassCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t(.funnel_paywall_plan_daypass)).font(.anton(20)).foregroundColor(Fnl.white)
+                Text(t(.funnel_paywall_sub_daypass)).font(.archivo(12)).foregroundColor(Fnl.ink2)
+            }
+            Spacer()
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("$4.99").font(.anton(22)).foregroundColor(Fnl.white)
+                Text(t(.funnel_paywall_unit_day)).font(.archivo(12)).foregroundColor(Fnl.ink2)
+            }
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Fnl.panel)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Fnl.line, lineWidth: 1)))
+    }
+    #endif
+
     private func planName(_ p: Product) -> String {
+        if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_plan_daypass) }
         if p.id.hasSuffix("weekly") { return t(.funnel_paywall_plan_weekly) }
         if p.id.hasSuffix("monthly") { return t(.funnel_paywall_plan_monthly) }
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_plan_lifetime) }
         return p.displayName.uppercased()
     }
     private func planUnit(_ p: Product) -> String {
+        if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_unit_day) }
         if p.id.hasSuffix("weekly") { return t(.funnel_paywall_unit_wk) }
         if p.id.hasSuffix("monthly") { return t(.funnel_paywall_unit_mo) }
         return ""
     }
     private func planSub(_ p: Product) -> String {
+        if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_sub_daypass) }
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_sub_lifetime) }
         return p.id.hasSuffix("weekly") ? t(.funnel_paywall_sub_weekly) : t(.funnel_paywall_sub_monthly)
     }

@@ -116,14 +116,24 @@ final class SubscriptionManager: ObservableObject {
     /// needed once this product exists in App Store Connect.
     static let lifetimeProductId = "com.pick1.app.pro.lifetime"
 
-    /// All Pick1 Pro product identifiers, in display order (weekly → monthly →
-    /// lifetime). Configure the two subscriptions in App Store Connect → My App
-    /// → Subscriptions → "Pick1 Pro" group, and Lifetime under In-App Purchases
-    /// as a Non-Consumable.
+    /// Non-Renewing Subscription: 24 hours of Pro for one game day. StoreKit
+    /// does NOT track expiry for this type (it never appears in
+    /// currentEntitlements) — on purchase we call the `claim_day_pass` RPC,
+    /// which writes a 24h `pro_grants` row; Pro then flows through the same
+    /// comp-grant rail as referral weeks (`refreshCompAccess`).
+    static let dayPassProductId = "com.pick1.app.pro.daypass"
+
+    /// All Pick1 Pro product identifiers, in display order (weekly →
+    /// monthly → lifetime → day pass; the pass anchors the bottom as the
+    /// no-commitment option). Configure the two auto-renewables in App
+    /// Store Connect → Subscriptions → "Pick1 Pro" group; Lifetime
+    /// (Non-Consumable) and Day Pass (Non-Renewing Subscription) live under
+    /// In-App Purchases.
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
         lifetimeProductId,
+        dayPassProductId,
     ]
 
     // MARK: - Lifecycle
@@ -174,6 +184,7 @@ final class SubscriptionManager: ObservableObject {
         await loadProducts()
         await refreshEntitlements()
         await refreshCompAccess()
+        await retryPendingDayPassClaim()
     }
 
     // MARK: - Loading products
@@ -272,6 +283,13 @@ final class SubscriptionManager: ObservableObject {
                 self.activeExpiration = transaction.expirationDate
                 self.optimisticEntitlementUntil = Date().addingTimeInterval(60)
                 await transaction.finish()
+                // Day Pass (non-renewing): StoreKit won't track its expiry,
+                // so convert the verified transaction into a 24h server
+                // grant. Idempotent per transaction id; Pro then persists
+                // through the comp-grant rail until the pass lapses.
+                if transaction.productID == Self.dayPassProductId {
+                    await claimDayPass(transactionId: String(transaction.id))
+                }
                 // Reconcile against StoreKit's source of truth. Guarded by
                 // the grace window above so it can't bounce us back to Free
                 // while currentEntitlements is still settling.
@@ -331,6 +349,34 @@ final class SubscriptionManager: ObservableObject {
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    /// Converts a verified Day Pass purchase into a 24h `pro_grants` row via
+    /// the `claim_day_pass` RPC (idempotent on the App Store transaction id,
+    /// rate-limited server-side). Refreshes comp access so `isPro` holds
+    /// after the optimistic window closes.
+    private func claimDayPass(transactionId: String) async {
+        do {
+            _ = try await SupabaseManager.client
+                .rpc("claim_day_pass", params: ["tx_id": transactionId])
+                .execute()
+            UserDefaults.standard.removeObject(forKey: Self.pendingDayPassKey)
+        } catch {
+            // Grant failed (offline / transient). The optimistic unlock covers
+            // the session; persist the tx id so the next launch retries the
+            // claim — a paid pass must never be lost to a network blip.
+            UserDefaults.standard.set(transactionId, forKey: Self.pendingDayPassKey)
+        }
+        await refreshCompAccess()
+    }
+
+    private static let pendingDayPassKey = "pendingDayPassClaim"
+
+    /// Retry a Day Pass claim that failed at purchase time (idempotent
+    /// server-side, so double-claims are harmless). Called from bootstrap.
+    func retryPendingDayPassClaim() async {
+        guard let tx = UserDefaults.standard.string(forKey: Self.pendingDayPassKey) else { return }
+        await claimDayPass(transactionId: tx)
     }
 
     // MARK: - Comp access (free Pro grants)
