@@ -18,11 +18,19 @@ final class TeamLogoResolver: ObservableObject {
     static let shared = TeamLogoResolver()
 
     // Value is the logo URL string; "" means "resolved, none found" so we
-    // don't re-hit the network for a team ESPN doesn't know.
+    // don't re-hit the network for a team ESPN doesn't know. Negative
+    // entries are SESSION-ONLY — a transient network failure must not be
+    // persisted as "this team has no logo" forever (that's exactly how
+    // the Atlanta Dream got stuck on the generic shield across launches).
     private var cache: [String: String] = [:]
-    private let defaultsKey = "pick1.teamLogo.v1"
+    private let defaultsKey = "pick1.teamLogo.v2"
 
-    private init() { load() }
+    private init() {
+        load()
+        // One-time migration: v1 persisted failed lookups as "" and
+        // re-served them forever. Drop the whole poisoned store.
+        UserDefaults.standard.removeObject(forKey: "pick1.teamLogo.v1")
+    }
 
     private func key(_ sport: String, _ team: String) -> String {
         sport + "|" + TeamLogoStore.normKey(team)
@@ -128,7 +136,10 @@ final class TeamLogoResolver: ObservableObject {
         cache = decoded
     }
     private func save() {
-        if let data = try? JSONEncoder().encode(cache) {
+        // Persist positive hits only — misses stay in-memory so the next
+        // launch retries them (the miss may have been a network blip).
+        let positives = cache.filter { !$0.value.isEmpty }
+        if let data = try? JSONEncoder().encode(positives) {
             UserDefaults.standard.set(data, forKey: defaultsKey)
         }
     }

@@ -721,12 +721,25 @@ enum TeamLogoLookup {
     /// Returns an ESPN CDN URL for the given (sport, team), or nil if
     /// we can't map it. Nil falls back to the colored crest.
     static func url(sport: String, team: String) -> URL? {
+        // Direct-URL table first — covers leagues with no ESPN CDN path
+        // (KBO, NPB, Major League Cricket, UCL qualifiers, West Indies).
+        // Every URL curl-verified 200 before being added.
+        if let direct = directLogoURLs[TeamLogoStore.normKey(team)] {
+            return URL(string: direct)
+        }
         let leagueSlug: String
         let table: [String: String]
         switch sport {
         case "basketball":
-            leagueSlug = "nba"
-            table = nbaAbbrevs
+            // NBA first, then WNBA — names never collide (Hawks/Dream,
+            // Warriors/Valkyries) so the sequential try is safe.
+            if let ab = abbreviation(in: nbaAbbrevs, team: team) {
+                return URL(string: "https://a.espncdn.com/i/teamlogos/nba/500/\(ab).png")
+            }
+            if let ab = abbreviation(in: wnbaAbbrevs, team: team) {
+                return URL(string: "https://a.espncdn.com/i/teamlogos/wnba/500/\(ab).png")
+            }
+            return nil
         case "football":
             leagueSlug = "nfl"
             table = nflAbbrevs
@@ -755,7 +768,12 @@ enum TeamLogoLookup {
     /// dictionary so we hit on "Cavaliers", "CLE", "Cleveland Cavaliers",
     /// "cleveland-cavaliers", etc. Returns the lowercase ESPN abbreviation.
     private static func abbreviation(in table: [String: String], team: String) -> String? {
-        let trimmed = team.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmed = team.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Drop parenthetical qualifiers — Summer League split squads
+        // arrive as "Golden State Warriors (Blue)".
+        if let paren = trimmed.firstIndex(of: "(") {
+            trimmed = String(trimmed[..<paren]).trimmingCharacters(in: .whitespaces)
+        }
         if trimmed.isEmpty { return nil }
         let lower = trimmed.lowercased()
         if let direct = table[lower] { return direct }
@@ -770,6 +788,13 @@ enum TeamLogoLookup {
         // Try first token (e.g. "Detroit Tigers" → "detroit")
         let first = lower.split(separator: " ").first.map(String.init) ?? lower
         if let hit = table[first] { return hit }
+        // Progressively drop trailing tokens so suffixed names still hit
+        // ("golden state warriors gold" → "golden state warriors").
+        var tokens = lower.split(separator: " ").map(String.init)
+        while tokens.count > 2 {
+            tokens.removeLast()
+            if let hit = table[tokens.joined(separator: " ")] { return hit }
+        }
         return nil
     }
 
@@ -860,6 +885,81 @@ enum TeamLogoLookup {
 // ════════════════════════════════════════════════════════════════
 // MARK: - Per-league abbreviation tables
 // ════════════════════════════════════════════════════════════════
+
+/// WNBA — full 15-team 2026 league including the Valkyries, Portland
+/// Fire, and Toronto Tempo expansion sides. Every abbreviation was
+/// curl-probed against a.espncdn.com/i/teamlogos/wnba/500/{ab}.png
+/// (all HTTP 200).
+private let wnbaAbbrevs: [String: String] = [
+    "atlanta dream": "atl",          "dream": "atl",
+    "chicago sky": "chi",            "sky": "chi",
+    "connecticut sun": "conn",       "sun": "conn",
+    "dallas wings": "dal",           "wings": "dal",
+    "golden state valkyries": "gs",  "valkyries": "gs",
+    "indiana fever": "ind",          "fever": "ind",
+    "las vegas aces": "lv",          "aces": "lv",
+    "los angeles sparks": "la",      "sparks": "la",
+    "minnesota lynx": "min",         "lynx": "min",
+    "new york liberty": "ny",        "liberty": "ny",
+    "phoenix mercury": "phx",        "mercury": "phx",
+    "portland fire": "por",          "fire": "por",
+    "seattle storm": "sea",          "storm": "sea",
+    "toronto tempo": "tor",          "tempo": "tor",
+    "washington mystics": "wsh",     "mystics": "wsh",
+]
+
+/// Leagues with no ESPN CDN path — badges hosted by TheSportsDB
+/// (free hotlink, same approach as the dynamic resolver but pinned so
+/// these teams NEVER fall back to a colored shield). Keyed by
+/// `TeamLogoStore.normKey` (lowercased, punctuation stripped) so
+/// "KIA Tigers"/"Kia Tigers" and "Nippon-Ham"/"Nippon Ham" all hit.
+/// Every URL curl-verified HTTP 200.
+private let directLogoURLs: [String: String] = [
+    // ── KBO ──
+    "doosan bears":   "https://r2.thesportsdb.com/images/media/team/badge/2qo9zp1740573854.png",
+    "hanwha eagles":  "https://r2.thesportsdb.com/images/media/team/badge/7aztmc1740573842.png",
+    "kia tigers":     "https://r2.thesportsdb.com/images/media/team/badge/2z389i1648069353.png",
+    "kiwoom heroes":  "https://r2.thesportsdb.com/images/media/team/badge/qcj18p1589709259.png",
+    "kt wiz":         "https://r2.thesportsdb.com/images/media/team/badge/qk8erg1589709962.png",
+    "lg twins":       "https://r2.thesportsdb.com/images/media/team/badge/ajpsiq1648069368.png",
+    "lotte giants":   "https://r2.thesportsdb.com/images/media/team/badge/p7q92w1742225576.png",
+    "nc dinos":       "https://r2.thesportsdb.com/images/media/team/badge/6gwcg81589708218.png",
+    "samsung lions":  "https://r2.thesportsdb.com/images/media/team/badge/5u6k511589709673.png",
+    "ssg landers":    "https://r2.thesportsdb.com/images/media/team/badge/kii9pd1742225451.png",
+    // ── NPB (incl. the short-name variants the pipeline emits) ──
+    "chiba lotte marines":     "https://r2.thesportsdb.com/images/media/team/badge/na10tn1576008207.png",
+    "chunichi dragons":        "https://r2.thesportsdb.com/images/media/team/badge/jli5jv1576009060.png",
+    "fukuoka softbank hawks":  "https://r2.thesportsdb.com/images/media/team/badge/ampozy1576009547.png",
+    "hanshin tigers":          "https://r2.thesportsdb.com/images/media/team/badge/h2jhos1576009994.png",
+    "hokkaido nippon ham fighters": "https://r2.thesportsdb.com/images/media/team/badge/qxgzq01576011016.png",
+    "nippon ham fighters":     "https://r2.thesportsdb.com/images/media/team/badge/qxgzq01576011016.png",
+    "hiroshima toyo carp":     "https://r2.thesportsdb.com/images/media/team/badge/bv50e51576010505.png",
+    "hiroshima carp":          "https://r2.thesportsdb.com/images/media/team/badge/bv50e51576010505.png",
+    "orix buffaloes":          "https://r2.thesportsdb.com/images/media/team/badge/53lv6f1576011517.png",
+    "saitama seibu lions":     "https://r2.thesportsdb.com/images/media/team/badge/onmvow1576012163.png",
+    "seibu lions":             "https://r2.thesportsdb.com/images/media/team/badge/onmvow1576012163.png",
+    "tohoku rakuten golden eagles": "https://r2.thesportsdb.com/images/media/team/badge/qx24pm1576012656.png",
+    "rakuten golden eagles":   "https://r2.thesportsdb.com/images/media/team/badge/qx24pm1576012656.png",
+    "tokyo yakult swallows":   "https://r2.thesportsdb.com/images/media/team/badge/ryyku01576013231.png",
+    "yakult swallows":         "https://r2.thesportsdb.com/images/media/team/badge/ryyku01576013231.png",
+    "yokohama dena baystars":  "https://r2.thesportsdb.com/images/media/team/badge/fuhqf21576013789.png",
+    "yokohama baystars":       "https://r2.thesportsdb.com/images/media/team/badge/fuhqf21576013789.png",
+    "yomiuri giants":          "https://r2.thesportsdb.com/images/media/team/badge/0qyqs41576014298.png",
+    // ── Major League Cricket (US franchises) ──
+    "los angeles knight riders": "https://r2.thesportsdb.com/images/media/team/badge/6q2cnq1689146300.png",
+    "mi new york":               "https://r2.thesportsdb.com/images/media/team/badge/i4lxb71689146303.png",
+    "san francisco unicorns":    "https://r2.thesportsdb.com/images/media/team/badge/k6pv961689146306.png",
+    "seattle orcas":             "https://r2.thesportsdb.com/images/media/team/badge/wg325p1689146309.png",
+    "texas super kings":         "https://r2.thesportsdb.com/images/media/team/badge/777fr51689161316.png",
+    "washington freedom":        "https://r2.thesportsdb.com/images/media/team/badge/ro0khs1750233280.png",
+    // ── International cricket sides with no country flag ──
+    "west indies":         "https://r2.thesportsdb.com/images/media/team/badge/1x0a681646775209.png",
+    "west indies women":   "https://r2.thesportsdb.com/images/media/team/badge/1x0a681646775209.png",
+    // ── UCL qualifier clubs the feeds surface ──
+    "kairat almaty":         "https://r2.thesportsdb.com/images/media/team/badge/sz5y1m1579285078.png",
+    "sutjeska":              "https://r2.thesportsdb.com/images/media/team/badge/jgxq3z1565903948.png",
+    "universitatea craiova": "https://r2.thesportsdb.com/images/media/team/badge/1jdz2y1579793710.png",
+]
 
 private let nbaAbbrevs: [String: String] = [
     // Atlantic

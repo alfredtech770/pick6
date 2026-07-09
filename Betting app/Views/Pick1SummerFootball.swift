@@ -812,8 +812,15 @@ func wcFlagCode(for country: String) -> String? {
         "SRI LANKA": "LK", "PAKISTAN": "PK", "BANGLADESH": "BD",
         "AFGHANISTAN": "AF", "NEPAL": "NP", "NAMIBIA": "NA",
         "PAPUA NEW GUINEA": "PG", "MYANMAR": "MM",
+        "HONG KONG": "HK", "SINGAPORE": "SG", "UAE": "AE",
     ]
-    return map[country.uppercased().trimmingCharacters(in: .whitespaces)]
+    // Fold diacritics before matching — the pipeline emits "Curaçao"
+    // and "Türkiye", which must hit the CURACAO / TURKIYE keys.
+    let key = country
+        .folding(options: .diacriticInsensitive, locale: .current)
+        .uppercased()
+        .trimmingCharacters(in: .whitespaces)
+    return map[key]
 }
 
 /// Strips squad suffixes ("England Women" → "England", "India XI" →
@@ -822,7 +829,8 @@ func wcFlagCode(for country: String) -> String? {
 func nationalTeamBase(_ team: String) -> String {
     var words = team.trimmingCharacters(in: .whitespacesAndNewlines)
         .split(separator: " ").map(String.init)
-    let suffixes: Set<String> = ["WOMEN", "MEN", "XI", "U19", "U21", "U23"]
+    // "A" catches second squads ("Afghanistan A", "Sri Lanka A").
+    let suffixes: Set<String> = ["WOMEN", "MEN", "XI", "U19", "U21", "U23", "A"]
     while words.count > 1, suffixes.contains(words.last!.uppercased()) {
         words.removeLast()
     }
