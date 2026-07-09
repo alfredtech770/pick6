@@ -283,9 +283,24 @@ struct HomeHiFiContent: View {
     @State private var showSummerFootball = false
     /// Won/lost prediction history sheet (opened from the stats tiles).
     @State private var showHistory = false
+    /// The hero's sport-filter dropdown (replaces the chip carousel).
+    @State private var showSportMenu = false
+
+    /// DEBUG screenshot hook: `-openSportMenu` pops the dropdown shortly
+    /// after launch (design review on the sim). Compiled out of Release.
+    private func debugAutoOpenMenu() {
+        #if DEBUG
+        guard CommandLine.arguments.contains("-openSportMenu") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(Pick1Springs.smooth) { showSportMenu = true }
+        }
+        #endif
+    }
 
     var body: some View {
         ScrollView {
+            // Zero-height anchor for the DEBUG auto-open hook.
+            Color.clear.frame(height: 0).onAppear { debugAutoOpenMenu() }
             VStack(spacing: 0) {
                 Button(action: {
                     if let t = topPick {
@@ -303,6 +318,18 @@ struct HomeHiFiContent: View {
                 // Hero card press feels great with a tiny 0.99 dip —
                 // bigger surfaces want subtler scale.
                 .pressableScale(0.99)
+                // Sport dropdown — sits where the AI POWERED pill was
+                // (hero top-right) and replaces the chip carousel. Overlaid
+                // OUTSIDE the hero Button so menu taps never trigger the
+                // card's tap-to-detail; zIndex lifts it over the sections
+                // below while the menu is open.
+                .overlay(alignment: .topTrailing) {
+                    SportDropdown(vm: vm, isOpen: $showSportMenu,
+                                  onLongPress: { onTapSport($0) })
+                        .padding(.trailing, 22)
+                        .padding(.top, 52)
+                }
+                .zIndex(showSportMenu ? 100 : 0)
 
                 StatsRow(winsThisWeek: vm.winsThisWeek,
                          gamesThisWeek: vm.gamesThisWeek,
@@ -324,11 +351,8 @@ struct HomeHiFiContent: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
-                SportFilter(vm: vm, onLongPress: { onTapSport($0) })
-                    // Breathing room between the WINS / ACCURACY tile
-                    // pair and the sport carousel — was 4pt which made
-                    // the chips feel glued to the tiles' bottom shadow.
-                    .padding(.top, 22)
+                // (Sport chip carousel removed 2026-07 — filtering moved to
+                // the SportDropdown overlaid on the hero's top-right.)
 
                 // VALUE BOARD — today's biggest model-vs-market edges, sits
                 // directly under the category chips. Hidden when no real
@@ -648,7 +672,11 @@ struct HeroCard: View {
         HStack(alignment: .center) {
             Pick1Logo()
             Spacer()
-            HeroPill(isLive: isLive)
+            // The sport dropdown (SportDropdown) is overlaid here by the
+            // home screen — it replaced the AI POWERED pill AND the sport
+            // chip carousel (2026-07). Reserve its footprint so the logo
+            // row's height doesn't collapse.
+            Color.clear.frame(width: 120, height: 34)
         }
     }
 
@@ -1575,6 +1603,183 @@ struct SparklineView: View {
                                                    lineCap: .round,
                                                    lineJoin: .round))
             }
+        }
+    }
+}
+
+// MARK: - Sport dropdown (home)
+
+/// The home screen's sport filter: one animated dropdown button in the
+/// hero's top-right (where the AI POWERED pill lived) that replaces the
+/// old horizontal chip carousel. Tap → the button's chevron flips and a
+/// menu of every sport cascades in (staggered rows, spring scale from
+/// the top-right); selecting a sport filters the whole feed.
+struct SportDropdown: View {
+    @ObservedObject var vm: PicksViewModel
+    @Binding var isOpen: Bool
+    /// Long-press a sport row → its hub (same affordance the chips had).
+    var onLongPress: ((String) -> Void)? = nil
+
+    private let sports = ["soccer", "baseball", "golf", "f1", "combat",
+                          "cricket", "football", "basketball", "hockey"]
+    private let lime = Color(hex: "#D4FF3A")
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 10) {
+            button
+            if isOpen {
+                menu
+                    .transition(.scale(scale: 0.72, anchor: .topTrailing)
+                        .combined(with: .opacity))
+            }
+        }
+    }
+
+    // ── Collapsed button ─────────────────────────────────────────────
+    private var button: some View {
+        Button {
+            Haptics.tap()
+            withAnimation(Pick1Springs.smooth) { isOpen.toggle() }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: currentIcon)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(lime)
+                Text(currentLabel.uppercased())
+                    .font(.archivoNarrow(11, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundColor(lime)
+                    .rotationEffect(.degrees(isOpen ? -180 : 0))
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 9)
+            .background(
+                Capsule().fill(Color(hex: "#0A0B0D").opacity(0.85))
+                    .overlay(Capsule().stroke(
+                        isOpen ? lime.opacity(0.6) : Color.white.opacity(0.14),
+                        lineWidth: 1.2))
+            )
+        }
+        .buttonStyle(.plain)
+        .pressableScale(0.95)
+    }
+
+    // ── Expanded menu ────────────────────────────────────────────────
+    @State private var rowsIn = false
+
+    private var menu: some View {
+        VStack(spacing: 2) {
+            row(key: "all", label: "All Sports", icon: "circle.grid.cross",
+                count: vm.effectiveTodayPicks.count, index: 0)
+            ForEach(Array(sports.enumerated()), id: \.element) { i, sport in
+                row(key: sport, label: label(sport), icon: icon(sport),
+                    count: count(sport), index: i + 1)
+                    .onLongPressGesture(minimumDuration: 0.4) {
+                        onLongPress?(sport)
+                    }
+            }
+        }
+        .padding(8)
+        .frame(width: 218)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(hex: "#101216"))
+                .overlay(RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1))
+                .shadow(color: .black.opacity(0.6), radius: 24, y: 14)
+        )
+        .onAppear {
+            rowsIn = false
+            withAnimation(Pick1Springs.smooth) { rowsIn = true }
+        }
+        .onDisappear { rowsIn = false }
+    }
+
+    private func row(key: String, label: String, icon: String,
+                     count: Int, index: Int) -> some View {
+        let active = vm.selectedSport == key
+        return Button {
+            Haptics.tap()
+            withAnimation(Pick1Springs.snappy) { vm.selectedSport = key }
+            withAnimation(Pick1Springs.smooth) { isOpen = false }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(active ? Color(hex: "#0A0B0D") : lime)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(active ? lime : Color.white.opacity(0.06)))
+                Text(label)
+                    .font(.archivo(14, weight: active ? .bold : .medium))
+                    .foregroundColor(active ? .white : Color(hex: "#C9CBCF"))
+                Spacer(minLength: 0)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.mono(11, weight: .bold))
+                        .foregroundColor(active ? lime : Color(hex: "#6E6F75"))
+                }
+                if active {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(lime)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(active ? lime.opacity(0.10) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+        // Cascade: each row fades/slides in slightly after the previous —
+        // the "nice motioned" bit. Driven off rowsIn so it replays on
+        // every open.
+        .opacity(rowsIn ? 1 : 0)
+        .offset(y: rowsIn ? 0 : -7)
+        .animation(Pick1Springs.smooth.delay(Double(index) * 0.028), value: rowsIn)
+    }
+
+    // ── Copy helpers ─────────────────────────────────────────────────
+    private var currentLabel: String {
+        vm.selectedSport == "all" ? "All Sports" : label(vm.selectedSport)
+    }
+    private var currentIcon: String {
+        vm.selectedSport == "all" ? "circle.grid.cross" : icon(vm.selectedSport)
+    }
+    private func count(_ sport: String) -> Int {
+        vm.effectiveTodayPicks.filter { $0.sport == sport }.count
+    }
+    private func label(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "Basketball"
+        case "football":   return "NFL"
+        case "soccer":     return "Soccer"
+        case "baseball":   return "MLB"
+        case "golf":       return "Golf"
+        case "hockey":     return "Hockey"
+        case "combat":     return "MMA"
+        case "f1":         return "F1"
+        case "cricket":    return "Cricket"
+        default:           return sport.capitalized
+        }
+    }
+    private func icon(_ sport: String) -> String {
+        switch sport {
+        case "basketball": return "basketball.fill"
+        case "football":   return "football.fill"
+        case "soccer":     return "soccerball"
+        case "baseball":   return "baseball.fill"
+        case "hockey":     return "hockey.puck.fill"
+        case "combat":     return "figure.boxing"
+        case "f1":         return "car.fill"
+        case "golf":       return "figure.golf"
+        case "cricket":    return "figure.cricket"
+        default:           return "circle"
         }
     }
 }
