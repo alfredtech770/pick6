@@ -397,6 +397,7 @@ enum PortugueseStrings {
         .funnel_success_cta:             "COMEÇA A TUA JORNADA →",
 
         // 2026-07 redesign surfaces
+        .rd_upcoming_football: "PRÓXIMOS JOGOS",
         .rd_predicted_score: "RESULTADO PREVISTO IA",
         .rd_market_odds: "ODDS DE MERCADO",
         .rd_est_from_conf: "ESTIMADO PELA CONFIANÇA DA IA",

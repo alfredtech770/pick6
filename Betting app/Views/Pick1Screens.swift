@@ -300,6 +300,9 @@ struct MatchDetailView: View {
         ZStack(alignment: .top) {
             Color(hex: "#07080a").ignoresSafeArea()
 
+            // scrollBounceBehavior kills the horizontal "jiggle": any row
+            // rendering a point wider than the screen let the vertical
+            // ScrollView rubber-band sideways on diagonal swipes.
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     detailTopNav
@@ -386,6 +389,7 @@ struct MatchDetailView: View {
                     Spacer().frame(height: 120)
                 }
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
 
             // Toast
             if showToast {

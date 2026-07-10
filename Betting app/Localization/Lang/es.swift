@@ -397,6 +397,7 @@ enum SpanishStrings {
         .funnel_success_cta:             "COMIENZA TU AVENTURA →",
 
         // 2026-07 redesign surfaces
+        .rd_upcoming_football: "PRÓXIMOS PARTIDOS",
         .rd_predicted_score: "MARCADOR PREVISTO IA",
         .rd_market_odds: "CUOTAS DEL MERCADO",
         .rd_est_from_conf: "ESTIMADO SEGÚN LA CONFIANZA DE LA IA",

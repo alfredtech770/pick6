@@ -442,6 +442,7 @@ enum L10nKey: String, CaseIterable {
     case funnel_success_cta               // "START YOUR JOURNEY →"
 
     // ─── 2026-07 redesign surfaces (home/detail/live/picks) ───────
+    case rd_upcoming_football
     case rd_predicted_score
     case rd_market_odds
     case rd_est_from_conf

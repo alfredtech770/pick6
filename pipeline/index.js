@@ -666,7 +666,10 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     // NEXT event with its real date: tournaments a day ahead, UFC the
     // next card (within 14 days), F1 the next Grand Prix (21 days).
     const searchTarget =
-      league === 'WC' ? `today's and tomorrow's ${sportPlural}`
+      // WC previews 5 days out — knockout matchups are known days ahead
+      // and users want to see the bracket (e.g. Argentina) early. The
+      // app labels future-dated picks with their weekday.
+      league === 'WC' ? `${sportPlural} scheduled over the next 5 days (today included, US Eastern Time)`
       : league === 'UFC' ? 'the next upcoming UFC event within the next 14 days (today included) — cover its main-card fights'
       : league === 'F1' ? 'the next upcoming Grand Prix within the next 21 days (today included)'
       : `today's and tomorrow's ${sportPlural} (the next 48 hours, US Eastern Time)`;

@@ -397,6 +397,7 @@ enum FrenchStrings {
         .funnel_success_cta:             "COMMENCER L'AVENTURE →",
 
         // 2026-07 redesign surfaces
+        .rd_upcoming_football: "MATCHS À VENIR",
         .rd_predicted_score: "SCORE PRÉDIT IA",
         .rd_market_odds: "COTES DU MARCHÉ",
         .rd_est_from_conf: "ESTIMÉ SELON LA CONFIANCE DE L'IA",

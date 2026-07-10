@@ -542,6 +542,30 @@ struct HomeHiFiContent: View {
                                     value: visible.count
                                 )
                             }
+                            // WC bracket preview — soccer picks up to
+                            // 5 days out, weekday-labeled (e.g. SAT · 3 PM).
+                            let upcomingSoccer = vm.upcomingSoccerPicks
+                            if !upcomingSoccer.isEmpty,
+                               vm.selectedSport == "all" || vm.selectedSport == "soccer" {
+                                HStack {
+                                    Text(t(.rd_upcoming_football))
+                                        .font(.anton(22)).foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 4)
+                                .padding(.top, 14)
+                                ForEach(upcomingSoccer) { pick in
+                                    Button {
+                                        Haptics.tap()
+                                        onTapPick(pick)
+                                    } label: {
+                                        ProSlateCard(pick: pick,
+                                                     liveScore: liveScore(for: pick))
+                                            .pressableScale(0.985)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                         }
                     }
 
@@ -1855,9 +1879,14 @@ struct FreeSlateSection: View {
     private let gold = Color(hex: "#E8C64A")
 
     private var slate: [Pick] {
-        vm.effectiveTodayPicks.filter {
+        let today = vm.effectiveTodayPicks.filter {
             $0.id != topPickId && (vm.selectedSport == "all" || $0.sport == vm.selectedSport)
         }
+        // WC bracket preview rides the locked slate too (weekday-labeled).
+        let showSoccer = vm.selectedSport == "all" || vm.selectedSport == "soccer"
+        let soccer = showSoccer ? vm.upcomingSoccerPicks : []
+        var seen = Set(today.map(\.id))
+        return today + soccer.filter { seen.insert($0.id).inserted }
     }
 
     var body: some View {
@@ -1971,7 +2000,8 @@ struct LockedSlateCard: View {
     /// Real kickoff ("5 PM" / "7:35 PM" ET) — empty when unknown; never
     /// the pick-creation timestamp.
     private var timeText: String {
-        pick.startTimeDisplay.map { "\($0) ET" } ?? ""
+        [upcomingDayLabel(pick), pick.startTimeDisplay.map { "\($0) ET" }]
+            .compactMap { $0 }.joined(separator: " · ")
     }
     private var sportEmoji: String {
         switch pick.sport {
@@ -1998,6 +2028,30 @@ struct LockedSlateCard: View {
         default:           return Color(hex: "#6E6F75")
         }
     }
+}
+
+/// "SÁB"-style weekday label for a future-dated pick (beyond tomorrow),
+/// in the app language — nil for today/tomorrow so the plain kickoff
+/// time label wins. Reads the language directly from UserDefaults so
+/// it stays actor-free (callable from any View computed property).
+func upcomingDayLabel(_ pick: Pick) -> String? {
+    let parse = DateFormatter()
+    parse.dateFormat = "yyyy-MM-dd"
+    parse.timeZone = TimeZone(identifier: "America/New_York")
+    guard let game = parse.date(from: pick.gameDate) else { return nil }
+    var cal = Calendar(identifier: .iso8601)
+    cal.timeZone = TimeZone(identifier: "America/New_York")!
+    let days = cal.dateComponents([.day],
+                                  from: cal.startOfDay(for: Date()),
+                                  to: cal.startOfDay(for: game)).day ?? 0
+    guard days >= 2 else { return nil }
+    let lang = UserDefaults.standard.string(forKey: "appLanguage")
+        ?? Locale.preferredLanguages.first ?? "en"
+    let fmt = DateFormatter()
+    fmt.locale = Locale(identifier: lang)
+    fmt.timeZone = TimeZone(identifier: "America/New_York")
+    fmt.dateFormat = "EEE"
+    return fmt.string(from: game).uppercased().replacingOccurrences(of: ".", with: "")
 }
 
 /// Premium slate row — the unlocked twin of LockedSlateCard. Identical
@@ -2094,7 +2148,9 @@ struct ProSlateCard: View {
             }
             .foregroundColor(Color(hex: "#FF5A5A"))
         case .awaitingResult, .upcoming:
-            Text(pick.startTimeDisplay.map { "\($0) ET" } ?? "")
+            Text([upcomingDayLabel(pick),
+                  pick.startTimeDisplay.map { "\($0) ET" }]
+                    .compactMap { $0 }.joined(separator: " · "))
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#8A8D94"))
         }

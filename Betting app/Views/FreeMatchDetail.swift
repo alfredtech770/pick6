@@ -33,6 +33,7 @@ struct FreeMatchDetailView: View {
                 // Clear the sticky CTA bar so the last section never hides.
                 .padding(.bottom, 130)
             }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         }
         .background(Color(hex: "#0A0B0D").ignoresSafeArea())
         // Sticky unlock bar — pinned while the page scrolls, with a fade

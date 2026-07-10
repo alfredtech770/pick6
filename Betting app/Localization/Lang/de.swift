@@ -397,6 +397,7 @@ enum GermanStrings {
         .funnel_success_cta:             "STARTE DEINE REISE →",
 
         // 2026-07 redesign surfaces
+        .rd_upcoming_football: "KOMMENDE SPIELE",
         .rd_predicted_score: "KI-ERGEBNISPROGNOSE",
         .rd_market_odds: "MARKTQUOTEN",
         .rd_est_from_conf: "GESCHÄTZT AUS KI-KONFIDENZ",
