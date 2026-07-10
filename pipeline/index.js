@@ -1159,8 +1159,12 @@ async function gradeViaResearch() {
   const ids = [...new Set(pending.map((p) => p.game_id).filter(Boolean))];
   const { data: scored } = await supabase.from('live_scores').select('game_id').in('game_id', ids);
   const hasScore = new Set((scored || []).map((s) => s.game_id));
-  const stale = pending.filter((p) => p.game_date < daysAgoISO(10) && !hasScore.has(p.game_id));
-  const target = pending.filter((p) => !hasScore.has(p.game_id) && p.game_date >= daysAgoISO(10));
+  // NEVER research-grade feed-covered leagues: sportsdata's final may lag
+  // hours, but it arrives — and a web search for a series matchup loves to
+  // return the PREVIOUS game's score (graded PHI@CIN 7/9 with 7/8's 11-5).
+  const FEED_GRADED = new Set(['MLB', 'NBA', 'NFL', 'NHL', 'EPL', 'WNBA', 'WC']);
+  const stale = pending.filter((p) => p.game_date < daysAgoISO(10) && !hasScore.has(p.game_id) && !FEED_GRADED.has(p.league));
+  const target = pending.filter((p) => !hasScore.has(p.game_id) && p.game_date >= daysAgoISO(10) && !FEED_GRADED.has(p.league));
 
   // Delete the unresolvable tail so history stops accumulating zombies.
   if (stale.length) {
@@ -1212,6 +1216,7 @@ async function gradeViaResearch() {
           role: 'user',
           content: `Find the FINAL scores of these completed ${league} games via web_search. ` +
             `Report ONLY verified final scores — use status "not_found" when you cannot confirm one. ` +
+            `CRITICAL: the score MUST be from the game played on the EXACT listed date. Teams often play the same opponent on consecutive days (series) — a result from the day before or after is WRONG; if you cannot confirm the date matches, return not_found. ` +
             `Cricket: report runs as scores; the winner is whoever won the match, so put the winner's runs higher only if that reflects the actual result — otherwise use home_score=1/away_score=0 style marker for the match winner.\n\n${listing}`,
         }],
       });
