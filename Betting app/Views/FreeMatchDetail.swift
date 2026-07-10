@@ -29,6 +29,7 @@ struct FreeMatchDetailView: View {
                     pick1sCall
                     whyBreakdown
                 }
+            .frame(width: UIScreen.main.bounds.width)
                 .padding(.horizontal, 18)
                 .padding(.top, 14)
                 // Clear the sticky CTA bar so the last section never hides.

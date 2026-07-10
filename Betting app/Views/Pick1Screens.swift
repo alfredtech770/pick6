@@ -393,6 +393,11 @@ struct MatchDetailView: View {
                     .padding(.horizontal, 16)
                     Spacer().frame(height: 120)
                 }
+                // Hard width pin: an overwide child (long factor value,
+                // wide table) must clip, never widen the scrollable content
+                // — a wider content size is what made the page pannable
+                // sideways.
+                .frame(width: UIScreen.main.bounds.width)
                 .frame(width: geo.size.width)
             }
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
@@ -1964,6 +1969,8 @@ struct MatchDetailView: View {
                             Text(f.value.uppercased())
                                 .font(.archivo(12, weight: .bold))
                                 .foregroundColor(Color(hex: "#F5F3EE"))
+                                .lineLimit(1).minimumScaleFactor(0.6)
+                                .multilineTextAlignment(.trailing)
                         }
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
