@@ -745,7 +745,7 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   // max_tokens=32000 + effort=high: gives the agentic web_search loop
   // enough headroom to think AND emit the final JSON. effort=max +
   // 16k was burning all output on reasoning, leaving no text block.
-  const stream = anthropic.messages.stream({
+  const makeStream = () => anthropic.messages.stream({
     model: ANTHROPIC_MODEL,
     max_tokens: 32000,
     thinking: { type: 'adaptive' },
@@ -762,13 +762,23 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     messages: [{ role: 'user', content: userPrompt }],
   });
 
+  // Retry transient API failures (overloaded_error, 529s) with backoff —
+  // one blip was killing a league's whole day (4 golf runs lost 7/9-7/10).
   let final;
-  try {
-    final = await stream.finalMessage();
-  } catch (e) {
-    err(`Claude (${league}) failed:`, e.message);
-    return [];
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      final = await makeStream().finalMessage();
+      break;
+    } catch (e) {
+      const transient = /overloaded|529|rate.?limit/i.test(e.message || '');
+      err(`Claude (${league}) attempt ${attempt} failed:`, e.message);
+      if (!transient || attempt === 3) return [];
+      const waitMs = attempt * 45_000;
+      log(`   retrying ${league} in ${waitMs / 1000}s…`);
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
   }
+  if (!final) return [];
 
   const u = final.usage;
   log(`Claude ${league} usage: in=${u.input_tokens} out=${u.output_tokens} cache_read=${u.cache_read_input_tokens || 0} cache_write=${u.cache_creation_input_tokens || 0}`);
