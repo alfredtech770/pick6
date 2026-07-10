@@ -357,6 +357,12 @@ const LEAGUES = {
     }),
   },
 
+  // ─── Tennis (ATP/WTA) — research mode; Grand Slams + tour events
+  ATP: {
+    sport: 'tennis', promptMode: 'research', fetcher: null,
+    notes: 'ATP/WTA singles. Use web_search to find today\'s completed-draw matches — Grand Slams take priority when running (Wimbledon Jun-Jul, US Open Aug-Sep, etc.), otherwise the biggest tour events. Surface 2-4 matches with the clearest edges (ranking gaps, surface specialists, head-to-head). Pick is the player to win the match; home_team/away_team are the two players.',
+  },
+
   // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
   IPL: {
     sport: 'cricket', promptMode: 'research', fetcher: null,

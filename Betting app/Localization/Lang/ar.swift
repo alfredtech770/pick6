@@ -399,6 +399,7 @@ enum ArabicStrings {
         .funnel_success_cta:             "← ابدأ رحلتك",
 
         // 2026-07 redesign surfaces
+        .rd_sport_tennis: "تنس",
         .rd_upcoming_football: "مباريات قادمة",
         .rd_predicted_score: "النتيجة المتوقعة",
         .rd_market_odds: "معاملات السوق",

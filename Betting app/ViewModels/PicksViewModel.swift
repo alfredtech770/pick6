@@ -88,6 +88,7 @@ class PicksViewModel: ObservableObject {
         "all",
         "football", "basketball", "baseball", "f1",
         "combat",   "soccer",     "cricket",  "hockey",
+        "tennis",
     ]
 
     // MARK: - Filters

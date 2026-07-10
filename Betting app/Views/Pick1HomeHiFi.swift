@@ -2418,6 +2418,7 @@ struct SportDropdown: View {
         case "combat":     return "MMA"
         case "f1":         return "F1"
         case "cricket":    return t(.rd_sport_cricket)
+        case "tennis":     return t(.rd_sport_tennis)
         default:           return sport.capitalized
         }
     }
@@ -2432,6 +2433,7 @@ struct SportDropdown: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
     }
@@ -2492,6 +2494,7 @@ struct SportFilter: View {
         case "combat":     return "MMA"
         case "f1":         return "F1"
         case "cricket":    return t(.rd_sport_cricket)
+        case "tennis":     return t(.rd_sport_tennis)
         default:           return sport.capitalized
         }
     }
@@ -2507,6 +2510,7 @@ struct SportFilter: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
     }
@@ -2643,6 +2647,7 @@ struct ValueBoard: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
     }

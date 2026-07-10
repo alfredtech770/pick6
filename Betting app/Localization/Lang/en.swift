@@ -398,6 +398,7 @@ enum EnglishStrings {
         .funnel_success_cta:             "START YOUR JOURNEY →",
 
         // 2026-07 redesign surfaces
+        .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "UPCOMING FOOTBALL",
         .rd_predicted_score: "AI PREDICTED SCORE",
         .rd_market_odds: "MARKET ODDS",

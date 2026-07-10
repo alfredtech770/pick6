@@ -397,6 +397,7 @@ enum ItalianStrings {
         .funnel_success_cta:             "INIZIA IL TUO PERCORSO →",
 
         // 2026-07 redesign surfaces
+        .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "PROSSIME PARTITE",
         .rd_predicted_score: "RISULTATO PREVISTO IA",
         .rd_market_odds: "QUOTE DI MERCATO",
