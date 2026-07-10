@@ -345,7 +345,7 @@ const LEAGUES = {
   // ─── Golf — predict the tournament winner from the field (F1-style) ─
   GOLF: {
     sport: 'golf', promptMode: 'race', fetcher: fetchGolf,
-    notes: 'Predict the WINNER of the PGA tournament from the field. A field of ~70+ means even the favorite is usually only 15-25% — calibrate honestly, never inflate one golfer. When the event is underway use the live leaderboard (position + score to par) below; otherwise use recent form + course history. game_date MUST be the tournament\'s FINAL-round date (the final_day field in the feed) — NOT the start date — so the pick stays visible and pending until the trophy is decided.',
+    notes: 'Predict the WINNER of the PGA tournament from the field. A field of ~70+ means even the favorite is usually only 15-25% — calibrate honestly, never inflate one golfer. When the event is underway use the live leaderboard (position + score to par) below; otherwise use recent form + course history. game_date MUST be the tournament\'s FINAL-round date (the final_day field in the feed) — NOT the start date — so the pick stays visible and pending until the trophy is decided. ALWAYS return exactly ONE pick per tournament (the most likely winner at realistic 10-30% probability) — an in-progress or upcoming tournament is never an empty slate.',
     normalizer: (t) => ({
       game_id: `golf-${t.id}`,
       home_team: t.name,            // tournament name
@@ -499,7 +499,7 @@ Hard rules:
 - Probability floor is 55% for head-to-head picks. EXCEPTION: field events (F1, golf) use the realistic WIN probability from a whole field, which is normally 15-40% — never floor those at 55%.
 - Singles only — no parlays, no multi-leg.
 - The "pick" field MUST be one of {home_team, away_team} from the input. Casing/whitespace can vary slightly but the team must clearly match.
-- Probability is an integer 55–97.
+- Probability is an integer 55–97 for head-to-head picks. Field events (F1, golf, NASCAR) instead use the realistic win probability from the whole field — typically 15–40, sometimes lower — never floored at 55.
 - Confidence: "***" for 75%+, "**" for 65–74%, "*" for 55–64%.
 - Reasoning: 2–3 sentences explaining WHY, in the STYLE below.
 - Key factor: the single biggest reason in 6–10 words, stat-first when possible ("Aces 2-0 without Wilson", not "Depth advantage").
@@ -808,8 +808,11 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   // F1 race-mode picks are exempt — the pick is a driver name.
   const norm = (s) => (typeof s === 'string' ? s.trim().toLowerCase() : '');
   const dropped = [];
+  // Field events (F1/GOLF/NASCAR) carry honest 5-40% win probabilities —
+  // the 55 floor only applies to head-to-head picks.
+  const probFloor = cfg.promptMode === 'race' ? 5 : 55;
   const picks = (parsed.picks || []).filter((p) => {
-    if (typeof p.probability !== 'number' || p.probability < 55 || p.probability > 97) {
+    if (typeof p.probability !== 'number' || p.probability < probFloor || p.probability > 97) {
       dropped.push(`bad_prob(${p.probability})`); return false;
     }
     if (!p.pick || typeof p.pick !== 'string') {
