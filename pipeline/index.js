@@ -1288,8 +1288,14 @@ async function runPipeline() {
     // once per daily run only, never in the hourly ticks.
     await gradeViaResearch().catch((e) => err('gradeViaResearch failed:', e.message));
 
+    // RUN_LEAGUES="WC,EPL" limits a run to specific leagues — used with
+    // RUN_ON_BOOT=1 for targeted backfills (e.g. regenerate just the WC
+    // bracket) without burning credits on every league.
+    const onlyLeagues = (process.env.RUN_LEAGUES || '')
+      .split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       try {
+      if (onlyLeagues.length && !onlyLeagues.includes(league)) { continue; }
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
 
       // GROUNDED COMBAT PATH — facts come from ESPN, not the model's memory.
