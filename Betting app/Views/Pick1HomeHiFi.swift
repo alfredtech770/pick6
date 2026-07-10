@@ -438,17 +438,8 @@ struct HomeHiFiContent: View {
                 // 2026-07 — WC games live in the normal feed; filtering
                 // moved to the SportDropdown on the hero's top-right.)
 
-                // VALUE BOARD — today's biggest model-vs-market edges, sits
-                // directly under the category chips. Hidden when no real
-                // market edges exist.
-                if !vm.valuePlays.isEmpty {
-                    // Edges visible to all (the hook); free users hit the
-                    // paywall on tap, Pro users open the detail.
-                    ValueBoard(picks: vm.valuePlays, isPro: isPro,
-                               onTap: { isPro ? onTapPick($0) : onUnlock() })
-                        .padding(.horizontal, 16)
-                        .padding(.top, 14)
-                }
+                // (VALUE BOARD removed 2026-07-10 per design review — the
+                // edge callout lives on each pick's detail page instead.)
 
                 // Section header — title matches the design
                 // ("TODAY'S GAMES") with a SEE ALL → CTA. The CTA is
