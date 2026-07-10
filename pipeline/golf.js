@@ -37,7 +37,7 @@ async function fetchTournaments() {
       position: c.order != null ? Number(c.order) : null,
       score: c.score != null ? String(c.score) : null,
     })).filter((p) => p.name);
-    out.push({ id: e.id, name: e.name, date: e.date, state, players });
+    out.push({ id: e.id, name: e.name, date: e.date, end_date: e.endDate, state, players });
   }
   return out;
 }

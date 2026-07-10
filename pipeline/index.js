@@ -345,12 +345,13 @@ const LEAGUES = {
   // ─── Golf — predict the tournament winner from the field (F1-style) ─
   GOLF: {
     sport: 'golf', promptMode: 'race', fetcher: fetchGolf,
-    notes: 'Predict the WINNER of the PGA tournament from the field. A field of ~70+ means even the favorite is usually only 15-25% — calibrate honestly, never inflate one golfer. When the event is underway use the live leaderboard (position + score to par) below; otherwise use recent form + course history.',
+    notes: 'Predict the WINNER of the PGA tournament from the field. A field of ~70+ means even the favorite is usually only 15-25% — calibrate honestly, never inflate one golfer. When the event is underway use the live leaderboard (position + score to par) below; otherwise use recent form + course history. game_date MUST be the tournament\'s FINAL-round date (the final_day field in the feed) — NOT the start date — so the pick stays visible and pending until the trophy is decided.',
     normalizer: (t) => ({
       game_id: `golf-${t.id}`,
       home_team: t.name,            // tournament name
       away_team: 'Field',           // pick = predicted winning golfer
       start_time: t.date,
+      final_day: t.end_date,        // → game_date (multi-day event)
       field: t.players,             // grounded field + live board → prompt
       status: 'Scheduled',
     }),

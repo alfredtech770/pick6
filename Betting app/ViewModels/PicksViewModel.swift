@@ -121,14 +121,15 @@ class PicksViewModel: ObservableObject {
             .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
     }
 
-    /// Pending soccer picks beyond the 48h feed window but within the
-    /// next 5 days — the World Cup bracket preview (knockout matchups
-    /// are known days ahead; users want to see e.g. Argentina early).
-    var upcomingSoccerPicks: [Pick] {
+    /// Pending soccer + golf picks beyond the 48h feed window but within
+    /// the next 5 days — the World Cup bracket preview (knockout matchups
+    /// are known days ahead) and multi-day golf tournaments (dated by
+    /// their final round, so they'd otherwise hide until Sunday).
+    var upcomingPreviewPicks: [Pick] {
         let tomorrow = Self.dateString(daysAgo: -1)
         let horizon  = Self.dateString(daysAgo: -5)
         return historyPicks
-            .filter { $0.sport == "soccer" && $0.isPending
+            .filter { ($0.sport == "soccer" || $0.sport == "golf") && $0.isPending
                       && $0.gameDate > tomorrow && $0.gameDate <= horizon }
             .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
     }

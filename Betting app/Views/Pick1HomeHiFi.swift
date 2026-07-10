@@ -469,8 +469,6 @@ struct HomeHiFiContent: View {
                 //      single destination — eight hubs, not one).
                 //   3. There's at least one Pro chip selected (the chip
                 //      isn't the ALL chip, which is just the default).
-                let activeSport: String? =
-                    (isPro && vm.selectedSport != "all") ? vm.selectedSport : nil
                 if isPro {
                     // Proof first — the Latest Wins rail leads, exactly
                     // like the free home, with today's slate below it.
@@ -479,15 +477,12 @@ struct HomeHiFiContent: View {
                     LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
                         .padding(.horizontal, 16)
                         .padding(.top, 14)
+                    // (Per-sport SEE ALL CTA removed 2026-07 — the sport
+                    // dropdown is the only per-sport navigation.)
                     SectionHeader(
                         title: t(.rd_todays_games),
-                        cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
-                        onTapCTA: activeSport.map { sport in
-                            {
-                                Haptics.tap()
-                                onTapSport(sport)
-                            }
-                        }
+                        cta: nil,
+                        onTapCTA: nil
                     )
                     .padding(.horizontal, 20)
                     .padding(.top, 18)
@@ -542,19 +537,22 @@ struct HomeHiFiContent: View {
                                     value: visible.count
                                 )
                             }
-                            // WC bracket preview — soccer picks up to
-                            // 5 days out, weekday-labeled (e.g. SAT · 3 PM).
-                            let upcomingSoccer = vm.upcomingSoccerPicks
-                            if !upcomingSoccer.isEmpty,
-                               vm.selectedSport == "all" || vm.selectedSport == "soccer" {
+                            // Event preview — soccer + golf up to 5 days
+                            // out, weekday-labeled (e.g. SAT · 3 PM).
+                            let upcoming = vm.upcomingPreviewPicks.filter {
+                                vm.selectedSport == "all" || $0.sport == vm.selectedSport
+                            }
+                            if !upcoming.isEmpty {
                                 HStack {
-                                    Text(t(.rd_upcoming_football))
+                                    Text(upcoming.allSatisfy { $0.sport == "soccer" }
+                                         ? t(.rd_upcoming_football)
+                                         : t(.live_section_upcoming))
                                         .font(.anton(22)).foregroundColor(.white)
                                     Spacer()
                                 }
                                 .padding(.horizontal, 4)
                                 .padding(.top, 14)
-                                ForEach(upcomingSoccer) { pick in
+                                ForEach(upcoming) { pick in
                                     Button {
                                         Haptics.tap()
                                         onTapPick(pick)
@@ -1882,11 +1880,12 @@ struct FreeSlateSection: View {
         let today = vm.effectiveTodayPicks.filter {
             $0.id != topPickId && (vm.selectedSport == "all" || $0.sport == vm.selectedSport)
         }
-        // WC bracket preview rides the locked slate too (weekday-labeled).
-        let showSoccer = vm.selectedSport == "all" || vm.selectedSport == "soccer"
-        let soccer = showSoccer ? vm.upcomingSoccerPicks : []
+        // Event previews (WC bracket + golf) ride the locked slate too.
+        let preview = vm.upcomingPreviewPicks.filter {
+            vm.selectedSport == "all" || $0.sport == vm.selectedSport
+        }
         var seen = Set(today.map(\.id))
-        return today + soccer.filter { seen.insert($0.id).inserted }
+        return today + preview.filter { seen.insert($0.id).inserted }
     }
 
     var body: some View {

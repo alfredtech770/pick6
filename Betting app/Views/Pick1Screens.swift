@@ -297,12 +297,17 @@ struct MatchDetailView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
         ZStack(alignment: .top) {
             Color(hex: "#07080a").ignoresSafeArea()
 
-            // scrollBounceBehavior kills the horizontal "jiggle": any row
-            // rendering a point wider than the screen let the vertical
-            // ScrollView rubber-band sideways on diagonal swipes.
+            // The content column is pinned to exactly the container width.
+            // scrollBounceBehavior alone wasn't enough: any row rendering
+            // even a point wider than the screen (long team names, tracked
+            // type, fixed tiles) grew the scroll content box sideways and
+            // the whole page panned left/right on diagonal swipes. With the
+            // frame clamped, horizontal movement is impossible no matter
+            // what a child renders; overflow just clips.
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     detailTopNav
@@ -388,6 +393,7 @@ struct MatchDetailView: View {
                     .padding(.horizontal, 16)
                     Spacer().frame(height: 120)
                 }
+                .frame(width: geo.size.width)
             }
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
 
@@ -406,6 +412,7 @@ struct MatchDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+        }
         }
         .preferredColorScheme(.dark)
         // Engagement signal → PostHog (pick_viewed) + Meta (ViewContent,

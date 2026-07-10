@@ -19,6 +19,7 @@ struct FreeMatchDetailView: View {
     private let lime = Color(hex: "#D4FF3A")
 
     var body: some View {
+        GeometryReader { geo in
         VStack(spacing: 0) {
             header
             ScrollView(showsIndicators: false) {
@@ -32,8 +33,14 @@ struct FreeMatchDetailView: View {
                 .padding(.top, 14)
                 // Clear the sticky CTA bar so the last section never hides.
                 .padding(.bottom, 130)
+                // Pin the content box to the container width — same fix as
+                // MatchDetailView: any child wider than the screen otherwise
+                // lets the vertical ScrollView pan sideways. Clamped, the
+                // page can only scroll up/down; overflow clips.
+                .frame(width: geo.size.width)
             }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        }
         }
         .background(Color(hex: "#0A0B0D").ignoresSafeArea())
         // Sticky unlock bar — pinned while the page scrolls, with a fade
