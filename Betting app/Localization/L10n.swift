@@ -470,7 +470,13 @@ final class LocalizationManager {
     static let shared = LocalizationManager()
 
     init() {
-        let stored = UserDefaults.standard.string(forKey: Self.storageKey) ?? "en"
+        // First launch: follow the phone's language (normalized onto our
+        // 7 supported codes; anything else → English). Once the user
+        // picks a language in Profile → Language, that stored choice
+        // wins forever after.
+        let stored = UserDefaults.standard.string(forKey: Self.storageKey)
+            ?? Locale.preferredLanguages.first
+            ?? "en"
         self.languageCode = LocalizationManager.normalize(stored)
     }
 
