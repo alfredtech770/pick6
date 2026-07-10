@@ -43,7 +43,7 @@ struct Pick1SplashLoader: View {
 
                 Pick1Wordmark(size: 84)
 
-                Text("PICKS · STATS · GLORY")
+                Text(t(.rd_picks_stats_glory))
                     .font(.archivoNarrow(12, weight: .semibold))
                     .tracking(4.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -135,7 +135,7 @@ struct Pick1SplashLoader: View {
             .frame(height: 2)
             .padding(.horizontal, 60)
 
-            Text("LOADING PICKS…")
+            Text(t(.rd_loading_picks))
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.6)
                 .foregroundColor(Color(hex: "#6E6F75"))

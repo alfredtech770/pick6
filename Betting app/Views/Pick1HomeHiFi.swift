@@ -480,7 +480,7 @@ struct HomeHiFiContent: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 14)
                     SectionHeader(
-                        title: "TODAY'S GAMES",
+                        title: t(.rd_todays_games),
                         cta: activeSport.map { "SEE ALL \(sportLabelFull($0)) →" },
                         onTapCTA: activeSport.map { sport in
                             {
@@ -804,12 +804,12 @@ struct HeroCard: View {
             // one baseline so they read as a single statement.
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("AI PICKS")
+                    Text(t(.rd_ai_picks))
                         .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
                         .foregroundColor(Color(hex: "#8A8D94"))
                     Spacer(minLength: 8)
                     if pick != nil {
-                        Text("WIN PROB.")
+                        Text(t(.rd_win_prob))
                             .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                             .foregroundColor(Color(hex: "#8A8D94"))
                     }
@@ -832,7 +832,7 @@ struct HeroCard: View {
                 // detail page's POTENTIAL RETURN (App Review-proven).
                 if let pick {
                     HStack {
-                        Text("POSSIBLE RETURN")
+                        Text(t(.rd_possible_return))
                             .font(.archivoNarrow(10, weight: .bold)).tracking(1.8)
                             .foregroundColor(Color(hex: "#8A8D94"))
                         Spacer(minLength: 8)
@@ -1038,7 +1038,7 @@ struct HeroPill: View {
                 .frame(width: 6, height: 6)
                 .shadow(color: (isLive ? Color(hex: "#FF3B30") : Color(hex: "#D4FF3A")).opacity(0.6), radius: 3)
                 .opacity(isLive ? (pulse ? 0.35 : 1.0) : 1.0)
-            Text(isLive ? "LIVE" : "AI POWERED")
+            Text(isLive ? t(.card_live) : t(.rd_ai_powered))
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2)
                 .foregroundColor(.white)
@@ -1453,7 +1453,7 @@ struct WinsThisWeekTile: View {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color(hex: "#D4FF3A"))
-                Text("WINS")
+                Text(t(.rd_wins_tile))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -1519,7 +1519,7 @@ struct AccuracyTile: View {
                 Image(systemName: moodIcon)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(numberColor)
-                Text("ACCURACY")
+                Text(t(.rd_accuracy))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -1550,7 +1550,7 @@ struct AccuracyTile: View {
                     // below the meaningful-sample floor (PicksViewModel
                     // .minSampleForAccuracy) — reads as a positive "give it
                     // time" rather than implying a bad/zero record.
-                    Text("BUILDING TRACK RECORD")
+                    Text(t(.rd_building_record))
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                 } else {
@@ -1606,7 +1606,7 @@ struct AccuracyTile: View {
     @ViewBuilder
     private var trailingBadge: some View {
         if mood == .bullish {
-            Text("ON FIRE")
+            Text(t(.rd_on_fire))
                 .font(.archivoNarrow(9, weight: .bold))
                 .tracking(1.8)
                 .foregroundColor(Color(hex: "#0A0B0D"))
@@ -1745,11 +1745,11 @@ struct LatestWinsRail: View {
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("LATEST WINS")
+                    Text(t(.rd_latest_wins))
                         .font(.anton(22)).foregroundColor(.white)
                     Spacer()
                     if onSeeAll != nil {
-                        Text("SEE ALL →")
+                        Text(t(.rd_see_all))
                             .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
                             .foregroundColor(win)
                     }
@@ -1795,7 +1795,7 @@ struct WinReceiptCard: View {
                 HStack(spacing: 6) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12)).foregroundColor(accent)
-                    Text("MISSED WIN · \(pick.league.uppercased())")
+                    Text("\(t(.rd_missed_win)) · \(pick.league.uppercased())")
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                         .foregroundColor(accent)
                         .lineLimit(1).minimumScaleFactor(0.7)
@@ -1866,12 +1866,12 @@ struct FreeSlateSection: View {
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("FULL SLATE")
+                    Text(t(.rd_full_slate))
                         .font(.anton(22)).foregroundColor(.white)
                     Spacer()
                     HStack(spacing: 5) {
                         Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
-                        Text("PREMIUM")
+                        Text(t(.rd_premium))
                             .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     }
                     .foregroundColor(gold)
@@ -1886,7 +1886,7 @@ struct FreeSlateSection: View {
                     })
                 }
                 if slate.count > 3 {
-                    Text("+ \(slate.count - 3) MORE PICKS INSIDE")
+                    Text(t(.rd_more_picks_inside, count: slate.count - 3))
                         .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                         .foregroundColor(Color(hex: "#E8C64A").opacity(0.85))
                         .frame(maxWidth: .infinity)
@@ -1930,7 +1930,7 @@ struct LockedSlateCard: View {
                             .lineLimit(1).minimumScaleFactor(0.55)
                         HStack(spacing: 5) {
                             Image(systemName: "lock.fill").font(.system(size: 8, weight: .bold))
-                            Text("AI PICK HIDDEN")
+                            Text(t(.rd_ai_pick_hidden))
                                 .font(.archivoNarrow(10, weight: .bold)).tracking(1.4)
                         }
                         .foregroundColor(gold)
@@ -1938,7 +1938,7 @@ struct LockedSlateCard: View {
                     Spacer(minLength: 8)
                     VStack(spacing: 3) {
                         Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
-                        Text("UNLOCK")
+                        Text(t(.rd_unlock))
                             .font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
                     }
                     .foregroundColor(gold)
@@ -2030,7 +2030,7 @@ struct ProSlateCard: View {
                         .font(.anton(17))
                         .lineLimit(1).minimumScaleFactor(0.55)
                     HStack(spacing: 6) {
-                        Text("AI PICKS")
+                        Text(t(.rd_ai_picks))
                             .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
                             .foregroundColor(Color(hex: "#8A8D94"))
                         Text(pick.shortDisplayPick.uppercased())
@@ -2074,23 +2074,23 @@ struct ProSlateCard: View {
             HStack(spacing: 5) {
                 Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
                 if let s = liveScore, let h = s.homeScore, let a = s.awayScore {
-                    Text("LIVE · \(a)–\(h)")
+                    Text("\(t(.card_live)) · \(a)–\(h)")
                         .font(.mono(10, weight: .bold))
                 } else {
-                    Text("LIVE").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                    Text(t(.card_live)).font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 }
             }
             .foregroundColor(Color(hex: "#FF5A36"))
         case .won:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark").font(.system(size: 8, weight: .heavy))
-                Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                Text(t(.rd_won)).font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
             }
             .foregroundColor(lime)
         case .lost:
             HStack(spacing: 4) {
                 Image(systemName: "xmark").font(.system(size: 8, weight: .heavy))
-                Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                Text(t(.rd_lost)).font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
             }
             .foregroundColor(Color(hex: "#FF5A5A"))
         case .awaitingResult, .upcoming:
@@ -2144,31 +2144,31 @@ struct PremiumUpsellCard: View {
             onUnlock()
         } label: {
             VStack(alignment: .leading, spacing: 14) {
-                Text("🙌 PICK1 PREMIUM")
+                Text(t(.rd_prem_pill))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(1.8)
                     .foregroundColor(Color(hex: "#14110A"))
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Capsule().fill(gold))
 
-                (Text("EVERY PICK.\nEVERY ").foregroundColor(.white)
-                 + Text("SPORT.").foregroundColor(gold))
+                (Text(t(.rd_prem_head)).foregroundColor(.white)
+                 + Text(t(.rd_prem_head_accent)).foregroundColor(gold))
                     .font(.anton(34))
 
-                Text("You get 1 free pick a day. Members unlock the entire daily slate, all leagues, and full AI confidence breakdowns.")
+                Text(t(.rd_prem_body))
                     .font(.archivo(13.5)).foregroundColor(Color(hex: "#B9B7B0"))
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 9) {
-                    checkRow("Unlock all 6–12 daily picks")
-                    checkRow("Full confidence & reasoning")
-                    checkRow("Summer Football 2026 full slate")
-                    checkRow("Track record & streak rewards")
+                    checkRow(t(.rd_prem_check1))
+                    checkRow(t(.rd_prem_check2))
+                    checkRow(t(.rd_prem_check3))
+                    checkRow(t(.rd_prem_check4))
                 }
                 .padding(.top, 2)
 
                 VStack(spacing: 9) {
-                    Text(subs.introOfferEligible ? "START 3 DAYS FREE →" : "UNLOCK PREMIUM →")
+                    Text(subs.introOfferEligible ? t(.rd_prem_cta_trial) : t(.rd_prem_cta))
                         .font(.anton(17)).kerning(0.4)
                         .foregroundColor(Color(hex: "#14110A"))
                         .frame(maxWidth: .infinity)
@@ -2279,7 +2279,7 @@ struct SportDropdown: View {
 
     private var menu: some View {
         VStack(spacing: 2) {
-            row(key: "all", label: "All Sports", icon: "circle.grid.cross",
+            row(key: "all", label: t(.rd_all_sports), icon: "circle.grid.cross",
                 count: vm.effectiveTodayPicks.count, index: 0)
             ForEach(Array(sports.enumerated()), id: \.element) { i, sport in
                 row(key: sport, label: label(sport), icon: icon(sport),
@@ -2353,7 +2353,7 @@ struct SportDropdown: View {
 
     // ── Copy helpers ─────────────────────────────────────────────────
     private var currentLabel: String {
-        vm.selectedSport == "all" ? "All Sports" : label(vm.selectedSport)
+        vm.selectedSport == "all" ? t(.rd_all_sports) : label(vm.selectedSport)
     }
     private var currentIcon: String {
         vm.selectedSport == "all" ? "circle.grid.cross" : icon(vm.selectedSport)
@@ -2363,15 +2363,15 @@ struct SportDropdown: View {
     }
     private func label(_ sport: String) -> String {
         switch sport {
-        case "basketball": return "Basketball"
+        case "basketball": return t(.rd_sport_basketball)
         case "football":   return "NFL"
-        case "soccer":     return "Soccer"
+        case "soccer":     return t(.rd_sport_soccer)
         case "baseball":   return "MLB"
-        case "golf":       return "Golf"
-        case "hockey":     return "Hockey"
+        case "golf":       return t(.rd_sport_golf)
+        case "hockey":     return t(.rd_sport_hockey)
         case "combat":     return "MMA"
         case "f1":         return "F1"
-        case "cricket":    return "Cricket"
+        case "cricket":    return t(.rd_sport_cricket)
         default:           return sport.capitalized
         }
     }
@@ -2437,15 +2437,15 @@ struct SportFilter: View {
     /// inside the league rail.
     private func sportLabel(_ sport: String) -> String {
         switch sport {
-        case "basketball": return "Basketball"
+        case "basketball": return t(.rd_sport_basketball)
         case "football":   return "NFL"
-        case "soccer":     return "Soccer"
+        case "soccer":     return t(.rd_sport_soccer)
         case "baseball":   return "MLB"
-        case "golf":       return "Golf"
-        case "hockey":     return "Hockey"
+        case "golf":       return t(.rd_sport_golf)
+        case "hockey":     return t(.rd_sport_hockey)
         case "combat":     return "MMA"
         case "f1":         return "F1"
-        case "cricket":    return "Cricket"
+        case "cricket":    return t(.rd_sport_cricket)
         default:           return sport.capitalized
         }
     }
@@ -2516,11 +2516,11 @@ struct ValueBoard: View {
                 Image(systemName: "diamond.fill")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(Color(hex: "#D4FF3A"))
-                Text("BEST VALUE TODAY")
+                Text(t(.rd_best_value_today))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#F5F3EE"))
                 Spacer()
-                Text("WE BEAT THE MARKET")
+                Text(t(.rd_beat_market))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
             }
@@ -2566,7 +2566,7 @@ struct ValueBoard: View {
                 .buttonStyle(.plain)
             }
 
-            Text("AI PROJECTION · NOT A GUARANTEE")
+            Text(t(.rd_ai_projection_disc))
                 .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
                 .foregroundColor(Color(hex: "#4A4B50"))
                 .padding(.top, 10)
@@ -2741,7 +2741,7 @@ struct GameCard: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("AI PICKS")
+                    Text(t(.rd_ai_picks))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#B9B7B0"))
@@ -2961,7 +2961,7 @@ struct GameCard: View {
 
     private func livePulseText(_ s: LiveScore) -> String {
         let q = s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? (s.status ?? "LIVE").uppercased()
-        return "LIVE · \(q)"
+        return "\(t(.card_live)) · \(q)"
     }
 
     /// Per-state top-row badge for both team and event card layouts.
@@ -2980,21 +2980,21 @@ struct GameCard: View {
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
             } else {
-                LivePulseBadge(label: "LIVE")
+                LivePulseBadge(label: t(.card_live))
             }
         case .awaitingResult:
             HStack(spacing: 5) {
                 Image(systemName: "hourglass")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#F59E0B"))
             }
         case .won, .lost:
             HStack(spacing: 6) {
-                Text("FINAL")
+                Text(t(.card_final))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -3029,7 +3029,7 @@ struct PredictionResultBadge: View {
                 .tracking(2.2)
                 .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#6E6F75"))
             if won {
-                Text("· AI CALLED IT")
+                Text(t(.rd_ai_called_it))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.4)
                     .foregroundColor(Color(hex: "#0A0B0D").opacity(0.65))
@@ -3263,7 +3263,7 @@ struct ScoreView: View {
                         .monospacedDigit()
                 }
             } else {
-                Text(state == .live ? "LIVE" : "FINAL")
+                Text(state == .live ? t(.card_live) : t(.card_final))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#B9B7B0"))
@@ -3277,7 +3277,7 @@ struct ScoreView: View {
                 Image(systemName: "hourglass")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.8)
                     .foregroundColor(Color(hex: "#F59E0B"))
@@ -3558,7 +3558,7 @@ struct LiveNavItem: View {
     }
 
     private var labelText: String {
-        liveCount > 0 ? "LIVE \(liveCount)" : "LIVE"
+        liveCount > 0 ? "\(t(.card_live)) \(liveCount)" : t(.card_live)
     }
 
     private var bgColor: Color {
@@ -3602,7 +3602,7 @@ struct ProUnlockCard: View {
                 HStack(spacing: 6) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("PICK1 PRO")
+                    Text(t(.rd_pick1_pro))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                 }
@@ -3613,7 +3613,7 @@ struct ProUnlockCard: View {
                     .foregroundColor(Color(hex: "#0A0B0D"))
 
                 HStack(spacing: 6) {
-                    Text(subs.introOfferEligible ? "3-day free trial" : "Go Pro from $14.99/wk")
+                    Text(subs.introOfferEligible ? t(.rd_trial_badge) : t(.rd_go_pro_from))
                         .font(.archivo(12, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
                     Image(systemName: "arrow.right")
@@ -3757,7 +3757,7 @@ struct LockedPickCard: View {
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("AI PICKS")
+                            Text(t(.rd_ai_picks))
                                 .font(.archivoNarrow(10, weight: .bold))
                                 .tracking(2)
                                 .foregroundColor(Color(hex: "#B9B7B0"))
@@ -3782,7 +3782,7 @@ struct LockedPickCard: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#0A0B0D"))
-                    Text("UNLOCK WITH PRO")
+                    Text(t(.rd_unlock_with_pro))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#0A0B0D"))
@@ -3849,11 +3849,11 @@ struct EmptyTodayState: View {
             Image(systemName: "calendar.badge.exclamationmark")
                 .font(.system(size: 38))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("NO GAMES FOR TODAY")
+            Text(t(.rd_no_games_today))
                 .font(.archivoNarrow(13, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("New picks drop daily by 5:00 AM ET")
+            Text(t(.rd_picks_drop))
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)

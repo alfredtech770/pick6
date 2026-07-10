@@ -281,17 +281,17 @@ struct MatchDetailView: View {
     @EnvironmentObject private var favorites: FavoritesStore
     private var starred: Bool { favorites.contains(pick.id) }
 
-    private func tabLabel(_ t: Tab) -> String {
-        switch t {
-        case .ourCall: return "OUR CALL"
-        case .summary: return "AI ANALYSIS"
+    private func tabLabel(_ which: Tab) -> String {
+        switch which {
+        case .ourCall: return t(.rd_our_call)
+        case .summary: return t(.rd_ai_analysis)
         case .stats:
             // Sport-adaptive stats label.
             switch pick.sport {
-            case "combat": return "FIGHTERS"
-            case "f1", "golf": return "FIELD"
-            case "tennis": return "PLAYERS"
-            default: return "TEAM STATS"
+            case "combat": return t(.rd_fighters)
+            case "f1", "golf": return t(.rd_field)
+            case "tennis": return t(.rd_players)
+            default: return t(.rd_team_stats)
             }
         }
     }
@@ -333,11 +333,11 @@ struct MatchDetailView: View {
                     // PICK1'S CALL · ✓ UNLOCKED — the premium mirror of the
                     // free tease's locked section.
                     HStack {
-                        Text("PICK1'S CALL").font(.anton(19)).foregroundColor(.white)
+                        Text(t(.rd_pick1s_call)).font(.anton(19)).foregroundColor(.white)
                         Spacer()
                         HStack(spacing: 5) {
                             Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy))
-                            Text("UNLOCKED")
+                            Text(t(.rd_unlocked))
                                 .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                         }
                         .foregroundColor(Color(hex: "#D4FF3A"))
@@ -451,7 +451,7 @@ struct MatchDetailView: View {
                         .font(.system(size: 13, weight: .bold))
                         .scaleEffect(starred ? 1.0 : 0.92)
                         .animation(Pick1Springs.bouncy, value: starred)
-                    Text(starred ? "TRACKING" : "TRACK YOUR PICK")
+                    Text(starred ? t(.rd_tracking) : t(.rd_track_your_pick))
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                 }
                 .foregroundColor(starred ? Color(hex: "#0A0B0D") : Color(hex: "#D4FF3A"))
@@ -509,7 +509,7 @@ struct MatchDetailView: View {
         case .live:
             if let s = liveScore {
                 let q = s.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? (s.status ?? "LIVE").uppercased()
-                return "LIVE · \(q)"
+                return "\(t(.card_live)) · \(q)"
             }
             return "LIVE"
         case .awaitingResult: return "AWAITING"
@@ -531,7 +531,7 @@ struct MatchDetailView: View {
         let maxWin = max(1, drivers.map { $0.win }.max() ?? 1)
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("PODIUM PROBABILITIES")
+                Text(t(.rd_podium_probs))
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#F5F3EE"))
@@ -542,15 +542,15 @@ struct MatchDetailView: View {
             }
             .padding(.bottom, 4)
             HStack {
-                Text("WIN AND PODIUM CHANCE")
+                Text(t(.rd_win_podium_chance))
                     .font(.mono(9, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Spacer()
-                Text("WIN")
+                Text(t(.rd_win_word))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .frame(width: 44, alignment: .trailing)
-                Text("PODIUM")
+                Text(t(.rd_podium_word))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.4)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .frame(width: 52, alignment: .trailing)
@@ -620,7 +620,7 @@ struct MatchDetailView: View {
     private var fieldEventHeader: some View {
         VStack(spacing: 8) {
             AthleteHeadshot(sport: pick.sport, name: pick.pick, size: .big)
-            Text("OUR PICK · TO WIN")
+            Text(t(.rd_our_pick_to_win))
                 .font(.archivoNarrow(10, weight: .bold)).tracking(2.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
             Text(teamShortName(pick.pick, sport: pick.sport))
@@ -641,7 +641,7 @@ struct MatchDetailView: View {
             // HOME column (always left)
             VStack(spacing: 8) {
                 TeamLogo(sport: pick.sport, team: pick.homeTeam, size: .big)
-                Text("HOME")
+                Text(t(.rd_home_label))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.8)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -664,7 +664,7 @@ struct MatchDetailView: View {
             // AWAY column (always right)
             VStack(spacing: 8) {
                 TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .big)
-                Text("AWAY")
+                Text(t(.rd_away_label))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.8)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -726,7 +726,7 @@ struct MatchDetailView: View {
             .overlay(Capsule().stroke(Color(hex: "#F59E0B").opacity(0.22), lineWidth: 1))
             .clipShape(Capsule())
         case .won:
-            Text("FINAL · W")
+            Text(t(.rd_final_w))
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#4ADE80"))
                 .padding(.horizontal, 10)
@@ -735,7 +735,7 @@ struct MatchDetailView: View {
                 .overlay(Capsule().stroke(Color(hex: "#4ADE80").opacity(0.22), lineWidth: 1))
                 .clipShape(Capsule())
         case .lost:
-            Text("FINAL · L")
+            Text(t(.rd_final_l))
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#FF5A36"))
                 .padding(.horizontal, 10)
@@ -811,7 +811,7 @@ struct MatchDetailView: View {
                     .font(.anton(20))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("PENDING GRADE")
+                Text(t(.rd_pending_grade))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.6)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -899,7 +899,7 @@ struct MatchDetailView: View {
             // Mock layout: AI PICKS label → NAME + WIN% on one baseline →
             // divider → LOGGED time · Confidence tier.
             HStack {
-                Text("AI PICKS")
+                Text(t(.rd_ai_picks))
                     .font(.archivoNarrow(10, weight: .bold)).tracking(2.4)
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
@@ -915,7 +915,7 @@ struct MatchDetailView: View {
                     Text("\(Int(pick.probability))%")
                         .font(.anton(40)).tracking(-0.4)
                         .foregroundColor(Color(hex: "#F5F3EE"))
-                    Text("WIN PROB.")
+                    Text(t(.rd_win_prob))
                         .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
@@ -923,11 +923,11 @@ struct MatchDetailView: View {
             Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
                 .padding(.top, 12)
             HStack {
-                Text("LOGGED \(loggedTimeText)")
+                Text("\(t(.rd_logged)) \(loggedTimeText)")
                     .font(.mono(10, weight: .bold)).tracking(1.2)
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
-                (Text("Confidence: ").foregroundColor(Color(hex: "#8A8D94"))
+                (Text(t(.rd_confidence_prefix)).foregroundColor(Color(hex: "#8A8D94"))
                  + Text(confidenceDisplay).foregroundColor(sportAccent))
                     .font(.mono(11, weight: .bold))
             }
@@ -939,7 +939,7 @@ struct MatchDetailView: View {
             // "EXPECTED RETURN −6.0% vs market consensus" read as
             // analyst jargon; AI edge now lives in the stat row.)
             VStack(alignment: .center, spacing: 4) {
-                Text("POTENTIAL PAYOUT")
+                Text(t(.rd_potential_payout))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -1115,7 +1115,7 @@ struct MatchDetailView: View {
         let mute = Color(hex: "#6E6F75")
         if pick.isPending {
             guard let pred = pick.predictedScore else { return nil }
-            return ("target", "AI PREDICTED SCORE  \(pred)", lime)
+            return ("target", "\(t(.rd_predicted_score))  \(pred)", lime)
         }
         guard let acc = pick.predictionAccuracy else { return nil }
         let final = (pick.homeScore != nil && pick.awayScore != nil)
@@ -1155,14 +1155,14 @@ struct MatchDetailView: View {
 
     /// Multiplier demoted to the support line.
     private var payoutSubText: String {
-        String(format: "%.2fx odds · if the pick hits", decimalOdds)
+        t(.rd_odds_if_hits).replacingOccurrences(of: "{x}", with: String(format: "%.2f", decimalOdds))
     }
 
     /// Where the multiplier comes from — a real market or our estimate.
     private var payoutSourceText: String {
         hasMarketOdds
-            ? "MARKET ODDS · \((pick.oddsSource ?? "MARKET").uppercased())"
-            : "ESTIMATED FROM AI CONFIDENCE"
+            ? "\(t(.rd_market_odds)) · \((pick.oddsSource ?? "MARKET").uppercased())"
+            : t(.rd_est_from_conf)
     }
 
     /// Lime accent when the AI sees positive edge, muted ink otherwise
@@ -1184,13 +1184,13 @@ struct MatchDetailView: View {
         let statusValue: String
         switch state {
         case .live:
-            statusLabel = "STATUS"
+            statusLabel = t(.rd_status)
             statusValue = tipoffText            // "Q3" / "LIVE"
         case .won, .lost:
             statusLabel = "RESULT"
             statusValue = state == .won ? "WON" : "LOST"
         case .awaitingResult:
-            statusLabel = "STATUS"
+            statusLabel = t(.rd_status)
             statusValue = "FINAL"
         case .upcoming:
             statusLabel = "TIP-OFF"
@@ -1204,8 +1204,8 @@ struct MatchDetailView: View {
         // when our probability beats what the odds imply).
         let _ = oddsStr
         return [
-            .init(label: "AI EDGE",    value: expectedReturnText, suffix: nil),
-            .init(label: "CONFIDENCE", value: "\(Int(pick.probability))", suffix: "%"),
+            .init(label: t(.rd_ai_edge),    value: expectedReturnText, suffix: nil),
+            .init(label: t(.rd_confidence_label), value: "\(Int(pick.probability))", suffix: "%"),
             .init(label: statusLabel,  value: statusValue, suffix: nil),
         ]
     }
@@ -1228,7 +1228,7 @@ struct MatchDetailView: View {
     /// Compact label for the 3rd pick-row column. "LIVE", "TONIGHT",
     /// "TOMORROW", or the day-of-week, depending on the game state.
     private var scheduledOrLiveLabelShort: String {
-        if liveScore?.isLive == true { return "STATUS" }
+        if liveScore?.isLive == true { return t(.rd_status) }
         return "TIPOFF"
     }
 
@@ -1297,7 +1297,7 @@ struct MatchDetailView: View {
                 .padding(.bottom, 14)
             }
 
-            Text("WHY THE AI LIKES THIS")
+            Text(t(.rd_why_ai_likes))
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.4)
                 .foregroundColor(Color(hex: "#6E6F75"))
@@ -1315,7 +1315,7 @@ struct MatchDetailView: View {
             // Confidence row — real probability + tier.
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("AI CONFIDENCE")
+                    Text(t(.rd_ai_confidence))
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2.0)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1350,7 +1350,7 @@ struct MatchDetailView: View {
                     Image(systemName: "chart.bar.doc.horizontal")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(sportAccent)
-                    Text("MATCHUP")
+                    Text(t(.rd_matchup))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1379,7 +1379,7 @@ struct MatchDetailView: View {
                     }
                 }
 
-                Text("AI-COMPILED · VERIFIED VIA WEB SEARCH")
+                Text(t(.rd_verified_web))
                     .font(.archivoNarrow(8, weight: .bold))
                     .tracking(1.6)
                     .foregroundColor(Color(hex: "#4A4B50"))
@@ -1403,7 +1403,7 @@ struct MatchDetailView: View {
                     Image(systemName: "scope")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(sportAccent)
-                    Text("PROJECTION")
+                    Text(t(.rd_projection))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1462,7 +1462,7 @@ struct MatchDetailView: View {
                     Image(systemName: "figure.boxing")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(sportAccent)
-                    Text("TALE OF THE TAPE")
+                    Text(t(.rd_tale_of_tape))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1491,7 +1491,7 @@ struct MatchDetailView: View {
                 totRow("STANCE", a.stance, b.stance)
 
                 if a.career != nil || b.career != nil {
-                    Text("CAREER")
+                    Text(t(.rd_career))
                         .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
                         .foregroundColor(Color(hex: "#4A4B50"))
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -1510,7 +1510,7 @@ struct MatchDetailView: View {
                         .padding(.top, 12)
                 }
 
-                Text("VERIFIED VIA ESPN STATS")
+                Text(t(.rd_verified_espn_stats))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#4A4B50"))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -1533,7 +1533,7 @@ struct MatchDetailView: View {
                     Image(systemName: "soccerball")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(sportAccent)
-                    Text("FORM GUIDE")
+                    Text(t(.rd_form_guide))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
@@ -1563,7 +1563,7 @@ struct MatchDetailView: View {
                     totRow("RECENT FORM", spacedForm(h.form), spacedForm(a.form))
                 }
 
-                Text("VERIFIED VIA ESPN")
+                Text(t(.rd_verified_espn))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#4A4B50"))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -1706,7 +1706,7 @@ struct MatchDetailView: View {
 
         return VStack(alignment: .leading, spacing: 0) {
             // 1. Who we're backing + our confidence
-            Text("WE'RE BACKING")
+            Text(t(.rd_were_backing))
                 .font(.archivoNarrow(10, weight: .bold)).tracking(2.4)
                 .foregroundColor(Color(hex: "#6E6F75"))
             HStack(alignment: .center, spacing: 8) {
@@ -1729,11 +1729,11 @@ struct MatchDetailView: View {
             if let imp = impliedPct {
                 HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("OUR READ").font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
+                        Text(t(.rd_our_read)).font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(ourPct)%").font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .trailing, spacing: 3) {
-                        Text("MARKET IMPLIED").font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
+                        Text(t(.rd_market_implied)).font(.archivoNarrow(9, weight: .bold)).tracking(1.4).foregroundColor(Color(hex: "#6E6F75"))
                         Text("\(imp)%").font(.anton(20)).foregroundColor(Color(hex: "#B9B7B0"))
                     }.frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -1753,7 +1753,7 @@ struct MatchDetailView: View {
             // real odds → show the confidence % and a projected-return chip;
             // legacy rows fall back to the plain label/value line.
             if let props = pick.bettingProps, !props.isEmpty {
-                Text("MORE PREDICTIONS · \(props.count)")
+                Text("\(t(.rd_more_predictions)) · \(props.count)")
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .padding(.top, 16).padding(.bottom, 6)
@@ -1835,7 +1835,7 @@ struct MatchDetailView: View {
                             .font(.archivo(13, weight: .bold))
                             .foregroundColor(i == 0 ? sportAccent : Color(hex: "#B9B7B0"))
                         if i == 0 {
-                            Text("BEST").font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
+                            Text(t(.rd_best)).font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
                                 .foregroundColor(Color(hex: "#0A0B0D"))
                                 .padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(Capsule().fill(sportAccent))
@@ -1843,7 +1843,7 @@ struct MatchDetailView: View {
                     }
                     .padding(.vertical, 6)
                 }
-                Text("You decide where to play — we don't take bets.")
+                Text(t(.rd_no_bets))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
                     .foregroundColor(Color(hex: "#4A4B50")).padding(.top, 2)
             }
@@ -1851,7 +1851,7 @@ struct MatchDetailView: View {
             // 4. Potential return
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("POTENTIAL RETURN").font(.archivoNarrow(9, weight: .bold)).tracking(1.6).foregroundColor(Color(hex: "#6E6F75"))
+                    Text(t(.rd_potential_return)).font(.archivoNarrow(9, weight: .bold)).tracking(1.6).foregroundColor(Color(hex: "#6E6F75"))
                     Text(pick.oddsSource.map { "LINE VIA \($0.uppercased())" } ?? "FAIR PRICE FROM OUR CONFIDENCE")
                         .font(.archivoNarrow(8, weight: .bold)).tracking(1.0).foregroundColor(Color(hex: "#4A4B50"))
                 }
@@ -1889,7 +1889,7 @@ struct MatchDetailView: View {
             }
             .padding(.top, 16)
 
-            Text("Our prediction — not a guarantee, and not financial advice.")
+            Text(t(.rd_not_advice))
                 .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
                 .foregroundColor(Color(hex: "#4A4B50"))
                 .padding(.top, 14)
@@ -1935,7 +1935,7 @@ struct MatchDetailView: View {
                     .font(.anton(19)).foregroundColor(.white)
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
-                Text("BREAKDOWN")
+                Text(t(.rd_breakdown))
                     .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                     .foregroundColor(sportAccent)
                     .padding(.horizontal, 11).padding(.vertical, 6)
@@ -1975,10 +1975,10 @@ struct MatchDetailView: View {
     private func valueVerdict(edge: Int) -> some View {
         let isValue = edge >= 6
         let isNoEdge = edge <= -6
-        let label = isValue ? "VALUE · +\(edge)%" : (isNoEdge ? "NO EDGE · \(edge)%" : "FAIR PRICE")
-        let sub = isValue ? "We rate this higher than the market — the price has value."
-            : (isNoEdge ? "The market rates this above us — thin value, consider passing."
-                        : "Our read is in line with the market price.")
+        let label = isValue ? "\(t(.rd_value_label)) · +\(edge)%" : (isNoEdge ? "\(t(.rd_no_edge)) · \(edge)%" : t(.rd_fair_price))
+        let sub = isValue ? t(.rd_value_sub)
+            : (isNoEdge ? t(.rd_no_edge_sub)
+                        : t(.rd_fair_price_body))
         let fg = isValue ? Color(hex: "#0A0B0D") : (isNoEdge ? Color(hex: "#F0A8A0") : Color(hex: "#E7E4DC"))
         let bg = isValue ? sportAccent : (isNoEdge ? Color(hex: "#2A1416") : Color(hex: "#16181C"))
         return VStack(alignment: .leading, spacing: 4) {
@@ -2148,8 +2148,8 @@ struct MatchDetailView: View {
     private var lineupKicker: String {
         switch pick.sport {
         case "f1":      return "GRID"
-        case "combat":  return "FIGHTERS"
-        case "tennis":  return "PLAYERS"
+        case "combat":  return t(.rd_fighters)
+        case "tennis":  return t(.rd_players)
         default:        return "STARTERS"
         }
     }
@@ -2494,7 +2494,7 @@ struct SportHubView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    TopNavBar(crumb: "HOME · ",
+                    TopNavBar(crumb: t(.rd_crumb_home),
                               crumbAccent: leagueLabel,
                               live: hasLiveToday,
                               onBack: onClose)
@@ -2551,7 +2551,7 @@ struct SportHubView: View {
 
                     // ── YESTERDAY (only when there's history) ────────
                     if !yesterdayForSport.isEmpty {
-                        HubSectionHead(title: "YESTERDAY",
+                        HubSectionHead(title: t(.rd_yesterday),
                                        meta: yesterdayMeta)
                             .padding(.bottom, 10)
                         yesterdaySum
@@ -2563,7 +2563,7 @@ struct SportHubView: View {
                     }
 
                     // ── STANDINGS placeholder ────────────────────────
-                    HubSectionHead(title: "STANDINGS", meta: "TOP 5")
+                    HubSectionHead(title: t(.rd_standings), meta: t(.rd_top5))
                         .padding(.bottom, 10)
                     standingsCard
                         .padding(.horizontal, 16)
@@ -2946,7 +2946,7 @@ struct SportHubView: View {
                                     .lineLimit(1)
                             }
                             if isPicked {
-                                Text("★ AI PICK · RACE WINNER")
+                                Text(t(.rd_ai_pick_race_winner))
                                     .font(.archivoNarrow(8, weight: .bold))
                                     .tracking(1.4)
                                     .foregroundColor(Color(hex: "#F5F3EE").opacity(0.7))
@@ -2962,7 +2962,7 @@ struct SportHubView: View {
                                 .font(.anton(30))
                                 .foregroundColor(team.color)
                                 .monospacedDigit()
-                            Text("WIN")
+                            Text(t(.rd_win_word))
                                 .font(.archivoNarrow(8, weight: .bold)).tracking(1.8)
                                 .foregroundColor(Color(hex: "#6E6F75"))
                             // mini win-share bar in team color
@@ -3134,7 +3134,7 @@ struct SportHubView: View {
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .frame(width: 24, alignment: .leading)
-                Text("TEAM")
+                Text(t(.rd_team_col))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -3165,7 +3165,7 @@ struct SportHubView: View {
 
             // Empty rows — design renders 5 of these with mute text.
             VStack(spacing: 0) {
-                Text("Standings load with the season")
+                Text(t(.rd_standings_load))
                     .font(.archivo(12, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -3279,7 +3279,7 @@ struct SmallPickHero: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text("★ TOP AI PICK · TODAY")
+                    Text(t(.rd_top_ai_pick_today))
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.2)
                         .foregroundColor(Color.black.opacity(0.6))
@@ -4089,11 +4089,11 @@ struct WinsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                TopNavBar(crumb: "YOU · ", crumbAccent: "PICKS", live: false, onBack: onClose, showBack: false)
-                PageHero(title: "YOUR",
-                         titleAccent: "PICKS.",
-                         sub: ["\(wonPicks.count) SAVED MATCH\(wonPicks.count == 1 ? "" : "ES")",
-                               "TAP A STAR TO FAVORITE"],
+                TopNavBar(crumb: t(.rd_crumb_you), crumbAccent: t(.nav_picks).uppercased(), live: false, onBack: onClose, showBack: false)
+                PageHero(title: t(.rd_your),
+                         titleAccent: t(.rd_picks_word),
+                         sub: [t(.rd_saved_matches, count: wonPicks.count),
+                               t(.rd_tap_star_favorite)],
                          glow: Color(hex: "#D4FF3A"))
                     .padding(.bottom, 6)
 
@@ -4147,7 +4147,7 @@ struct WinsView: View {
     @ViewBuilder
     private var favActionsRow: some View {
         HStack {
-            Text("\(wonPicks.count) MATCH\(wonPicks.count == 1 ? "" : "ES")")
+            Text(t(.rd_matches_count, count: wonPicks.count))
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#6E6F75"))
@@ -4155,18 +4155,18 @@ struct WinsView: View {
             if !wonPicks.isEmpty {
                 if confirmingClear {
                     HStack(spacing: 8) {
-                        Text("Remove all?")
+                        Text(t(.rd_remove_all_q))
                             .font(.archivoNarrow(10, weight: .bold))
                             .tracking(1.4)
                             .foregroundColor(Color(hex: "#B9B7B0"))
-                        Button("Cancel") { confirmingClear = false }
+                        Button(t(.action_cancel)) { confirmingClear = false }
                             .font(.archivoNarrow(10, weight: .bold))
                             .foregroundColor(Color(hex: "#B9B7B0"))
                         Button {
                             favorites.clear()
                             confirmingClear = false
                         } label: {
-                            Text("Clear all")
+                            Text(t(.rd_clear_all))
                                 .font(.archivoNarrow(10, weight: .heavy))
                                 .tracking(1.8)
                                 .foregroundColor(Color(hex: "#0A0B0D"))
@@ -4181,7 +4181,7 @@ struct WinsView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "trash")
                                 .font(.system(size: 10, weight: .bold))
-                            Text("Clear all")
+                            Text(t(.rd_clear_all))
                                 .font(.archivoNarrow(10, weight: .bold))
                                 .tracking(1.8)
                         }
@@ -4202,10 +4202,10 @@ struct WinsView: View {
             Image(systemName: "star")
                 .font(.system(size: 36))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("No saved picks yet")
+            Text(t(.rd_no_saved_title))
                 .font(.anton(22))
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("Tap the star on a match to save it here.")
+            Text(t(.rd_no_saved_sub))
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
@@ -4315,7 +4315,7 @@ struct WinsView: View {
             // Footer with dashed top border, AI PICK label, money line
             // (wins) or key factor + remove X.
             HStack(spacing: 8) {
-                Text("AI PICK")
+                Text(t(.rd_ai_pick))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -4472,6 +4472,15 @@ struct PredictionHistoryView: View {
     private enum Filter: String, CaseIterable { case all = "ALL", won = "WON", lost = "LOST" }
     @State private var filter: Filter = .all
 
+    /// Localized label for a filter chip (rawValue stays the stable key).
+    private func filterTitle(_ f: Filter) -> String {
+        switch f {
+        case .all:  return t(.rd_all_filter)
+        case .won:  return t(.rd_won)
+        case .lost: return t(.rd_lost)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             grabber
@@ -4549,11 +4558,11 @@ struct PredictionHistoryView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("TRACK")
+                Text(t(.rd_track))
                     .font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
-                + Text(" RECORD.")
+                + Text(t(.rd_record))
                     .font(.anton(26)).foregroundColor(Color(hex: "#D4FF3A"))
-                Text("\(wonCount)–\(lostCount) ON GRADED \(vm.selectedSport == "all" ? "PICKS" : "\(vm.selectedSport.uppercased()) PICKS")")
+                Text("\(wonCount)–\(lostCount) \(t(.rd_on_graded))")
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -4581,7 +4590,7 @@ struct PredictionHistoryView: View {
                     Haptics.tap()
                     filter = f
                 } label: {
-                    Text("\(f.rawValue) \(count)")
+                    Text("\(filterTitle(f)) \(count)")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(1.6)
                         .foregroundColor(filter == f ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
@@ -4605,10 +4614,10 @@ struct PredictionHistoryView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 34))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("No graded picks yet")
+            Text(t(.rd_no_graded_title))
                 .font(.anton(20))
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("Won and lost predictions will show up here\nonce today's games are scored.")
+            Text(t(.rd_no_graded_sub))
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
@@ -4679,7 +4688,7 @@ struct PredictionHistoryView: View {
             }
 
             HStack(spacing: 8) {
-                Text("AI PICK")
+                Text(t(.rd_ai_pick))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -4775,11 +4784,11 @@ struct LiveView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                TopNavBar(crumb: "NOW · ", crumbAccent: "LIVE", live: !livePicks.isEmpty, onBack: {}, showBack: false)
-                PageHero(title: "LIVE",
-                         titleAccent: "NOW.",
-                         sub: ["\(livePicks.count) GAMES",
-                               "\(livePicks.count) PICK\(livePicks.count == 1 ? "" : "S") IN PLAY"],
+                TopNavBar(crumb: t(.rd_crumb_now), crumbAccent: t(.card_live), live: !livePicks.isEmpty, onBack: {}, showBack: false)
+                PageHero(title: t(.rd_live_word),
+                         titleAccent: t(.rd_now_word),
+                         sub: [t(.rd_games_n, count: livePicks.count),
+                               t(.rd_picks_in_play, count: livePicks.count)],
                          glow: Color(hex: "#FF5A36"))
                     .padding(.bottom, 6)
 
@@ -4823,8 +4832,8 @@ struct LiveView: View {
         if livePicks.isEmpty {
             nothingLive
         } else {
-            HubSectionHead(title: "IN PLAY",
-                           meta: "\(livePicks.count) LIVE",
+            HubSectionHead(title: t(.rd_in_play),
+                           meta: t(.rd_n_live, count: livePicks.count),
                            live: true)
                 .padding(.bottom, 10)
             LazyVStack(spacing: 8) {
@@ -4872,28 +4881,28 @@ struct LiveView: View {
         } else {
             VStack(spacing: 16) {
                 if !myLive.isEmpty {
-                    section(title: "LIVE",
+                    section(title: t(.card_live),
                             meta: "\(myLive.count) IN PLAY",
                             live: true,
                             picks: myLive,
                             renderer: { liveCard(pick: $0, score: liveScore(for: $0)) })
                 }
                 if !mySettled.isEmpty {
-                    section(title: "FINAL",
+                    section(title: t(.card_final),
                             meta: settledMetaToday(mySettled),
                             live: false,
                             picks: mySettled,
                             renderer: { settledCard(pick: $0) })
                 }
                 if !myAwaiting.isEmpty {
-                    section(title: "AWAITING",
+                    section(title: t(.card_awaiting),
                             meta: "\(myAwaiting.count) TO GRADE",
                             live: false,
                             picks: myAwaiting,
                             renderer: { settledCard(pick: $0) })
                 }
                 if !myUpcoming.isEmpty {
-                    section(title: "UPCOMING",
+                    section(title: t(.live_section_upcoming),
                             meta: "\(myUpcoming.count) TODAY",
                             live: false,
                             picks: myUpcoming,
@@ -4912,8 +4921,8 @@ struct LiveView: View {
         if favPicks.isEmpty {
             nothingFavs
         } else {
-            HubSectionHead(title: "FAVORITES",
-                           meta: "\(favPicks.count) SAVED",
+            HubSectionHead(title: t(.rd_favorites),
+                           meta: t(.rd_n_saved, count: favPicks.count),
                            live: false)
                 .padding(.bottom, 10)
             LazyVStack(spacing: 8) {
@@ -4974,10 +4983,10 @@ struct LiveView: View {
             Image(systemName: "star")
                 .font(.system(size: 30))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("No saved picks")
+            Text(t(.rd_no_saved_title))
                 .font(.anton(20))
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("Tap the star on a match to save it.")
+            Text(t(.rd_no_saved_sub))
                 .font(.archivo(12)).foregroundColor(Color(hex: "#6E6F75"))
         }
         .padding(.vertical, 50)
@@ -5004,7 +5013,7 @@ struct LiveView: View {
                 HStack(spacing: 6) {
                     Image(systemName: favoritesOnly ? "star.fill" : "star")
                         .font(.system(size: 11, weight: .bold))
-                    Text("FAVORITES")
+                    Text(t(.rd_favorites))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.6)
                 }
@@ -5028,7 +5037,7 @@ struct LiveView: View {
     private func watchBanner(_ next: Pick) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("NEXT UP · \(minutesUntil(next))")
+                Text("\(t(.rd_next_up)) · \(minutesUntil(next))")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.4)
                     .foregroundColor(Color(hex: "#D4FF3A"))
@@ -5074,7 +5083,7 @@ struct LiveView: View {
     private func minutesUntil(_ pick: Pick) -> String {
         guard let date = pick.createdAt else { return "SOON" }
         let mins = max(0, Int(date.timeIntervalSinceNow / 60))
-        if mins == 0 { return "STARTING NOW" }
+        if mins == 0 { return t(.rd_starting_now) }
         if mins < 60 { return "\(mins) MIN" }
         let h = mins / 60
         return "\(h)H \(mins % 60)M"
@@ -5097,10 +5106,10 @@ struct LiveView: View {
             Image(systemName: "play.tv.fill")
                 .font(.system(size: 36))
                 .foregroundColor(Color(hex: "#6E6F75"))
-            Text("Nothing live right now")
+            Text(t(.rd_nothing_live))
                 .font(.anton(22))
                 .foregroundColor(Color(hex: "#F5F3EE"))
-            Text("When games on your picks tip off, they'll show here with live progress + your call status.")
+            Text(t(.rd_nothing_live_sub))
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
@@ -5115,7 +5124,7 @@ struct LiveView: View {
             HStack {
                 HStack(spacing: 5) {
                     Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
-                    Text("LIVE · \(pick.league.uppercased())")
+                    Text("\(t(.card_live)) · \(pick.league.uppercased())")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.2)
                         .foregroundColor(Color(hex: "#FF5A36"))
@@ -5185,7 +5194,7 @@ struct LiveView: View {
             .padding(.top, 12)
 
             HStack {
-                Text("YOUR PICK")
+                Text(t(.rd_your_pick))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -5293,17 +5302,17 @@ struct AllPicksView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                TopNavBar(crumb: "TODAY · ", crumbAccent: "PICKS", live: false, onBack: {})
-                PageHero(title: "TODAY'S",
-                         titleAccent: "PICKS.",
-                         sub: ["\(vm.todayPicks.count) PICKS", "AI \(Int(avgConf))% AVG"],
+                TopNavBar(crumb: t(.rd_crumb_today), crumbAccent: t(.nav_picks).uppercased(), live: false, onBack: {})
+                PageHero(title: t(.rd_todays_word),
+                         titleAccent: t(.rd_picks_word),
+                         sub: [t(.rd_n_picks, count: vm.todayPicks.count), t(.rd_avg_conf, count: Int(avgConf))],
                          glow: Color(hex: "#D4FF3A"))
                     .padding(.bottom, 18)
                 SportFilter(vm: vm)
                     .padding(.bottom, 12)
                 let visible = vm.visiblePicks(isPro: isPro)
                 if visible.isEmpty {
-                    Text("No picks for the selected sport.")
+                    Text(t(.rd_no_sport_picks))
                         .font(.archivo(12, weight: .regular))
                         .foregroundColor(Color(hex: "#6E6F75"))
                         .padding(.vertical, 60)
@@ -6395,7 +6404,7 @@ struct SettledOutcomeCard: View {
             }
 
             HStack(spacing: 8) {
-                Text("AI PICK")
+                Text(t(.rd_ai_pick))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2)
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Text(pick.displayPick.uppercased())

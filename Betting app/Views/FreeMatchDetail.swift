@@ -72,7 +72,7 @@ struct FreeMatchDetailView: View {
                 HStack(spacing: 6) {
                     Image(systemName: favorites.contains(pick.id) ? "star.fill" : "star")
                         .font(.system(size: 13, weight: .bold))
-                    Text(favorites.contains(pick.id) ? "TRACKING" : "TRACK YOUR PICK")
+                    Text(favorites.contains(pick.id) ? t(.rd_tracking) : t(.rd_track_your_pick))
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                 }
                 .foregroundColor(favorites.contains(pick.id) ? Color(hex: "#0A0B0D") : lime)
@@ -178,7 +178,7 @@ struct FreeMatchDetailView: View {
                         .background(Capsule().stroke(gold.opacity(0.7), lineWidth: 1.2))
                     HStack(spacing: 12) {
                         blurBlob(width: 74)
-                        Text("SEE PICK1'S CALL")
+                        Text(t(.rd_see_pick1s_call))
                             .font(.anton(20)).foregroundColor(.white)
                         blurBlob(width: 52)
                     }
@@ -226,7 +226,7 @@ struct FreeMatchDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(title)
                                 .font(.archivo(14, weight: .bold)).foregroundColor(.white)
-                            Text("Hidden")
+                            Text(t(.rd_hidden))
                                 .font(.archivo(11)).foregroundColor(Color(hex: "#6E6F75"))
                         }
                         Spacer(minLength: 10)
@@ -265,7 +265,7 @@ struct FreeMatchDetailView: View {
     private var unlockCTA: some View {
         VStack(spacing: 9) {
             Button { Haptics.tap(); onUnlock() } label: {
-                Text(subs.introOfferEligible ? "UNLOCK THIS PICK — 3 DAYS FREE →" : "UNLOCK THIS PICK →")
+                Text(subs.introOfferEligible ? t(.rd_unlock_pick_trial) : t(.rd_unlock_pick))
                     .font(.anton(17)).kerning(0.3)
                     .foregroundColor(Color(hex: "#14110A"))
                     .frame(maxWidth: .infinity)
@@ -388,7 +388,7 @@ struct RecentFormSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("RECENT FORM").font(.anton(19)).foregroundColor(.white)
+                Text(t(.rd_recent_form)).font(.anton(19)).foregroundColor(.white)
                 Spacer()
                 if let chip {
                     Text(chip)
