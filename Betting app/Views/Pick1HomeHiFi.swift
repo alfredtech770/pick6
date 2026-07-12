@@ -69,6 +69,11 @@ struct Pick1HomeHiFi: View {
         if CommandLine.arguments.contains("-openPaywall") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showPaywall = true }
         }
+        if CommandLine.arguments.contains("-openShareWin") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                debugSharePick = vm.historyPicks.first(where: \.isWin)
+            }
+        }
         if CommandLine.arguments.contains("-openWonDetail") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 detailPick = vm.historyPicks.first(where: \.isWin)
@@ -102,6 +107,8 @@ struct Pick1HomeHiFi: View {
         #endif
     }
     @State private var showWins: Bool = false
+    /// DEBUG `-openShareWin`: present the share sheet directly.
+    @State private var debugSharePick: Pick?
     /// Boot gate: the splash loader (same view the auth gate shows, so the
     /// hand-off is seamless) stays up until the FIRST slate load finishes,
     /// then fades out over a fully-populated home. Without this the home
@@ -307,6 +314,10 @@ struct Pick1HomeHiFi: View {
                 Task { await vm.refreshForForeground() }
                 Task { await updateChecker.check() }
             }
+        }
+        .sheet(item: $debugSharePick) { pick in
+            ShareWinSheet(pick: pick)
+                .presentationDetents([.fraction(0.78), .large])
         }
         .sheet(item: $detailPick) { pick in
             MatchDetailView(pick: pick,

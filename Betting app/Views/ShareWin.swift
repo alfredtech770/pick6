@@ -94,9 +94,16 @@ struct ShareWinSheet: View {
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 30)
-                .padding(.bottom, 16)
+
+            Spacer(minLength: 8)
         }
-        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        // Fill the whole sheet and own its background — without
+        // presentationBackground the system sheet gray peeked through
+        // around the content.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(hex: "#0A0B0D"))
+        .presentationBackground(Color(hex: "#0A0B0D"))
+        .presentationDragIndicator(.visible)
         .onAppear { Analytics.shareWinOpened(league: pick.league) }
         .sheet(isPresented: $showShare) {
             if let img = shareImage {
