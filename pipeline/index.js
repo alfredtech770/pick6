@@ -1676,6 +1676,33 @@ async function sendDailyRecap() {
   } catch (e) { err('sendDailyRecap failed:', e.message); }
 }
 
+// Free-tier upsell recap at 10am ET — yesterday's full-slate record,
+// sent ONLY to users without an active entitlement (send-push's
+// freeOnly filter drops members). Honest regret marketing: every
+// number is verifiable in the app's graded history. Fires only on
+// clearly good days (more wins than losses AND net-positive at $100
+// flat per pick) — silence beats a losing-day upsell.
+async function sendFreeRecap() {
+  try {
+    const y = daysAgoISO(1);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('result, probability, market_odds')
+      .eq('game_date', y)
+      .in('result', ['win', 'loss']);
+    if (!picks || picks.length < 4) return;
+    const wins = picks.filter((p) => p.result === 'win').length;
+    const losses = picks.length - wins;
+    let units = 0;
+    for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
+    const net = Math.round(units * 100);
+    if (wins <= losses || net <= 0) return;
+    await sendPush({ key: 'free_recap', prefKey: 'picks', freeOnly: true,
+      args: { w: wins, l: losses, ret: `+$${net}` } });
+    log(`Push: free_recap sent (${wins}-${losses}, +$${net})`);
+  } catch (e) { err('sendFreeRecap failed:', e.message); }
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
@@ -1976,6 +2003,9 @@ cron.schedule('25 5,6,12 * * *', async () => {
 // Daily recap push at 9am ET — after the overnight slate has graded,
 // before the morning's pick_drop competition. Hypes profitable days.
 cron.schedule('0 9 * * *', sendDailyRecap, { timezone: TZ });
+
+// Free-tier upsell recap — an hour after the member recap.
+cron.schedule('0 10 * * *', sendFreeRecap, { timezone: TZ });
 
 // NOTE — we intentionally do NOT run runPipeline() on boot. Every
 // Railway redeploy used to fire a full pipeline run, which costs
