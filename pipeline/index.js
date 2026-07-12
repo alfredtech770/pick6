@@ -1317,7 +1317,8 @@ async function runPipeline() {
     // RUN_ON_BOOT=1 for targeted backfills (e.g. regenerate just the WC
     // bracket) without burning credits on every league.
     const onlyLeagues = (process.env.RUN_LEAGUES || '')
-      .split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+      .split(',').map((s) => s.trim().toUpperCase())
+      .filter((s) => s && s !== 'NONE');   // 'none' = explicit no-filter
     for (const [league, cfg] of Object.entries(LEAGUES)) {
       try {
       if (onlyLeagues.length && !onlyLeagues.includes(league)) { continue; }
