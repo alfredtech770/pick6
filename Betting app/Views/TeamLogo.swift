@@ -87,7 +87,19 @@ struct CachedImage<Content: View, Placeholder: View>: View {
                     if !Task.isCancelled { uiImage = img }
                     return
                 }
-                return   // got bytes but not an image — don't hammer the CDN
+                // Un-decodable bytes usually mean URLCache is serving a
+                // stale error page cached from BEFORE the asset existed
+                // (returnCacheDataElseLoad returns stale hits forever).
+                // Force one fresh network fetch before giving up.
+                var fresh = URLRequest(url: url)
+                fresh.cachePolicy = .reloadIgnoringLocalCacheData
+                fresh.timeoutInterval = 12
+                if let (d2, _) = try? await URLSession.shared.data(for: fresh),
+                   let img2 = UIImage(data: d2) {
+                    ImageMemoryCache.shared.setObject(img2, forKey: key)
+                    if !Task.isCancelled { uiImage = img2 }
+                }
+                return   // still not an image — don't hammer the CDN
             } catch {
                 if Task.isCancelled { return }
                 // brief backoff, then retry the transient failure
@@ -317,11 +329,14 @@ struct AthleteHeadshot: View {
     /// synchronously from cache so a known athlete paints with no flash.
     @State private var info: AthleteResolver.Info?
 
-    /// Best headshot URL: dynamically-resolved first, then the hardcoded
-    /// map, then nil (→ silhouette placeholder).
+    /// Best headshot URL: the hardcoded map FIRST (every entry is
+    /// curl-verified), then the dynamic resolver. The old order let a
+    /// stale/wrong resolver cache entry beat a verified table entry —
+    /// which is how a fighter with a known headshot rendered initials.
     private var headshotURL: URL? {
+        if let u = AthleteHeadshotLookup.url(sport: sport, name: name) { return u }
         if let s = info?.headshot, let u = URL(string: s) { return u }
-        return AthleteHeadshotLookup.url(sport: sport, name: name)
+        return nil
     }
 
     var body: some View {

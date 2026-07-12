@@ -75,6 +75,16 @@ struct Pick1HomeHiFi: View {
                     ?? vm.effectiveTodayPicks.first
             }
         }
+        // `-openDetailTeam <name>`: open the detail of the pick whose
+        // matchup contains <name> (sim review of specific cards).
+        if let team = UserDefaults.standard.string(forKey: "openDetailTeam") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                detailPick = vm.effectiveTodayPicks.first {
+                    $0.homeTeam.localizedCaseInsensitiveContains(team)
+                        || $0.awayTeam.localizedCaseInsensitiveContains(team)
+                }
+            }
+        }
         // Tab jumps for sim review (seed favorites via the UserDefaults
         // argument domain: -pick1.favoriteMatchIds.v1 '("<uuid>", …)').
         if CommandLine.arguments.contains("-openPicksTab") {
