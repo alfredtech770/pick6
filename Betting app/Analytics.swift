@@ -132,6 +132,18 @@ enum Analytics {
         // Meta can see which sports drive the most activation.
         AppEvents.shared.logEvent(.viewedContent, parameters: [.contentType: league])
     }
+    // ── Share-your-win viral loop ─────────────────────────────────
+    static func shareWinOpened(league: String) {
+        track("share_win_opened", ["league": league])
+    }
+    static func shareWinCompleted(granted: Bool) {
+        track("share_win_completed", ["reward_granted": granted])
+    }
+    /// The gold MEMBERS WON MORE card on the free Latest Wins rail.
+    static func memberCardTapped() {
+        track("member_card_tapped")
+    }
+
     static func trialStarted(productId: String) {
         track("trial_started", ["product": productId])
         AppEvents.shared.logEvent(.startTrial)

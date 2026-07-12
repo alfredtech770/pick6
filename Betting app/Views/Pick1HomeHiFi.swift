@@ -1817,6 +1817,7 @@ struct LatestWinsRail: View {
                         if let onUnlock, vm.yesterdayWins >= 3, vm.yesterdayWins > vm.yesterdayLosses, membersNet > 0 {
                             Button {
                                 Haptics.tap()
+                                Analytics.memberCardTapped()
                                 onUnlock()
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {

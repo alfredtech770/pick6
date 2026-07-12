@@ -97,16 +97,22 @@ struct ShareWinSheet: View {
                 .padding(.bottom, 16)
         }
         .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .onAppear { Analytics.shareWinOpened(league: pick.league) }
         .sheet(isPresented: $showShare) {
             if let img = shareImage {
                 ShareActivitySheet(items: [img]) { completed in
-                    guard completed else { return }
+                    guard completed else {
+                        Analytics.shareWinCompleted(granted: false)
+                        return
+                    }
                     Haptics.success()
                     // Reward only for free users; server enforces the
                     // 7-day cooldown + signs the grant.
                     if !subs.isPro {
                         Task {
-                            if await subs.claimShareReward() {
+                            let granted = await subs.claimShareReward()
+                            Analytics.shareWinCompleted(granted: granted)
+                            if granted {
                                 withAnimation { rewardGranted = true }
                             }
                         }
