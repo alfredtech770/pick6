@@ -1954,6 +1954,20 @@ cron.schedule('0 5 * * *', async () => {
 // Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 
+// SELF-HEAL — if the 5am run died mid-flight (container crash/OOM/restart),
+// today's slate stays empty and nothing notices. Check at 5:25 + 6:25 +
+// 12:25 ET: no picks dated today → re-run the pipeline. Idempotent — the
+// excludeMatchups guard prevents duplicates when picks DO exist.
+cron.schedule('25 5,6,12 * * *', async () => {
+  try {
+    const { data } = await supabase.from('picks').select('id').eq('game_date', todayISO()).limit(1);
+    if (!data || !data.length) {
+      log('🩹 Self-heal: zero picks for today — re-running pipeline.');
+      await runPipeline();
+    }
+  } catch (e) { err('Self-heal check failed:', e.message); }
+}, { timezone: TZ });
+
 // Daily recap push at 9am ET — after the overnight slate has graded,
 // before the morning's pick_drop competition. Hypes profitable days.
 cron.schedule('0 9 * * *', sendDailyRecap, { timezone: TZ });
