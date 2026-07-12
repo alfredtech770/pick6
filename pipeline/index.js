@@ -861,7 +861,11 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     // Post-blend, a pick under 55% has no defensible edge — drop it. Never
     // silence a league entirely: keep the single strongest pick if the
     // blend emptied the slate (free tier shows one pick per sport).
-    const withEdge = picks.filter((p) => p.probability >= 55);
+    // WC exception: tournament coverage beats edge — a knockout game the
+    // whole world watches must stay on the board even at a thin 50-54%
+    // (dropping England–Norway as "no edge" made the app look asleep).
+    const noEdgeFloor = league === 'WC' ? 50 : 55;
+    const withEdge = picks.filter((p) => p.probability >= noEdgeFloor);
     if (withEdge.length < picks.length) {
       log(`${league}: dropped ${picks.length - withEdge.length} no-edge picks post-blend.`);
     }
