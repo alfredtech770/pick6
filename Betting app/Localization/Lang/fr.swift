@@ -397,6 +397,15 @@ enum FrenchStrings {
         .funnel_success_cta:             "COMMENCER L'AVENTURE →",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "PARTAGEZ VOTRE VICTOIRE",
+        .sw_your_amount: "VOTRE MONTANT",
+        .sw_would_have: "AURAIT RAPPORTÉ",
+        .sw_share_cta: "PARTAGER →",
+        .sw_reward_hint: "Partager = 24 h de Premium offert",
+        .sw_reward_done: "🎉 24 H DE PREMIUM DÉBLOQUÉES",
+        .sw_disclaimer: "Gain hypothétique — Pick1 affiche des prédictions IA, nous ne prenons pas de paris.",
+        .sw_day_pass_line: "ou accès complet 24 h — {p}",
+        .sw_members_title: "LES MEMBRES ONT GAGNÉ PLUS",
         .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "MATCHS À VENIR",
         .rd_predicted_score: "SCORE PRÉDIT IA",

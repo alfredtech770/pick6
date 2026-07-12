@@ -397,6 +397,15 @@ enum ItalianStrings {
         .funnel_success_cta:             "INIZIA IL TUO PERCORSO →",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "CONDIVIDI LA VITTORIA",
+        .sw_your_amount: "IL TUO IMPORTO",
+        .sw_would_have: "AVREBBE RESO",
+        .sw_share_cta: "CONDIVIDI →",
+        .sw_reward_hint: "Condividi = 24 h di Premium gratis",
+        .sw_reward_done: "🎉 24 H DI PREMIUM SBLOCCATE",
+        .sw_disclaimer: "Ritorno ipotetico — Pick1 mostra previsioni IA, non accettiamo scommesse.",
+        .sw_day_pass_line: "o accesso completo 24 h — {p}",
+        .sw_members_title: "I MEMBRI HANNO VINTO DI PIÙ",
         .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "PROSSIME PARTITE",
         .rd_predicted_score: "RISULTATO PREVISTO IA",

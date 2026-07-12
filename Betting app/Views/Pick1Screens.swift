@@ -273,6 +273,7 @@ struct MatchDetailView: View {
     @State private var showToast: Bool = false
     @StateObject private var betTracker = BetTracker.shared
     @State private var showTrackSheet = false
+    @State private var showShareWin = false
 
     /// Persistent favorites (drives the Wins/Picks tab list). Replaces
     /// the prior local `@State starred` flag — that flag was per-sheet
@@ -326,6 +327,29 @@ struct MatchDetailView: View {
                             .padding(.bottom, 26)
                     } else {
                         scoreHeader
+                    }
+                    // Won pick → the share-your-gains viral loop. Free
+                    // users earn 24h of Premium for a completed share.
+                    if pick.isWin {
+                        Button {
+                            Haptics.tap()
+                            showShareWin = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text(t(.sw_share_win))
+                                    .font(.anton(15)).kerning(0.4)
+                            }
+                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(RoundedRectangle(cornerRadius: 13)
+                                .fill(Color(hex: "#D4FF3A")))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 22)
                     }
                     // "What is this league" descriptor — only shows for
                     // leagues whose code isn't self-explanatory (KBO, NPB,
@@ -1913,6 +1937,10 @@ struct MatchDetailView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
+        .sheet(isPresented: $showShareWin) {
+            ShareWinSheet(pick: pick)
+                .presentationDetents([.large])
+        }
         .sheet(isPresented: $showTrackSheet) {
             TrackBetSheet(pick: pick, accent: sportAccent) { stake in
                 Task { await betTracker.track(pick: pick, stake: stake) }

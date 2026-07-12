@@ -397,6 +397,15 @@ enum GermanStrings {
         .funnel_success_cta:             "STARTE DEINE REISE →",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "TEILE DEINEN SIEG",
+        .sw_your_amount: "DEIN BETRAG",
+        .sw_would_have: "HÄTTE GEBRACHT",
+        .sw_share_cta: "TEILEN →",
+        .sw_reward_hint: "Teilen = 24 h Premium gratis",
+        .sw_reward_done: "🎉 24 H PREMIUM FREIGESCHALTET",
+        .sw_disclaimer: "Hypothetische Rendite — Pick1 zeigt KI-Prognosen, wir nehmen keine Wetten an.",
+        .sw_day_pass_line: "oder 24 h Vollzugriff — {p}",
+        .sw_members_title: "MITGLIEDER GEWANNEN MEHR",
         .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "KOMMENDE SPIELE",
         .rd_predicted_score: "KI-ERGEBNISPROGNOSE",

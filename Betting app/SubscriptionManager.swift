@@ -503,6 +503,29 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
+    // MARK: - Share-your-win reward
+
+    /// The Day Pass product when loaded (nil until StoreKit returns it).
+    var dayPassProduct: Product? {
+        products.first { $0.id == Self.dayPassProductId }
+    }
+
+    /// Grants 24h of Pro after the user shares a win card (server-side
+    /// rail: claim_share_reward RPC → pro_grants; capped to one claim
+    /// per 7 days there). Returns true when the grant landed.
+    func claimShareReward() async -> Bool {
+        struct Claim: Decodable { let ok: Bool }
+        do {
+            let res: Claim = try await SupabaseManager.client
+                .rpc("claim_share_reward")
+                .execute().value
+            if res.ok { await refreshCompAccess() }
+            return res.ok
+        } catch {
+            return false
+        }
+    }
+
     // MARK: - Display helpers
 
     /// "$14.99/wk" — formatted for the paywall toggle.

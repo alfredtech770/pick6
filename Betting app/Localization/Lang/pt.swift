@@ -397,6 +397,15 @@ enum PortugueseStrings {
         .funnel_success_cta:             "COMEÇA A TUA JORNADA →",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "PARTILHA A TUA VITÓRIA",
+        .sw_your_amount: "O TEU VALOR",
+        .sw_would_have: "TERIA RENDIDO",
+        .sw_share_cta: "PARTILHAR →",
+        .sw_reward_hint: "Partilhar = 24 h de Premium grátis",
+        .sw_reward_done: "🎉 24 H DE PREMIUM DESBLOQUEADAS",
+        .sw_disclaimer: "Retorno hipotético — o Pick1 mostra previsões de IA, não aceitamos apostas.",
+        .sw_day_pass_line: "ou acesso total 24 h — {p}",
+        .sw_members_title: "OS MEMBROS GANHARAM MAIS",
         .rd_sport_tennis: "Tênis",
         .rd_upcoming_football: "PRÓXIMOS JOGOS",
         .rd_predicted_score: "RESULTADO PREVISTO IA",

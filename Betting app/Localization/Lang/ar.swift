@@ -399,6 +399,15 @@ enum ArabicStrings {
         .funnel_success_cta:             "← ابدأ رحلتك",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "شارك فوزك",
+        .sw_your_amount: "مبلغك",
+        .sw_would_have: "كان سيعود بـ",
+        .sw_share_cta: "مشاركة ←",
+        .sw_reward_hint: "المشاركة = 24 ساعة بريميوم مجانًا",
+        .sw_reward_done: "🎉 فُتحت 24 ساعة بريميوم",
+        .sw_disclaimer: "عائد افتراضي — Pick1 يعرض توقعات الذكاء ولا يقبل الرهانات.",
+        .sw_day_pass_line: "أو وصول كامل 24 ساعة — {p}",
+        .sw_members_title: "الأعضاء ربحوا أكثر",
         .rd_sport_tennis: "تنس",
         .rd_upcoming_football: "مباريات قادمة",
         .rd_predicted_score: "النتيجة المتوقعة",

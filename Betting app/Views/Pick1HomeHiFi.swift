@@ -11,6 +11,7 @@
 //   - game cards         = vm.todayPicks (filtered by selectedSport)
 //   - LIVE / SCHEDULED   = lookup pick.gameId in vm.liveScores
 
+import StoreKit
 import SwiftUI
 
 // MARK: - Type stack
@@ -67,6 +68,11 @@ struct Pick1HomeHiFi: View {
         #if DEBUG
         if CommandLine.arguments.contains("-openPaywall") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showPaywall = true }
+        }
+        if CommandLine.arguments.contains("-openWonDetail") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                detailPick = vm.historyPicks.first(where: \.isWin)
+            }
         }
         if CommandLine.arguments.contains("-openTopDetail") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -475,7 +481,8 @@ struct HomeHiFiContent: View {
                     // like the free home, with today's slate below it.
                     // (Outside the slate's LazyVStack, so it needs the
                     // list's 16pt side inset applied by hand.)
-                    LatestWinsRail(vm: vm, onSeeAll: { showHistory = true })
+                    LatestWinsRail(vm: vm, onSeeAll: { showHistory = true },
+                                   onUnlock: onUnlock)
                         .padding(.horizontal, 16)
                         .padding(.top, 14)
                     // (Per-sport SEE ALL CTA removed 2026-07 — the sport
@@ -1722,7 +1729,20 @@ struct LatestWinsRail: View {
     @ObservedObject var vm: PicksViewModel
     /// Tap (header or any card) → the full graded-results ledger.
     var onSeeAll: (() -> Void)? = nil
+    /// Free-tier only: appends the "MEMBERS WON MORE" upsell card at the
+    /// end of the rail (yesterday's slate record + flat-$100 return).
+    var onUnlock: (() -> Void)? = nil
     private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
+
+    /// Net flat-$100 return across yesterday's settled slate — wins pay
+    /// (odds × 100 − 100), losses cost 100. Clamped at 0; the upsell
+    /// card only renders on clearly winning days anyway.
+    private var membersNet: Int {
+        let settled = vm.yesterdayPicks.filter { !$0.isPending }
+        let winnings = settled.filter(\.isWin)
+            .reduce(0.0) { $0 + ($1.decimalOdds * 100 - 100) }
+        return max(0, Int((winnings - Double(vm.yesterdayLosses) * 100).rounded()))
+    }
 
     /// Settled picks from the PAST 3 DAYS in a deliberate ~80/20 win-loss
     /// mix (up to 8 wins, up to 2 losses, losses interleaved) — recent,
@@ -1789,6 +1809,40 @@ struct LatestWinsRail: View {
                                 onSeeAll?()
                             } label: {
                                 WinReceiptCard(pick: p).pressableScale(0.98)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        // Free tier: the regret card — yesterday's member
+                        // slate with the flat-$100 math. Tap → paywall.
+                        if let onUnlock, vm.yesterdayWins >= 3, vm.yesterdayWins > vm.yesterdayLosses, membersNet > 0 {
+                            Button {
+                                Haptics.tap()
+                                onUnlock()
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(t(.sw_members_title))
+                                        .font(.anton(15)).foregroundColor(Color(hex: "#E8C64A"))
+                                        .lineLimit(1).minimumScaleFactor(0.7)
+                                    Text("\(vm.yesterdayWins)–\(vm.yesterdayLosses)")
+                                        .font(.anton(26)).foregroundColor(.white)
+                                    Text("$100 → +$\(membersNet)")
+                                        .font(.mono(12, weight: .bold)).foregroundColor(Color(hex: "#E8C64A"))
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "lock.open.fill").font(.system(size: 9, weight: .bold))
+                                        Text(t(.rd_unlock)).font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                                    }
+                                    .foregroundColor(Color(hex: "#0A0B0D"))
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(Capsule().fill(Color(hex: "#E8C64A")))
+                                }
+                                .padding(14)
+                                .frame(width: 170, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(Color(hex: "#14110A"))
+                                        .overlay(RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color(hex: "#E8C64A").opacity(0.5), lineWidth: 1))
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -2222,6 +2276,14 @@ struct PremiumUpsellCard: View {
                     checkRow(t(.rd_prem_check4))
                 }
                 .padding(.top, 2)
+
+                // Impulse alternative — the 24h Day Pass (shows once
+                // StoreKit returns the product).
+                if let dp = subs.dayPassProduct {
+                    Text(t(.sw_day_pass_line).replacingOccurrences(of: "{p}", with: dp.displayPrice))
+                        .font(.archivo(11, weight: .semibold))
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                }
 
                 VStack(spacing: 9) {
                     Text(subs.introOfferEligible ? t(.rd_prem_cta_trial) : t(.rd_prem_cta))

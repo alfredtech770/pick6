@@ -398,6 +398,15 @@ enum EnglishStrings {
         .funnel_success_cta:             "START YOUR JOURNEY →",
 
         // 2026-07 redesign surfaces
+        .sw_share_win: "SHARE YOUR WIN",
+        .sw_your_amount: "YOUR AMOUNT",
+        .sw_would_have: "WOULD HAVE RETURNED",
+        .sw_share_cta: "SHARE →",
+        .sw_reward_hint: "Share = 24h of Premium, free",
+        .sw_reward_done: "🎉 24H PREMIUM UNLOCKED",
+        .sw_disclaimer: "Hypothetical return — Pick1 shows AI predictions, we don't take bets.",
+        .sw_day_pass_line: "or 24h full access — {p}",
+        .sw_members_title: "MEMBERS WON MORE",
         .rd_sport_tennis: "Tennis",
         .rd_upcoming_football: "UPCOMING FOOTBALL",
         .rd_predicted_score: "AI PREDICTED SCORE",
