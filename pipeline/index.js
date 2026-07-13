@@ -34,6 +34,7 @@ const soccer = require('./soccer');   // grounded World Cup facts (ESPN standing
 const teamsport = require('./teamsport'); // grounded MLB/NBA/WNBA/NFL/NHL facts (ESPN standings + probables)
 const f1 = require('./f1');            // grounded F1 facts (ESPN driver championship)
 const golf = require('./golf');        // grounded PGA golf facts (ESPN tournament + leaderboard)
+const { enrichImages } = require('./images'); // server-side crest capture → home_logo/away_logo
 
 // ─── Config ────────────────────────────────────────────────────
 const ANTHROPIC_MODEL = 'claude-opus-4-8';
@@ -1454,6 +1455,11 @@ async function runPipeline() {
     // Second grade pass: catches anything sportsdata.io flipped to Final
     // while the per-league loop was running.
     await gradePicks();
+
+    // Capture real team crests into home_logo/away_logo so the app never
+    // has to search per-device (obscure clubs/KBO/NPB used to fall to the
+    // placeholder shield). Best-effort, never blocks the run.
+    await enrichImages(supabase, log, err, { sinceDaysAgo: 5 }).catch((e) => err('enrichImages:', e.message));
   } catch (e) {
     err('Pipeline crashed:', e.stack || e.message);
     await sendAlert('Pipeline run FAILED',
