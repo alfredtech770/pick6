@@ -2136,21 +2136,36 @@ struct ProSlateCard: View {
                 topTrailing(state)
             }
             HStack(spacing: 12) {
-                TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
-                VStack(alignment: .leading, spacing: 5) {
-                    (Text(short(pick.awayTeam)).foregroundColor(.white)
-                     + Text("  VS  ").foregroundColor(lime.opacity(0.75))
-                     + Text(short(pick.homeTeam)).foregroundColor(.white))
-                        .font(.anton(17))
-                        .lineLimit(1).minimumScaleFactor(0.55)
-                    HStack(spacing: 6) {
-                        Text(t(.rd_ai_picks))
-                            .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
-                            .foregroundColor(Color(hex: "#8A8D94"))
+                // Field events (golf/F1): feature the picked competitor's
+                // headshot + name, not a "Field VS Event" silhouette pair.
+                if isFieldEvent {
+                    AthleteHeadshot(sport: pick.sport, name: pick.pick, size: .small)
+                    VStack(alignment: .leading, spacing: 5) {
                         Text(pick.shortDisplayPick.uppercased())
-                            .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
-                            .foregroundColor(lime)
+                            .font(.anton(17)).foregroundColor(.white)
+                            .lineLimit(1).minimumScaleFactor(0.55)
+                        Text(eventName.uppercased())
+                            .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
+                            .foregroundColor(Color(hex: "#8A8D94"))
                             .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                } else {
+                    TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
+                    VStack(alignment: .leading, spacing: 5) {
+                        (Text(short(pick.awayTeam)).foregroundColor(.white)
+                         + Text("  VS  ").foregroundColor(lime.opacity(0.75))
+                         + Text(short(pick.homeTeam)).foregroundColor(.white))
+                            .font(.anton(17))
+                            .lineLimit(1).minimumScaleFactor(0.55)
+                        HStack(spacing: 6) {
+                            Text(t(.rd_ai_picks))
+                                .font(.archivoNarrow(9, weight: .bold)).tracking(1.6)
+                                .foregroundColor(Color(hex: "#8A8D94"))
+                            Text(pick.shortDisplayPick.uppercased())
+                                .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
+                                .foregroundColor(lime)
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                        }
                     }
                 }
                 Spacer(minLength: 8)
@@ -2218,6 +2233,17 @@ struct ProSlateCard: View {
 
     private func short(_ team: String) -> String {
         teamShortName(team, sport: pick.sport).uppercased()
+    }
+    /// Golf / F1 = field event (one side is the "Field" placeholder).
+    private var isFieldEvent: Bool {
+        pick.sport == "f1" || pick.sport == "golf"
+            || pick.awayTeam.lowercased() == "field"
+            || pick.homeTeam.lowercased() == "field"
+    }
+    private var eventName: String {
+        if pick.homeTeam.lowercased() == "field" { return pick.awayTeam }
+        if pick.awayTeam.lowercased() == "field" { return pick.homeTeam }
+        return pick.homeTeam
     }
     private var sportEmoji: String {
         switch pick.sport {

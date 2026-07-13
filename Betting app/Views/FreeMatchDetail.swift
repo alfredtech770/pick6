@@ -338,17 +338,43 @@ struct FreeMatchDetailView: View {
 struct MatchupHeaderCard: View {
     let pick: Pick
 
+    /// Golf / F1 are field events: `away_team` is "Field" and `home_team`
+    /// is the tournament/race, so a two-column "X VS Field" header showed
+    /// two grey silhouettes. Instead we feature the PICKED competitor
+    /// (pick.pick) with their headshot, and name the event underneath.
+    private var isFieldEvent: Bool {
+        pick.sport == "f1" || pick.sport == "golf"
+            || pick.awayTeam.lowercased() == "field"
+            || pick.homeTeam.lowercased() == "field"
+    }
+
     var body: some View {
         VStack(spacing: 14) {
             Text("\(pick.league.uppercased()) · \(dayLabel)")
                 .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
                 .foregroundColor(Color(hex: "#8FA7E8"))
-            HStack(alignment: .top, spacing: 26) {
-                column(pick.awayTeam)
-                Text("VS")
-                    .font(.anton(20)).foregroundColor(Color.white.opacity(0.35))
-                    .padding(.top, 26)
-                column(pick.homeTeam)
+            if isFieldEvent {
+                // Single featured competitor + event name.
+                VStack(spacing: 10) {
+                    AthleteHeadshot(sport: pick.sport, name: pick.pick, size: .big)
+                    Text(pick.shortDisplayPick.uppercased())
+                        .font(.anton(22)).foregroundColor(.white)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .frame(maxWidth: 240)
+                    Text(eventName.uppercased())
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
+                        .foregroundColor(Color(hex: "#9AA4B8"))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .frame(maxWidth: 260)
+                }
+            } else {
+                HStack(alignment: .top, spacing: 26) {
+                    column(pick.awayTeam)
+                    Text("VS")
+                        .font(.anton(20)).foregroundColor(Color.white.opacity(0.35))
+                        .padding(.top, 26)
+                    column(pick.homeTeam)
+                }
             }
             Text(pick.startTimeDisplay.map { "\(dayLabel) · \($0) ET" } ?? dayLabel)
                 .font(.mono(11, weight: .bold)).tracking(1.2)
@@ -363,6 +389,14 @@ struct MatchupHeaderCard: View {
                 .overlay(RoundedRectangle(cornerRadius: 20)
                     .stroke(Color(hex: "#26304A"), lineWidth: 1))
         )
+    }
+
+    /// The tournament / race name for a field event — whichever side
+    /// isn't the "Field" placeholder.
+    private var eventName: String {
+        if pick.homeTeam.lowercased() == "field" { return pick.awayTeam }
+        if pick.awayTeam.lowercased() == "field" { return pick.homeTeam }
+        return pick.homeTeam
     }
 
     private func column(_ team: String) -> some View {

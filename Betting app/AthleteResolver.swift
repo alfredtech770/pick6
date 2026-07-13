@@ -38,6 +38,15 @@ final class AthleteResolver: ObservableObject {
 
     /// Resolve (and cache) the headshot + flag for an athlete. Returns the
     /// cached value instantly when present.
+    ///
+    /// Correctness note: we ask ESPN's core API for the REAL `headshot.href`
+    /// instead of blindly constructing `/full/{id}.png`. Lower-ranked
+    /// players (qualifiers, journeymen) have an athlete ID but NO photo on
+    /// ESPN — the constructed URL 404s and the card fell back to a grey
+    /// silhouette. The core API returns headshot=null for those, so we
+    /// store nil (→ flag-forward placeholder) and only ever paint a photo
+    /// that actually exists. The country flag is present even when the
+    /// photo isn't, so no athlete is ever fully blank.
     func resolve(sport: String, name: String) async -> Info {
         let k = key(sport, name)
         if let hit = cache[k] { return hit }
@@ -48,11 +57,22 @@ final class AthleteResolver: ObservableObject {
 
         var info = Info(headshot: nil, flag: nil)
         if let id {
-            info.headshot = "https://a.espncdn.com/i/headshots/\(headshotPath(sport))/players/full/\(id).png"
-            info.flag = await fetchFlag(sport: sport, id: id)
+            info = await fetchCore(sport: sport, id: id)
+            // Fallback: the hardcoded-ID players are known to have photos,
+            // so if the core API is briefly unreachable, still construct the
+            // canonical URL rather than showing nothing.
+            if info.headshot == nil,
+               AthleteHeadshotLookup.athleteId(sport: sport, name: name) != nil {
+                info.headshot = "https://a.espncdn.com/i/headshots/\(headshotPath(sport))/players/full/\(id).png"
+            }
         }
-        cache[k] = info
-        save()
+        // Only cache once we have SOMETHING (a photo or a flag). A transient
+        // network failure that yields neither shouldn't be memoized as
+        // "this athlete has no images" — let the next appearance retry.
+        if info.headshot != nil || info.flag != nil {
+            cache[k] = info
+            save()
+        }
         return info
     }
 
@@ -85,19 +105,30 @@ final class AthleteResolver: ObservableObject {
         return nil
     }
 
-    /// ESPN core API → the athlete's country flag image href.
-    private func fetchFlag(sport: String, id: String) async -> String? {
+    /// ESPN core API → the athlete's REAL headshot href (null-aware) AND
+    /// country flag href, in one round-trip. ESPN only returns a headshot
+    /// object when a photo genuinely exists, so this is the authoritative
+    /// "does this player have a picture" check.
+    private func fetchCore(sport: String, id: String) async -> Info {
+        var info = Info(headshot: nil, flag: nil)
         guard let url = URL(string:
             "https://sports.core.api.espn.com/v2/sports/\(espnSport(sport))/athletes/\(id)?lang=en")
-        else { return nil }
+        else { return info }
         do {
             var req = URLRequest(url: url); req.timeoutInterval = 8
             let (data, _) = try await URLSession.shared.data(for: req)
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let flag = json["flag"] as? [String: Any],
-                  let href = flag["href"] as? String else { return nil }
-            return href
-        } catch { return nil }
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { return info }
+            if let hs = json["headshot"] as? [String: Any],
+               let href = hs["href"] as? String, !href.isEmpty {
+                info.headshot = href
+            }
+            if let flag = json["flag"] as? [String: Any],
+               let href = flag["href"] as? String, !href.isEmpty {
+                info.flag = href
+            }
+        } catch { }
+        return info
     }
 
     // MARK: - Sport mapping

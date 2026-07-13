@@ -373,10 +373,13 @@ struct AthleteHeadshot: View {
         }
     }
 
-    /// Small circular country flag pinned to the headshot corner.
+    /// Small circular country flag pinned to the headshot corner — only
+    /// when a real headshot is showing (otherwise the placeholder already
+    /// fills the whole circle with the flag, so a corner badge is
+    /// redundant).
     @ViewBuilder
     private var flagBadge: some View {
-        if let f = info?.flag, let u = URL(string: f) {
+        if headshotURL != nil, let f = info?.flag, let u = URL(string: f) {
             let d = dimension * 0.36
             CachedImage(url: u) { img in
                 img.resizable().scaledToFill()
@@ -395,24 +398,40 @@ struct AthleteHeadshot: View {
         size == .big ? 72 : 44
     }
 
-    /// Initials over a soft gradient — used when we don't have a real
-    /// headshot URL or the load fails.
+    /// Placeholder when ESPN has no photo for this athlete (common for
+    /// qualifiers / lower-ranked players). When we DO have their country
+    /// flag — which ESPN provides even without a headshot — fill the circle
+    /// with the flag (dimmed) + initials, so it reads as "this player, from
+    /// Croatia" rather than an anonymous grey silhouette. Falls back to the
+    /// silhouette + initials only when there's truly nothing.
     private var placeholder: some View {
         ZStack {
-            Image(systemName: "person.fill")
-                .resizable()
-                .scaledToFit()
-                .padding(size == .big ? 18 : 11)
-                .foregroundColor(Color(hex: "#6E6F75"))
-            // Initials overlay so each athlete still feels distinct
-            // even without a real photo.
-            VStack {
-                Spacer()
+            if let f = info?.flag, let u = URL(string: f) {
+                CachedImage(url: u) { img in
+                    img.resizable().scaledToFill()
+                        .overlay(Color.black.opacity(0.45))   // dim so initials read
+                } placeholder: {
+                    Color(hex: "#22252B")
+                }
+                .clipShape(Circle())
                 Text(initials)
-                    .font(.archivoNarrow(size == .big ? 11 : 9, weight: .bold))
-                    .tracking(1.4)
-                    .foregroundColor(Color(hex: "#B9B7B0"))
-                    .padding(.bottom, size == .big ? 6 : 3)
+                    .font(.anton(size == .big ? 22 : 15))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.6), radius: 3)
+            } else {
+                Image(systemName: "person.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(size == .big ? 18 : 11)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                VStack {
+                    Spacer()
+                    Text(initials)
+                        .font(.archivoNarrow(size == .big ? 11 : 9, weight: .bold))
+                        .tracking(1.4)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                        .padding(.bottom, size == .big ? 6 : 3)
+                }
             }
         }
     }
