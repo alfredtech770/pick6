@@ -397,6 +397,7 @@ enum PortugueseStrings {
         .funnel_success_cta:             "COMEÇA A TUA JORNADA →",
 
         // 2026-07 redesign surfaces
+        .rd_sport_tennis: "Tênis",
         .sw_share_win: "PARTILHA A TUA VITÓRIA",
         .sw_your_amount: "O TEU VALOR",
         .sw_would_have: "TERIA RENDIDO",
@@ -406,7 +407,6 @@ enum PortugueseStrings {
         .sw_disclaimer: "Retorno hipotético — o Pick1 mostra previsões de IA, não aceitamos apostas.",
         .sw_day_pass_line: "ou acesso total 24 h — {p}",
         .sw_members_title: "OS MEMBROS GANHARAM MAIS",
-        .rd_sport_tennis: "Tênis",
         .rd_upcoming_football: "PRÓXIMOS JOGOS",
         .rd_predicted_score: "RESULTADO PREVISTO IA",
         .rd_market_odds: "ODDS DE MERCADO",

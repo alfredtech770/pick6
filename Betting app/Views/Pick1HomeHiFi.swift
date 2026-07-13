@@ -2350,8 +2350,10 @@ struct SportDropdown: View {
     /// Long-press a sport row → its hub (same affordance the chips had).
     var onLongPress: ((String) -> Void)? = nil
 
-    private let sports = ["soccer", "baseball", "golf", "f1", "combat",
-                          "cricket", "football", "basketball", "hockey"]
+    /// Menu rows come straight from the view model so a sport added
+    /// there (tennis, golf, …) can never silently miss the dropdown —
+    /// this used to be a second hardcoded copy and tennis fell through.
+    private var sports: [String] { vm.sports.filter { $0 != "all" } }
     private let lime = Color(hex: "#D4FF3A")
 
     var body: some View {
@@ -2497,6 +2499,7 @@ struct SportDropdown: View {
         case "f1":         return "F1"
         case "cricket":    return t(.rd_sport_cricket)
         case "tennis":     return t(.rd_sport_tennis)
+        case "tennis":     return t(.rd_sport_tennis)
         default:           return sport.capitalized
         }
     }
@@ -2511,6 +2514,7 @@ struct SportDropdown: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
@@ -2573,6 +2577,7 @@ struct SportFilter: View {
         case "f1":         return "F1"
         case "cricket":    return t(.rd_sport_cricket)
         case "tennis":     return t(.rd_sport_tennis)
+        case "tennis":     return t(.rd_sport_tennis)
         default:           return sport.capitalized
         }
     }
@@ -2588,6 +2593,7 @@ struct SportFilter: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
@@ -2725,6 +2731,7 @@ struct ValueBoard: View {
         case "f1":         return "car.fill"
         case "golf":       return "figure.golf"
         case "cricket":    return "figure.cricket"
+        case "tennis":     return "tennisball.fill"
         case "tennis":     return "tennisball.fill"
         default:           return "circle"
         }
