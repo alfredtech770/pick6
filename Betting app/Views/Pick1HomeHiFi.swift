@@ -543,18 +543,12 @@ struct HomeHiFiContent: View {
                                         .pressableScale(0.985)
                                 }
                                 .buttonStyle(.plain)
-                                // Stagger each card's appearance so the list
-                                // cascades in over ~250ms instead of popping.
-                                // Reads as "curated" rather than "dumped".
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom)
-                                        .combined(with: .opacity),
-                                    removal: .opacity
-                                ))
-                                .animation(
-                                    Pick1Springs.smooth.delay(Double(idx) * 0.05),
-                                    value: visible.count
-                                )
+                                // NOTE: no insertion transition here. In a
+                                // lazy list, transitions fire every time a
+                                // row materializes DURING scroll — cards
+                                // wobbled into place with an idx-scaled
+                                // delay the deeper you scrolled. Rows now
+                                // render statically.
                             }
                             // Event preview — soccer + golf up to 5 days
                             // out, weekday-labeled (e.g. SAT · 3 PM).
