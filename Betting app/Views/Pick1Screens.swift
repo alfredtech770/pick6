@@ -1939,6 +1939,7 @@ struct MatchDetailView: View {
         .background(cardBackground)
         .sheet(isPresented: $showShareWin) {
             ShareWinSheet(pick: pick)
+                .relocalizesOnLanguageChange()
                 .presentationDetents([.fraction(0.78), .large])
         }
         .sheet(isPresented: $showTrackSheet) {

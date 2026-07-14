@@ -317,6 +317,7 @@ struct Pick1HomeHiFi: View {
         }
         .sheet(item: $debugSharePick) { pick in
             ShareWinSheet(pick: pick)
+                .relocalizesOnLanguageChange()
                 .presentationDetents([.fraction(0.78), .large])
         }
         .sheet(item: $detailPick) { pick in
@@ -332,6 +333,7 @@ struct Pick1HomeHiFi: View {
                 // standard pull handle so vertical intent stays obvious.
                 .presentationDragIndicator(.visible)
                 .presentationContentInteraction(.scrolls)
+                .relocalizesOnLanguageChange()
         }
         // (SportHub is now a full-page push inside the Home tab — see the
         // `.home` branch of the tab switch above. No sheet needed.)
@@ -357,6 +359,7 @@ struct Pick1HomeHiFi: View {
                 .padding(.trailing, 18)
                 .padding(.top, 14)
             }
+            .relocalizesOnLanguageChange()
         }
         .sheet(isPresented: $showWins) {
             WinsView(vm: vm,
@@ -367,6 +370,7 @@ struct Pick1HomeHiFi: View {
                      })
                 .presentationDragIndicator(.visible)
                 .presentationContentInteraction(.scrolls)
+                .relocalizesOnLanguageChange()
         }
     }
 
@@ -600,15 +604,18 @@ struct HomeHiFiContent: View {
             SummerFootballHubView(vm: vm, onClose: { showSummerFootball = false },
                                   isPro: isPro,
                                   onUnlock: { showSummerFootball = false; onUnlock() })
+                .relocalizesOnLanguageChange()
         }
         .sheet(isPresented: $showHistory) {
             PredictionHistoryView(vm: vm)
+                .relocalizesOnLanguageChange()
         }
         .sheet(item: $freeDetailPick) { p in
             FreeMatchDetailView(pick: p, onUnlock: {
                 freeDetailPick = nil
                 onUnlock()
             })
+            .relocalizesOnLanguageChange()
         }
         .task {
             // Ask for an App Store rating only at a genuine high point —

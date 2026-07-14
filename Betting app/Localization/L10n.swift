@@ -716,3 +716,33 @@ func t(_ key: L10nKey) -> String {
 func t(_ key: L10nKey, count n: Int) -> String {
     LocalizationManager.shared.t(key, count: n)
 }
+
+// MARK: - Live re-localization for detached view trees
+
+/// Views that call the free `t()` helper don't individually observe
+/// `LocalizationManager`, so they only re-localize when an ancestor that
+/// DOES observe it rebuilds them. The main tab tree gets that for free
+/// (the root reads `localization`), but **sheets and fullScreenCovers are
+/// a detached tree** — they don't rebuild when the root does, so their
+/// `t()` strings stayed in the old language after a language switch.
+///
+/// Applying `.relocalizesOnLanguageChange()` to a sheet's content makes it
+/// observe the manager and rebuild (via `.id`) whenever the language
+/// changes — so every `t()` inside re-runs. It also carries the correct
+/// layout direction into the sheet so Arabic reads right-to-left there too.
+private struct RelocalizeOnLanguageChange: ViewModifier {
+    @Environment(LocalizationManager.self) private var loc
+    func body(content: Content) -> some View {
+        content
+            .environment(\.layoutDirection, loc.layoutDirection)
+            .id(loc.languageCode)
+    }
+}
+
+extension View {
+    /// Rebuild this subtree when the app language changes. Apply to sheet /
+    /// fullScreenCover content so `t()` strings inside re-localize live.
+    func relocalizesOnLanguageChange() -> some View {
+        modifier(RelocalizeOnLanguageChange())
+    }
+}

@@ -246,6 +246,7 @@ struct SummerFootballHubView: View {
                             liveScore: nil,
                             onClose: { detailPick = nil })
                 .presentationDragIndicator(.visible)
+                .relocalizesOnLanguageChange()
         }
     }
 
