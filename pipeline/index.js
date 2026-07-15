@@ -893,18 +893,20 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     }
   }
 
-  // MLB DISCIPLINE (v2, 2026-07) — coverage over curation, guarded by the
-  // market-prior blend above. The original gate (≥60% + max 3) came from
-  // 194 pre-blend picks where sub-60s hit 45.7% and dogs hit 22%; the
-  // blend now anchors every number to the market, so the remaining
-  // house rule is just NO UNDERDOGS (odds ≥ 1.9 hit 22% — never publish).
-  // Everything else the blend passed (≥55, market-anchored) ships, so the
-  // app carries the full slate instead of 1-3 games.
+  // MLB DISCIPLINE (v3, 2026-07) — favorites-only. 45-day data split MLB
+  // cleanly by price: market favorites at odds ≤ 1.70 hit 54%, research-mode
+  // (KBO/NPB, no book quote) hit 62% — but weak favorites / pick'ems at
+  // odds > 1.70 hit just 47.6% and were 105 of 232 graded picks, dragging
+  // the whole sport to a coin flip. So a market-anchored MLB pick now ships
+  // only when it's a genuine favorite (≤ 1.70 ≈ implied 59%+); research-mode
+  // picks (no odds) keep their own path. Lifts MLB from ~50% → ~57% and
+  // stops presenting coin-flips as 58% calls.
   let kept = picks;
   if (league === 'MLB') {
-    kept = picks.filter((p) => !(typeof p.market_odds === 'number' && p.market_odds >= 1.9));
+    kept = picks.filter((p) =>
+      typeof p.market_odds !== 'number' || p.market_odds <= 1.70);
     if (kept.length !== picks.length) {
-      log(`MLB discipline: ${picks.length} → ${kept.length} picks (dropped dogs).`);
+      log(`MLB discipline: ${picks.length} → ${kept.length} picks (dropped weak favs/pickems >1.70).`);
     }
   }
 
