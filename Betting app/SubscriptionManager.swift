@@ -294,6 +294,7 @@ final class SubscriptionManager: ObservableObject {
                 // grant. Idempotent per transaction id; Pro then persists
                 // through the comp-grant rail until the pass lapses.
                 if transaction.productID == Self.dayPassProductId {
+                    Analytics.dayPassPurchased()
                     await claimDayPass(transactionId: String(transaction.id))
                 }
                 // Reconcile against StoreKit's source of truth. Guarded by

@@ -15,6 +15,7 @@
 
 import Foundation
 import UIKit
+import UserNotifications
 import PostHog
 import FBSDKCoreKit
 import AppTrackingTransparency
@@ -22,7 +23,7 @@ import AppTrackingTransparency
 // MARK: - App-launch hook for the Meta SDK
 // SwiftUI has no AppDelegate by default; this adaptor gives the Meta SDK the
 // didFinishLaunching call it needs. PostHog is set up in Betting_appApp.init().
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         Settings.shared.appID       = Analytics.metaAppID
@@ -34,7 +35,29 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Settings.shared.isAutoLogAppEventsEnabled      = true
         Settings.shared.isAdvertiserIDCollectionEnabled = true
         ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+        // Own the notification center so we can (1) show pushes while the
+        // app is foregrounded and (2) log the open + its A/B variant.
+        UNUserNotificationCenter.current().delegate = self
         return true
+    }
+
+    /// Notification tapped → log the open with its campaign + A/B variant
+    /// (send-push stamps these into the payload's `data`).
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let info = response.notification.request.content.userInfo
+        Analytics.notificationOpened(campaign: info["campaign"] as? String,
+                                     variant: info["variant"] as? String)
+        completionHandler()
+    }
+
+    /// Show banner + sound even when the app is in the foreground (so a
+    /// win alert lands visibly while the user is in-app).
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound, .list])
     }
 
     // APNs token callbacks → PushManager persists the token per-user so the
@@ -151,5 +174,35 @@ enum Analytics {
     static func subscribed(amount: Double, currency: String, productId: String) {
         track("subscribed", ["product": productId, "amount": amount, "currency": currency])
         AppEvents.shared.logPurchase(amount: amount, currency: currency)
+    }
+
+    // ── Behavior (what drives engagement) ─────────────────────────
+    /// A user filtered the board to a sport (or "all"). Shows which
+    /// sports pull attention → what to invest model effort in.
+    static func sportSelected(_ sport: String) {
+        track("sport_selected", ["sport": sport])
+    }
+    static func favoriteToggled(_ on: Bool, league: String) {
+        track("favorite_toggled", ["on": on, "league": league])
+    }
+    static func detailTabViewed(_ tab: String) {
+        track("detail_tab_viewed", ["tab": tab])
+    }
+    static func dayPassPurchased() {
+        track("day_pass_purchased")
+    }
+    static func languageChanged(_ code: String) {
+        track("language_changed", ["language": code])
+    }
+
+    /// A notification was tapped open. `campaign` is the push key
+    /// (pick_drop / free_recap / result_win …) and `variant` is the A/B
+    /// arm (A/B) when the push was part of an experiment — this closes the
+    /// loop on push OPEN rate + attributes the winning copy.
+    static func notificationOpened(campaign: String?, variant: String?) {
+        var props: [String: Any] = [:]
+        if let campaign { props["campaign"] = campaign }
+        if let variant { props["variant"] = variant }
+        track("notification_opened", props)
     }
 }

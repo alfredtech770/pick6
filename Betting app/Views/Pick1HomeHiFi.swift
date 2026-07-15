@@ -2470,6 +2470,7 @@ struct SportDropdown: View {
         return Button {
             Haptics.tap()
             withAnimation(Pick1Springs.snappy) { vm.selectedSport = key }
+            Analytics.sportSelected(key)
             withAnimation(Pick1Springs.smooth) { isOpen = false }
         } label: {
             HStack(spacing: 10) {

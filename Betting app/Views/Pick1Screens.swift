@@ -5470,6 +5470,7 @@ struct LanguagePickerSheet: View {
             // sync is what makes the change take effect mid-session.
             selection = lang.code
             loc.languageCode = lang.code
+            Analytics.languageChanged(lang.code)
             isOpen = false
         } label: {
             HStack(spacing: 14) {
