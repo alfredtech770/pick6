@@ -851,12 +851,27 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   if (cfg.promptMode !== 'race') {
     for (const p of picks) {
       const mo = p.market_odds;
-      if (typeof mo !== 'number' || mo < 1.01 || mo > 25) continue;
-      const implied = 100 / mo;
-      const blended = Math.round(0.65 * implied + 0.35 * p.probability);
-      if (blended !== p.probability) {
-        log(`${league}: market blend ${p.pick} ${p.probability}%→${blended}% (implied ${implied.toFixed(0)}%)`);
-        p.probability = Math.max(30, Math.min(97, blended));
+      if (typeof mo === 'number' && mo >= 1.01 && mo <= 25) {
+        // Market-anchored: pull 65% toward the consensus implied prob.
+        const implied = 100 / mo;
+        const blended = Math.round(0.65 * implied + 0.35 * p.probability);
+        if (blended !== p.probability) {
+          log(`${league}: market blend ${p.pick} ${p.probability}%→${blended}% (implied ${implied.toFixed(0)}%)`);
+          p.probability = Math.max(30, Math.min(97, blended));
+        }
+      } else if (typeof p.probability === 'number' && p.probability > 55) {
+        // CALIBRATION HAIRCUT (2026-07) — no market quote to anchor against
+        // (combat / tennis / off-season basketball research-mode picks).
+        // Measured over 30d these stated 65-68% but hit 30-50%: badly
+        // overconfident BECAUSE the blend above never touches them. Shrink
+        // the un-anchored claim 40% of the way toward a coin flip so the
+        // confidence the user sees is defensible. k is intentionally gentle
+        // (keeps a presentable slate); tune per-sport as hit-rate data grows.
+        const shrunk = Math.round(50 + 0.6 * (p.probability - 50));
+        if (shrunk !== p.probability) {
+          log(`${league}: calibration haircut ${p.pick} ${p.probability}%→${shrunk}% (no market anchor)`);
+          p.probability = shrunk;
+        }
       }
     }
     // Post-blend, a pick under 55% has no defensible edge — drop it. Never
