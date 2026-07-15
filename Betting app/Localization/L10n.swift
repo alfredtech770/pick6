@@ -606,6 +606,59 @@ enum L10nKey: String, CaseIterable {
     case rd_todays_word
     case rd_avg_conf
     case rd_n_picks
+    // 2026-07 language-completeness sweep (summer-football/tracker/calibration)
+    case rd_sf_title
+    case rd_sf_summer_football
+    case rd_sf_every_match
+    case rd_sf_every_match_nl
+    case rd_sf_call
+    case rd_sf_unlock_pro
+    case rd_sf_next_fixtures
+    case rd_sf_predictions_land
+    case rd_sf_ai_by
+    case rd_sf_group_stage
+    case rd_bt_track_this
+    case rd_bt_ledger
+    case rd_bt_empty
+    case rd_bt_on
+    case rd_bt_staked_across
+    case rd_bt_to_return
+    case rd_cal_title
+    case rd_cal_tagline
+    case rd_cal_alltime
+    case rd_no_market_line
+    case rd_best_line_books
+    case rd_over_prefix
+    case rd_save_changes
+    case rd_delete_subtitle
+    // 2026-07 language-completeness sweep (part 2)
+    case rd_every_pick_line
+    case rd_cancel_anytime
+    case rd_bt_stake_sub
+    case rd_bt_amount
+    case rd_bt_track_without_stake
+    case rd_bt_track_bet
+    case rd_bt_n_tracked
+    case rd_cal_gap_pre
+    case rd_cal_gap_post
+    case rd_cal_we_said
+    case rd_cal_actually_hit
+    case rd_bt_record
+    case rd_bt_hit_rate
+    case rd_bt_pending
+    case rd_cal_pct_hit
+    case rd_ob_every
+    case rd_ob_result
+    case rd_profile_change_password
+    case rd_profile_email_label
+    case rd_profile_phone_label
+    case rd_profile_password_help
+    case rd_legal_load_pre
+    case rd_legal_load_post
+    case rd_free_lock_copy
+    case rd_of_n_this_week
+    case rd_unlock_more_one
+    case rd_unlock_more_other
 }
 
 // MARK: - Manager

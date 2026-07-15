@@ -428,7 +428,7 @@ struct MatchDetailView: View {
 
             // Toast
             if showToast {
-                Text("SAVED · \(Int(pick.probability))% AI CONFIDENCE")
+                Text(t(.card_saved_toast, count: Int(pick.probability)))
                     .font(.archivo(12, weight: .bold))
                     .foregroundColor(Color(hex: "#0A0B0D"))
                     .padding(.horizontal, 16)
@@ -755,7 +755,7 @@ struct MatchDetailView: View {
                 Image(systemName: "hourglass")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(11, weight: .bold))
                     .tracking(1.8)
                     .foregroundColor(Color(hex: "#F59E0B"))
@@ -847,7 +847,7 @@ struct MatchDetailView: View {
                 Image(systemName: "hourglass")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.anton(20))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#F59E0B"))
@@ -1478,7 +1478,7 @@ struct MatchDetailView: View {
                     }
                 }
 
-                Text("AI PROJECTION · NOT A GUARANTEE")
+                Text(t(.rd_ai_projection_disc))
                     .font(.archivoNarrow(8, weight: .bold))
                     .tracking(1.6)
                     .foregroundColor(Color(hex: "#4A4B50"))
@@ -1782,7 +1782,7 @@ struct MatchDetailView: View {
                 .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
                 valueVerdict(edge: ourPct - imp).padding(.top, 12)
             } else {
-                Text("No live market line to compare — this call is based on our model read.")
+                Text(t(.rd_no_market_line))
                     .font(.archivo(12)).foregroundColor(Color(hex: "#8A8D94"))
                     .padding(.vertical, 12)
                     .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
@@ -1858,7 +1858,7 @@ struct MatchDetailView: View {
             // 3b. Line shopping — where to get the best price. Only when the
             // pipeline captured multiple real book quotes.
             if let books = pick.oddsBooks, books.count >= 2 {
-                Text("BEST LINE · \(books.count) BOOKS")
+                Text(t(.rd_best_line_books, count: books.count))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .padding(.top, 16).padding(.bottom, 4)
@@ -1976,7 +1976,7 @@ struct MatchDetailView: View {
     private func whyFactorsPanel(_ factors: [PickFactor]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("WHY \(pick.shortDisplayPick.uppercased())")
+                Text("\(t(.rd_why)) \(pick.shortDisplayPick.uppercased())")
                     .font(.anton(19)).foregroundColor(.white)
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
@@ -2998,7 +2998,7 @@ struct SportHubView: View {
                                     .tracking(1.4)
                                     .foregroundColor(Color(hex: "#F5F3EE").opacity(0.7))
                             } else {
-                                Text("PODIUM \(Int(d.podium.rounded()))%")
+                                Text("\(t(.rd_podium_word)) \(Int(d.podium.rounded()))%")
                                     .font(.mono(9, weight: .medium))
                                     .foregroundColor(Color(hex: "#8A8F98"))
                             }
@@ -3347,7 +3347,7 @@ struct SmallPickHero: View {
                             .foregroundColor(Color(hex: "#0A0B0D"))
                             .lineLimit(2)
                             .minimumScaleFactor(0.5)
-                        Text("over \(opp.uppercased())")
+                        Text("\(t(.rd_over_prefix))\(opp.uppercased())")
                             .font(.archivo(11, weight: .bold))
                             .tracking(1.4)
                             .foregroundColor(Color.black.opacity(0.65))
@@ -3461,7 +3461,7 @@ struct CompactPickCard: View {
                 Circle()
                     .fill(Color(hex: "#FF5A36"))
                     .frame(width: 6, height: 6)
-                Text("LIVE")
+                Text(t(.card_live))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#FF5A36"))
@@ -3471,13 +3471,13 @@ struct CompactPickCard: View {
                 Image(systemName: "hourglass")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#F59E0B"))
             }
         case .won, .lost:
-            Text("FINAL · \(displayLeague(pick.league))")
+            Text("\(t(.card_final)) · \(displayLeague(pick.league))")
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(Color(hex: "#B9B7B0"))
@@ -3518,7 +3518,7 @@ struct CompactPickCard: View {
                 Image(systemName: "hourglass")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.8)
                     .foregroundColor(Color(hex: "#F59E0B"))
@@ -3627,7 +3627,7 @@ struct ProfileView: View {
             }
         }
         .alert("Delete your account?", isPresented: $showDeleteAccountConfirm) {
-            Button("Delete Account", role: .destructive) {
+            Button(t(.profile_delete_account), role: .destructive) {
                 // Same path as EditProfileSheet: delete_current_user RPC
                 // (security definer pinned to auth.uid()), then bounce
                 // to the welcome flow.
@@ -3636,9 +3636,9 @@ struct ProfileView: View {
                     if ok { onSignOut() }
                 }
             }
-            Button("Cancel", role: .cancel) {}
+            Button(t(.action_cancel), role: .cancel) {}
         } message: {
-            Text("This permanently deletes your account and all associated data. This action cannot be undone.")
+            Text(t(.profile_delete_alert_message))
         }
         .sheet(isPresented: $showEditProfile) {
             EditProfileSheet(
@@ -3975,15 +3975,15 @@ struct ProfileView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "diamond.fill")
                                 .font(.system(size: 11, weight: .heavy))
-                            Text("PICK1 PRO")
+                            Text(t(.rd_pick1_pro))
                                 .font(.archivoNarrow(10, weight: .bold))
                                 .tracking(2.4)
                         }
                         .foregroundColor(ink.opacity(0.7))
 
                         VStack(alignment: .leading, spacing: -7) {
-                            Text("UNLOCK")
-                            Text("EVERY PICK.")
+                            Text(t(.rd_unlock))
+                            Text(t(.rd_every_pick_line))
                         }
                         .font(.anton(28))
                         .foregroundColor(ink)
@@ -4025,7 +4025,7 @@ struct ProfileView: View {
                         .foregroundColor(Color(hex: "#D4FF3A"))
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(Capsule().fill(ink))
-                    Text("Cancel anytime")
+                    Text(t(.rd_cancel_anytime))
                         .font(.archivo(11, weight: .semibold))
                         .foregroundColor(ink.opacity(0.55))
                 }
@@ -4414,7 +4414,7 @@ struct WinsView: View {
         case .live:
             HStack(spacing: 5) {
                 Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
-                Text("LIVE")
+                Text(t(.card_live))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#FF5A36"))
@@ -4426,7 +4426,7 @@ struct WinsView: View {
             HStack(spacing: 5) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 9, weight: .heavy))
-                Text("WON")
+                Text(t(.rd_won))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#D4FF3A"))
@@ -4438,7 +4438,7 @@ struct WinsView: View {
             HStack(spacing: 5) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .heavy))
-                Text("LOST")
+                Text(t(.rd_lost))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#FF5A5A"))
@@ -4452,7 +4452,7 @@ struct WinsView: View {
             HStack(spacing: 5) {
                 Image(systemName: "hourglass")
                     .font(.system(size: 9, weight: .heavy))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#B98C40"))
@@ -4461,7 +4461,7 @@ struct WinsView: View {
             .overlay(Capsule().stroke(Color(hex: "#B98C40").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .upcoming:
-            Text("UPCOMING")
+            Text(t(.live_section_upcoming))
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -5555,7 +5555,7 @@ struct PrivacySecuritySheet: View {
                         .padding(.bottom, 22)
 
                     // ── Account section ──────────────────────────
-                    fieldLabel("ACCOUNT")
+                    fieldLabel(t(.settings_account_section))
                     VStack(spacing: 0) {
                         infoRow(icon: "envelope.fill",
                                 title: "Email",
@@ -5580,8 +5580,8 @@ struct PrivacySecuritySheet: View {
                     .padding(.bottom, 24)
 
                     // ── Change password section ──────────────────
-                    fieldLabel("CHANGE PASSWORD")
-                    Text("Add or update an account password as a second way to sign in. Pick1 still works without one — magic-link sign-in stays available.")
+                    fieldLabel(t(.rd_profile_change_password))
+                    Text(t(.rd_profile_password_help))
                         .font(.archivo(11, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                         .padding(.horizontal, 22)
@@ -5677,7 +5677,7 @@ struct PrivacySecuritySheet: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("PRIVACY & SECURITY")
+            Text(t(.settings_privacy_security))
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2.4)
                 .foregroundColor(Color(hex: "#B9B7B0"))
@@ -5688,6 +5688,7 @@ struct PrivacySecuritySheet: View {
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
+            .textCase(.uppercase)
             .font(.archivoNarrow(10, weight: .bold))
             .tracking(2.2)
             .foregroundColor(Color(hex: "#6E6F75"))
@@ -5801,7 +5802,7 @@ struct LegalSheet: View {
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            Text("Couldn't load \(doc.title.lowercased()). Visit pick1.live/legal for the latest version.")
+                            Text("\(t(.rd_legal_load_pre))\(doc.title.lowercased())\(t(.rd_legal_load_post))")
                                 .font(.archivo(13, weight: .medium))
                                 .foregroundColor(Color(hex: "#6E6F75"))
                         }
@@ -5906,7 +5907,7 @@ struct EditProfileSheet: View {
                     .padding(.bottom, 28)
 
                     // Email — read-only
-                    fieldLabel("EMAIL")
+                    fieldLabel(t(.rd_profile_email_label))
                     HStack {
                         Image(systemName: "envelope.fill")
                             .foregroundColor(Color(hex: "#6E6F75"))
@@ -5929,18 +5930,18 @@ struct EditProfileSheet: View {
                     .padding(.bottom, 14)
 
                     // First / Last name
-                    fieldLabel("FIRST NAME")
+                    fieldLabel(t(.profile_first_name))
                     profileField(text: $firstName, placeholder: "First name", icon: "person.fill")
-                    fieldLabel("LAST NAME")
+                    fieldLabel(t(.profile_last_name))
                     profileField(text: $lastName, placeholder: "Last name", icon: "person.fill")
 
                     // Phone
-                    fieldLabel("PHONE / WHATSAPP (OPTIONAL)")
+                    fieldLabel(t(.rd_profile_phone_label))
                     profileField(text: $phone, placeholder: "+1 (555) 555-1234",
                                  icon: "phone.fill", keyboard: .phonePad)
 
                     // DOB
-                    fieldLabel("DATE OF BIRTH")
+                    fieldLabel(t(.profile_dob))
                     HStack {
                         Image(systemName: "calendar")
                             .foregroundColor(Color(hex: "#D4FF3A"))
@@ -5980,7 +5981,7 @@ struct EditProfileSheet: View {
                             if saving {
                                 ProgressView().tint(Color(hex: "#0A0B0D"))
                             } else {
-                                Text("Save Changes")
+                                Text(t(.rd_save_changes))
                                     .font(.archivo(14, weight: .heavy))
                             }
                         }
@@ -6053,10 +6054,10 @@ struct EditProfileSheet: View {
                             .stroke(Color(hex: "#22252B"), lineWidth: 1)
                     )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Delete Account")
+                    Text(t(.profile_delete_account))
                         .font(.archivo(13, weight: .semibold))
                         .foregroundColor(Color(hex: "#FF5A36"))
-                    Text("Permanently remove your data")
+                    Text(t(.rd_delete_subtitle))
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
@@ -6096,7 +6097,7 @@ struct EditProfileSheet: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("EDIT PROFILE")
+            Text(t(.profile_edit_title))
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2.4)
                 .foregroundColor(Color(hex: "#B9B7B0"))
@@ -6107,6 +6108,7 @@ struct EditProfileSheet: View {
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
+            .textCase(.uppercase)
             .font(.archivoNarrow(10, weight: .bold))
             .tracking(2.2)
             .foregroundColor(Color(hex: "#6E6F75"))
@@ -6488,7 +6490,7 @@ struct SettledOutcomeCard: View {
         case .live:
             HStack(spacing: 5) {
                 Circle().fill(Color(hex: "#FF5A36")).frame(width: 6, height: 6)
-                Text("LIVE").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                Text(t(.card_live)).font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#FF5A36"))
             .padding(.horizontal, 8).padding(.vertical, 3)
@@ -6498,7 +6500,7 @@ struct SettledOutcomeCard: View {
         case .won:
             HStack(spacing: 5) {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
-                Text("WON").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                Text(t(.rd_won)).font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#D4FF3A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
@@ -6508,7 +6510,7 @@ struct SettledOutcomeCard: View {
         case .lost:
             HStack(spacing: 5) {
                 Image(systemName: "xmark").font(.system(size: 9, weight: .heavy))
-                Text("LOST").font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
+                Text(t(.rd_lost)).font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#FF5A5A"))
             .padding(.horizontal, 8).padding(.vertical, 3)
@@ -6521,7 +6523,7 @@ struct SettledOutcomeCard: View {
             HStack(spacing: 5) {
                 Image(systemName: "hourglass")
                     .font(.system(size: 9, weight: .heavy))
-                Text("AWAITING")
+                Text(t(.card_awaiting))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
             .foregroundColor(Color(hex: "#B98C40"))
@@ -6530,7 +6532,7 @@ struct SettledOutcomeCard: View {
             .overlay(Capsule().stroke(Color(hex: "#B98C40").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .upcoming:
-            Text("UPCOMING")
+            Text(t(.live_section_upcoming))
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .padding(.horizontal, 8).padding(.vertical, 3)

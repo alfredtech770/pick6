@@ -71,13 +71,13 @@ struct CalibrationCard: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("CALIBRATION")
+                Text(t(.rd_cal_title))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text("When we say a number, we mean it")
+                Text(t(.rd_cal_tagline))
                     .font(.anton(19)).foregroundColor(Color(hex: "#F5F3EE"))
                 if let gap = model.avgGapText {
-                    Text("Our stated confidence lands within ~\(gap) points of the real hit rate, on average.")
+                    Text("\(t(.rd_cal_gap_pre))\(gap)\(t(.rd_cal_gap_post))")
                         .font(.archivo(12)).foregroundColor(Color(hex: "#8A8D94"))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -92,10 +92,10 @@ struct CalibrationCard: View {
 
             // Legend
             HStack(spacing: 14) {
-                legendDot(Color(hex: "#4A4B50"), "We said")
-                legendDot(lime, "Actually hit")
+                legendDot(Color(hex: "#4A4B50"), t(.rd_cal_we_said))
+                legendDot(lime, t(.rd_cal_actually_hit))
                 Spacer()
-                Text("all-time · graded picks")
+                Text(t(.rd_cal_alltime))
                     .font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
                     .foregroundColor(Color(hex: "#4A4B50"))
             }
@@ -111,7 +111,7 @@ struct CalibrationCard: View {
                 Text(b.band).font(.archivo(12, weight: .bold))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                 Spacer()
-                Text("\(Int(b.actualPct.rounded()))% hit")
+                Text(t(.rd_cal_pct_hit, count: Int(b.actualPct.rounded())))
                     .font(.archivo(12, weight: .bold)).foregroundColor(lime)
                 Text("· n=\(b.n)")
                     .font(.archivo(11)).foregroundColor(Color(hex: "#4A4B50"))

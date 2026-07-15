@@ -57,15 +57,15 @@ struct SummerFootballBanner: View {
                     .foregroundColor(WC.gold)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("SUMMER FOOTBALL 2026")
+                    Text(t(.rd_sf_title))
                         .font(.archivoNarrow(9, weight: .bold))
                         .tracking(2.5)
                         .foregroundColor(WC.gold)
                         .padding(.bottom, 3)
                     // .l2 — "EVERY MATCH. EVERY CALL." with CALL. in gold
-                    (Text("EVERY MATCH. EVERY ")
+                    (Text(t(.rd_sf_every_match))
                         .foregroundColor(.white)
-                     + Text("CALL.")
+                     + Text(t(.rd_sf_call))
                         .foregroundColor(WC.gold))
                         .font(.anton(22))
                         .tracking(-0.1)
@@ -277,12 +277,12 @@ struct SummerFootballHubView: View {
                     .font(.archivoNarrow(12, weight: .bold))
                     .tracking(1.8)
                     .foregroundColor(WC.ink)
-                Text("Unlock every match prediction with Pro")
+                Text(t(.rd_sf_unlock_pro))
                     .font(.archivo(11, weight: .regular))
                     .foregroundColor(WC.mute)
             }
             Spacer()
-            Text("GO PRO")
+            Text(t(.paywall_kicker))
                 .font(.archivoNarrow(11, weight: .heavy))
                 .tracking(1.6)
                 .foregroundColor(WC.bg)
@@ -307,11 +307,11 @@ struct SummerFootballHubView: View {
             Image(systemName: "hourglass")
                 .font(.system(size: 26))
                 .foregroundColor(WC.gold)
-            Text("NEXT FIXTURES DROP SOON")
+            Text(t(.rd_sf_next_fixtures))
                 .font(.archivoNarrow(12, weight: .bold))
                 .tracking(2.2)
                 .foregroundColor(WC.ink)
-            Text("Match predictions land by 5:00 AM ET on game day")
+            Text(t(.rd_sf_predictions_land))
                 .font(.archivo(11, weight: .regular))
                 .foregroundColor(WC.mute)
         }
@@ -339,7 +339,7 @@ struct SummerFootballHubView: View {
 
             HStack(spacing: 8) {
                 WCTrophy().frame(width: 10, height: 13).foregroundColor(WC.gold)
-                Text("SUMMER FOOTBALL 2026")
+                Text(t(.rd_sf_title))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(WC.gold)
@@ -370,7 +370,7 @@ struct SummerFootballHubView: View {
                 HStack(spacing: 8) {
                     WCTrophy().frame(width: 22, height: 28).foregroundColor(WC.gold)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("SUMMER FOOTBALL")
+                        Text(t(.rd_sf_summer_football))
                             .font(.anton(8))
                             .tracking(2.6)
                             .foregroundColor(WC.gold)
@@ -380,22 +380,22 @@ struct SummerFootballHubView: View {
                     }
                 }
                 Spacer()
-                (Text("AI BY ").foregroundColor(.white.opacity(0.6))
+                (Text(t(.rd_sf_ai_by)).foregroundColor(.white.opacity(0.6))
                  + Text("PICK1").foregroundColor(WC.accent))
                     .font(.mono(8, weight: .heavy))
                     .tracking(1.8)
             }
             .padding(.bottom, 14)
 
-            (Text("EVERY MATCH.\nEVERY ").foregroundColor(.white)
-             + Text("CALL.").foregroundColor(WC.gold))
+            (Text(t(.rd_sf_every_match_nl)).foregroundColor(.white)
+             + Text(t(.rd_sf_call)).foregroundColor(WC.gold))
                 .font(.anton(50))
                 .tracking(-1.0)
                 .lineSpacing(-12)
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.vertical, 6)
 
-            Text("GROUP STAGE · NEXT 24 HOURS · LIVE")
+            Text(t(.rd_sf_group_stage))
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(2.0)
                 .foregroundColor(.white.opacity(0.85))
@@ -518,7 +518,7 @@ struct SummerFootballHubView: View {
                     (Text("\(Int(pick.probability.rounded()))").font(.anton(26))
                      + Text("%").font(.anton(13)))
                         .foregroundColor(WC.gold)
-                    Text("CONFIDENCE")
+                    Text(t(.rd_confidence_label))
                         .font(.archivoNarrow(8, weight: .bold))
                         .tracking(2.0).foregroundColor(.white.opacity(0.55))
                 }

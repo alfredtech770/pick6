@@ -1519,7 +1519,7 @@ struct WinsThisWeekTile: View {
             .animation(Pick1Springs.smooth, value: wins)
             Spacer(minLength: 0)
             HStack {
-                Text("OF \(games) THIS WEEK")
+                Text(t(.rd_of_n_this_week, count: games))
                     .font(.mono(10, weight: .medium))
                     .foregroundColor(Color(hex: "#6E6F75"))
                     .lineLimit(1)
@@ -3778,7 +3778,7 @@ struct ProUnlockCard: View {
                 }
                 .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
 
-                Text("Unlock \(lockedCount) more pick\(lockedCount == 1 ? "" : "s")")
+                Text(lockedCount == 1 ? t(.rd_unlock_more_one) : t(.rd_unlock_more_other, count: lockedCount))
                     .font(.anton(28))
                     .foregroundColor(Color(hex: "#0A0B0D"))
 

@@ -27,14 +27,14 @@ struct TrackBetSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("TRACK THIS BET")
+                Text(t(.rd_bt_track_this))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Text(pick.pick)
                     .font(.anton(22)).foregroundColor(Color(hex: "#F5F3EE"))
             }
 
-            Text("Add your stake to track your real return, or skip it to just log the pick.")
+            Text(t(.rd_bt_stake_sub))
                 .font(.archivo(13)).foregroundColor(Color(hex: "#8A8D94"))
 
             // Quick stake chips
@@ -57,7 +57,7 @@ struct TrackBetSheet: View {
             // Custom amount
             HStack(spacing: 8) {
                 Text("$").font(.anton(20)).foregroundColor(Color(hex: "#6E6F75"))
-                TextField("Amount", text: $stakeText)
+                TextField(t(.rd_bt_amount), text: $stakeText)
                     .keyboardType(.decimalPad)
                     .font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
             }
@@ -66,7 +66,7 @@ struct TrackBetSheet: View {
 
             if let s = stake {
                 HStack {
-                    Text("TO RETURN").font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
+                    Text(t(.rd_bt_to_return)).font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Spacer()
                     Text("$\(Int((s * odds).rounded()))")
@@ -79,7 +79,7 @@ struct TrackBetSheet: View {
             Button {
                 onTrack(stake); dismiss()
             } label: {
-                Text(stake == nil ? "TRACK WITHOUT STAKE" : "TRACK BET")
+                Text(stake == nil ? t(.rd_bt_track_without_stake) : t(.rd_bt_track_bet))
                     .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#0A0B0D"))
                     .frame(maxWidth: .infinity).padding(.vertical, 15)
@@ -116,10 +116,10 @@ struct MyBetsCard: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color(hex: "#6E6F75"))
             VStack(alignment: .leading, spacing: 2) {
-                Text("YOUR BET LEDGER")
+                Text(t(.rd_bt_ledger))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#B9B7B0"))
-                Text("Tap “Track this bet” on any pick to build your record.")
+                Text(t(.rd_bt_empty))
                     .font(.archivo(12)).foregroundColor(Color(hex: "#6E6F75"))
             }
             Spacer()
@@ -135,11 +135,11 @@ struct MyBetsCard: View {
         let hitRate = s.settled > 0 ? Int((Double(s.wins) / Double(s.settled) * 100).rounded()) : 0
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("YOUR BET LEDGER")
+                Text(t(.rd_bt_ledger))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#B9B7B0"))
                 Spacer()
-                Text("\(s.tracked) TRACKED")
+                Text(t(.rd_bt_n_tracked, count: s.tracked))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
             }
@@ -154,17 +154,17 @@ struct MyBetsCard: View {
                             .font(.archivo(13, weight: .bold)).foregroundColor(profitColor.opacity(0.85))
                     }
                 }
-                Text("on $\(Int(s.staked.rounded())) staked across \(s.settled) settled")
+                Text("\(t(.rd_bt_on)) $\(Int(s.staked.rounded())) \(t(.rd_bt_staked_across, count: s.settled))")
                     .font(.archivo(11)).foregroundColor(Color(hex: "#6E6F75"))
             }
 
             // Record row
             HStack(spacing: 0) {
-                statCell("RECORD", "\(s.wins)-\(s.losses)", Color(hex: "#F5F3EE"))
+                statCell(t(.rd_bt_record), "\(s.wins)-\(s.losses)", Color(hex: "#F5F3EE"))
                 divider
-                statCell("HIT RATE", s.settled > 0 ? "\(hitRate)%" : "—", win)
+                statCell(t(.rd_bt_hit_rate), s.settled > 0 ? "\(hitRate)%" : "—", win)
                 divider
-                statCell("PENDING", "\(s.tracked - s.settled)", Color(hex: "#B9B7B0"))
+                statCell(t(.rd_bt_pending), "\(s.tracked - s.settled)", Color(hex: "#B9B7B0"))
             }
             .padding(.top, 2)
         }

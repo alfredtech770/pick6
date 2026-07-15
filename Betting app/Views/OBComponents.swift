@@ -50,7 +50,7 @@ struct OBTopBar: View {
 
             if canSkip, let onSkip {
                 Button(action: onSkip) {
-                    Text("SKIP")
+                    Text(t(.action_skip))
                         .font(.custom("BarlowCondensed-Bold", size: 12))
                         .kerning(2.4)
                         .foregroundColor(.p1Mute)

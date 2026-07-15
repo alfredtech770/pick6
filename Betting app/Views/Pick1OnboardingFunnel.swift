@@ -938,7 +938,7 @@ private struct GreenScreen: View {
     private var ledgerPreview: some View {
         VStack(alignment: .leading, spacing: 8) {
             previewPill(t(.funnel_green_pill_ledger))
-            (Text("EVERY ").foregroundColor(Fnl.white) + Text("RESULT.").foregroundColor(Fnl.lime))
+            (Text(t(.rd_ob_every)).foregroundColor(Fnl.white) + Text(t(.rd_ob_result)).foregroundColor(Fnl.lime))
                 .font(.anton(19))
             ForEach(Array([
                 ("SPURS −5", "84.8%", true), ("KNICKS ML", "71.5%", true),

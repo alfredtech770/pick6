@@ -191,7 +191,7 @@ struct FreeMatchDetailView: View {
                             .font(.anton(20)).foregroundColor(.white)
                         blurBlob(width: 52)
                     }
-                    Text("The AI logged its pick & win probability at 6:30 AM ET. Unlock to reveal who it's backing.")
+                    Text(t(.rd_free_lock_copy))
                         .font(.archivo(13)).foregroundColor(Color(hex: "#CDb98A").opacity(0.85))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
