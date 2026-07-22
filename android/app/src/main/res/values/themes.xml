@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pick1 is dark-only (matching iOS). NoActionBar because Compose draws
+         the entire chrome, and the near-black window background prevents a
+         white flash on cold start. -->
+    <style name="Theme.Pick1" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/p1_ink</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

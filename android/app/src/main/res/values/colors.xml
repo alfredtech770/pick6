@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- XML mirrors of the Compose tokens in ui/theme/Color.kt, for the places
+     Android needs a resource (window background, notification accent). -->
+<resources>
+    <color name="p1_ink">#FF0A0B0D</color>
+    <color name="p1_panel">#FF101114</color>
+    <color name="p1_lime">#FFD4FF3A</color>
+    <color name="p1_foreground">#FFF5F3EE</color>
+</resources>
