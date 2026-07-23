@@ -23,6 +23,7 @@ import com.pick1.app.data.model.Pick
 import com.pick1.app.ui.components.ProSlateCard
 import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.free.FreeFeed
+import com.pick1.app.ui.free.FreeMatchDetailScreen
 import com.pick1.app.ui.free.FreeSlateSection
 import com.pick1.app.ui.free.LatestWinsRail
 import com.pick1.app.ui.free.MembersWonCard
@@ -111,7 +112,17 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var showSummerFootball by remember { mutableStateOf(false) }
 
     selected?.let { p ->
-        MatchDetailScreen(p) { selected = null }
+        // Free tier sees the tease detail (matchup shown, call locked);
+        // Pro sees the real breakdown. Same split as iOS.
+        if (vm.isPro) {
+            MatchDetailScreen(p) { selected = null }
+        } else {
+            FreeMatchDetailScreen(
+                pick = p,
+                onClose = { selected = null },
+                onUnlock = { selected = null; showPaywall = true },
+            )
+        }
         return
     }
     if (showSummerFootball) {
