@@ -56,6 +56,12 @@ def to_android(value):
     v = v.replace('"', '\\"').replace("'", "\\'")
     v = v.replace("@", "\\@").replace("?", "\\?") if v[:1] in ("@", "?") else v
     v = v.replace("\n", "\\n")
+    # Android TRIMS leading/trailing whitespace in <string> bodies unless the
+    # value is wrapped in double quotes. Several iOS keys end in a space on
+    # purpose because they're concatenated with a colored span
+    # (e.g. "EVERY PICK.\nEVERY " + "SPORT."), so preserve it.
+    if value != value.strip():
+        v = '"' + v + '"'
     return v, has_arg
 
 

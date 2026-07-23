@@ -28,6 +28,13 @@ import com.pick1.app.data.model.Pick
 import com.pick1.app.ui.Sport
 import com.pick1.app.ui.components.ProSlateCard
 import com.pick1.app.ui.detail.MatchDetailScreen
+import com.pick1.app.ui.free.FreeFeed
+import com.pick1.app.ui.free.FreeSlateSection
+import com.pick1.app.ui.free.LatestWinsRail
+import com.pick1.app.ui.free.MembersWonCard
+import com.pick1.app.ui.free.PremiumUpsellCard
+import com.pick1.app.ui.paywall.PaywallScreen
+import com.pick1.app.billing.PlaceholderCatalogue
 import com.pick1.app.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -44,6 +51,13 @@ class HomeViewModel : ViewModel() {
     var loading by mutableStateOf(true); private set
     var error by mutableStateOf<String?>(null); private set
     var sport by mutableStateOf("all"); private set
+
+    /**
+     * Entitlement. Play Billing isn't wired yet, so the app runs in the FREE
+     * tier — which is exactly the surface we want to build and verify first.
+     */
+    var isPro by mutableStateOf(false); private set
+    fun updateEntitlement(pro: Boolean) { isPro = pro }
 
     /** Sports present in the current slate, in the iOS carousel order. */
     val sports: List<String>
@@ -77,6 +91,18 @@ class HomeViewModel : ViewModel() {
 @Composable
 fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var selected by remember { mutableStateOf<Pick?>(null) }
+    var showPaywall by remember { mutableStateOf(false) }
+
+    if (showPaywall) {
+        PaywallScreen(
+            plans = PlaceholderCatalogue.plans(trialEligible = true),
+            trialEligible = true,
+            onBuy = { /* Play Billing purchase flow lands with the Play Console setup */ },
+            onRestore = { },
+            onContinueFree = { showPaywall = false },
+        )
+        return
+    }
     selected?.let { p ->
         MatchDetailScreen(p) { selected = null }
         return
@@ -120,12 +146,40 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 }
             }
 
-            else -> LazyColumn(
+            vm.isPro -> LazyColumn(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(vm.visiblePicks, key = { it.id }) { p -> ProSlateCard(p) { selected = p } }
                 item { Spacer(Modifier.height(24.dp)) }
+            }
+
+            // ── FREE TIER ────────────────────────────────────────────
+            // Proof (Latest Wins) -> tease (locked Full Slate) -> close
+            // (gold Premium card). Same order as iOS.
+            else -> {
+                val wins = FreeFeed.latestWins(vm.picks, vm.sport)
+                val slate = FreeFeed.lockedSlate(vm.visiblePicks, wins.firstOrNull()?.id, vm.sport)
+                val net = FreeFeed.membersNet(vm.picks)
+                val yWins = vm.picks.count { it.isWin }
+                val yLoss = vm.picks.count { it.isLoss }
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    item {
+                        LatestWinsRail(
+                            results = wins,
+                            onSeeAll = { },
+                            membersCard = if (yWins >= 3 && yWins > yLoss && net > 0) {
+                                { MembersWonCard(yWins, yLoss, net) { showPaywall = true } }
+                            } else null,
+                        )
+                    }
+                    item { FreeSlateSection(slate) { showPaywall = true } }
+                    item { PremiumUpsellCard(trialEligible = true) { showPaywall = true } }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
             }
         }
     }
