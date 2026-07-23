@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pick1.app.ui.home.HomeScreen
+import com.pick1.app.ui.RootScaffold
 import com.pick1.app.ui.theme.Pick1Theme
 
 class MainActivity : ComponentActivity() {
@@ -12,7 +12,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Pick1Theme { HomeScreen() }
+            Pick1Theme { RootScaffold() }
         }
     }
 }

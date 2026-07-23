@@ -85,6 +85,14 @@ data class Pick(
     val impliedProbability: Double?
         get() = marketOdds?.takeIf { it > 0 }?.let { 100.0 / it }
 
+    /**
+     * Fallback decimal odds when no market quote exists — derived from the
+     * model's own probability. Used only for payout math, and labelled as
+     * such in the UI (mirrors the iOS `Pick.impliedOddsForPayout` extension).
+     */
+    val impliedOddsForPayout: Double?
+        get() = if (probability > 0) 100.0 / probability else null
+
     /** Our edge over the market, in percentage points. */
     val valueEdge: Double?
         get() = impliedProbability?.let { probability - it }
