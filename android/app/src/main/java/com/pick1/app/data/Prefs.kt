@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.dataStore by preferencesDataStore(name = "pick1_prefs")
+internal val Context.prefsStore by preferencesDataStore(name = "pick1_prefs")
 
 /**
  * Local preferences — the Android counterpart of the iOS `@AppStorage` keys.
@@ -21,16 +21,16 @@ object Prefs {
     private val GOAL = intPreferencesKey("userGoal")
 
     fun onboarded(ctx: Context): Flow<Boolean> =
-        ctx.dataStore.data.map { it[ONBOARDED] ?: false }
+        ctx.prefsStore.data.map { it[ONBOARDED] ?: false }
 
     suspend fun setOnboarded(ctx: Context, value: Boolean) {
-        ctx.dataStore.edit { it[ONBOARDED] = value }
+        ctx.prefsStore.edit { it[ONBOARDED] = value }
     }
 
     fun goal(ctx: Context): Flow<Int?> =
-        ctx.dataStore.data.map { it[GOAL] }
+        ctx.prefsStore.data.map { it[GOAL] }
 
     suspend fun setGoal(ctx: Context, value: Int) {
-        ctx.dataStore.edit { it[GOAL] = value }
+        ctx.prefsStore.edit { it[GOAL] = value }
     }
 }

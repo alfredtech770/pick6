@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -25,7 +27,11 @@ import com.pick1.app.BuildConfig
 import com.pick1.app.data.Prefs
 import com.pick1.app.ui.funnel.FunnelHost
 import kotlinx.coroutines.launch
+import com.pick1.app.data.model.Pick
+import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.home.HomeScreen
+import com.pick1.app.ui.live.LiveScreen
+import com.pick1.app.ui.wins.WinsScreen
 import com.pick1.app.ui.profile.ProfileScreen
 import com.pick1.app.ui.theme.*
 
@@ -34,7 +40,7 @@ import com.pick1.app.ui.theme.*
  * the iOS tab bar. HOME and PROFILE are live; PICKS and LIVE land with their
  * screen ports.
  */
-private enum class RootTab { HOME, PROFILE }
+private enum class RootTab { HOME, PICKS, LIVE, PROFILE }
 
 @Composable
 fun RootScaffold(forceSkipOnboarding: Boolean = false) {
@@ -54,9 +60,18 @@ fun RootScaffold(forceSkipOnboarding: Boolean = false) {
         else -> Unit
     }
 
+    // Detail is shown over whichever tab opened it.
+    var detail by remember { mutableStateOf<Pick?>(null) }
+    detail?.let { p ->
+        MatchDetailScreen(p) { detail = null }
+        return
+    }
+
     Box(Modifier.fillMaxSize().background(P1.Ink)) {
         when (tab) {
             RootTab.HOME -> HomeScreen()
+            RootTab.PICKS -> WinsScreen { detail = it }
+            RootTab.LIVE -> LiveScreen { detail = it }
             RootTab.PROFILE -> ProfileScreen()
         }
         BottomNav(
@@ -83,6 +98,12 @@ private fun BottomNav(tab: RootTab, onSelect: (RootTab) -> Unit, modifier: Modif
         NavItem(Icons.Default.Home, stringResource(R.string.nav_home), tab == RootTab.HOME) {
             onSelect(RootTab.HOME)
         }
+        NavItem(Icons.Default.BarChart, stringResource(R.string.nav_picks), tab == RootTab.PICKS) {
+            onSelect(RootTab.PICKS)
+        }
+        NavItem(Icons.Default.Bolt, stringResource(R.string.nav_live), tab == RootTab.LIVE) {
+            onSelect(RootTab.LIVE)
+        }
         NavItem(Icons.Default.Person, stringResource(R.string.nav_profile), tab == RootTab.PROFILE) {
             onSelect(RootTab.PROFILE)
         }
@@ -96,7 +117,7 @@ private fun NavItem(icon: ImageVector, label: String, active: Boolean, onClick: 
             .clip(RoundedCornerShape(22.dp))
             .background(if (active) P1.Lime else Color.Transparent)
             .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
     ) {

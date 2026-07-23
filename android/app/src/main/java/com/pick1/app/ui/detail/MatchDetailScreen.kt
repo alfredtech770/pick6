@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -20,7 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pick1.app.R
+import androidx.compose.ui.platform.LocalContext
+import com.pick1.app.data.Favorites
 import com.pick1.app.data.model.Pick
+import kotlinx.coroutines.launch
 import com.pick1.app.ui.Sport
 import com.pick1.app.ui.components.TeamLogo
 import com.pick1.app.ui.theme.*
@@ -93,7 +98,22 @@ private fun TopBar(pick: Pick, onClose: () -> Unit) {
             color = P1.Mute,
         )
         Spacer(Modifier.weight(1f))
-        Spacer(Modifier.size(38.dp))
+        // Star -> favorites, which is what populates the PICKS tab.
+        val ctx = LocalContext.current
+        val scope = rememberCoroutineScope()
+        val favIds by Favorites.ids(ctx).collectAsState(initial = emptySet())
+        val starred = pick.id in favIds
+        Icon(
+            if (starred) Icons.Default.Star else Icons.Default.StarBorder,
+            contentDescription = null,
+            tint = if (starred) P1.Lime else P1.Mute,
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(P1.Panel)
+                .clickable { scope.launch { Favorites.toggle(ctx, pick.id) } }
+                .padding(9.dp),
+        )
     }
 }
 

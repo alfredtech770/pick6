@@ -205,3 +205,28 @@ data class SoccerTeam(
     val goalsFor: String? = null,
     val goalsAgainst: String? = null,
 )
+
+/**
+ * A live game's running score — mirrors `LiveScore` in Models/Pick.swift and
+ * the `live_scores` table the pipeline updates. Joined to a Pick by game_id.
+ */
+@Serializable
+data class LiveScore(
+    val id: String,
+    @SerialName("game_id") val gameId: String,
+    val sport: String,
+    @SerialName("home_team") val homeTeam: String,
+    @SerialName("away_team") val awayTeam: String,
+    @SerialName("home_score") val homeScore: Int? = null,
+    @SerialName("away_score") val awayScore: Int? = null,
+    val status: String? = null,
+    val quarter: String? = null,
+    @SerialName("start_time") val startTime: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+) {
+    /** In-progress right now (not scheduled, not final). */
+    val isLive: Boolean
+        get() = status?.lowercase()?.let {
+            it.contains("in") || it.contains("live") || it.contains("progress")
+        } ?: false
+}

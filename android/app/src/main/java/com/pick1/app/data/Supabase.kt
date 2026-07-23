@@ -68,6 +68,10 @@ class PicksRepository {
             }
             .decodeList<Pick>()
 
+    /** Live scores for today's games — powers the LIVE NOW tab. */
+    suspend fun liveScores(): List<com.pick1.app.data.model.LiveScore> =
+        Supabase.client.from("live_scores").select().decodeList()
+
     private fun today(): String {
         val fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
         return java.time.LocalDate.now().format(fmt)
