@@ -20,7 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pick1.app.R
+import androidx.compose.ui.platform.LocalContext
+import com.pick1.app.BuildConfig
+import com.pick1.app.data.Prefs
 import com.pick1.app.ui.funnel.FunnelHost
+import kotlinx.coroutines.launch
 import com.pick1.app.ui.home.HomeScreen
 import com.pick1.app.ui.profile.ProfileScreen
 import com.pick1.app.ui.theme.*
@@ -33,16 +37,21 @@ import com.pick1.app.ui.theme.*
 private enum class RootTab { HOME, PROFILE }
 
 @Composable
-fun RootScaffold() {
+fun RootScaffold(forceSkipOnboarding: Boolean = false) {
     var tab by remember { mutableStateOf(RootTab.HOME) }
-    // First run shows the onboarding funnel. Persisting "seen" lands with
-    // the DataStore/auth work; for now it's session-scoped so the funnel is
-    // reachable for review.
-    var onboarded by remember { mutableStateOf(false) }
+    // First run shows the onboarding funnel, once — persisted in DataStore
+    // exactly like the iOS `hasFinishedOnboarding` @AppStorage key.
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val onboarded by Prefs.onboarded(ctx).collectAsState(initial = null)
 
-    if (!onboarded) {
-        FunnelHost(onFinished = { onboarded = true })
-        return
+    when (if (forceSkipOnboarding) true else onboarded) {
+        null -> return          // first frame: don't flash the wrong screen
+        false -> {
+            FunnelHost(onFinished = { scope.launch { Prefs.setOnboarded(ctx, true) } })
+            return
+        }
+        else -> Unit
     }
 
     Box(Modifier.fillMaxSize().background(P1.Ink)) {

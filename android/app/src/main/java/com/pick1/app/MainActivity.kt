@@ -11,8 +11,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // DEBUG ONLY: `adb shell am start ... --ez skipOnboarding true` jumps
+        // straight to the board, mirroring the iOS -hasFinishedOnboarding
+        // launch arg. Never reachable in a release build.
+        val skipOnboarding = BuildConfig.DEBUG &&
+            intent?.getBooleanExtra("skipOnboarding", false) == true
         setContent {
-            Pick1Theme { RootScaffold() }
+            Pick1Theme { RootScaffold(forceSkipOnboarding = skipOnboarding) }
         }
     }
 }

@@ -1,31 +1,25 @@
 package com.pick1.app.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pick1.app.R
+import com.pick1.app.billing.PlaceholderCatalogue
 import com.pick1.app.data.PicksRepository
 import com.pick1.app.data.model.Pick
-import com.pick1.app.ui.Sport
 import com.pick1.app.ui.components.ProSlateCard
 import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.free.FreeFeed
@@ -34,55 +28,74 @@ import com.pick1.app.ui.free.LatestWinsRail
 import com.pick1.app.ui.free.MembersWonCard
 import com.pick1.app.ui.free.PremiumUpsellCard
 import com.pick1.app.ui.paywall.PaywallScreen
-import com.pick1.app.billing.PlaceholderCatalogue
 import com.pick1.app.ui.theme.*
+import com.posthog.PostHog
 import kotlinx.coroutines.launch
 
 /**
  * Home board — port of `Pick1HomeHiFi.swift`.
  *
- * Structure mirrors iOS: PICK1 wordmark, a horizontal sport filter scroller
- * (tennis included), then the slate of ProSlateCards.
+ * Structure matches iOS: the HERO card (today's highest-probability pick)
+ * with the SportDropdown overlaid on its top-right, then either the pro
+ * slate or the free-tier proof/tease/close stack.
  */
 class HomeViewModel : ViewModel() {
     private val repo = PicksRepository()
 
-    var picks by mutableStateOf<List<Pick>>(emptyList()); private set
+    /** Today's slate — what the board is actually about. */
+    var todayPicks by mutableStateOf<List<Pick>>(emptyList()); private set
+
+    /** Recently graded results — feeds the Latest Wins proof rail. */
+    var history by mutableStateOf<List<Pick>>(emptyList()); private set
+
     var loading by mutableStateOf(true); private set
     var error by mutableStateOf<String?>(null); private set
     var sport by mutableStateOf("all"); private set
 
     /**
      * Entitlement. Play Billing isn't wired yet, so the app runs in the FREE
-     * tier — which is exactly the surface we want to build and verify first.
+     * tier — which is the surface we want to verify first.
      */
     var isPro by mutableStateOf(false); private set
     fun updateEntitlement(pro: Boolean) { isPro = pro }
 
-    /** Sports present in the current slate, in the iOS carousel order. */
+    /** Sports present in today's slate, in the iOS carousel order. */
     val sports: List<String>
         get() {
             val order = listOf(
                 "soccer", "baseball", "golf", "f1", "combat",
                 "cricket", "basketball", "hockey", "tennis",
             )
-            val present = picks.map { it.sport }.toSet()
-            return listOf("all") + order.filter { it in present }
+            val present = todayPicks.map { it.sport }.toSet()
+            return order.filter { it in present }
         }
 
-    val visiblePicks: List<Pick>
-        get() = if (sport == "all") picks else picks.filter { it.sport == sport }
+    fun countFor(s: String): Int =
+        if (s == "all") todayPicks.size else todayPicks.count { it.sport == s }
 
-    fun select(s: String) { sport = s }
+    val filteredToday: List<Pick>
+        get() = if (sport == "all") todayPicks else todayPicks.filter { it.sport == sport }
+
+    /** Highest-probability pick from today — the hero. */
+    val topPick: Pick? get() = filteredToday.maxByOrNull { it.probability }
+
+    fun select(s: String) {
+        sport = s
+        PostHog.capture("sport_selected", properties = mapOf("sport" to s))
+    }
 
     init { refresh() }
 
     fun refresh() {
         viewModelScope.launch {
             loading = true
-            runCatching { repo.latestWins(limit = 40) }
-                .onSuccess { picks = it; error = null }
-                .onFailure { error = it.message }
+            runCatching {
+                val today = repo.todayPicks()
+                val hist = repo.latestWins(limit = 40)
+                today to hist
+            }.onSuccess { (t, h) ->
+                todayPicks = t; history = h; error = null
+            }.onFailure { error = it.message }
             loading = false
         }
     }
@@ -92,41 +105,26 @@ class HomeViewModel : ViewModel() {
 fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var selected by remember { mutableStateOf<Pick?>(null) }
     var showPaywall by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
 
+    selected?.let { p ->
+        MatchDetailScreen(p) { selected = null }
+        return
+    }
     if (showPaywall) {
         PaywallScreen(
             plans = PlaceholderCatalogue.plans(trialEligible = true),
             trialEligible = true,
-            onBuy = { /* Play Billing purchase flow lands with the Play Console setup */ },
+            onBuy = { },
             onRestore = { },
             onContinueFree = { showPaywall = false },
         )
         return
     }
-    selected?.let { p ->
-        MatchDetailScreen(p) { selected = null }
-        return
-    }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(P1.Ink)
-            .safeDrawingPadding(),
-    ) {
-        Header()
-        Spacer(Modifier.height(14.dp))
 
-        if (vm.sports.size > 1) {
-            SportScroller(
-                sports = vm.sports,
-                selected = vm.sport,
-                onSelect = vm::select,
-            )
-            Spacer(Modifier.height(14.dp))
-        }
-
+    Box(Modifier.fillMaxSize().background(P1.Ink)) {
         when {
-            vm.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+            vm.loading && vm.todayPicks.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 CircularProgressIndicator(color = P1.Lime)
             }
 
@@ -138,35 +136,62 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                         color = P1.Foreground,
                     )
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        vm.error ?: "",
-                        style = archivo(12),
-                        color = P1.Mute,
-                    )
+                    Text(vm.error ?: "", style = archivo(12), color = P1.Mute)
                 }
             }
 
-            vm.isPro -> LazyColumn(
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(vm.visiblePicks, key = { it.id }) { p -> ProSlateCard(p) { selected = p } }
-                item { Spacer(Modifier.height(24.dp)) }
-            }
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // ── HERO + dropdown ──────────────────────────────────
+                item {
+                    Box {
+                        Box(
+                            Modifier.clickable(enabled = vm.topPick != null) {
+                                vm.topPick?.let { selected = it }
+                            }
+                        ) {
+                            HeroCard(vm.topPick)
+                        }
+                        // Overlaid OUTSIDE the hero's click target so menu
+                        // taps never open the detail card.
+                        SportDropdown(
+                            sports = vm.sports,
+                            selected = vm.sport,
+                            countFor = vm::countFor,
+                            isOpen = menuOpen,
+                            onToggle = { menuOpen = !menuOpen },
+                            onSelect = { vm.select(it); menuOpen = false },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(end = 22.dp, top = 82.dp)
+                                .zIndex(100f),
+                        )
+                    }
+                }
 
-            // ── FREE TIER ────────────────────────────────────────────
-            // Proof (Latest Wins) -> tease (locked Full Slate) -> close
-            // (gold Premium card). Same order as iOS.
-            else -> {
-                val wins = FreeFeed.latestWins(vm.picks, vm.sport)
-                val slate = FreeFeed.lockedSlate(vm.visiblePicks, wins.firstOrNull()?.id, vm.sport)
-                val net = FreeFeed.membersNet(vm.picks)
-                val yWins = vm.picks.count { it.isWin }
-                val yLoss = vm.picks.count { it.isLoss }
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
+                if (vm.isPro) {
+                    item {
+                        Text(
+                            stringResource(R.string.rd_todays_games),
+                            style = anton(22),
+                            color = P1.Foreground,
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                        )
+                    }
+                    items(
+                        vm.filteredToday.filter { it.id != vm.topPick?.id },
+                        key = { it.id },
+                    ) { p ->
+                        Box(Modifier.padding(horizontal = 20.dp)) {
+                            ProSlateCard(p) { selected = p }
+                        }
+                    }
+                } else {
+                    // ── FREE TIER: proof -> tease -> close ───────────
+                    val wins = FreeFeed.latestWins(vm.history, vm.sport)
+                    val slate = FreeFeed.lockedSlate(vm.filteredToday, vm.topPick?.id, vm.sport)
+                    val net = FreeFeed.membersNet(vm.history)
+                    val yWins = vm.history.count { it.isWin }
+                    val yLoss = vm.history.count { it.isLoss }
                     item {
                         LatestWinsRail(
                             results = wins,
@@ -178,74 +203,9 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     }
                     item { FreeSlateSection(slate) { showPaywall = true } }
                     item { PremiumUpsellCard(trialEligible = true) { showPaywall = true } }
-                    item { Spacer(Modifier.height(24.dp)) }
                 }
+                item { Spacer(Modifier.height(96.dp)) }
             }
         }
     }
-}
-
-/** PICK1 wordmark + breadcrumb, matching the iOS header. */
-@Composable
-private fun Header() {
-    Column(Modifier.padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("PICK", style = anton(34, tracking = -0.34f), color = P1.Foreground)
-            Text("1", style = anton(34, tracking = -0.34f), color = P1.Lime)
-        }
-        Text(
-            stringResource(R.string.rd_picks_stats_glory),
-            style = archivoNarrow(10, FontWeight.Bold, tracking = 2.2f),
-            color = P1.Mute,
-        )
-    }
-}
-
-/** Horizontal sport filter chips — the iOS carousel, including tennis. */
-@Composable
-private fun SportScroller(
-    sports: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(sports) { s ->
-            val active = s == selected
-            val label = if (s == "all") stringResource(R.string.rd_all_filter)
-            else "${Sport.emoji(s)} ${sportLabel(s)}"
-            Text(
-                label,
-                style = archivoNarrow(11, FontWeight.Bold, tracking = 1.4f),
-                color = if (active) P1.LimeInk else P1.Ink2,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (active) P1.Lime else P1.Panel)
-                    .border(
-                        1.dp,
-                        if (active) Color.Transparent else P1.Line,
-                        RoundedCornerShape(20.dp),
-                    )
-                    .clickable { onSelect(s) }
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
-            )
-        }
-    }
-}
-
-/** Display names matching the iOS carousel labels. */
-private fun sportLabel(sport: String): String = when (sport) {
-    "baseball"   -> "MLB"
-    "f1"         -> "F1"
-    "combat"     -> "MMA"
-    "soccer"     -> "Soccer"
-    "golf"       -> "Golf"
-    "cricket"    -> "Cricket"
-    "basketball" -> "Basketball"
-    "hockey"     -> "Hockey"
-    "tennis"     -> "Tennis"
-    else         -> sport.replaceFirstChar { it.uppercase() }
 }
