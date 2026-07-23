@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares the locales Pick1 ships so Android's per-app language feature
+     (AppCompatDelegate.setApplicationLocales) can switch between them, and
+     so the system Settings > Apps > Pick1 > Language screen lists them.
+     Mirrors the 7 languages the iOS LocalizationManager supports. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="de" />
+    <locale android:name="it" />
+    <locale android:name="pt" />
+    <locale android:name="ar" />
+</locale-config>

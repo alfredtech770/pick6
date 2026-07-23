@@ -3,10 +3,12 @@
     <!-- Pick1 is dark-only (matching iOS). NoActionBar because Compose draws
          the entire chrome, and the near-black window background prevents a
          white flash on cold start. -->
-    <style name="Theme.Pick1" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Pick1" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/p1_ink</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!-- AppCompat parent is required by AppCompatDelegate.setApplicationLocales,
+             which powers the in-app language picker. -->
     </style>
 </resources>
