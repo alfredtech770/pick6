@@ -2,7 +2,17 @@ package com.pick1.app.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.math.roundToInt
+
+/** Tolerant parser for the AI-written detail blobs. */
+internal val LenientJson = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
+}
 
 /**
  * A single AI prediction — mirrors `Betting app/Models/Pick.swift` and the
@@ -38,10 +48,28 @@ data class Pick(
     @SerialName("home_logo") val homeLogo: String? = null,
     @SerialName("away_logo") val awayLogo: String? = null,
     @SerialName("field_odds") val fieldOdds: List<DriverOdds>? = null,
-    @SerialName("tale_of_tape") val taleOfTape: TaleOfTape? = null,
     @SerialName("betting_props") val bettingProps: List<BettingProp>? = null,
-    @SerialName("soccer_comparison") val soccerComparison: SoccerComparison? = null,
+
+    // ── AI-written detail blobs ──────────────────────────────────────
+    // These come out of the Claude pipeline and their value TYPES vary from
+    // row to row (reachNum has been seen as both 71 and 66.5; soccer
+    // position is the string "1st"). Decoding them eagerly into typed
+    // classes made the entire picks query fail on a single odd row and
+    // blanked the whole board. They're held as raw JSON here — the board
+    // never breaks — and parsed leniently only where a detail screen needs
+    // them, via taleOfTape() / soccerComparison() below.
+    @SerialName("tale_of_tape") val taleOfTapeRaw: JsonElement? = null,
+    @SerialName("soccer_comparison") val soccerComparisonRaw: JsonElement? = null,
 ) {
+    /** Lenient decode; returns null rather than throwing on an odd shape. */
+    fun taleOfTape(): TaleOfTape? = taleOfTapeRaw?.let {
+        runCatching { LenientJson.decodeFromJsonElement<TaleOfTape>(it) }.getOrNull()
+    }
+
+    fun soccerComparison(): SoccerComparison? = soccerComparisonRaw?.let {
+        runCatching { LenientJson.decodeFromJsonElement<SoccerComparison>(it) }.getOrNull()
+    }
+
     val isWin: Boolean get() = result == "win"
     val isLoss: Boolean get() = result == "loss"
     val isPending: Boolean get() = result == "pending"
@@ -97,36 +125,75 @@ data class BettingProp(
     val hint: String? = null,
 )
 
+/**
+ * Combat tale-of-the-tape (`tale_of_tape` jsonb, written by pipeline/combat.js).
+ *
+ * NOTE the fighters are keyed "a"/"b" — NOT home/away — and every career stat
+ * arrives as a *string* (or null). Verified against live rows; getting this
+ * wrong makes the whole picks query fail to decode.
+ */
 @Serializable
 data class TaleOfTape(
-    val home: ToTFighter? = null,
-    val away: ToTFighter? = null,
+    val a: ToTFighter? = null,
+    val b: ToTFighter? = null,
+    val edges: Map<String, ToTEdge>? = null,
+    val weightClass: String? = null,
 )
 
 @Serializable
 data class ToTFighter(
+    val id: String? = null,
     val name: String? = null,
+    val age: Double? = null,
     val height: String? = null,
     val reach: String? = null,
-    val age: String? = null,
+    val reachNum: Double? = null,
     val stance: String? = null,
     val country: String? = null,
+    val nickname: String? = null,
     val record: String? = null,
+    val weightClass: String? = null,
+    val career: ToTCareer? = null,
 )
 
+@Serializable
+data class ToTCareer(
+    val strLPM: String? = null,
+    val strAcc: String? = null,
+    val tdAvg: String? = null,
+    val tdAcc: String? = null,
+    val subAvg: String? = null,
+)
+
+@Serializable
+data class ToTEdge(
+    val fighter: String? = null,
+    val value: String? = null,
+)
+
+/**
+ * Soccer form panel (`soccer_comparison` jsonb, from pipeline/soccer.js).
+ *
+ * Every numeric-looking field is stored as a STRING ("3", "1st", "5") — do
+ * not model these as Int or decoding blows up on `position: "1st"`.
+ */
 @Serializable
 data class SoccerComparison(
     val home: SoccerTeam? = null,
     val away: SoccerTeam? = null,
+    val competition: String? = null,
 )
 
 @Serializable
 data class SoccerTeam(
     val name: String? = null,
-    val position: Int? = null,
-    val points: Int? = null,
-    val played: Int? = null,
+    val found: Boolean? = null,
+    val group: String? = null,
+    val position: String? = null,
+    val points: String? = null,
+    val played: String? = null,
+    val record: String? = null,
     val form: String? = null,
-    @SerialName("goals_for") val goalsFor: Int? = null,
-    @SerialName("goals_against") val goalsAgainst: Int? = null,
+    val goalsFor: String? = null,
+    val goalsAgainst: String? = null,
 )
