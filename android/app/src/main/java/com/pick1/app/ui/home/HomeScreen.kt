@@ -27,6 +27,7 @@ import com.pick1.app.data.PicksRepository
 import com.pick1.app.data.model.Pick
 import com.pick1.app.ui.Sport
 import com.pick1.app.ui.components.ProSlateCard
+import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -75,6 +76,11 @@ class HomeViewModel : ViewModel() {
 
 @Composable
 fun HomeScreen(vm: HomeViewModel = viewModel()) {
+    var selected by remember { mutableStateOf<Pick?>(null) }
+    selected?.let { p ->
+        MatchDetailScreen(p) { selected = null }
+        return
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -118,7 +124,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(vm.visiblePicks, key = { it.id }) { ProSlateCard(it) }
+                items(vm.visiblePicks, key = { it.id }) { p -> ProSlateCard(p) { selected = p } }
                 item { Spacer(Modifier.height(24.dp)) }
             }
         }

@@ -37,6 +37,24 @@ object Sport {
     }
 
     /**
+     * Detail-screen accent (`sportAccent` in Pick1Screens.swift) — a
+     * *different* palette from the card tint above.
+     */
+    fun accent(sport: String): Color = when (sport) {
+        "basketball" -> Color(0xFFE75A28)   // orange
+        "soccer"     -> Color(0xFFD4FF3A)   // lime
+        "football"   -> Color(0xFF785AF0)   // purple
+        "baseball"   -> Color(0xFFFF5A36)   // red-orange
+        "hockey"     -> Color(0xFF5B8CFF)   // blue
+        "combat"     -> Color(0xFFFF3C28)   // red
+        "f1"         -> Color(0xFFE10600)   // ferrari red
+        "golf"       -> Color(0xFF3FA34D)   // fairway green
+        "tennis"     -> Color(0xFFC6FF3A)   // electric yellow-green
+        "cricket"    -> Color(0xFFFFD93D)   // saffron
+        else         -> Color(0xFFD4FF3A)
+    }
+
+    /**
      * Shortens a team name for the "AWAY VS HOME" headline, mirroring the
      * iOS `short(_:)` helper: drop a leading city when the name has one.
      */

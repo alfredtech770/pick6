@@ -2,6 +2,7 @@ package com.pick1.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ fun ProSlateCard(
     pick: Pick,
     modifier: Modifier = Modifier,
     trailingLabel: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val tint = Sport.tint(pick.sport)
     val shape = RoundedCornerShape(18.dp)
@@ -50,6 +52,7 @@ fun ProSlateCard(
         modifier
             .fillMaxWidth()
             .clip(shape)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .background(Color(0xFF0F1114))
             // Per-sport wash: leading edge → transparent by ~55% across.
             .background(
