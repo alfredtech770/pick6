@@ -63,23 +63,11 @@ fun FunnelHost(onFinished: () -> Unit) {
             FunnelStep.Signup -> SignupScreen(onNext = ::advance)
 
             is FunnelStep.Red -> RedScreen(step.index, onNext = ::advance)
-            is FunnelStep.Green -> GreenScreen(step.index, onNext = ::advance)
+            is FunnelStep.Green -> GreenScreenRich(step.index, onNext = ::advance)
 
-            FunnelStep.Social -> SimpleFunnelScreen(
-                kick = R.string.funnel_social_kicker,
-                head = R.string.funnel_social_headline,
-                lead = null,
-                cta = R.string.funnel_social_cta,
-                onNext = ::advance,
-            )
+            FunnelStep.Social -> SocialProofScreen(onNext = ::advance)
 
-            FunnelStep.Compare -> SimpleFunnelScreen(
-                kick = R.string.funnel_compare_kicker,
-                head = R.string.funnel_compare_headline,
-                lead = null,
-                cta = R.string.funnel_continue_cta,
-                onNext = ::advance,
-            )
+            FunnelStep.Compare -> CompareScreen(onNext = ::advance)
 
             FunnelStep.Goals -> GoalsScreen(selected = goal) { goal = it; advance() }
 

@@ -245,31 +245,6 @@ fun RedScreen(index: Int, onNext: () -> Unit) {
     }
 }
 
-// ── Green "the fix" screens (3) ──────────────────────────────────────
-
-private data class GreenData(val kick: Int, val head: Int, val lead: Int, val cta: Int)
-
-private val greenScreens = listOf(
-    GreenData(R.string.funnel_green1_kicker, R.string.funnel_green1_headline, R.string.funnel_green1_lead, R.string.funnel_green1_cta),
-    GreenData(R.string.funnel_green2_kicker, R.string.funnel_green2_headline, R.string.funnel_green2_lead, R.string.funnel_green2_cta),
-    GreenData(R.string.funnel_green3_kicker, R.string.funnel_green3_headline, R.string.funnel_green3_lead, R.string.funnel_green3_cta),
-)
-
-@Composable
-fun GreenScreen(index: Int, onNext: () -> Unit) {
-    val d = greenScreens[index]
-    FnlScreen(
-        glow = Tone.WIN,
-        bottom = { FnlCTA(stringResource(d.cta)) { onNext() } },
-    ) {
-        FnlKick(stringResource(d.kick), tone = Tone.WIN)
-        Spacer(Modifier.height(14.dp))
-        FnlHeadline(stringResource(d.head), accent = P1.Win, size = 40)
-        Spacer(Modifier.height(18.dp))
-        FnlLead(stringResource(d.lead))
-    }
-}
-
 // ── Goals ────────────────────────────────────────────────────────────
 
 @Composable
