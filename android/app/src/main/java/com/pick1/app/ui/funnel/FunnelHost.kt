@@ -59,14 +59,8 @@ fun FunnelHost(onFinished: () -> Unit) {
             FunnelStep.Analysis -> AnalysisScreen(onDone = ::advance)
 
             // Sign-up sits after the analysis so it reads as "save your
-            // results". Auth wiring lands with the Google Sign-In work.
-            FunnelStep.Signup -> SimpleFunnelScreen(
-                kick = R.string.funnel_signup_kicker,
-                head = R.string.funnel_signup_headline,
-                lead = null,
-                cta = R.string.funnel_signup_cta_email,
-                onNext = ::advance,
-            )
+            // results" rather than a cold registration wall.
+            FunnelStep.Signup -> SignupScreen(onNext = ::advance)
 
             is FunnelStep.Red -> RedScreen(step.index, onNext = ::advance)
             is FunnelStep.Green -> GreenScreen(step.index, onNext = ::advance)

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android-only strings. Kept OUT of strings.xml because tools/port_l10n.py
+     regenerates that file from the iOS L10n tables and would drop these.
+     Sign in with Apple is replaced by Google on Android. -->
+<resources>
+    <string name="auth_google_button">المتابعة مع Google</string>
+</resources>
