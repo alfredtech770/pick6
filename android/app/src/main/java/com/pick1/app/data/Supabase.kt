@@ -68,6 +68,22 @@ class PicksRepository {
             }
             .decodeList<Pick>()
 
+    /**
+     * Graded history — wins AND losses, newest first.
+     *
+     * This is the honest ledger the product leans on, so it must NOT filter
+     * to wins: the public history screen shows the real record, and the free
+     * rail's deliberate ~80/20 mix needs losses available to interleave.
+     */
+    suspend fun gradedHistory(limit: Int = 120): List<Pick> =
+        Supabase.client.from("picks")
+            .select {
+                filter { isIn("result", listOf("win", "loss")) }
+                order("game_date", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                limit(limit.toLong())
+            }
+            .decodeList<Pick>()
+
     /** Live scores for today's games — powers the LIVE NOW tab. */
     suspend fun liveScores(): List<com.pick1.app.data.model.LiveScore> =
         Supabase.client.from("live_scores").select().decodeList()

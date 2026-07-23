@@ -32,6 +32,7 @@ import com.pick1.app.data.model.Pick
 import com.pick1.app.ui.calibration.CalibrationCard
 import com.pick1.app.ui.settings.EditProfileSheet
 import com.pick1.app.ui.settings.LanguagePickerSheet
+import com.pick1.app.ui.settings.PrivacySecuritySheet
 import com.pick1.app.ui.settings.SettingsDivider
 import com.pick1.app.ui.settings.SettingsRow
 import com.pick1.app.ui.settings.SettingsSection
@@ -57,7 +58,7 @@ class ProfileViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             val picks: List<Pick> =
-                runCatching { picksRepo.latestWins(limit = 60) }.getOrDefault(emptyList())
+                runCatching { picksRepo.gradedHistory(limit = 80) }.getOrDefault(emptyList())
             summary = bets.summary(bets.load().values, picks)
             val b = cal.bands()
             bands = b
@@ -72,9 +73,18 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
     val scope = rememberCoroutineScope()
     var showLanguages by remember { mutableStateOf(false) }
     var showEditProfile by remember { mutableStateOf(false) }
+    var showPrivacy by remember { mutableStateOf(false) }
 
     if (showLanguages) {
         LanguagePickerSheet { showLanguages = false }
+        return
+    }
+    if (showPrivacy) {
+        PrivacySecuritySheet(
+            email = AuthManager.userEmail,
+            onClose = { showPrivacy = false },
+            onSavePassword = { true },
+        )
         return
     }
     if (showEditProfile) {
@@ -157,7 +167,7 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
             SettingsRow(
                 Icons.Default.Lock,
                 stringResource(R.string.settings_privacy_security),
-            ) { }
+            ) { showPrivacy = true }
             SettingsDivider()
             SettingsRow(
                 Icons.Default.Description,

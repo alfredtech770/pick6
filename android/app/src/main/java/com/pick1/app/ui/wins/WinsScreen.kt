@@ -54,7 +54,7 @@ class WinsViewModel : ViewModel() {
             runCatching {
                 // Favorites can be pending, won or lost — pull today's slate
                 // plus recent history so any starred pick resolves.
-                repo.todayPicks() + repo.latestWins(limit = 60)
+                repo.todayPicks() + repo.gradedHistory(limit = 80)
             }.onSuccess { all = it.distinctBy { p -> p.id } }
             loading = false
         }

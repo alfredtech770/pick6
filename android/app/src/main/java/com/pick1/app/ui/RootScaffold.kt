@@ -32,7 +32,9 @@ import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.home.HomeScreen
 import com.pick1.app.ui.live.LiveScreen
 import com.pick1.app.ui.wins.WinsScreen
+import com.pick1.app.ui.history.PredictionHistoryScreen
 import com.pick1.app.ui.profile.ProfileScreen
+import com.pick1.app.ui.splash.SplashScreen
 import com.pick1.app.ui.theme.*
 
 /**
@@ -58,6 +60,13 @@ fun RootScaffold(forceSkipOnboarding: Boolean = false, debugScreen: String? = nu
             return
         }
         else -> Unit
+    }
+
+    // Splash while the first load settles (port of Pick1SplashLoader).
+    var splashDone by remember { mutableStateOf(false) }
+    if (!splashDone && debugScreen == null) {
+        SplashScreen(onDone = { splashDone = true })
+        return
     }
 
     // DEBUG: jump straight to a screen for review.

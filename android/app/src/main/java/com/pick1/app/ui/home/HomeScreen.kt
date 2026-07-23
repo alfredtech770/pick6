@@ -24,6 +24,7 @@ import com.pick1.app.ui.components.ProSlateCard
 import com.pick1.app.ui.detail.MatchDetailScreen
 import com.pick1.app.ui.free.FreeFeed
 import com.pick1.app.ui.free.FreeMatchDetailScreen
+import com.pick1.app.ui.history.PredictionHistoryScreen
 import com.pick1.app.ui.free.FreeSlateSection
 import com.pick1.app.ui.free.LatestWinsRail
 import com.pick1.app.ui.free.MembersWonCard
@@ -94,7 +95,7 @@ class HomeViewModel : ViewModel() {
             loading = true
             runCatching {
                 val today = repo.todayPicks()
-                val hist = repo.latestWins(limit = 40)
+                val hist = repo.gradedHistory(limit = 60)
                 today to hist
             }.onSuccess { (t, h) ->
                 todayPicks = t; history = h; error = null
@@ -110,6 +111,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var showPaywall by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var showSummerFootball by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
 
     selected?.let { p ->
         // Free tier sees the tease detail (matchup shown, call locked);
@@ -123,6 +125,13 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 onUnlock = { selected = null; showPaywall = true },
             )
         }
+        return
+    }
+    if (showHistory) {
+        PredictionHistoryScreen(
+            onClose = { showHistory = false },
+            onTapPick = { showHistory = false; selected = it },
+        )
         return
     }
     if (showSummerFootball) {
@@ -218,7 +227,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     item {
                         LatestWinsRail(
                             results = wins,
-                            onSeeAll = { },
+                            onSeeAll = { showHistory = true },
                             membersCard = if (yWins >= 3 && yWins > yLoss && net > 0) {
                                 { MembersWonCard(yWins, yLoss, net) { showPaywall = true } }
                             } else null,

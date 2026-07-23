@@ -4,4 +4,8 @@
      Sign in with Apple is replaced by Google on Android. -->
 <resources>
     <string name="auth_google_button">Continuer avec Google</string>
+    <string name="rd_signin_method_magic">Lien magique (code à usage unique)</string>
+    <string name="rd_new_password">NOUVEAU MOT DE PASSE</string>
+    <string name="rd_confirm_password">CONFIRMER LE MOT DE PASSE</string>
+    <string name="rd_password_saved">Mot de passe enregistré</string>
 </resources>
