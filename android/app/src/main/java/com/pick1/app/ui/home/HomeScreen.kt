@@ -28,6 +28,8 @@ import com.pick1.app.ui.free.LatestWinsRail
 import com.pick1.app.ui.free.MembersWonCard
 import com.pick1.app.ui.free.PremiumUpsellCard
 import com.pick1.app.ui.paywall.PaywallScreen
+import com.pick1.app.ui.summerfootball.SummerFootballBanner
+import com.pick1.app.ui.summerfootball.SummerFootballScreen
 import com.pick1.app.ui.theme.*
 import com.posthog.PostHog
 import kotlinx.coroutines.launch
@@ -106,9 +108,19 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var selected by remember { mutableStateOf<Pick?>(null) }
     var showPaywall by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var showSummerFootball by remember { mutableStateOf(false) }
 
     selected?.let { p ->
         MatchDetailScreen(p) { selected = null }
+        return
+    }
+    if (showSummerFootball) {
+        SummerFootballScreen(
+            isPro = vm.isPro,
+            onClose = { showSummerFootball = false },
+            onUnlock = { showSummerFootball = false; showPaywall = true },
+            onTapPick = { selected = it },
+        )
         return
     }
     if (showPaywall) {
@@ -200,6 +212,9 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                                 { MembersWonCard(yWins, yLoss, net) { showPaywall = true } }
                             } else null,
                         )
+                    }
+                    if (vm.todayPicks.any { it.league == "WC" }) {
+                        item { SummerFootballBanner { showSummerFootball = true } }
                     }
                     item { FreeSlateSection(slate) { showPaywall = true } }
                     item { PremiumUpsellCard(trialEligible = true) { showPaywall = true } }

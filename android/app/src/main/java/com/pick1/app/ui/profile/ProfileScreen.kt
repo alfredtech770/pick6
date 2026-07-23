@@ -30,6 +30,7 @@ import com.pick1.app.R
 import com.pick1.app.data.*
 import com.pick1.app.data.model.Pick
 import com.pick1.app.ui.calibration.CalibrationCard
+import com.pick1.app.ui.settings.EditProfileSheet
 import com.pick1.app.ui.settings.LanguagePickerSheet
 import com.pick1.app.ui.settings.SettingsDivider
 import com.pick1.app.ui.settings.SettingsRow
@@ -70,9 +71,19 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var showLanguages by remember { mutableStateOf(false) }
+    var showEditProfile by remember { mutableStateOf(false) }
 
     if (showLanguages) {
         LanguagePickerSheet { showLanguages = false }
+        return
+    }
+    if (showEditProfile) {
+        EditProfileSheet(
+            email = AuthManager.userEmail,
+            onClose = { showEditProfile = false },
+            onSave = { _, _, _, _ -> },
+            onDeleteAccount = { showEditProfile = false },
+        )
         return
     }
 
@@ -130,7 +141,7 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
             SettingsRow(
                 Icons.Default.Person,
                 stringResource(R.string.profile_edit_title),
-            ) { }
+            ) { showEditProfile = true }
         }
 
         // ── Support + legal ──────────────────────────────────────────

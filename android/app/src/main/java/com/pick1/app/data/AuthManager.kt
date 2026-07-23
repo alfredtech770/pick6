@@ -33,6 +33,7 @@ object AuthManager {
         private set
 
     val userId: String? get() = Supabase.client.auth.currentUserOrNull()?.id
+    val userEmail: String? get() = Supabase.client.auth.currentUserOrNull()?.email
 
     /** Reflects an existing session on cold start. */
     suspend fun refreshSession() {

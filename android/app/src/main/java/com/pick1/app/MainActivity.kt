@@ -16,8 +16,16 @@ class MainActivity : AppCompatActivity() {
         // launch arg. Never reachable in a release build.
         val skipOnboarding = BuildConfig.DEBUG &&
             intent?.getBooleanExtra("skipOnboarding", false) == true
+        // DEBUG ONLY: open a specific screen for review, mirroring the iOS
+        // -PreviewStep launch arg. e.g. `--es screen summerFootball`.
+        val debugScreen = if (BuildConfig.DEBUG) intent?.getStringExtra("screen") else null
         setContent {
-            Pick1Theme { RootScaffold(forceSkipOnboarding = skipOnboarding) }
+            Pick1Theme {
+                RootScaffold(
+                    forceSkipOnboarding = skipOnboarding,
+                    debugScreen = debugScreen,
+                )
+            }
         }
     }
 }

@@ -43,7 +43,7 @@ import com.pick1.app.ui.theme.*
 private enum class RootTab { HOME, PICKS, LIVE, PROFILE }
 
 @Composable
-fun RootScaffold(forceSkipOnboarding: Boolean = false) {
+fun RootScaffold(forceSkipOnboarding: Boolean = false, debugScreen: String? = null) {
     var tab by remember { mutableStateOf(RootTab.HOME) }
     // First run shows the onboarding funnel, once — persisted in DataStore
     // exactly like the iOS `hasFinishedOnboarding` @AppStorage key.
@@ -58,6 +58,14 @@ fun RootScaffold(forceSkipOnboarding: Boolean = false) {
             return
         }
         else -> Unit
+    }
+
+    // DEBUG: jump straight to a screen for review.
+    if (debugScreen == "summerFootball") {
+        com.pick1.app.ui.summerfootball.SummerFootballScreen(
+            isPro = false, onClose = { }, onUnlock = { }, onTapPick = { },
+        )
+        return
     }
 
     // Detail is shown over whichever tab opened it.
