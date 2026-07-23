@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.OtpType
+import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.Google
@@ -40,9 +42,24 @@ object AuthManager {
         }
     }
 
+    // ── Store-reviewer account ───────────────────────────────────────
+    // Ported from iOS: app reviewers can't receive a real OTP email, so a
+    // dedicated account accepts a static code and signs in via a password
+    // grant instead. Google Play review needs test credentials for exactly
+    // the same reason. Same account as the App Store notes.
+    private const val REVIEWER_EMAIL = "review@pick1.live"
+    private const val REVIEWER_STATIC_CODE = "070770"
+    private const val REVIEWER_PASSWORD = "p1ReviewDemo!2026#OTP"
+
+    private fun isReviewerEmail(email: String) =
+        email.trim().lowercase() == REVIEWER_EMAIL
+
     /** Step 1 — email a 6-digit code. */
     suspend fun sendOtp(email: String): Boolean {
         busy = true; error = null
+        // Reviewer account: no email is actually sent — the static code from
+        // the review notes is entered on the next screen.
+        if (isReviewerEmail(email)) { busy = false; return true }
         val ok = runCatching {
             Supabase.client.auth.signInWith(OTP) { this.email = email }
         }.onFailure { error = friendly(it) }.isSuccess
@@ -52,14 +69,30 @@ object AuthManager {
 
     /** Step 2 — verify the code; success flips [isAuthenticated]. */
     suspend fun verifyOtp(email: String, token: String): Boolean {
+        // Debounce double-fire: SMS/mail autofill can populate all six OTP
+        // boxes at once and trigger verify twice in the same tick. The second
+        // call burns the just-used token and surfaces a spurious "invalid
+        // code" over a login that actually succeeded.
+        if (busy) return false
         busy = true; error = null
-        val ok = runCatching {
-            Supabase.client.auth.verifyEmailOtp(
-                type = io.github.jan.supabase.auth.OtpType.Email.EMAIL,
-                email = email,
-                token = token,
-            )
-        }.onFailure { error = friendly(it) }.isSuccess
+
+        val ok = if (isReviewerEmail(email) && token == REVIEWER_STATIC_CODE) {
+            runCatching {
+                Supabase.client.auth.signInWith(Email) {
+                    this.email = REVIEWER_EMAIL
+                    this.password = REVIEWER_PASSWORD
+                }
+            }.onFailure { error = friendly(it) }.isSuccess
+        } else {
+            runCatching {
+                Supabase.client.auth.verifyEmailOtp(
+                    type = OtpType.Email.EMAIL,
+                    email = email,
+                    token = token,
+                )
+            }.onFailure { error = "Invalid verification code. Please try again." }.isSuccess
+        }
+
         if (ok) isAuthenticated = Supabase.client.auth.currentSessionOrNull() != null
         busy = false
         return ok
