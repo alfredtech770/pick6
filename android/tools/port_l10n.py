@@ -75,9 +75,9 @@ def main():
                  "<!-- Generated from Betting app/Localization/Lang/%s.swift -->" % lang,
                  "<!-- Do not hand-edit: re-run scratchpad/port_l10n.py after changing the iOS tables. -->",
                  "<resources>"]
-        if lang == "en":
-            lines.insert(3, '    <!-- app_name is the launcher label -->')
-            lines.append('    <string name="app_name">Pick1</string>')
+        # NOTE: app_name already exists in the iOS tables, so it is emitted by
+        # the loop below — don't add it again or resource merging fails with
+        # "Found item String/app_name more than one time".
 
         n = 0
         for key in en_keys:

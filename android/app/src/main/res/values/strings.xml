@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from Betting app/Localization/Lang/en.swift -->
 <!-- Do not hand-edit: re-run scratchpad/port_l10n.py after changing the iOS tables. -->
-    <!-- app_name is the launcher label -->
 <resources>
-    <string name="app_name">Pick1</string>
     <string name="app_name">Pick1</string>
     <string name="app_tagline">AI sports predictions</string>
     <string name="app_displayname_default">PICK1 FAN</string>
