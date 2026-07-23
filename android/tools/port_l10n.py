@@ -49,8 +49,12 @@ def to_android(value):
     v = value
     # {n} is the only interpolation the iOS tables use -> positional int arg.
     has_arg = "{n}" in v
-    v = v.replace("%", "%%")          # literal % must be doubled once we format
-    v = v.replace("{n}", "%1$d")
+    if has_arg:
+        # This string WILL be formatted, so a literal % must be escaped as %%.
+        v = v.replace("%", "%%")
+        v = v.replace("{n}", "%1$d")
+    # Strings with no argument are never run through String.format, so a
+    # literal % must stay single — doubling it renders "55%%" on screen.
     # XML entities first, then Android-specific escapes.
     v = html.escape(v, quote=False)   # & < >
     v = v.replace('"', '\\"').replace("'", "\\'")

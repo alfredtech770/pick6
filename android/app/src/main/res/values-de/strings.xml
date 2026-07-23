@@ -77,7 +77,7 @@
     <string name="paywall_subtitle">Jeder Sport. Jedes Spiel. Jeden Tag.</string>
     <string name="paywall_weekly">Wöchentlich</string>
     <string name="paywall_monthly">Monatlich</string>
-    <string name="paywall_save_badge">33%% SPAREN</string>
+    <string name="paywall_save_badge">33% SPAREN</string>
     <string name="paywall_best_value">BESTES ANGEBOT</string>
     <string name="paywall_compare_title">GRATIS vs PRO</string>
     <string name="paywall_compare_meta">DEINE VORTEILE</string>
@@ -89,14 +89,14 @@
     <string name="paywall_faq_a_trial">Voller Pro-Zugang — unbegrenzte Tipps, alle Sportarten, Live-Tracking und volle Statistiken. 3 Tage kostenlos; kündige vorher, um jede Belastung zu vermeiden.</string>
     <string name="paywall_faq_q_switch">Kann ich zwischen wöchentlich und monatlich wechseln?</string>
     <string name="paywall_faq_a_switch">Ja — wechsle jederzeit in den Einstellungen. Der neue Preis gilt ab dem nächsten Abrechnungszyklus.</string>
-    <string name="paywall_fineprint_weekly">3 Tage gratis, dann %%@/Woche. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID.</string>
-    <string name="paywall_fineprint_monthly">3 Tage gratis, dann %%@/Monat. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID.</string>
-    <string name="paywall_then_weekly">3 Tage gratis, dann %%@/Woche. Verlängert sich automatisch, sofern nicht gekündigt.</string>
-    <string name="paywall_then_monthly">3 Tage gratis, dann %%@/Monat. Verlängert sich automatisch, sofern nicht gekündigt.</string>
-    <string name="paywall_then_weekly_notrial">%%@/Woche · Verlängert sich automatisch · Jederzeit kündbar.</string>
-    <string name="paywall_then_monthly_notrial">%%@/Monat · Verlängert sich automatisch · Jederzeit kündbar.</string>
-    <string name="paywall_fineprint_weekly_notrial">%%@/Woche, sofort berechnet. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID. Deine Gratis-Testphase wurde bereits genutzt.</string>
-    <string name="paywall_fineprint_monthly_notrial">%%@/Monat, sofort berechnet. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID. Deine Gratis-Testphase wurde bereits genutzt.</string>
+    <string name="paywall_fineprint_weekly">3 Tage gratis, dann %@/Woche. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID.</string>
+    <string name="paywall_fineprint_monthly">3 Tage gratis, dann %@/Monat. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID.</string>
+    <string name="paywall_then_weekly">3 Tage gratis, dann %@/Woche. Verlängert sich automatisch, sofern nicht gekündigt.</string>
+    <string name="paywall_then_monthly">3 Tage gratis, dann %@/Monat. Verlängert sich automatisch, sofern nicht gekündigt.</string>
+    <string name="paywall_then_weekly_notrial">%@/Woche · Verlängert sich automatisch · Jederzeit kündbar.</string>
+    <string name="paywall_then_monthly_notrial">%@/Monat · Verlängert sich automatisch · Jederzeit kündbar.</string>
+    <string name="paywall_fineprint_weekly_notrial">%@/Woche, sofort berechnet. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID. Deine Gratis-Testphase wurde bereits genutzt.</string>
+    <string name="paywall_fineprint_monthly_notrial">%@/Monat, sofort berechnet. Verlängert sich automatisch, sofern nicht mind. 24 Std. vor Ablauf gekündigt. Zahlung über deine Apple-ID. Deine Gratis-Testphase wurde bereits genutzt.</string>
     <string name="paywall_cta_trial">3 Tage gratis testen</string>
     <string name="paywall_cta_subscribe">Jetzt abonnieren</string>
     <string name="paywall_restore">Käufe wiederherstellen</string>
@@ -120,7 +120,7 @@
     <string name="code_applied">✓ Code angewendet!</string>
     <string name="referral_err_invalid">Dieser Code ist ungültig.</string>
     <string name="referral_err_used">Du hast bereits einen Code eingelöst.</string>
-    <string name="referral_share_msg">Hol dir Pick1 — KI-Sporttipps. Nutze meinen Code %%@ für einen Gratismonat: %%@</string>
+    <string name="referral_share_msg">Hol dir Pick1 — KI-Sporttipps. Nutze meinen Code %@ für einen Gratismonat: %@</string>
     <string name="update_title">Update verfügbar</string>
     <string name="update_body">Eine neue Version von Pick1 ist da — aktualisiere für die neuesten Tipps und Fixes.</string>
     <string name="update_cta">Aktualisieren</string>
@@ -161,7 +161,7 @@
     <string name="funnel_feat1_title">Ein KI-Tipp pro Tag</string>
     <string name="funnel_feat1_body">Der eine Tipp mit dem größten Vorteil in NBA, NFL, Premier League, MLB, UFC, NHL, F1, Tennis &amp; Cricket.</string>
     <string name="funnel_feat2_title">Kalibrierte Sicherheit</string>
-    <string name="funnel_feat2_body">Wenn 73 %% dransteht, trifft es zu ≈73 %%. Eine gemessene Prognose — nie ein „garantierter Treffer\".</string>
+    <string name="funnel_feat2_body">Wenn 73 % dransteht, trifft es zu ≈73 %. Eine gemessene Prognose — nie ein „garantierter Treffer\".</string>
     <string name="funnel_feat3_title">Öffentliches Ergebnis-Register</string>
     <string name="funnel_feat3_body">Jeder Tipp vor Anpfiff protokolliert. Siege UND Niederlagen, für immer festgehalten.</string>
     <string name="funnel_feat4_title">Beste Quote, 6 Anbieter</string>
@@ -214,12 +214,12 @@
     <string name="funnel_analysis_row4">Dein Pick1-Plan wird erstellt…</string>
     <string name="funnel_red_kicker">Die harte Wahrheit · %1$d von 4</string>
     <string name="funnel_red1_headline">DU WETTEST AUS\n*EMOTION.*</string>
-    <string name="funnel_red1_lead">Bauchtipps verlieren langfristig ~55 %% der Zeit. Deine Lieblingsmannschaft ist keine Strategie.</string>
+    <string name="funnel_red1_lead">Bauchtipps verlieren langfristig ~55 % der Zeit. Deine Lieblingsmannschaft ist keine Strategie.</string>
     <string name="funnel_red1_ct">Kein System = kein Vorteil</string>
     <string name="funnel_red1_cb">Ohne Modell rätst du nur — gegen Leute, die das nicht tun.</string>
     <string name="funnel_red1_cta">WEITER →</string>
     <string name="funnel_red2_headline">KOMBIWETTEN\n*RUINIEREN DICH.*</string>
-    <string name="funnel_red2_lead">Die durchschnittliche Kombiwette bringt dem Wettenden -32 %%. Das Haus liebt sie aus gutem Grund.</string>
+    <string name="funnel_red2_lead">Die durchschnittliche Kombiwette bringt dem Wettenden -32 %. Das Haus liebt sie aus gutem Grund.</string>
     <string name="funnel_red2_ct">Dem großen Coup hinterher</string>
     <string name="funnel_red2_cb">Jede zusätzliche Auswahl vervielfacht den Vorteil des Hauses gegen dich.</string>
     <string name="funnel_red2_cta">WEITER →</string>
@@ -230,8 +230,8 @@
     <string name="funnel_red3_cb">Kein Protokoll heißt kein Lernen — du wiederholst dieselben Verlustwetten.</string>
     <string name="funnel_red3_cta">WEITER →</string>
     <string name="funnel_red4_headline">SCHLECHTE QUOTEN\n*ZEHREN AN DIR.*</string>
-    <string name="funnel_red4_unit">%%/Wette</string>
-    <string name="funnel_red4_lead">Die erstbeste Quote zu nehmen kostet dich bei jeder Wette 3–5 %%. Das summiert sich schnell.</string>
+    <string name="funnel_red4_unit">%/Wette</string>
+    <string name="funnel_red4_lead">Die erstbeste Quote zu nehmen kostet dich bei jeder Wette 3–5 %. Das summiert sich schnell.</string>
     <string name="funnel_red4_ct">Zu viel Marge gezahlt</string>
     <string name="funnel_red4_cb">Du vergleichst nie die beste Quote über Anbieter — also zahlst du immer zu viel.</string>
     <string name="funnel_red4_cta">ZEIG MIR DIE LÖSUNG →</string>
@@ -241,7 +241,7 @@
     <string name="funnel_green1_cta">WEITER →</string>
     <string name="funnel_green2_kicker">Die Pick1-Lösung · 2 von 3</string>
     <string name="funnel_green2_headline">SIEH DIE\n*BEGRÜNDUNG.*</string>
-    <string name="funnel_green2_lead">Kalibrierte Sicherheit + das „Warum\" hinter jedem Tipp. Wenn 73 %% dransteht, trifft es zu ≈73 %%.</string>
+    <string name="funnel_green2_lead">Kalibrierte Sicherheit + das „Warum\" hinter jedem Tipp. Wenn 73 % dransteht, trifft es zu ≈73 %.</string>
     <string name="funnel_green2_cta">WEITER →</string>
     <string name="funnel_green3_kicker">Die Pick1-Lösung · 3 von 3</string>
     <string name="funnel_green3_headline">VERFOLGE\n*ALLES.*</string>
@@ -258,8 +258,8 @@
     <string name="funnel_social1_title">Tipps öffentlich bewertet</string>
     <string name="funnel_social1_sub">Jeder Tipp vor Anpfiff protokolliert — Siege UND Niederlagen, festgehalten.</string>
     <string name="funnel_social2_title">Trefferquote bei Fußball mit hoher Sicherheit</string>
-    <string name="funnel_social2_sub">Unsere Fußball-Tipps mit 60 %%+ Sicherheit trafen zu 74 %%.</string>
-    <string name="funnel_social3_title">Über alle Tipps mit 60 %%+ Sicherheit</string>
+    <string name="funnel_social2_sub">Unsere Fußball-Tipps mit 60 %+ Sicherheit trafen zu 74 %.</string>
+    <string name="funnel_social3_title">Über alle Tipps mit 60 %+ Sicherheit</string>
     <string name="funnel_social3_sub">145 überzeugte Tipps bewertet — gemessen, nicht versprochen.</string>
     <string name="funnel_social_disclaimer">Vergangene Ergebnisse sind keine Garantie für künftige.</string>
     <string name="funnel_social_cta">ICH BIN DABEI →</string>
@@ -268,7 +268,7 @@
     <string name="funnel_compare_col_feature">MERKMAL</string>
     <string name="funnel_compare_col_others">ANDERE</string>
     <string name="funnel_compare_col_pick1">PICK1</string>
-    <string name="funnel_compare_row1">Kalibrierte %%</string>
+    <string name="funnel_compare_row1">Kalibrierte %</string>
     <string name="funnel_compare_row2">Öffentliches Sieg/Niederlage-Protokoll</string>
     <string name="funnel_compare_row3">Vor Anpfiff protokolliert</string>
     <string name="funnel_compare_row4">Bestquoten-Finder</string>

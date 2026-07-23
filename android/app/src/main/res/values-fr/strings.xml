@@ -77,7 +77,7 @@
     <string name="paywall_subtitle">Tous les sports. Tous les matchs. Tous les jours.</string>
     <string name="paywall_weekly">Hebdo</string>
     <string name="paywall_monthly">Mensuel</string>
-    <string name="paywall_save_badge">-33 %%</string>
+    <string name="paywall_save_badge">-33 %</string>
     <string name="paywall_best_value">MEILLEURE OFFRE</string>
     <string name="paywall_compare_title">GRATUIT vs PRO</string>
     <string name="paywall_compare_meta">CE QUE VOUS OBTENEZ</string>
@@ -89,14 +89,14 @@
     <string name="paywall_faq_a_trial">Accès Pro complet — paris illimités, tous les sports, suivi en direct et statistiques complètes. Gratuit pendant 3 jours ; annule avant la fin pour éviter tout débit.</string>
     <string name="paywall_faq_q_switch">Puis-je passer de l\'hebdo au mensuel ?</string>
     <string name="paywall_faq_a_switch">Oui — change d\'offre quand tu veux dans les Réglages. Le nouveau tarif s\'applique au prochain cycle.</string>
-    <string name="paywall_fineprint_weekly">Essai gratuit de 3 jours, puis %%@/semaine. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiements via votre identifiant Apple.</string>
-    <string name="paywall_fineprint_monthly">Essai gratuit de 3 jours, puis %%@/mois. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiements via votre identifiant Apple.</string>
-    <string name="paywall_then_weekly">3 jours gratuits, puis %%@/semaine. Renouvellement automatique sauf annulation.</string>
-    <string name="paywall_then_monthly">3 jours gratuits, puis %%@/mois. Renouvellement automatique sauf annulation.</string>
-    <string name="paywall_then_weekly_notrial">%%@/semaine · Renouvellement automatique · Annulable à tout moment.</string>
-    <string name="paywall_then_monthly_notrial">%%@/mois · Renouvellement automatique · Annulable à tout moment.</string>
-    <string name="paywall_fineprint_weekly_notrial">%%@/semaine, facturé immédiatement. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiement débité sur votre identifiant Apple. Votre essai gratuit a déjà été utilisé.</string>
-    <string name="paywall_fineprint_monthly_notrial">%%@/mois, facturé immédiatement. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiement débité sur votre identifiant Apple. Votre essai gratuit a déjà été utilisé.</string>
+    <string name="paywall_fineprint_weekly">Essai gratuit de 3 jours, puis %@/semaine. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiements via votre identifiant Apple.</string>
+    <string name="paywall_fineprint_monthly">Essai gratuit de 3 jours, puis %@/mois. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiements via votre identifiant Apple.</string>
+    <string name="paywall_then_weekly">3 jours gratuits, puis %@/semaine. Renouvellement automatique sauf annulation.</string>
+    <string name="paywall_then_monthly">3 jours gratuits, puis %@/mois. Renouvellement automatique sauf annulation.</string>
+    <string name="paywall_then_weekly_notrial">%@/semaine · Renouvellement automatique · Annulable à tout moment.</string>
+    <string name="paywall_then_monthly_notrial">%@/mois · Renouvellement automatique · Annulable à tout moment.</string>
+    <string name="paywall_fineprint_weekly_notrial">%@/semaine, facturé immédiatement. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiement débité sur votre identifiant Apple. Votre essai gratuit a déjà été utilisé.</string>
+    <string name="paywall_fineprint_monthly_notrial">%@/mois, facturé immédiatement. Renouvellement automatique sauf annulation au moins 24 h avant la fin de la période. Paiement débité sur votre identifiant Apple. Votre essai gratuit a déjà été utilisé.</string>
     <string name="paywall_cta_trial">Commencer l’essai gratuit de 3 jours</string>
     <string name="paywall_cta_subscribe">S\'abonner maintenant</string>
     <string name="paywall_restore">Restaurer les achats</string>
@@ -120,7 +120,7 @@
     <string name="code_applied">✓ Code appliqué !</string>
     <string name="referral_err_invalid">Ce code n\'est pas valide.</string>
     <string name="referral_err_used">Tu as déjà utilisé un code.</string>
-    <string name="referral_share_msg">Découvre Pick1 — pronostics sportifs IA. Utilise mon code %%@ pour un mois gratuit : %%@</string>
+    <string name="referral_share_msg">Découvre Pick1 — pronostics sportifs IA. Utilise mon code %@ pour un mois gratuit : %@</string>
     <string name="update_title">Mise à jour disponible</string>
     <string name="update_body">Une nouvelle version de Pick1 est prête — mettez à jour pour les derniers picks et correctifs.</string>
     <string name="update_cta">Mettre à jour</string>
@@ -161,7 +161,7 @@
     <string name="funnel_feat1_title">Un pick IA par jour</string>
     <string name="funnel_feat1_body">Le seul choix au meilleur avantage sur NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis et cricket.</string>
     <string name="funnel_feat2_title">Confiance calibrée</string>
-    <string name="funnel_feat2_body">Quand elle affiche 73 %%, ça passe ≈73 %% du temps. Une prévision mesurée — jamais un « coup sûr garanti ».</string>
+    <string name="funnel_feat2_body">Quand elle affiche 73 %, ça passe ≈73 % du temps. Une prévision mesurée — jamais un « coup sûr garanti ».</string>
     <string name="funnel_feat3_title">Registre public des résultats</string>
     <string name="funnel_feat3_body">Chaque choix noté avant le coup d\'envoi. Victoires ET défaites, gravées à jamais.</string>
     <string name="funnel_feat4_title">Meilleure cote, 6 books</string>
@@ -214,12 +214,12 @@
     <string name="funnel_analysis_row4">Élaboration de votre plan Pick1…</string>
     <string name="funnel_red_kicker">La dure vérité · %1$d sur 4</string>
     <string name="funnel_red1_headline">VOUS PARIEZ À\n*L\'ÉMOTION.*</string>
-    <string name="funnel_red1_lead">Les choix à l\'instinct perdent ~55 %% du temps sur la durée. Votre équipe favorite n\'est pas une stratégie.</string>
+    <string name="funnel_red1_lead">Les choix à l\'instinct perdent ~55 % du temps sur la durée. Votre équipe favorite n\'est pas une stratégie.</string>
     <string name="funnel_red1_ct">Pas de système = pas d\'avantage</string>
     <string name="funnel_red1_cb">Sans modèle, vous ne faites que deviner face à des gens qui, eux, ne devinent pas.</string>
     <string name="funnel_red1_cta">SUIVANT →</string>
     <string name="funnel_red2_headline">LES COMBINÉS\n*VOUS TUENT.*</string>
-    <string name="funnel_red2_lead">Le combiné moyen rapporte -32 %% au parieur. Les bookmakers les adorent, et pour cause.</string>
+    <string name="funnel_red2_lead">Le combiné moyen rapporte -32 % au parieur. Les bookmakers les adorent, et pour cause.</string>
     <string name="funnel_red2_ct">Courir après le gros coup</string>
     <string name="funnel_red2_cb">Chaque sélection supplémentaire multiplie l\'avantage du book contre vous.</string>
     <string name="funnel_red2_cta">SUIVANT →</string>
@@ -230,8 +230,8 @@
     <string name="funnel_red3_cb">Sans historique, pas d\'apprentissage — vous répétez les mêmes paris perdants.</string>
     <string name="funnel_red3_cta">SUIVANT →</string>
     <string name="funnel_red4_headline">LES MAUVAISES\nCOTES *VOUS VIDENT.*</string>
-    <string name="funnel_red4_unit">%%/pari</string>
-    <string name="funnel_red4_lead">Prendre la première cote venue vous coûte 3 à 5 %% à chaque pari. Ça s\'accumule vite.</string>
+    <string name="funnel_red4_unit">%/pari</string>
+    <string name="funnel_red4_lead">Prendre la première cote venue vous coûte 3 à 5 % à chaque pari. Ça s\'accumule vite.</string>
     <string name="funnel_red4_ct">Trop payer la marge</string>
     <string name="funnel_red4_cb">Vous ne comparez jamais les prix entre books — vous payez donc toujours trop.</string>
     <string name="funnel_red4_cta">MONTREZ-MOI LA SOLUTION →</string>
@@ -241,7 +241,7 @@
     <string name="funnel_green1_cta">SUIVANT →</string>
     <string name="funnel_green2_kicker">La solution Pick1 · 2 sur 3</string>
     <string name="funnel_green2_headline">VOYEZ LE\n*RAISONNEMENT.*</string>
-    <string name="funnel_green2_lead">Confiance calibrée + le « pourquoi » derrière chaque pick. Quand elle affiche 73 %%, ça passe ≈73 %%.</string>
+    <string name="funnel_green2_lead">Confiance calibrée + le « pourquoi » derrière chaque pick. Quand elle affiche 73 %, ça passe ≈73 %.</string>
     <string name="funnel_green2_cta">SUIVANT →</string>
     <string name="funnel_green3_kicker">La solution Pick1 · 3 sur 3</string>
     <string name="funnel_green3_headline">SUIVEZ\n*TOUT.*</string>
@@ -258,8 +258,8 @@
     <string name="funnel_social1_title">Picks notés en public</string>
     <string name="funnel_social1_sub">Chaque choix noté avant le coup d\'envoi — victoires ET défaites, sur le registre.</string>
     <string name="funnel_social2_title">Taux de réussite foot haute confiance</string>
-    <string name="funnel_social2_sub">Nos choix foot à 60 %%+ de confiance passent 74 %% du temps.</string>
-    <string name="funnel_social3_title">Sur tous les choix à 60 %%+ de confiance</string>
+    <string name="funnel_social2_sub">Nos choix foot à 60 %+ de confiance passent 74 % du temps.</string>
+    <string name="funnel_social3_title">Sur tous les choix à 60 %+ de confiance</string>
     <string name="funnel_social3_sub">145 choix à forte conviction notés — mesurés, pas promis.</string>
     <string name="funnel_social_disclaimer">Les performances passées ne garantissent pas les résultats futurs.</string>
     <string name="funnel_social_cta">J\'EN SUIS →</string>
@@ -268,7 +268,7 @@
     <string name="funnel_compare_col_feature">CRITÈRE</string>
     <string name="funnel_compare_col_others">AUTRES</string>
     <string name="funnel_compare_col_pick1">PICK1</string>
-    <string name="funnel_compare_row1">%% calibré</string>
+    <string name="funnel_compare_row1">% calibré</string>
     <string name="funnel_compare_row2">Historique public gains/pertes</string>
     <string name="funnel_compare_row3">Noté avant le coup d\'envoi</string>
     <string name="funnel_compare_row4">Comparateur de meilleures cotes</string>

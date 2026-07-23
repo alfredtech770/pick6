@@ -77,7 +77,7 @@
     <string name="paywall_subtitle">Ogni sport. Ogni partita. Ogni giorno.</string>
     <string name="paywall_weekly">Settimanale</string>
     <string name="paywall_monthly">Mensile</string>
-    <string name="paywall_save_badge">RISPARMIA 33%%</string>
+    <string name="paywall_save_badge">RISPARMIA 33%</string>
     <string name="paywall_best_value">MIGLIOR PREZZO</string>
     <string name="paywall_compare_title">GRATIS vs PRO</string>
     <string name="paywall_compare_meta">COSA OTTIENI</string>
@@ -89,14 +89,14 @@
     <string name="paywall_faq_a_trial">Accesso Pro completo — pronostici illimitati, tutti gli sport, tracking live e statistiche complete. Nessun addebito per 3 giorni; disdici prima della fine per evitare qualsiasi addebito.</string>
     <string name="paywall_faq_q_switch">Posso passare da settimanale a mensile?</string>
     <string name="paywall_faq_a_switch">Sì — cambia piano quando vuoi da Impostazioni. La nuova tariffa parte dal ciclo successivo.</string>
-    <string name="paywall_fineprint_weekly">Prova gratuita di 3 giorni, poi %%@/settimana. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamenti tramite il tuo ID Apple.</string>
-    <string name="paywall_fineprint_monthly">Prova gratuita di 3 giorni, poi %%@/mese. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamenti tramite il tuo ID Apple.</string>
-    <string name="paywall_then_weekly">3 giorni gratis, poi %%@/settimana. Si rinnova automaticamente salvo disdetta.</string>
-    <string name="paywall_then_monthly">3 giorni gratis, poi %%@/mese. Si rinnova automaticamente salvo disdetta.</string>
-    <string name="paywall_then_weekly_notrial">%%@/settimana · Si rinnova automaticamente · Disdici quando vuoi.</string>
-    <string name="paywall_then_monthly_notrial">%%@/mese · Si rinnova automaticamente · Disdici quando vuoi.</string>
-    <string name="paywall_fineprint_weekly_notrial">%%@/settimana, addebito immediato. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamento addebitato sul tuo ID Apple. La tua prova gratuita è già stata utilizzata.</string>
-    <string name="paywall_fineprint_monthly_notrial">%%@/mese, addebito immediato. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamento addebitato sul tuo ID Apple. La tua prova gratuita è già stata utilizzata.</string>
+    <string name="paywall_fineprint_weekly">Prova gratuita di 3 giorni, poi %@/settimana. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamenti tramite il tuo ID Apple.</string>
+    <string name="paywall_fineprint_monthly">Prova gratuita di 3 giorni, poi %@/mese. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamenti tramite il tuo ID Apple.</string>
+    <string name="paywall_then_weekly">3 giorni gratis, poi %@/settimana. Si rinnova automaticamente salvo disdetta.</string>
+    <string name="paywall_then_monthly">3 giorni gratis, poi %@/mese. Si rinnova automaticamente salvo disdetta.</string>
+    <string name="paywall_then_weekly_notrial">%@/settimana · Si rinnova automaticamente · Disdici quando vuoi.</string>
+    <string name="paywall_then_monthly_notrial">%@/mese · Si rinnova automaticamente · Disdici quando vuoi.</string>
+    <string name="paywall_fineprint_weekly_notrial">%@/settimana, addebito immediato. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamento addebitato sul tuo ID Apple. La tua prova gratuita è già stata utilizzata.</string>
+    <string name="paywall_fineprint_monthly_notrial">%@/mese, addebito immediato. Si rinnova automaticamente salvo disdetta almeno 24 h prima della fine del periodo. Pagamento addebitato sul tuo ID Apple. La tua prova gratuita è già stata utilizzata.</string>
     <string name="paywall_cta_trial">Inizia la prova gratuita di 3 giorni</string>
     <string name="paywall_cta_subscribe">Abbonati ora</string>
     <string name="paywall_restore">Ripristina acquisti</string>
@@ -120,7 +120,7 @@
     <string name="code_applied">✓ Codice applicato!</string>
     <string name="referral_err_invalid">Questo codice non è valido.</string>
     <string name="referral_err_used">Hai già riscattato un codice.</string>
-    <string name="referral_share_msg">Scopri Pick1 — pronostici sportivi IA. Usa il mio codice %%@ per un mese gratis: %%@</string>
+    <string name="referral_share_msg">Scopri Pick1 — pronostici sportivi IA. Usa il mio codice %@ per un mese gratis: %@</string>
     <string name="update_title">Aggiornamento disponibile</string>
     <string name="update_body">Una nuova versione di Pick1 è pronta — aggiorna per gli ultimi pronostici e correzioni.</string>
     <string name="update_cta">Aggiorna</string>
@@ -161,7 +161,7 @@
     <string name="funnel_feat1_title">Un pick IA al giorno</string>
     <string name="funnel_feat1_body">La singola scelta col vantaggio più alto su NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis e cricket.</string>
     <string name="funnel_feat2_title">Fiducia calibrata</string>
-    <string name="funnel_feat2_body">Quando dice 73 %%, colpisce al ≈73 %%. Una previsione misurata — mai un «colpo garantito».</string>
+    <string name="funnel_feat2_body">Quando dice 73 %, colpisce al ≈73 %. Una previsione misurata — mai un «colpo garantito».</string>
     <string name="funnel_feat3_title">Registro pubblico dei risultati</string>
     <string name="funnel_feat3_body">Ogni scelta registrata prima del fischio d\'inizio. Vittorie E sconfitte, agli atti per sempre.</string>
     <string name="funnel_feat4_title">Miglior quota, 6 book</string>
@@ -214,12 +214,12 @@
     <string name="funnel_analysis_row4">Costruisco il tuo piano Pick1…</string>
     <string name="funnel_red_kicker">La dura verità · %1$d di 4</string>
     <string name="funnel_red1_headline">SCOMMETTI\n*D\'ISTINTO.*</string>
-    <string name="funnel_red1_lead">Le scelte d\'istinto perdono ~55 %% delle volte sul lungo periodo. La tua squadra del cuore non è una strategia.</string>
+    <string name="funnel_red1_lead">Le scelte d\'istinto perdono ~55 % delle volte sul lungo periodo. La tua squadra del cuore non è una strategia.</string>
     <string name="funnel_red1_ct">Niente sistema = niente vantaggio</string>
     <string name="funnel_red1_cb">Senza un modello, tiri a indovinare contro chi non lo fa.</string>
     <string name="funnel_red1_cta">AVANTI →</string>
     <string name="funnel_red2_headline">LE MULTIPLE\n*TI STANNO UCCIDENDO.*</string>
-    <string name="funnel_red2_lead">La multipla media rende -32 %% allo scommettitore. Il banco le adora, e non è un caso.</string>
+    <string name="funnel_red2_lead">La multipla media rende -32 % allo scommettitore. Il banco le adora, e non è un caso.</string>
     <string name="funnel_red2_ct">Rincorrere il colpo grosso</string>
     <string name="funnel_red2_cb">Ogni evento in più moltiplica il vantaggio del banco contro di te.</string>
     <string name="funnel_red2_cta">AVANTI →</string>
@@ -230,8 +230,8 @@
     <string name="funnel_red3_cb">Nessun registro significa nessun apprendimento — ripeti le stesse scommesse perdenti.</string>
     <string name="funnel_red3_cta">AVANTI →</string>
     <string name="funnel_red4_headline">LE QUOTE SCARSE\n*TI PROSCIUGANO.*</string>
-    <string name="funnel_red4_unit">%%/scommessa</string>
-    <string name="funnel_red4_lead">Prendere la prima quota che vedi lascia il 3–5 %% sul tavolo a ogni scommessa. Si accumula in fretta.</string>
+    <string name="funnel_red4_unit">%/scommessa</string>
+    <string name="funnel_red4_lead">Prendere la prima quota che vedi lascia il 3–5 % sul tavolo a ogni scommessa. Si accumula in fretta.</string>
     <string name="funnel_red4_ct">Pagare troppo il margine</string>
     <string name="funnel_red4_cb">Non cerchi mai il miglior prezzo tra i book — così paghi sempre troppo.</string>
     <string name="funnel_red4_cta">MOSTRAMI LA SOLUZIONE →</string>
@@ -241,7 +241,7 @@
     <string name="funnel_green1_cta">AVANTI →</string>
     <string name="funnel_green2_kicker">La soluzione Pick1 · 2 di 3</string>
     <string name="funnel_green2_headline">VEDI IL\n*RAGIONAMENTO.*</string>
-    <string name="funnel_green2_lead">Fiducia calibrata + il «perché» dietro ogni pick. Quando dice 73 %%, colpisce al ≈73 %%.</string>
+    <string name="funnel_green2_lead">Fiducia calibrata + il «perché» dietro ogni pick. Quando dice 73 %, colpisce al ≈73 %.</string>
     <string name="funnel_green2_cta">AVANTI →</string>
     <string name="funnel_green3_kicker">La soluzione Pick1 · 3 di 3</string>
     <string name="funnel_green3_headline">TIENI TRACCIA\n*DI TUTTO.*</string>
@@ -258,8 +258,8 @@
     <string name="funnel_social1_title">Pick valutati in pubblico</string>
     <string name="funnel_social1_sub">Ogni scelta registrata prima del fischio d\'inizio — vittorie E sconfitte, agli atti.</string>
     <string name="funnel_social2_title">Tasso di successo calcio ad alta fiducia</string>
-    <string name="funnel_social2_sub">I nostri pick di calcio con fiducia 60 %%+ hanno colpito il 74 %% delle volte.</string>
-    <string name="funnel_social3_title">Su tutti i pick con fiducia 60 %%+</string>
+    <string name="funnel_social2_sub">I nostri pick di calcio con fiducia 60 %+ hanno colpito il 74 % delle volte.</string>
+    <string name="funnel_social3_title">Su tutti i pick con fiducia 60 %+</string>
     <string name="funnel_social3_sub">145 pick ad alta convinzione valutati — misurati, non promessi.</string>
     <string name="funnel_social_disclaimer">I risultati passati non garantiscono quelli futuri.</string>
     <string name="funnel_social_cta">CI STO →</string>
@@ -268,7 +268,7 @@
     <string name="funnel_compare_col_feature">CARATTERISTICA</string>
     <string name="funnel_compare_col_others">ALTRI</string>
     <string name="funnel_compare_col_pick1">PICK1</string>
-    <string name="funnel_compare_row1">%% calibrata</string>
+    <string name="funnel_compare_row1">% calibrata</string>
     <string name="funnel_compare_row2">Registro pubblico vinte/perse</string>
     <string name="funnel_compare_row3">Registrato prima del fischio</string>
     <string name="funnel_compare_row4">Ricerca miglior quota</string>

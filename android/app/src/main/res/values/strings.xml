@@ -77,7 +77,7 @@
     <string name="paywall_subtitle">Every sport. Every game. Every day.</string>
     <string name="paywall_weekly">Weekly</string>
     <string name="paywall_monthly">Monthly</string>
-    <string name="paywall_save_badge">SAVE 33%%</string>
+    <string name="paywall_save_badge">SAVE 33%</string>
     <string name="paywall_best_value">BEST VALUE</string>
     <string name="paywall_compare_title">FREE vs PRO</string>
     <string name="paywall_compare_meta">WHAT YOU GET</string>
@@ -89,14 +89,14 @@
     <string name="paywall_faq_a_trial">Full Pro access — unlimited picks, every sport, live tracking and full analytics. No charge for 3 days; cancel before it ends to avoid any charge.</string>
     <string name="paywall_faq_q_switch">Can I switch between weekly and monthly?</string>
     <string name="paywall_faq_a_switch">Yes — switch plans anytime from Settings. The new rate starts on your next billing cycle.</string>
-    <string name="paywall_fineprint_weekly">3-day free trial, then %%@/week. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.</string>
-    <string name="paywall_fineprint_monthly">3-day free trial, then %%@/month. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.</string>
-    <string name="paywall_then_weekly">3 days free, then %%@/week. Auto-renews until canceled.</string>
-    <string name="paywall_then_monthly">3 days free, then %%@/month. Auto-renews until canceled.</string>
-    <string name="paywall_then_weekly_notrial">%%@/week · Auto-renews · Cancel anytime.</string>
-    <string name="paywall_then_monthly_notrial">%%@/month · Auto-renews · Cancel anytime.</string>
-    <string name="paywall_fineprint_weekly_notrial">%%@/week, billed immediately. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID. Your free trial has already been used.</string>
-    <string name="paywall_fineprint_monthly_notrial">%%@/month, billed immediately. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID. Your free trial has already been used.</string>
+    <string name="paywall_fineprint_weekly">3-day free trial, then %@/week. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.</string>
+    <string name="paywall_fineprint_monthly">3-day free trial, then %@/month. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID.</string>
+    <string name="paywall_then_weekly">3 days free, then %@/week. Auto-renews until canceled.</string>
+    <string name="paywall_then_monthly">3 days free, then %@/month. Auto-renews until canceled.</string>
+    <string name="paywall_then_weekly_notrial">%@/week · Auto-renews · Cancel anytime.</string>
+    <string name="paywall_then_monthly_notrial">%@/month · Auto-renews · Cancel anytime.</string>
+    <string name="paywall_fineprint_weekly_notrial">%@/week, billed immediately. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID. Your free trial has already been used.</string>
+    <string name="paywall_fineprint_monthly_notrial">%@/month, billed immediately. Auto-renews unless canceled at least 24h before the period ends. Payments are processed through your Apple ID. Your free trial has already been used.</string>
     <string name="paywall_cta_trial">Start 3-Day Free Trial</string>
     <string name="paywall_cta_subscribe">Subscribe Now</string>
     <string name="paywall_restore">Restore Purchases</string>
@@ -120,7 +120,7 @@
     <string name="code_applied">✓ Code applied!</string>
     <string name="referral_err_invalid">That code isn\'t valid.</string>
     <string name="referral_err_used">You\'ve already redeemed a code.</string>
-    <string name="referral_share_msg">Get Pick1 — AI sports predictions. Use my code %%@ for a free month: %%@</string>
+    <string name="referral_share_msg">Get Pick1 — AI sports predictions. Use my code %@ for a free month: %@</string>
     <string name="update_title">Update available</string>
     <string name="update_body">A new version of Pick1 is ready — update for the latest picks and fixes.</string>
     <string name="update_cta">Update</string>
@@ -161,7 +161,7 @@
     <string name="funnel_feat1_title">One daily AI pick</string>
     <string name="funnel_feat1_body">The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis &amp; Cricket.</string>
     <string name="funnel_feat2_title">Calibrated confidence</string>
-    <string name="funnel_feat2_body">When it says 73%%, it hits ≈73%%. A measured forecast — never a \"guaranteed lock.\"</string>
+    <string name="funnel_feat2_body">When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\"</string>
     <string name="funnel_feat3_title">Public results ledger</string>
     <string name="funnel_feat3_body">Every call logged before kickoff. Wins AND losses, on the record forever.</string>
     <string name="funnel_feat4_title">Best line, 6 books</string>
@@ -214,12 +214,12 @@
     <string name="funnel_analysis_row4">Building your Pick1 plan…</string>
     <string name="funnel_red_kicker">The hard truth · %1$d of 4</string>
     <string name="funnel_red1_headline">YOU BET ON\n*EMOTION.*</string>
-    <string name="funnel_red1_lead">Gut picks lose ~55%% of the time long-term. Your favorite team isn\'t a strategy.</string>
+    <string name="funnel_red1_lead">Gut picks lose ~55% of the time long-term. Your favorite team isn\'t a strategy.</string>
     <string name="funnel_red1_ct">No system = no edge</string>
     <string name="funnel_red1_cb">Without a model, you\'re just guessing against people who aren\'t.</string>
     <string name="funnel_red1_cta">NEXT →</string>
     <string name="funnel_red2_headline">PARLAYS ARE\n*KILLING YOU.*</string>
-    <string name="funnel_red2_lead">The average multi-leg parlay returns -32%% to the bettor. The house loves them for a reason.</string>
+    <string name="funnel_red2_lead">The average multi-leg parlay returns -32% to the bettor. The house loves them for a reason.</string>
     <string name="funnel_red2_ct">Chasing the big hit</string>
     <string name="funnel_red2_cb">Every extra leg multiplies the house edge against you.</string>
     <string name="funnel_red2_cta">NEXT →</string>
@@ -230,8 +230,8 @@
     <string name="funnel_red3_cb">No log means no learning — you repeat the same losing bets.</string>
     <string name="funnel_red3_cta">NEXT →</string>
     <string name="funnel_red4_headline">BAD LINES\n*DRAIN YOU.*</string>
-    <string name="funnel_red4_unit">%%/bet</string>
-    <string name="funnel_red4_lead">Taking the first line you see leaves 3–5%% on the table every single bet. It compounds fast.</string>
+    <string name="funnel_red4_unit">%/bet</string>
+    <string name="funnel_red4_lead">Taking the first line you see leaves 3–5% on the table every single bet. It compounds fast.</string>
     <string name="funnel_red4_ct">Overpaying the vig</string>
     <string name="funnel_red4_cb">You never shop for the best price across books — so you always overpay.</string>
     <string name="funnel_red4_cta">SHOW ME THE FIX →</string>
@@ -241,7 +241,7 @@
     <string name="funnel_green1_cta">NEXT →</string>
     <string name="funnel_green2_kicker">The Pick1 fix · 2 of 3</string>
     <string name="funnel_green2_headline">SEE THE\n*REASONING.*</string>
-    <string name="funnel_green2_lead">Calibrated confidence + the \"why\" behind every pick. When it says 73%%, it hits ≈73%%.</string>
+    <string name="funnel_green2_lead">Calibrated confidence + the \"why\" behind every pick. When it says 73%, it hits ≈73%.</string>
     <string name="funnel_green2_cta">NEXT →</string>
     <string name="funnel_green3_kicker">The Pick1 fix · 3 of 3</string>
     <string name="funnel_green3_headline">TRACK\n*EVERYTHING.*</string>
@@ -258,8 +258,8 @@
     <string name="funnel_social1_title">Picks graded in public</string>
     <string name="funnel_social1_sub">Every call logged before kickoff — wins AND losses, on the record.</string>
     <string name="funnel_social2_title">High-confidence soccer hit rate</string>
-    <string name="funnel_social2_sub">Our 60%%+ confidence soccer calls have landed 74%% of the time.</string>
-    <string name="funnel_social3_title">Across all 60%%+ confidence calls</string>
+    <string name="funnel_social2_sub">Our 60%+ confidence soccer calls have landed 74% of the time.</string>
+    <string name="funnel_social3_title">Across all 60%+ confidence calls</string>
     <string name="funnel_social3_sub">145 high-conviction picks graded — measured, not promised.</string>
     <string name="funnel_social_disclaimer">Past performance doesn\'t guarantee future results.</string>
     <string name="funnel_social_cta">I WANT IN →</string>
@@ -268,7 +268,7 @@
     <string name="funnel_compare_col_feature">FEATURE</string>
     <string name="funnel_compare_col_others">OTHERS</string>
     <string name="funnel_compare_col_pick1">PICK1</string>
-    <string name="funnel_compare_row1">Calibrated %%</string>
+    <string name="funnel_compare_row1">Calibrated %</string>
     <string name="funnel_compare_row2">Public win/loss log</string>
     <string name="funnel_compare_row3">Logged before kickoff</string>
     <string name="funnel_compare_row4">Best-line finder</string>

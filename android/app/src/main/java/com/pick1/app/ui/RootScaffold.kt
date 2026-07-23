@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pick1.app.R
+import com.pick1.app.ui.funnel.FunnelHost
 import com.pick1.app.ui.home.HomeScreen
 import com.pick1.app.ui.profile.ProfileScreen
 import com.pick1.app.ui.theme.*
@@ -34,6 +35,15 @@ private enum class RootTab { HOME, PROFILE }
 @Composable
 fun RootScaffold() {
     var tab by remember { mutableStateOf(RootTab.HOME) }
+    // First run shows the onboarding funnel. Persisting "seen" lands with
+    // the DataStore/auth work; for now it's session-scoped so the funnel is
+    // reachable for review.
+    var onboarded by remember { mutableStateOf(false) }
+
+    if (!onboarded) {
+        FunnelHost(onFinished = { onboarded = true })
+        return
+    }
 
     Box(Modifier.fillMaxSize().background(P1.Ink)) {
         when (tab) {
