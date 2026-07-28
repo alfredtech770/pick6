@@ -22,8 +22,9 @@ import com.posthog.PostHog
 class Pick1MessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
-        // TODO: persist to the device-token table alongside the iOS APNs
-        //  tokens so send-push can fan out to Android.
+        // Persist alongside the iOS APNs rows in device_tokens so send-push
+        // can fan out to Android once it grows an FCM branch.
+        PushManager.upload(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {

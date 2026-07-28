@@ -3,8 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    // Enable once google-services.json is added (FCM push):
-    // alias(libs.plugins.google.services)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -34,7 +33,11 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
+            // No applicationIdSuffix: debug uses com.pick1.app so it matches
+            // the single Firebase app in google-services.json. (Register a
+            // com.pick1.app.debug app in Firebase if you later want debug +
+            // release installed side by side.)
+            isDebuggable = true
         }
         release {
             isMinifyEnabled = true

@@ -57,6 +57,7 @@ fun SignupScreen(onNext: () -> Unit) {
                     // Meta CompleteRegistration fires at account creation —
                     // not at the end of the funnel (which sits past the paywall).
                     PostHog.capture("signup_completed")
+                    com.pick1.app.push.PushManager.register()
                     onNext()
                 }
             }
