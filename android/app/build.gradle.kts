@@ -1,9 +1,20 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
+}
+
+// Release signing — read from the gitignored keystore.properties so the upload
+// key + passwords never enter version control. Absent on CI/fresh clones, in
+// which case the release build stays unsigned (debug is unaffected).
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) FileInputStream(keystorePropsFile).use { load(it) }
 }
 
 android {
@@ -31,6 +42,17 @@ android {
         resourceConfigurations += listOf("en", "es", "fr", "de", "it", "pt", "ar")
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystoreProps.isNotEmpty()) {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // No applicationIdSuffix: debug uses com.pick1.app so it matches
@@ -40,9 +62,14 @@ android {
             isDebuggable = true
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // First store build ships un-minified so the release binary is a
+            // byte-for-byte behavioural match of debug — no R8 surprises with
+            // kotlinx.serialization / ktor / Supabase reflection. Re-enable R8
+            // with proper keep rules once we've validated on a closed track.
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

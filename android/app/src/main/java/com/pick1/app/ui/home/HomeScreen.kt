@@ -16,7 +16,10 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import com.pick1.app.R
+import com.pick1.app.billing.Billing
 import com.pick1.app.billing.PlaceholderCatalogue
 import com.pick1.app.data.PicksRepository
 import com.pick1.app.data.model.Pick
@@ -113,10 +116,21 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var showSummerFootball by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
 
+    // Live Play Billing entitlement + catalogue (falls back to placeholder
+    // copy when Play is unavailable, e.g. an emulator without Play services).
+    val ctx = LocalContext.current
+    val activity = ctx as? Activity
+    val isPro by Billing.isPro.collectAsState()
+    val offers by Billing.offers.collectAsState()
+    val trialEligible by Billing.trialEligible.collectAsState()
+
+    // A completed purchase flips entitlement — drop the paywall automatically.
+    LaunchedEffect(isPro) { if (isPro) showPaywall = false }
+
     selected?.let { p ->
         // Free tier sees the tease detail (matchup shown, call locked);
         // Pro sees the real breakdown. Same split as iOS.
-        if (vm.isPro) {
+        if (isPro) {
             MatchDetailScreen(p) { selected = null }
         } else {
             FreeMatchDetailScreen(
@@ -136,7 +150,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     }
     if (showSummerFootball) {
         SummerFootballScreen(
-            isPro = vm.isPro,
+            isPro = isPro,
             onClose = { showSummerFootball = false },
             onUnlock = { showSummerFootball = false; showPaywall = true },
             onTapPick = { selected = it },
@@ -144,11 +158,12 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         return
     }
     if (showPaywall) {
+        val plans = offers.ifEmpty { PlaceholderCatalogue.plans(trialEligible) }
         PaywallScreen(
-            plans = PlaceholderCatalogue.plans(trialEligible = true),
-            trialEligible = true,
-            onBuy = { },
-            onRestore = { },
+            plans = plans,
+            trialEligible = trialEligible,
+            onBuy = { plan -> activity?.let { Billing.purchase(it, plan.productId) } },
+            onRestore = { Billing.restore() },
             onContinueFree = { showPaywall = false },
         )
         return
@@ -200,7 +215,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     }
                 }
 
-                if (vm.isPro) {
+                if (isPro) {
                     item {
                         Text(
                             stringResource(R.string.rd_todays_games),

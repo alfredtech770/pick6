@@ -9,9 +9,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.app.Activity
 import com.pick1.app.R
+import com.pick1.app.billing.Billing
 import com.pick1.app.billing.PlaceholderCatalogue
 import com.pick1.app.ui.paywall.PaywallScreen
 import com.pick1.app.ui.theme.P1
@@ -39,8 +42,20 @@ fun FunnelHost(onFinished: () -> Unit) {
         if (stepIndex > 0) stepIndex--
     }
 
+    // Live Play Billing state for the paywall step.
+    val ctx = LocalContext.current
+    val activity = ctx as? Activity
+    val offers by Billing.offers.collectAsState()
+    val trialEligible by Billing.trialEligible.collectAsState()
+    val isPro by Billing.isPro.collectAsState()
+
     LaunchedEffect(stepIndex) {
         PostHog.capture("funnel_step_viewed", properties = mapOf("step" to step.analyticsName))
+    }
+
+    // A successful purchase on the paywall step advances to Success.
+    LaunchedEffect(isPro, step) {
+        if (isPro && step == FunnelStep.Paywall) advance()
     }
 
     Box(Modifier.fillMaxSize().background(P1.Ink)) {
@@ -101,10 +116,10 @@ fun FunnelHost(onFinished: () -> Unit) {
             )
 
             FunnelStep.Paywall -> PaywallScreen(
-                plans = PlaceholderCatalogue.plans(trialEligible = true),
-                trialEligible = true,
-                onBuy = { advance() },
-                onRestore = { },
+                plans = offers.ifEmpty { PlaceholderCatalogue.plans(trialEligible) },
+                trialEligible = trialEligible,
+                onBuy = { plan -> activity?.let { Billing.purchase(it, plan.productId) } },
+                onRestore = { Billing.restore() },
                 onContinueFree = { advance() },
             )
 

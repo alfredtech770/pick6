@@ -8,3 +8,8 @@ captures/
 .cxx/
 google-services.json
 .kotlin/
+
+# Release signing — never commit the upload key or its passwords
+keystore.properties
+*.jks
+*.keystore

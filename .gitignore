@@ -88,3 +88,6 @@ audit-*/
 
 # Skill lock files
 skills-lock.json
+
+# Supabase CLI local state
+supabase/.temp/
