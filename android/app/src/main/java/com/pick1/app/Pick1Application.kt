@@ -3,6 +3,7 @@ package com.pick1.app
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.pick1.app.billing.Billing
 import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
 
@@ -18,6 +19,10 @@ class Pick1Application : Application() {
                 host = BuildConfig.POSTHOG_HOST,
             ).apply { captureScreenViews = true },
         )
+
+        // Play Billing — connect early so the catalogue + entitlement are warm
+        // before the paywall is ever shown.
+        Billing.init(this)
 
         createNotificationChannel()
     }
