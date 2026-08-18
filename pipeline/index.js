@@ -433,57 +433,6 @@ const LEAGUES = {
     }),
   },
 
-  // ─── Tennis (ATP/WTA) — research mode; Grand Slams + tour events
-  ATP: {
-    sport: 'tennis', promptMode: 'research', fetcher: null,
-    notes: 'ATP/WTA singles. Use web_search to find today\'s completed-draw matches — Grand Slams take priority when running (Wimbledon Jun-Jul, US Open Aug-Sep, etc.), otherwise the biggest tour events. Surface 2-4 matches with the clearest edges (ranking gaps, surface specialists, head-to-head). Pick is the player to win the match; home_team/away_team are the two players.',
-  },
-
-  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
-  IPL: {
-    sport: 'cricket', promptMode: 'research', fetcher: null,
-    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
-  },
-
-  // 2026 World Cup — branded "Summer Football" in the app (App Review
-  // 5.2.1 IP caution; never surface FIFA marks in user-visible strings).
-  // Research mode covers today's AND tomorrow's fixtures (ET) so the
-  // Summer Football hub always previews the next slate a day ahead.
-  // game_date carries each match's REAL ET date, not the run date.
-  WC: {
-    sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'International national-team summer tournament 2026, hosted in North America (group stage June, knockouts through mid-July). Use web_search to confirm fixtures. Pick is the match result (team to win, or draw when genuinely strongest).',
-  },
-
-  // ── Expanded coverage (research-mode; web_search finds fixtures) ──
-  // Each runs in the daily 5am pass and returns [] cleanly off-season.
-  LALIGA: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'La Liga — Spanish first division (Aug–May). Pick the match result; draw allowed.' },
-  SERIEA: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'Serie A — Italian first division (Aug–May). Pick the match result; draw allowed.' },
-  BUNDESLIGA: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'Bundesliga — German first division (Aug–May). Pick the match result; draw allowed.' },
-  LIGUE1: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'Ligue 1 — French first division (Aug–May). Pick the match result; draw allowed.' },
-  UCL: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'UEFA Champions League — European club competition (Sep–May). Pick the match result; draw allowed in group stage.' },
-  MLS: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'Major League Soccer — US/Canada top flight (Feb–Oct). Pick the match result; draw allowed.' },
-  LIGAMX: { sport: 'soccer', promptMode: 'research', fetcher: null,
-    notes: 'Liga MX — Mexican top flight. Pick the match result; draw allowed.' },
-  WNBA: { sport: 'basketball', promptMode: 'research', fetcher: null,
-    notes: 'WNBA — women\'s pro basketball (May–Sep). Pick the game winner.' },
-  EUROLEAGUE: { sport: 'basketball', promptMode: 'research', fetcher: null,
-    notes: 'EuroLeague — top European club basketball (Oct–May). Pick the game winner.' },
-  NCAAB: { sport: 'basketball', promptMode: 'research', fetcher: null,
-    notes: 'NCAA Division I men\'s basketball (Nov–Apr). Pick the game winner.' },
-  KBO: { sport: 'baseball', promptMode: 'research', fetcher: null,
-    notes: 'KBO — Korean pro baseball (Mar–Oct). Pick the game winner.' },
-  NPB: { sport: 'baseball', promptMode: 'research', fetcher: null,
-    notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
-  NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
-    notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
-
   // ─── Rugby union — ESPN-grounded fixtures ─────────────────────────
   // sportsdata.io has no rugby tier, so these run on espnfixtures.js
   // rather than research mode: the model is handed the real round and
@@ -535,6 +484,58 @@ const LEAGUES = {
     notes: 'AFL — Australian Football League (Mar-Sep, finals in Sep). Scores run 60-120 points a side, so the margin markets carry most of the information; a 6-goal favourite is normal. Ground matters more than in most sports — the MCG and Marvel Stadium are home to several clubs at once, so check which side actually has the venue advantage rather than assuming the listed home team does. Pick the match winner.',
     normalizer: espnNorm,
   },
+
+  // ─── Tennis (ATP/WTA) — research mode; Grand Slams + tour events
+  ATP: {
+    sport: 'tennis', promptMode: 'research', fetcher: null,
+    notes: 'ATP/WTA singles. Use web_search to find today\'s completed-draw matches — Grand Slams take priority when running (Wimbledon Jun-Jul, US Open Aug-Sep, etc.), otherwise the biggest tour events. Surface 2-4 matches with the clearest edges (ranking gaps, surface specialists, head-to-head). Pick is the player to win the match; home_team/away_team are the two players.',
+  },
+
+  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
+  IPL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
+  },
+
+  // 2026 World Cup — branded "Summer Football" in the app (App Review
+  // 5.2.1 IP caution; never surface FIFA marks in user-visible strings).
+  // Research mode covers today's AND tomorrow's fixtures (ET) so the
+  // Summer Football hub always previews the next slate a day ahead.
+  // game_date carries each match's REAL ET date, not the run date.
+  WC: {
+    sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'International national-team summer tournament 2026, hosted in North America (group stage June, knockouts through mid-July). Use web_search to confirm fixtures. Pick is the match result (team to win, or draw when genuinely strongest).',
+  },
+
+  // ── Expanded coverage (research-mode; web_search finds fixtures) ──
+  // Each runs in the daily 5am pass and returns [] cleanly off-season.
+  LALIGA: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'La Liga — Spanish first division (Aug–May). Pick the match result; draw allowed.' },
+  SERIEA: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Serie A — Italian first division (Aug–May). Pick the match result; draw allowed.' },
+  BUNDESLIGA: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Bundesliga — German first division (Aug–May). Pick the match result; draw allowed.' },
+  LIGUE1: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Ligue 1 — French first division (Aug–May). Pick the match result; draw allowed.' },
+  UCL: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'UEFA Champions League — European club competition (Sep–May). Pick the match result; draw allowed in group stage.' },
+  MLS: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Major League Soccer — US/Canada top flight (Feb–Oct). Pick the match result; draw allowed.' },
+  LIGAMX: { sport: 'soccer', promptMode: 'research', fetcher: null,
+    notes: 'Liga MX — Mexican top flight. Pick the match result; draw allowed.' },
+  WNBA: { sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'WNBA — women\'s pro basketball (May–Sep). Pick the game winner.' },
+  EUROLEAGUE: { sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'EuroLeague — top European club basketball (Oct–May). Pick the game winner.' },
+  NCAAB: { sport: 'basketball', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I men\'s basketball (Nov–Apr). Pick the game winner.' },
+  KBO: { sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'KBO — Korean pro baseball (Mar–Oct). Pick the game winner.' },
+  NPB: { sport: 'baseball', promptMode: 'research', fetcher: null,
+    notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
+  NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
+    notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
+
 };
 
 // ════════════════════════════════════════════════════════════════
