@@ -30,6 +30,7 @@ const axios = require('axios');
 // crashes the worker on boot.
 const ws = require('ws');
 const combat = require('./combat');   // grounded UFC/MMA path (ESPN-sourced facts + verification)
+const espnfixtures = require('./espnfixtures');
 const soccer = require('./soccer');   // grounded World Cup facts (ESPN standings + form)
 const teamsport = require('./teamsport'); // grounded MLB/NBA/WNBA/NFL/NHL facts (ESPN standings + probables)
 const f1 = require('./f1');            // grounded F1 facts (ESPN driver championship)
@@ -37,7 +38,12 @@ const golf = require('./golf');        // grounded PGA golf facts (ESPN tourname
 const { enrichImages } = require('./images'); // server-side crest capture → home_logo/away_logo
 
 // ─── Config ────────────────────────────────────────────────────
-const ANTHROPIC_MODEL = 'claude-opus-4-8';
+// Opus 5 costs exactly the same as Opus 4.8 ($5/M in, $25/M out), so the
+// hardcoded rates in trackClaudeCost() below stay correct. The swap is clean
+// here because this pipeline already passes `thinking: {type: 'adaptive'}`
+// explicitly and never sets temperature/top_p — the two things that break
+// when moving to Opus 5.
+const ANTHROPIC_MODEL = 'claude-opus-5';
 const TZ = 'America/New_York';
 
 const anthropic = new Anthropic({
@@ -67,6 +73,8 @@ const PROP_MENUS = {
   baseball: 'total runs over/under at a realistic line; a specific player home run (yes/no, verified lineup only); starting pitcher strikeouts over/under; winning margin bracket (1 / 2-3 / 4+)',
   hockey: 'total goals over/under; both teams score 2+ (yes/no); winning margin bracket',
   cricket: 'top team batter; total sixes over/under; winning margin bracket',
+  rugby: 'points handicap at the market line; total points over/under; winning margin bracket (1-6 / 7-12 / 13+); total tries over/under; both teams to score a try (yes/no); first try scorer (ONLY with a verified matchday squad)',
+  afl: 'points handicap at the market line; total points over/under; winning margin bracket (1-12 / 13-24 / 25+); highest-scoring quarter; quarter winner (first quarter); top goalscorer (ONLY with a verified selected side)',
 };
 
 // ─── Daily web_search budget ─────────────────────────────────────────
@@ -226,6 +234,13 @@ async function fetchF1() {
 // Golf: the current / next PGA tournament with its field + live board.
 const fetchGolf = () => golf.fetchTournaments();
 
+
+/// espnfixtures.js already returns the registry's shape, so this only
+/// strips the `Status` flag the scheduled-filter reads and lower-cases it
+/// into the field the writer expects. Everything else — records, venue,
+/// competition name — flows into the prompt as grounding.
+const espnNorm = ({ Status, ...g }) => ({ ...g, status: Status || 'Scheduled' });
+
 // ════════════════════════════════════════════════════════════════
 // LEAGUE REGISTRY
 // ════════════════════════════════════════════════════════════════
@@ -241,6 +256,66 @@ const fetchGolf = () => golf.fetchTournaments();
 //                       This is what keeps NBA/NHL/MLB usable without paying
 //                       for the missing sportsdata.io subscription tiers.
 //   liveFetcher       — optional separate fetcher for in-play scores; defaults to fetcher
+
+// ─── Season windows ──────────────────────────────────────────────────
+// Months (1-12, US Eastern) in which each league actually plays.
+//
+// Without this the pipeline cannot tell "the feed is broken" from "this
+// league has no games today": an empty feed always falls through to
+// Anthropic research mode, which is the expensive path. In August that
+// meant paying Opus + web_search to research the NBA, NHL, EuroLeague,
+// NCAAB, IPL and the finished World Cup — every single day — and
+// exhausting the 200/day web_search budget before MLB (30 real games)
+// ever got its turn. That is what emptied the app from 8 Aug onward.
+//
+// Windows are deliberately generous: a league listed one month too wide
+// only costs a little money, whereas one listed too narrow silently
+// removes real picks from the app. Leagues absent from this map (UFC)
+// run year-round and are never gated.
+const SEASON_MONTHS = {
+  NBA:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
+  NHL:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
+  NFL:        [8, 9, 10, 11, 12, 1, 2],
+  MLB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
+  EPL:        [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
+  LALIGA:     [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
+  SERIEA:     [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
+  BUNDESLIGA: [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
+  LIGUE1:     [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
+  UCL:        [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5],   // qualifiers from July
+  MLS:        [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],   // playoffs run into Dec
+  LIGAMX:     [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12],   // dark only in June
+  WNBA:       [5, 6, 7, 8, 9, 10],
+  EUROLEAGUE: [9, 10, 11, 12, 1, 2, 3, 4, 5],
+  NCAAB:      [11, 12, 1, 2, 3, 4],
+  KBO:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
+  NPB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
+  NASCAR:     [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  IPL:        [3, 4, 5, 6],
+  WC:         [6, 7],                                  // 2026 tournament only
+  ATP:        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  GOLF:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  F1:         [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  // Rugby and AFL play weekly, so these windows are what keep them from
+  // burning a research call every day of an eight-month off-season.
+  AFL:        [3, 4, 5, 6, 7, 8, 9],                   // home-and-away + finals
+  SIXNATIONS: [1, 2, 3],
+  RUGBYCHAMP: [8, 9, 10],
+  RWC:        [9, 10],                                 // quadrennial
+  TOP14:      [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+  PREMRUGBY:  [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+  URC:        [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+  CHAMPCUP:   [12, 1, 2, 3, 4, 5],
+};
+
+// Reuses todayISO() so the month is read in the pipeline's timezone (ET),
+// not the container's UTC clock — otherwise a season would flip a few
+// hours early at every month boundary.
+function inSeason(league) {
+  const months = SEASON_MONTHS[league];
+  if (!months) return true;               // unlisted ⇒ year-round
+  return months.includes(Number(todayISO().slice(5, 7)));
+}
 
 const LEAGUES = {
   // ─── Team sports — picks are home_team or away_team ────────────
@@ -408,6 +483,58 @@ const LEAGUES = {
     notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
   NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
     notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
+
+  // ─── Rugby union — ESPN-grounded fixtures ─────────────────────────
+  // sportsdata.io has no rugby tier, so these run on espnfixtures.js
+  // rather than research mode: the model is handed the real round and
+  // judges it, instead of being asked to recall what is scheduled.
+  // researchFallback is deliberately OFF — an empty ESPN slate for a
+  // weekly sport means "no round this week", not "the feed broke", and
+  // falling through would pay Opus to invent one.
+  RUGBYCHAMP: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('RUGBYCHAMP'),
+    notes: 'The Rugby Championship — Argentina, Australia, New Zealand, South Africa (Aug-Oct). Home advantage is large in this competition, and travel between hemispheres matters. Pick the match winner; draws are rare enough to ignore.',
+    normalizer: espnNorm,
+  },
+  SIXNATIONS: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('SIXNATIONS'),
+    notes: 'Six Nations (Feb-Mar). Home advantage is worth roughly 6 points. Pick the match winner; use the handicap markets for the blowout fixtures rather than inflating a win probability.',
+    normalizer: espnNorm,
+  },
+  RWC: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('RWC'),
+    notes: 'Rugby World Cup (Sep-Oct, every four years). Pool games between tier-1 and tier-2 nations are heavy mismatches — say so in the margin markets and keep the win probability honest rather than capping it.',
+    normalizer: espnNorm,
+  },
+  TOP14: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('TOP14'),
+    notes: 'Top 14 — French first division (Sep-Jun). Home advantage is unusually strong here and several clubs rotate heavily for away trips. Pick the match winner.',
+    normalizer: espnNorm,
+  },
+  PREMRUGBY: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('PREMRUGBY'),
+    notes: 'Gallagher Premiership — English first division (Sep-Jun). Pick the match winner; check for England international call-ups thinning a squad during Test windows.',
+    normalizer: espnNorm,
+  },
+  URC: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('URC'),
+    notes: 'United Rugby Championship — Ireland, Italy, Scotland, Wales and South Africa (Sep-Jun). South African away trips are a genuine disadvantage for the travelling side. Pick the match winner.',
+    normalizer: espnNorm,
+  },
+  CHAMPCUP: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('CHAMPCUP'),
+    notes: 'European Rugby Champions Cup (Dec-May). Pool-stage sides often rest players for domestic priorities; knockout rounds do not. Pick the match winner.',
+    normalizer: espnNorm,
+  },
+
+  // ─── Australian rules ─────────────────────────────────────────────
+  // AFLW and VFL are in the spec but ESPN serves neither, so they are
+  // absent here rather than research-moded into existence.
+  AFL: {
+    sport: 'afl', promptMode: 'team', fetcher: espnfixtures.fetcherFor('AFL'),
+    notes: 'AFL — Australian Football League (Mar-Sep, finals in Sep). Scores run 60-120 points a side, so the margin markets carry most of the information; a 6-goal favourite is normal. Ground matters more than in most sports — the MCG and Marvel Stadium are home to several clubs at once, so check which side actually has the venue advantage rather than assuming the listed home team does. Pick the match winner.',
+    normalizer: espnNorm,
+  },
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -714,6 +841,14 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const cfg = LEAGUES[league];
   const useResearch = cfg.promptMode === 'research' || forceResearch;
 
+  // Season gate — cheapest check, so it runs before anything that spends.
+  // An out-of-season league has no games to find; researching it can only
+  // return an empty slate at full Opus + web_search price.
+  if (!inSeason(league)) {
+    log(`🌙 Skipping ${league}: out of season this month — no spend.`);
+    return [];
+  }
+
   if (claudeBudgetExceeded()) {
     log(`🛑 Skipping ${league} pick gen: daily Claude cost ceiling ($${CLAUDE_DAILY_COST_LIMIT_USD}) reached. Spent $${claudeCostUsd.toFixed(2)} today.`);
     return [];
@@ -791,6 +926,22 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   log(`Claude ${league} usage: in=${u.input_tokens} out=${u.output_tokens} cache_read=${u.cache_read_input_tokens || 0} cache_write=${u.cache_creation_input_tokens || 0}`);
   const { spent, callCost } = trackClaudeCost(u);
   log(`💰 Claude cost this call: $${callCost.toFixed(3)} | today: $${spent.toFixed(2)}/${CLAUDE_DAILY_COST_LIMIT_USD}`);
+
+  // Reconcile the budget against what this call actually searched, in BOTH
+  // directions. The up-front reservation exists to stop a runaway agentic loop
+  // mid-flight, but it is a guess: measured live, a feed-mode league reserved 3
+  // and used 17, while research mode reserves 10. Refunding only the overshoot
+  // (the first version of this) left the counter under-reporting real spend by
+  // ~5x on feed-mode leagues. Settling to the true count keeps the ceiling
+  // honest whichever way the guess was wrong.
+  //
+  // Note the real money guard is CLAUDE_DAILY_COST_LIMIT_USD, which counts
+  // dollars. This counter is a secondary proxy — with honest accounting it
+  // must be set high enough that the cost cap binds first, otherwise a
+  // miscalibrated proxy starves the app of picks while the budget is intact.
+  const actualSearches = u.server_tool_use?.web_search_requests ?? 0;
+  webSearchUses = Math.max(0, webSearchUses + actualSearches - expectedSearches);
+  log(`🔎 web_search ${league}: reserved ${expectedSearches}, used ${actualSearches} | jour ${webSearchUses}/${WEB_SEARCH_DAILY_LIMIT}`);
 
   const text = final.content.find((b) => b.type === 'text')?.text;
   if (!text) {
@@ -1542,6 +1693,14 @@ const ESPN_PATHS = {
   NASCAR: 'racing/nascar-premier',
   UFC: 'mma/ufc',
   F1:  'racing/f1',
+  AFL: 'australian-football/afl',
+  SIXNATIONS: 'rugby/180659',
+  RUGBYCHAMP: 'rugby/244293',
+  RWC:        'rugby/164205',
+  TOP14:      'rugby/270559',
+  PREMRUGBY:  'rugby/267979',
+  URC:        'rugby/270557',
+  CHAMPCUP:   'rugby/271937',
 };
 
 function normName(n) {
@@ -2017,6 +2176,14 @@ cron.schedule('25 5,6,12 * * *', async () => {
   try {
     const { data } = await supabase.from('picks').select('id').eq('game_date', todayISO()).limit(1);
     if (!data || !data.length) {
+      // Only re-run if a re-run could actually change the outcome. When the
+      // day's budget is already spent, every league short-circuits to a skip
+      // and the pass produces nothing — so the three self-heal ticks used to
+      // turn one failed day into four full passes, each paying to fail again.
+      if (webSearchUses >= WEB_SEARCH_DAILY_LIMIT || claudeBudgetExceeded()) {
+        log('🩹 Self-heal skipped: daily budget already spent — a re-run cannot produce picks.');
+        return;
+      }
       log('🩹 Self-heal: zero picks for today — re-running pipeline.');
       await runPipeline();
     }
