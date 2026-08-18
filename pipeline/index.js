@@ -1198,6 +1198,16 @@ async function savePicks(league, picks) {
     };
   });
 
+  // Crest passthrough for the leagues whose feed ships the logo URL with the
+  // fixture (rugby, AFL). Assigned only when present rather than written into
+  // the row literal: this is an upsert, so an unconditional `home_logo: null`
+  // would wipe a crest enrichImages had already resolved on an earlier run.
+  rows.forEach((row, i) => {
+    const p = picks[i];
+    if (p.home_logo) row.home_logo = p.home_logo;
+    if (p.away_logo) row.away_logo = p.away_logo;
+  });
+
   const { error } = await supabase
     .from('picks')
     .upsert(rows, { onConflict: 'league,game_date,game_id' });
@@ -1612,6 +1622,12 @@ async function runPipeline() {
       } else if (league === 'GOLF') {
         try { picks = await golf.enrichPicks(picks); }
         catch (e) { log(`   golf grounding failed: ${e.message}`); }
+      } else if (espnfixtures.isSupported(league)) {
+        // Rugby / AFL: the scoreboard already handed us each club's crest
+        // with the fixture, so attach it rather than letting enrichImages
+        // search for it by name later.
+        try { picks = espnfixtures.enrichPicks(games, picks); }
+        catch (e) { log(`   ${league} crest attach failed: ${e.message}`); }
       }
       await savePicks(league, picks);
       } catch (e) {

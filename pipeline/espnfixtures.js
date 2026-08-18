@@ -119,4 +119,41 @@ async function fetchFixtures(league, days = 8) {
 /// of a round permanently unpicked.
 const fetcherFor = (league) => () => fetchFixtures(league);
 
-module.exports = { fetchFixtures, fetcherFor, isSupported, PATHS };
+/// Attach the crest the fixture feed already gave us.
+///
+/// enrichImages resolves logos by *searching* ESPN and TheSportsDB by team
+/// name, which is why rugby and AFL painted lettered placeholders: neither
+/// sport was in its maps, and even once added a name search is a guess. The
+/// scoreboard hands us the exact crest URL alongside the fixture, so the
+/// authoritative answer is already in hand before any search runs.
+///
+/// Left null where ESPN genuinely has no crest (Bayonne, for one) — the
+/// image resolver still gets its turn on those, and the app's drawn shield
+/// is the last resort.
+function enrichPicks(games, picks) {
+  if (!games?.length || !picks?.length) return picks;
+
+  const crest = new Map();
+  for (const g of games) {
+    if (g.home_logo) crest.set(normKey(g.home_team), g.home_logo);
+    if (g.away_logo) crest.set(normKey(g.away_team), g.away_logo);
+  }
+
+  for (const p of picks) {
+    const h = crest.get(normKey(p.home_team));
+    const a = crest.get(normKey(p.away_team));
+    if (h) p.home_logo = h;
+    if (a) p.away_logo = a;
+  }
+  return picks;
+}
+
+/// Loose enough to survive "GWS GIANTS" vs "GWS Giants", strict enough not
+/// to collide two clubs in the same round.
+function normKey(name) {
+  return (name || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+module.exports = { fetchFixtures, fetcherFor, enrichPicks, isSupported, PATHS };
