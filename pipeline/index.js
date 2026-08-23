@@ -691,8 +691,10 @@ const PICK_SCHEMA = {
                 label: { type: 'string' },
                 value: { type: 'string' },
                 strength: { type: 'integer' },
+                label_fr: { type: ['string', 'null'], description: 'label in French, e.g. "Forme récente", "Écart de buts attendus", "Effectif disponible".' },
+                value_fr: { type: ['string', 'null'], description: 'value in French. Stat shorthand that is already language-neutral (+0.7 xG, 2.1 ERA, W-W-D-W) stays as it is; only translate actual words, and use French result letters where they are words (V-V-N-V for a French form string).' },
               },
-              required: ['label', 'value', 'strength'],
+              required: ['label', 'value', 'strength', 'label_fr', 'value_fr'],
               additionalProperties: false,
             },
           },
@@ -711,8 +713,14 @@ const PICK_SCHEMA = {
                 probability: { type: 'integer', description: 'Your honest calibrated probability (50-95) that this call hits' },
                 odds: { type: ['number', 'null'], description: 'Decimal odds for THIS selection ONLY if you saw a real sportsbook quote during your existing searches (do NOT run extra searches for props). Null otherwise. Same real-books-only rule as market_odds.' },
                 hint: { type: ['string', 'null'], description: 'One short stat-first reason, e.g. "BTTS hit in 7 of Spain\'s last 8"' },
+                // Nested rather than a parallel french array on purpose: a
+                // separate list can drift out of order or length and silently
+                // attach the wrong translation to the wrong market.
+                label_fr: { type: ['string', 'null'], description: 'label in French, e.g. "Nombre de buts plus/moins 2,5", "Les deux équipes marquent". Use French market vocabulary, not a literal translation.' },
+                value_fr: { type: ['string', 'null'], description: 'value in French, e.g. "OUI", "PLUS DE 2,5". Player and team names stay as they are.' },
+                hint_fr: { type: ['string', 'null'], description: 'hint in French. Null if hint is null.' },
               },
-              required: ['label', 'value', 'probability', 'odds', 'hint'],
+              required: ['label', 'value', 'probability', 'odds', 'hint', 'label_fr', 'value_fr', 'hint_fr'],
               additionalProperties: false,
             },
           },
@@ -751,6 +759,13 @@ const PICK_SCHEMA = {
           confidence: { type: 'string', enum: ['***', '**', '*'] },
           reasoning: { type: 'string' },
           key_factor: { type: 'string' },
+          // FRENCH. Pronext/PLAYR is a French product; the app chrome is
+          // localised but the pick content was English, so a French user read
+          // a French interface wrapped around English analysis. These ride the
+          // same call rather than a second translation pass, which would have
+          // doubled the per-league cost for text we are already generating.
+          reasoning_fr: { type: ['string', 'null'], description: 'reasoning translated to natural French, as a French sports writer would put it — not a literal word-for-word rendering. Keep every number, team, player and market exactly as in the English. Null only if you genuinely cannot produce it.' },
+          key_factor_fr: { type: ['string', 'null'], description: 'key_factor in natural French, same length discipline as the English (it is a one-line tagline under the pick).' },
           matchup_facts: {
             type: 'array',
             description:
@@ -830,6 +845,9 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     JSON.stringify(games, null, 2),
     '',
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
+    // The schema marks the _fr fields nullable so a refusal degrades to English
+    // rather than failing the whole call, but they are not optional in practice.
+    'FRENCH: every _fr field is required, not a bonus. The app ships in French, so reasoning_fr, key_factor_fr, and the label_fr / value_fr / hint_fr on every prop and factor must be filled. Write them as a French sports journalist would, not as a literal translation: use French market vocabulary (buts, cotes, mi-temps, plus/moins) and French decimal commas inside prose. Leave team names, player names and stat shorthand (xG, ERA, K/9) exactly as they are. Only return null on an _fr field when its English counterpart is null.',
     'Set game_date on every pick to the REAL calendar date (US Eastern Time) the event is played — for future events (e.g. an upcoming Grand Prix) use the event\'s date from the feed above, formatted YYYY-MM-DD.',
     'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
     ...(PROP_MENUS[cfg.sport] ? [
@@ -1107,6 +1125,16 @@ async function savePicks(league, picks) {
       if (t.length < 4 || /^n\/?a$/i.test(t)) return null;
       return t;
     })(p.key_factor),
+    // French copy. Same junk filter as the English: a model that fills the
+    // field with "n/a" is worse than one that leaves it null, because the app
+    // falls back to English on null and would print the junk otherwise.
+    reasoning_fr: ((t) => (typeof t === 'string' && t.trim().length > 8) ? t.trim() : null)(p.reasoning_fr),
+    key_factor_fr: ((k) => {
+      if (typeof k !== 'string') return null;
+      const t = k.trim();
+      if (t.length < 4 || /^n\/?a$/i.test(t)) return null;
+      return t;
+    })(p.key_factor_fr),
     // Phase 2: real, web-search-backed supporting facts → MATCHUP card.
     // Default to [] so a model that omits the field never nulls the
     // NOT NULL column.
@@ -1139,6 +1167,8 @@ async function savePicks(league, picks) {
           .filter((f) => f && typeof f.label === 'string' && typeof f.value === 'string'
             && Number.isFinite(f.strength))
           .map((f) => ({ label: f.label.trim().slice(0, 40), value: f.value.trim().slice(0, 30),
+                         label_fr: (typeof f.label_fr === 'string' && f.label_fr.trim()) ? f.label_fr.trim().slice(0, 40) : null,
+                         value_fr: (typeof f.value_fr === 'string' && f.value_fr.trim()) ? f.value_fr.trim().slice(0, 30) : null,
                          strength: Math.max(0, Math.min(100, Math.round(f.strength))) }))
           .slice(0, 5)
       : null,
@@ -1180,6 +1210,9 @@ async function savePicks(league, picks) {
           label: x.label.trim().slice(0, 60),
           value: x.value.trim().slice(0, 40),
           hint: (typeof x.hint === 'string' && x.hint.trim()) ? x.hint.trim().slice(0, 90) : null,
+          label_fr: (typeof x.label_fr === 'string' && x.label_fr.trim()) ? x.label_fr.trim().slice(0, 60) : null,
+          value_fr: (typeof x.value_fr === 'string' && x.value_fr.trim()) ? x.value_fr.trim().slice(0, 40) : null,
+          hint_fr: (typeof x.hint_fr === 'string' && x.hint_fr.trim()) ? x.hint_fr.trim().slice(0, 90) : null,
           probability: Math.round(x.probability),
           odds: (typeof x.odds === 'number' && x.odds >= 1.01 && x.odds <= 30) ? +x.odds.toFixed(2) : null,
         }));
