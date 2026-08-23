@@ -691,8 +691,8 @@ const PICK_SCHEMA = {
                 label: { type: 'string' },
                 value: { type: 'string' },
                 strength: { type: 'integer' },
-                label_fr: { type: ['string', 'null'], description: 'label in French, e.g. "Forme récente", "Écart de buts attendus", "Effectif disponible".' },
-                value_fr: { type: ['string', 'null'], description: 'value in French. Stat shorthand that is already language-neutral (+0.7 xG, 2.1 ERA, W-W-D-W) stays as it is; only translate actual words, and use French result letters where they are words (V-V-N-V for a French form string).' },
+                label_fr: { type: ['string', 'null'], description: 'label in French, e.g. "Forme récente".' },
+                value_fr: { type: ['string', 'null'], description: 'value in French. Language-neutral shorthand (+0.7 xG, 2.1 ERA) unchanged; form letters become French (V-V-N-V).' },
               },
               required: ['label', 'value', 'strength', 'label_fr', 'value_fr'],
               additionalProperties: false,
@@ -716,11 +716,10 @@ const PICK_SCHEMA = {
                 // Nested rather than a parallel french array on purpose: a
                 // separate list can drift out of order or length and silently
                 // attach the wrong translation to the wrong market.
-                label_fr: { type: ['string', 'null'], description: 'label in French, e.g. "Nombre de buts plus/moins 2,5", "Les deux équipes marquent". Use French market vocabulary, not a literal translation.' },
-                value_fr: { type: ['string', 'null'], description: 'value in French, e.g. "OUI", "PLUS DE 2,5". Player and team names stay as they are.' },
-                hint_fr: { type: ['string', 'null'], description: 'hint in French. Null if hint is null.' },
+                label_fr: { type: ['string', 'null'], description: 'label in French market vocabulary, e.g. "Nombre de buts plus/moins 2,5".' },
+                value_fr: { type: ['string', 'null'], description: 'value in French, e.g. "OUI", "PLUS DE 2,5". Names unchanged.' },
               },
-              required: ['label', 'value', 'probability', 'odds', 'hint', 'label_fr', 'value_fr', 'hint_fr'],
+              required: ['label', 'value', 'probability', 'odds', 'hint', 'label_fr', 'value_fr'],
               additionalProperties: false,
             },
           },
@@ -764,8 +763,7 @@ const PICK_SCHEMA = {
           // a French interface wrapped around English analysis. These ride the
           // same call rather than a second translation pass, which would have
           // doubled the per-league cost for text we are already generating.
-          reasoning_fr: { type: ['string', 'null'], description: 'reasoning translated to natural French, as a French sports writer would put it — not a literal word-for-word rendering. Keep every number, team, player and market exactly as in the English. Null only if you genuinely cannot produce it.' },
-          key_factor_fr: { type: ['string', 'null'], description: 'key_factor in natural French, same length discipline as the English (it is a one-line tagline under the pick).' },
+          key_factor_fr: { type: ['string', 'null'], description: 'key_factor in natural French, same length.' },
           matchup_facts: {
             type: 'array',
             description:
@@ -789,6 +787,32 @@ const PICK_SCHEMA = {
   required: ['picks'],
   additionalProperties: false,
 };
+
+/// One schema served every league, so a soccer call carried the F1 field_odds
+/// branch and the combat tale_of_tape branch it could never fill. That is pure
+/// grammar budget spent on nothing, and adding the French fields pushed the
+/// compiled grammar past Anthropic's size limit:
+///   "The compiled grammar is too large ... Simplify your tool schemas"
+/// Trimming the branches a sport cannot use buys back more room than the
+/// translation costs, and makes every call cheaper to compile besides.
+/// field_odds is the only sport-specific branch the MODEL fills; tale_of_tape,
+/// soccer_comparison and team_comparison are written by the grounding modules
+/// after the call, so they cost nothing here.
+const SPORT_ONLY = {
+  field_odds: ['f1', 'golf'],                 // race / field events only
+};
+
+function schemaFor(sport) {
+  // Structured clone so the constant is never mutated across leagues.
+  const schema = JSON.parse(JSON.stringify(PICK_SCHEMA));
+  const item = schema.properties.picks.items;
+  for (const [field, sports] of Object.entries(SPORT_ONLY)) {
+    if (sports.includes(sport)) continue;
+    delete item.properties[field];
+    item.required = item.required.filter((k) => k !== field);
+  }
+  return schema;
+}
 
 function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, excludeMatchups = []) {
   const cfg = LEAGUES[league];
@@ -847,7 +871,7 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
     'Return your picks via the structured output schema. Use web_search to verify late-breaking injury news, scratched starters, weather, or qualifying results.',
     // The schema marks the _fr fields nullable so a refusal degrades to English
     // rather than failing the whole call, but they are not optional in practice.
-    'FRENCH: every _fr field is required, not a bonus. The app ships in French, so reasoning_fr, key_factor_fr, and the label_fr / value_fr / hint_fr on every prop and factor must be filled. Write them as a French sports journalist would, not as a literal translation: use French market vocabulary (buts, cotes, mi-temps, plus/moins) and French decimal commas inside prose. Leave team names, player names and stat shorthand (xG, ERA, K/9) exactly as they are. Only return null on an _fr field when its English counterpart is null.',
+    'FRENCH: the _fr fields are required, not a bonus — the app ships in French. Fill key_factor_fr, and label_fr / value_fr on every prop and every factor. Write them as a French sports journalist would rather than translating literally: French market vocabulary (buts, cotes, mi-temps, plus/moins) and decimal commas. Team names, player names and stat shorthand (xG, ERA, K/9) stay exactly as they are.',
     'Set game_date on every pick to the REAL calendar date (US Eastern Time) the event is played — for future events (e.g. an upcoming Grand Prix) use the event\'s date from the feed above, formatted YYYY-MM-DD.',
     'For each pick also look up the CURRENT market odds for the picked outcome (Polymarket or a major sportsbook) and report them as decimal odds in market_odds with the source name in odds_source; null both if no real quote is found.',
     ...(PROP_MENUS[cfg.sport] ? [
@@ -912,7 +936,7 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
     thinking: { type: 'adaptive' },
     output_config: {
       effort: 'high',
-      format: { type: 'json_schema', schema: PICK_SCHEMA },
+      format: { type: 'json_schema', schema: schemaFor(cfg.sport) },
     },
     tools: [
       { type: 'web_search_20260209', name: 'web_search' },
@@ -1557,7 +1581,7 @@ async function runPipeline() {
         gt.fights = gt.fights.filter((f) => !seen.has(`ufc-${f.fightId}`));
         if (!gt.fights.length) { log(`${league}: upcoming card already covered.`); continue; }
         log(`Analyzing ${gt.fights.length} ${league} fights (grounded: ${gt.event.name})…`);
-        let draft = await combat.generateGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, groundTruth: gt, schema: PICK_SCHEMA, log });
+        let draft = await combat.generateGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, groundTruth: gt, schema: schemaFor('combat'), log });
         draft = await combat.verifyGroundedCombatPicks({ anthropic, model: ANTHROPIC_MODEL, picks: draft, groundTruth: gt, log });
         // Confident outcome props (method + distance) for the whole card.
         let outByPair = new Map();
