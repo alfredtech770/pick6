@@ -1236,7 +1236,6 @@ async function savePicks(league, picks) {
           hint: (typeof x.hint === 'string' && x.hint.trim()) ? x.hint.trim().slice(0, 90) : null,
           label_fr: (typeof x.label_fr === 'string' && x.label_fr.trim()) ? x.label_fr.trim().slice(0, 60) : null,
           value_fr: (typeof x.value_fr === 'string' && x.value_fr.trim()) ? x.value_fr.trim().slice(0, 40) : null,
-          hint_fr: (typeof x.hint_fr === 'string' && x.hint_fr.trim()) ? x.hint_fr.trim().slice(0, 90) : null,
           probability: Math.round(x.probability),
           odds: (typeof x.odds === 'number' && x.odds >= 1.01 && x.odds <= 30) ? +x.odds.toFixed(2) : null,
         }));
