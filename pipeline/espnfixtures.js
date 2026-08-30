@@ -21,6 +21,12 @@ const SITE = 'https://site.api.espn.com/apis/site/v2/sports';
 // League code (as written into picks.league) → ESPN scoreboard path.
 // The rugby numbers are ESPN's competition ids; they are stable.
 const PATHS = {
+  // The WNBA plays May–Sep and ESPN serves its scoreboard on the same
+  // endpoint, records included. It was on research mode purely because
+  // sportsdata.io has no WNBA tier — which meant paying for a web_search
+  // to discover a fixture list ESPN publishes for free, and trusting the
+  // model to remember a schedule instead of reading one.
+  WNBA:       'basketball/wnba',
   AFL:        'australian-football/afl',
   SIXNATIONS: 'rugby/180659',
   TOP14:      'rugby/270559',

@@ -274,8 +274,14 @@ const espnNorm = ({ Status, ...g }) => ({ ...g, status: Status || 'Scheduled' })
 // run year-round and are never gated.
 const SEASON_MONTHS = {
   NBA:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
-  NHL:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
+  // September included: NHL preseason starts in the third week and those
+  // games are real, bettable fixtures.
+  NHL:        [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+  KHL:        [9, 10, 11, 12, 1, 2, 3, 4],
+  IIHF:       [5],                                     // world championship
   NFL:        [8, 9, 10, 11, 12, 1, 2],
+  NCAAF:      [8, 9, 10, 11, 12, 1],                   // bowls + playoff in Jan
+  UFL:        [3, 4, 5, 6],                            // spring football
   MLB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   EPL:        [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
   LALIGA:     [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
@@ -291,11 +297,22 @@ const SEASON_MONTHS = {
   KBO:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   NPB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   NASCAR:     [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  // Cricket. IPL alone left the sport dark from July to February — nine
+  // months with no cricket league in the registry at all, which is why the
+  // app showed none. Internationals run essentially year-round and are the
+  // backbone; the franchise leagues fill the peaks.
   IPL:        [3, 4, 5, 6],
+  T20I:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  HUNDRED:    [7, 8],
+  CPL:        [8, 9],
+  T20BLAST:   [5, 6, 7],
+  PSL:        [4, 5],
+  BBL:        [12, 1],
   WC:         [6, 7],                                  // 2026 tournament only
-  ATP:        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  GOLF:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  ATP:        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  GOLF:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   F1:         [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  FORMULAE:   [12, 1, 2, 3, 4, 5, 6, 7, 8],            // covers the F1 winter
   // Rugby and AFL play weekly, so these windows are what keep them from
   // burning a research call every day of an eight-month off-season.
   AFL:        [3, 4, 5, 6, 7, 8, 9],                   // home-and-away + finals
@@ -315,6 +332,57 @@ function inSeason(league) {
   const months = SEASON_MONTHS[league];
   if (!months) return true;               // unlisted ⇒ year-round
   return months.includes(Number(todayISO().slice(5, 7)));
+}
+
+// The ten sports the app actually shows (Pick1HomeV4.swift `P1_SPORTS`).
+// Rugby and AFL are still generated — the model calls them fine — but no
+// screen renders them, so they run after everything a user can see rather
+// than competing with it for the daily budget.
+const APP_SPORTS = new Set([
+  'basketball', 'football', 'soccer', 'hockey', 'baseball',
+  'combat', 'f1', 'tennis', 'cricket', 'golf',
+]);
+
+/// Leagues to run today, ordered so every SPORT gets a turn before any
+/// sport gets a second one.
+///
+/// The loop used to walk `Object.entries(LEAGUES)` — plain declaration
+/// order — and the daily cost ceiling normally trips about two thirds of
+/// the way down. Whatever happened to sit at the tail of the object
+/// literal therefore never ran at all. On 24 Aug the run reached LIGUE1,
+/// 23rd of 32, and stopped: WNBA sits 27th, so the app had no basketball
+/// for sixteen days while the WNBA season was in full swing, and KBO, NPB
+/// and NASCAR never ran either. Coverage must not depend on where a key
+/// happens to sit in a literal.
+///
+/// Round-robin by sport means that when the budget does run out it drops
+/// the fourth soccer league of the day, not the only basketball one.
+function leagueRunOrder() {
+  const bySport = new Map();
+  for (const [league, cfg] of Object.entries(LEAGUES)) {
+    // Out-of-season leagues are dropped here rather than inside the loop.
+    // Left in, a sport whose only in-season league sits second in its own
+    // bucket would still wait a full extra round for a turn it deserves
+    // immediately. They cost nothing downstream: an out-of-season feed
+    // returns no games and `upsertLiveScores` no-ops on an empty array.
+    if (!inSeason(league)) continue;
+    if (!bySport.has(cfg.sport)) bySport.set(cfg.sport, []);
+    bySport.get(cfg.sport).push([league, cfg]);
+  }
+  const visible = [...bySport.entries()].filter(([sp]) => APP_SPORTS.has(sp));
+  const hidden  = [...bySport.entries()].filter(([sp]) => !APP_SPORTS.has(sp));
+
+  const interleave = (buckets) => {
+    const out = [];
+    for (let round = 0; ; round++) {
+      let any = false;
+      for (const [, list] of buckets) {
+        if (list[round]) { out.push(list[round]); any = true; }
+      }
+      if (!any) return out;
+    }
+  };
+  return [...interleave(visible), ...interleave(hidden)];
 }
 
 const LEAGUES = {
@@ -491,10 +559,41 @@ const LEAGUES = {
     notes: 'ATP/WTA singles. Use web_search to find today\'s completed-draw matches — Grand Slams take priority when running (Wimbledon Jun-Jul, US Open Aug-Sep, etc.), otherwise the biggest tour events. Surface 2-4 matches with the clearest edges (ranking gaps, surface specialists, head-to-head). Pick is the player to win the match; home_team/away_team are the two players.',
   },
 
-  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
+  // ─── Cricket — research mode; Claude web-searches today's slate.
+  //
+  // IPL used to be the ONLY cricket league here, so from July to February
+  // the registry had no cricket at all. Worse, its notes told the model to
+  // also cover "any notable T20I/Test internationals", so August picks came
+  // back labelled IPL months after the IPL final — real fixtures under a
+  // competition that was not playing. Internationals now have their own
+  // entry and IPL is strictly IPL.
   IPL: {
     sport: 'cricket', promptMode: 'research', fetcher: null,
-    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
+    notes: 'Indian Premier League (Mar–May, final in late May/early June). Use web_search to find today\'s IPL fixtures. Surface 1–4 picks per match day. Pick is the team to win the match. Return an empty array if the IPL is not currently playing — do NOT substitute other cricket.',
+  },
+  T20I: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'International cricket — T20Is, ODIs and Tests between full-member nations, plus major ICC events (World Cups, Champions Trophy, Asia Cup). This runs essentially year-round and is the backbone of cricket coverage. Use web_search to find matches being played today or starting today. For a Test, the pick is the match result (a draw is a genuine outcome and often the honest call on a flat pitch — say so rather than forcing a winner). For white-ball, pick the team to win. Surface 1–4 picks.',
+  },
+  HUNDRED: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'The Hundred — England, 100-ball, men\'s and women\'s competitions run together (Aug). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  CPL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Caribbean Premier League — T20, Aug–Sep. Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  T20BLAST: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'T20 Blast — England and Wales domestic T20 (May–Jul, finals day in Jul). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  PSL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Pakistan Super League — T20 (Apr–May). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  BBL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Big Bash League — Australia, T20 (Dec–Jan). Use web_search to find today\'s fixtures. Pick the team to win.',
   },
 
   // 2026 World Cup — branded "Summer Football" in the app (App Review
@@ -523,16 +622,38 @@ const LEAGUES = {
     notes: 'Major League Soccer — US/Canada top flight (Feb–Oct). Pick the match result; draw allowed.' },
   LIGAMX: { sport: 'soccer', promptMode: 'research', fetcher: null,
     notes: 'Liga MX — Mexican top flight. Pick the match result; draw allowed.' },
-  WNBA: { sport: 'basketball', promptMode: 'research', fetcher: null,
-    notes: 'WNBA — women\'s pro basketball (May–Sep). Pick the game winner.' },
+  // Grounded on ESPN's scoreboard rather than researched: the fixture
+  // list, team names and season records come from the feed, and the model
+  // only judges the games it is handed. `researchFallback` keeps the
+  // league alive if ESPN ever 404s mid-season.
+  WNBA: {
+    sport: 'basketball', promptMode: 'team',
+    fetcher: espnfixtures.fetcherFor('WNBA'), researchFallback: true,
+    notes: 'WNBA — women\'s pro basketball (May–Sep, playoffs into Oct). Home advantage is smaller than the NBA\'s and rest matters more: the schedule is compressed and rosters are short, so a team on the second night of a back-to-back with a star rested is a real edge. Pick the game winner.',
+    normalizer: espnNorm,
+  },
   EUROLEAGUE: { sport: 'basketball', promptMode: 'research', fetcher: null,
     notes: 'EuroLeague — top European club basketball (Oct–May). Pick the game winner.' },
   NCAAB: { sport: 'basketball', promptMode: 'research', fetcher: null,
     notes: 'NCAA Division I men\'s basketball (Nov–Apr). Pick the game winner.' },
+  // Hockey outside the NHL. The NHL alone leaves the sport dark from mid-June
+  // to late September; the KHL starting in early September closes most of
+  // that, and the IIHF Worlds cover May. July and August have no meaningful
+  // professional hockey anywhere, and no league entry can invent one.
+  KHL: { sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'KHL — Kontinental Hockey League (Sep–Apr, Gagarin Cup playoffs Mar–Apr). Use web_search to find today\'s fixtures. Pick the game winner; note that KHL regulation ties go to overtime and shootout, so the market line is for the 60-minute result unless stated otherwise.' },
+  IIHF: { sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'IIHF World Championship — national teams (May). Use web_search to find today\'s fixtures. Pick the game winner.' },
   KBO: { sport: 'baseball', promptMode: 'research', fetcher: null,
     notes: 'KBO — Korean pro baseball (Mar–Oct). Pick the game winner.' },
   NPB: { sport: 'baseball', promptMode: 'research', fetcher: null,
     notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
+  NCAAF: { sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I college football (Aug–Dec, bowls and the playoff into Jan). Use web_search to find today\'s fixtures — there are far too many games to cover, so surface the 2–4 with the clearest edges, favouring ranked teams and conference games. Spreads run wide here; a 30-point favourite is normal and says little about the win probability being anything other than very high. Pick the game winner.' },
+  UFL: { sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'United Football League — spring American football (Mar–Jun). Use web_search to find today\'s fixtures. Pick the game winner.' },
+  FORMULAE: { sport: 'f1', promptMode: 'research', fetcher: null,
+    notes: 'Formula E — all-electric single-seaters, season runs Dec–Aug across city street circuits. Use web_search to find the next E-Prix. Pick the race winner; populate field_odds with the top contenders. Note that Formula E results are far less predictable than F1 — street circuits, energy management and a tight field mean favourites win a much smaller share of races, so keep probabilities honest and low.' },
   NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
     notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
 
@@ -1559,7 +1680,9 @@ async function runPipeline() {
     const onlyLeagues = (process.env.RUN_LEAGUES || '')
       .split(',').map((s) => s.trim().toUpperCase())
       .filter((s) => s && s !== 'NONE');   // 'none' = explicit no-filter
-    for (const [league, cfg] of Object.entries(LEAGUES)) {
+    const runOrder = leagueRunOrder();
+    log(`   Run order (${runOrder.length} in-season): ${runOrder.map(([l]) => l).join(', ')}`);
+    for (const [league, cfg] of runOrder) {
       try {
       if (onlyLeagues.length && !onlyLeagues.includes(league)) { continue; }
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
