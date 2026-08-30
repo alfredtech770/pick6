@@ -417,6 +417,11 @@ struct P1V4Hero: View {
 struct P1V4GameRow: View {
     let pick: Pick
     var isLocked: Bool = false
+    /// Marks the call on today's board that would return the most on the
+    /// reference stake. It is deliberately NOT presented as the best pick:
+    /// the biggest return is by definition the least likely call, which is
+    /// why the win probability sits right beside it at the same weight.
+    var isBiggestWin: Bool = false
     var onTap: () -> Void = {}
     var onTrack: () -> Void = {}
 
@@ -464,7 +469,7 @@ struct P1V4GameRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(teamShortName(called, sport: pick.sport).uppercased())
-                        .font(.anton(19))
+                        .font(.anton(21))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.55)
@@ -481,8 +486,8 @@ struct P1V4GameRow: View {
 
                 VStack(alignment: .trailing, spacing: 1) {
                     (
-                        Text("\(Int(pick.probability.rounded()))").font(.anton(24))
-                        + Text("%").font(.anton(11))
+                        Text("\(Int(pick.probability.rounded()))").font(.anton(26))
+                        + Text("%").font(.anton(12))
                     )
                     .foregroundStyle(V4.win)
                     .blur(radius: isLocked ? 8 : 0)
@@ -497,27 +502,37 @@ struct P1V4GameRow: View {
                 .frame(height: 1)
                 .padding(.top, 13)
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("$100 RETURNS")
-                        .font(.archivoNarrow(8.5, weight: .bold))
-                        .tracking(1.19)
-                        .foregroundStyle(V4.mute)
+            // Money left, action right. Giving the return the full width made
+            // it the biggest thing on screen but also made the card enormous
+            // and loose; paired with the button it stays the subject of the
+            // card while the whole thing reads in one glance.
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("$\(returns)")
-                            .font(.anton(27))
-                            .foregroundStyle(Color.p1Lime)
-                            .blur(radius: isLocked ? 8 : 0)
-                        Text(oddsNote)
-                            .font(.mono(8.5, weight: .bold))
+                        Text("$100")
+                            .font(.anton(17))
                             .foregroundStyle(V4.mute)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(V4.mute)
+                        Text("$\(returns)")
+                            .font(.anton(33))
+                            .foregroundStyle(Color.p1Lime)
+                            .shadow(color: Color.p1Lime.opacity(0.4), radius: 11)
+                            .lineLimit(1).minimumScaleFactor(0.6)
                             .blur(radius: isLocked ? 8 : 0)
                     }
+                    // The multiplier and its source. "$100 →" already says
+                    // what the figure is, so the old "$100 RETURNS" caption
+                    // above it was saying the same thing twice.
+                    Text(oddsNote)
+                        .font(.mono(8.5, weight: .bold))
+                        .foregroundStyle(V4.mute)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .blur(radius: isLocked ? 8 : 0)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 6)
 
                 if isLocked {
                     HStack(spacing: 6) {
@@ -535,7 +550,7 @@ struct P1V4GameRow: View {
                             .font(.archivoNarrow(11, weight: .bold))
                             .tracking(1.1)
                             .foregroundStyle(V4.ink)
-                            .padding(.horizontal, 16).padding(.vertical, 11)
+                            .padding(.horizontal, 18).padding(.vertical, 12)
                             .background(Capsule().fill(Color.p1Lime))
                             .shadow(color: Color.p1Lime.opacity(0.35), radius: 10, y: 4)
                     }
@@ -547,12 +562,26 @@ struct P1V4GameRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(LinearGradient(
+                    colors: isBiggestWin ? [V4.gold.opacity(0.10), V4.panelBot]
+                                         : [V4.rowTop, V4.panelBot],
+                    startPoint: .topLeading, endPoint: .bottomTrailing))
         )
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(V4.line, lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .strokeBorder(isBiggestWin ? V4.gold.opacity(0.5) : V4.line, lineWidth: 1))
+        .overlay(alignment: .topTrailing) {
+            if isBiggestWin && !isLocked {
+                Text("BIGGEST WIN")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundStyle(V4.ink)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Capsule().fill(V4.gold))
+                    .offset(x: -14, y: -8)
+            }
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .onTapGesture { isLocked ? onTrack() : onTap() }
     }
 
@@ -562,20 +591,20 @@ struct P1V4GameRow: View {
             // stacking a placeholder shield behind the golfer invented one.
             if !isFieldEvent {
                 TeamLogo(sport: pick.sport, team: other, size: .small)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 35, height: 35)
                     .background(Circle().fill(V4.panelBot))
                     .clipShape(Circle())
                     .overlay(Circle().strokeBorder(V4.line, lineWidth: 1))
-                    .offset(x: 21)
+                    .offset(x: 23)
             }
             TeamLogo(sport: pick.sport, team: called, size: .small)
-                .frame(width: 36, height: 36)
+                .frame(width: 40, height: 40)
                 .background(Circle().fill(V4.panelBot))
                 .clipShape(Circle())
                 .overlay(Circle().strokeBorder(Color.p1Lime.opacity(0.85), lineWidth: 1.5))
                 .shadow(color: Color.p1Lime.opacity(0.4), radius: 6)
         }
-        .frame(width: isFieldEvent ? 40 : 57, height: 38, alignment: .leading)
+        .frame(width: isFieldEvent ? 43 : 63, height: 42, alignment: .leading)
         .blur(radius: isLocked ? 6 : 0)
     }
 
@@ -974,6 +1003,25 @@ struct Pick1HomeV4: View {
     /// Within the selected sport the hero IS the free pick, so everything
     /// under it is locked for a free user. Rows still render, blurred, because
     /// a visible locked slate converts better than a hidden one.
+    /// The unlocked call on today's board that returns the most on the
+    /// reference stake. Nil when there is nothing to compare, or when the
+    /// whole board pays about the same, in which case crowning one card
+    /// would be noise dressed as a signal.
+    private var biggestWinId: UUID? {
+        let board = visibleRest
+        #if DEBUG
+        // The badge needs a board of at least two to mean anything, and a
+        // thin slate often has one. Review hook, like the others here.
+        if CommandLine.arguments.contains("-forceBiggestWin") { return board.first?.id }
+        #endif
+        guard board.count > 1,
+              let top = board.max(by: { $0.decimalOdds < $1.decimalOdds }),
+              let low = board.min(by: { $0.decimalOdds < $1.decimalOdds }),
+              top.decimalOdds >= low.decimalOdds * 1.15
+        else { return nil }
+        return top.id
+    }
+
     private var visibleRest: [Pick] { rest.filter { !locked($0) } }
     private var hiddenRest: [Pick] { rest.filter { locked($0) } }
 
@@ -1105,9 +1153,10 @@ struct Pick1HomeV4: View {
             .padding(.horizontal, 22)
             .padding(.top, 24)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 ForEach(visibleRest) { p in
                     P1V4GameRow(pick: p,
+                                isBiggestWin: p.id == biggestWinId,
                                 onTap: { onSelectPick(p) },
                                 onTrack: { onTrackPick(p) })
                 }
