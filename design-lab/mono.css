@@ -1,0 +1,274 @@
+/* mono.css — the European sportsbook layout Betclic uses (sport strip,
+   compact event rows, 1/N/2 markets, live timer), rendered with no colour
+   at all.
+
+   The whole point: every piece of emphasis is carried by weight, size,
+   surface elevation or an inverted fill. Nothing is carried by hue. The
+   model's selection is the one white-filled button on the screen, which
+   makes it the most emphatic element in the app without a single accent. */
+
+:root {
+  --m-bg:     #0A0A0B;   /* page */
+  --m-surf:   #121214;   /* event cards, header, nav */
+  --m-elev:   #1B1B1E;   /* inner rows, inputs */
+  --m-line:   #262629;   /* borders, rules */
+  --m-line2:  #37373C;   /* button outlines */
+  --m-text:   #FFFFFF;
+  --m-mid:    #A3A3AA;   /* secondary text */
+  --m-dim:    #6A6A72;   /* tertiary / labels */
+  --m-faint:  #46464D;   /* disabled */
+}
+
+.mono {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  background: var(--m-bg); scrollbar-width: none;
+  font-family: "Archivo", -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--m-text);
+}
+.mono::-webkit-scrollbar { display: none; }
+.mono .tail { height: 96px; }
+
+/* Colour is removed from the crests too, so the screen is genuinely
+   monochrome. Delete this rule to bring team colours back. */
+.mono .crest img { filter: grayscale(1) contrast(1.05) brightness(1.25); }
+.mono .crest .fallback {
+  background: var(--m-elev); border-color: var(--m-line2); color: var(--m-mid);
+  font-family: "Archivo"; font-weight: 800;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.mo-header {
+  position: sticky; top: 0; z-index: 40; background: var(--m-surf);
+  padding: 58px 16px 0; border-bottom: 1px solid var(--m-line);
+}
+.mo-headrow { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; }
+.mo-logo {
+  font-weight: 900; font-size: 17px; letter-spacing: -.5px; color: #fff;
+}
+.mo-headrow .spacer { flex: 1; }
+.mo-icon {
+  width: 34px; height: 34px; border-radius: 4px; flex: none;
+  display: grid; place-items: center; color: var(--m-mid); cursor: pointer;
+}
+.mo-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  background: var(--m-elev); border: 1px solid var(--m-line2); color: var(--m-mid);
+  display: grid; place-items: center; font-weight: 800; font-size: 12px;
+}
+.mo-plan {
+  padding: 6px 9px; border-radius: 4px; border: 1px solid var(--m-line2);
+  font-size: 9px; font-weight: 800; letter-spacing: 1.2px; color: var(--m-mid);
+}
+
+/* Sport strip — active gets a white underline, the European convention */
+.mo-strip { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; }
+.mo-strip::-webkit-scrollbar { display: none; }
+.mo-tab {
+  flex: none; padding-bottom: 11px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; color: var(--m-dim);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  white-space: nowrap;
+}
+.mo-tab .ct { font-size: 11px; font-weight: 600; color: var(--m-faint); }
+.mo-tab.on { color: #fff; border-bottom-color: #fff; }
+.mo-tab.on .ct { color: var(--m-mid); }
+
+/* ── Section rule ────────────────────────────────────────────────── */
+.mo-sect {
+  display: flex; align-items: center; gap: 10px; padding: 20px 16px 10px;
+}
+.mo-sect .t {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.6px;
+  text-transform: uppercase; color: var(--m-dim);
+}
+.mo-sect .rule { flex: 1; height: 1px; background: var(--m-line); }
+.mo-sect .n { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--m-faint); }
+
+/* ── Event row ───────────────────────────────────────────────────── */
+.mo-event {
+  margin: 0 12px 6px; background: var(--m-surf);
+  border: 1px solid var(--m-line); border-radius: 6px;
+  cursor: pointer; overflow: hidden;
+}
+.mo-ev-top {
+  display: flex; align-items: center; gap: 8px; padding: 11px 13px 9px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.1px; color: var(--m-dim);
+}
+.mo-ev-top .time { margin-left: auto; letter-spacing: .4px; color: var(--m-mid); }
+.mo-star { color: var(--m-faint); display: flex; }
+
+/* live chip: an outlined pill with a pulsing white dot, no red */
+.mo-livechip {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--m-line2); border-radius: 3px; padding: 2px 6px;
+  font-size: 9px; font-weight: 800; letter-spacing: 1px; color: #fff;
+}
+.mo-livechip .d {
+  width: 5px; height: 5px; border-radius: 50%; background: #fff;
+  animation: moPulse 1.5s ease-in-out infinite;
+}
+@keyframes moPulse { 50% { opacity: .2 } }
+
+.mo-teams { padding: 0 13px 11px; display: flex; flex-direction: column; gap: 8px; }
+.mo-team { display: flex; align-items: center; gap: 10px; }
+.mo-team .crest, .mo-team .crest.small { width: 22px; height: 22px; }
+.mo-team .crest .fallback { font-size: 8px; }
+.mo-team .nm {
+  font-size: 14px; font-weight: 600; color: #fff; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mo-team .sc { margin-left: auto; font-size: 15px; font-weight: 800; color: #fff; }
+.mo-team.dim .nm, .mo-team.dim .sc { color: var(--m-faint); }
+
+/* markets: 1 / N / 2. The model's side is the inverted button —
+   the single brightest thing on the screen. */
+.mo-mkt { display: flex; gap: 5px; padding: 0 13px 12px; }
+.mo-odd {
+  flex: 1; min-width: 0; cursor: pointer;
+  border: 1px solid var(--m-line2); border-radius: 4px; padding: 9px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: transparent; transition: background .14s, border-color .14s;
+}
+.mo-odd:active { background: var(--m-elev); }
+.mo-odd .l { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: var(--m-dim); }
+.mo-odd .v { font-size: 14px; font-weight: 700; color: #fff; }
+.mo-odd.pick { background: #fff; border-color: #fff; }
+.mo-odd.pick .l { color: rgba(0,0,0,.55); }
+.mo-odd.pick .v { color: #000; }
+.mo-odd.locked { border-style: dashed; border-color: var(--m-line); }
+.mo-odd.locked .v, .mo-odd.locked .l { color: var(--m-faint); }
+
+/* model strip: label, selection, confidence bar, percentage */
+.mo-model {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 13px; border-top: 1px solid var(--m-line); background: var(--m-elev);
+  font-size: 11px; font-weight: 600; color: var(--m-mid);
+}
+.mo-model .tag {
+  font-size: 9px; font-weight: 800; letter-spacing: 1.2px; color: var(--m-dim);
+  border: 1px solid var(--m-line2); border-radius: 3px; padding: 2px 5px;
+}
+.mo-model .sel { color: #fff; font-weight: 700; }
+.mo-model .bar {
+  margin-left: auto; width: 46px; height: 3px; background: var(--m-line); flex: none;
+}
+.mo-model .bar i { display: block; height: 100%; background: #fff; }
+.mo-model .pct { font-size: 12px; font-weight: 800; color: #fff; flex: none; width: 32px; text-align: right; }
+.mo-model.locked .sel, .mo-model.locked .pct { color: var(--m-faint); }
+.mo-model.locked .bar i { background: var(--m-line2); }
+
+/* ── Ledger (My picks) ───────────────────────────────────────────── */
+.mo-ledger { margin: 0 12px; }
+.mo-lrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 13px 13px 12px; cursor: pointer;
+  background: var(--m-surf); border: 1px solid var(--m-line);
+  border-left-width: 2px; border-radius: 4px; margin-bottom: 5px;
+}
+/* settled state is carried by the left rule, not by colour */
+.mo-lrow.won  { border-left-color: #fff; }
+.mo-lrow.lost { border-left-color: var(--m-faint); }
+.mo-lrow.live { border-left-color: var(--m-mid); }
+.mo-lrow.upcoming { border-left-color: var(--m-line2); }
+.mo-lrow .g { flex: 1; min-width: 0; }
+.mo-lrow .g .mu {
+  font-size: 13.5px; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mo-lrow .g .meta {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .5px;
+  color: var(--m-dim); margin-top: 3px;
+}
+.mo-lrow .sel { width: 84px; flex: none; }
+.mo-lrow .sel .n { font-size: 12px; font-weight: 700; color: var(--m-mid);
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mo-lrow .sel .o { font-size: 11px; font-weight: 600; color: var(--m-faint); margin-top: 2px; }
+.mo-lrow .out { flex: none; text-align: right; }
+.mo-lrow .out .r { font-size: 13px; font-weight: 800; color: #fff; }
+.mo-lrow .out .r.dim { color: var(--m-faint); }
+.mo-lrow .out .s {
+  font-size: 9px; font-weight: 800; letter-spacing: 1px;
+  color: var(--m-dim); margin-top: 3px;
+}
+
+/* ── Summary strip ───────────────────────────────────────────────── */
+.mo-summary {
+  display: flex; margin: 0 12px 4px;
+  border: 1px solid var(--m-line); border-radius: 6px; overflow: hidden;
+}
+.mo-sum {
+  flex: 1; padding: 13px 12px; background: var(--m-surf);
+  border-left: 1px solid var(--m-line);
+}
+.mo-sum:first-child { border-left: 0; }
+.mo-sum .k { font-size: 9px; font-weight: 800; letter-spacing: 1.3px; color: var(--m-dim); }
+.mo-sum .v { font-size: 20px; font-weight: 800; color: #fff; margin-top: 5px; }
+.mo-sum .v.dim { color: var(--m-faint); }
+
+/* ── Settings list ───────────────────────────────────────────────── */
+.mo-list {
+  margin: 0 12px 12px; border: 1px solid var(--m-line);
+  border-radius: 6px; overflow: hidden; background: var(--m-surf);
+}
+.mo-item {
+  display: flex; align-items: center; gap: 13px; padding: 15px 13px;
+  border-top: 1px solid var(--m-line); cursor: pointer;
+}
+.mo-item:first-child { border-top: 0; }
+.mo-item .ic { color: var(--m-dim); display: flex; flex: none; }
+.mo-item .t { font-size: 14px; font-weight: 600; color: #fff; }
+.mo-item .v {
+  margin-left: auto; display: flex; align-items: center; gap: 9px;
+  font-size: 12px; font-weight: 600; color: var(--m-dim);
+}
+
+/* ── Buttons / promo ─────────────────────────────────────────────── */
+.mo-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 14px; border-radius: 4px; cursor: pointer; border: none;
+  font-family: "Archivo"; font-weight: 800; font-size: 13px;
+  letter-spacing: .8px; text-transform: uppercase;
+  background: #fff; color: #000;
+}
+.mo-btn.ghost { background: transparent; border: 1px solid var(--m-line2); color: #fff; }
+
+.mo-promo {
+  margin: 0 12px 12px; padding: 18px 16px;
+  border: 1px solid var(--m-line2); border-radius: 6px; background: var(--m-surf);
+  display: flex; flex-direction: column; gap: 12px; cursor: pointer;
+}
+.mo-promo .k {
+  font-size: 9px; font-weight: 800; letter-spacing: 1.6px; color: var(--m-dim);
+}
+.mo-promo .t { font-size: 19px; font-weight: 800; color: #fff; line-height: 1.25; }
+.mo-promo .s { font-size: 12.5px; font-weight: 500; color: var(--m-mid); line-height: 1.55; }
+.mo-promo .fine { font-size: 10px; font-weight: 500; color: var(--m-faint); text-align: center; }
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.mo-empty {
+  margin: 0 12px; padding: 48px 24px; text-align: center;
+  border: 1px dashed var(--m-line2); border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+}
+.mo-empty .ic { color: var(--m-faint); }
+.mo-empty .t { font-size: 14px; font-weight: 800; color: #fff; letter-spacing: .3px; }
+.mo-empty .s { font-size: 12.5px; font-weight: 500; color: var(--m-dim); max-width: 220px; line-height: 1.55; }
+
+/* ── Bottom nav ──────────────────────────────────────────────────── */
+.mo-nav {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 800;
+  background: var(--m-surf); border-top: 1px solid var(--m-line);
+  display: flex; padding: 9px 4px 24px;
+}
+.mo-navitem {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 4px 0; cursor: pointer; color: var(--m-faint); position: relative;
+}
+.mo-navitem .lbl { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; }
+.mo-navitem.on { color: #fff; }
+.mo-navitem .dot {
+  position: absolute; top: 0; left: 50%; margin-left: 6px;
+  width: 5px; height: 5px; border-radius: 50%; background: #fff;
+}

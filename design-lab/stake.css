@@ -1,0 +1,267 @@
+/* stake.css — Pick1 rebuilt in Stake's design language.
+   Their system is the opposite of Pick1's: navy-on-navy surfaces instead
+   of black, one signal green instead of lime + gold, small radii, dense
+   functional rows, and no display type — information over atmosphere. */
+
+:root {
+  /* Stake palette */
+  --s-bg:      #0F212E;   /* page */
+  --s-surface: #1A2C38;   /* header, cards, nav */
+  --s-elev:    #213743;   /* inputs, inner rows, stat boxes */
+  --s-elev2:   #2F4553;   /* buttons, borders */
+  --s-green:   #00E701;
+  --s-green-d: #00c701;
+  --s-blue:    #1475E1;
+  --s-red:     #E9113C;
+  --s-text:    #FFFFFF;
+  --s-muted:   #B1BAD3;
+  --s-dim:     #557086;
+}
+
+.stake {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  background: var(--s-bg); scrollbar-width: none;
+  font-family: "Archivo", -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.stake::-webkit-scrollbar { display: none; }
+.stake .tail { height: 92px; }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.sk-header {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--s-surface);
+  padding: 58px 12px 10px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+.sk-logo {
+  font-family: "Archivo"; font-weight: 900; font-size: 17px; color: #fff;
+  letter-spacing: -.4px; display: flex; align-items: center; gap: 1px;
+}
+.sk-logo b { color: var(--s-green); font-weight: 900; }
+.sk-header .spacer { flex: 1; }
+
+.sk-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 14px; border-radius: 4px; cursor: pointer;
+  font-family: "Archivo"; font-weight: 700; font-size: 13px; line-height: 1;
+  border: none; white-space: nowrap;
+}
+.sk-btn.green { background: var(--s-green); color: #0A1A22; }
+.sk-btn.green:active { background: var(--s-green-d); }
+.sk-btn.grey  { background: var(--s-elev2); color: #fff; }
+.sk-btn.ghost { background: transparent; color: var(--s-muted); }
+.sk-btn.block { width: 100%; padding: 13px; font-size: 14px; }
+
+.sk-balance {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--s-bg); border-radius: 4px; padding: 8px 10px;
+}
+.sk-balance .n { font-weight: 700; font-size: 13px; color: #fff; }
+.sk-balance .u { font-size: 10px; font-weight: 700; color: var(--s-dim); letter-spacing: .4px; }
+.sk-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex: none;
+  background: var(--s-elev2); color: var(--s-muted);
+  display: grid; place-items: center; font-weight: 800; font-size: 13px;
+}
+
+/* ── Search ──────────────────────────────────────────────────────── */
+.sk-search {
+  margin: 12px; display: flex; align-items: center; gap: 9px;
+  background: var(--s-elev); border: 1px solid var(--s-elev2);
+  border-radius: 4px; padding: 11px 12px; color: var(--s-dim);
+  font-size: 13px; font-weight: 500;
+}
+
+/* ── Sport pills ─────────────────────────────────────────────────── */
+.sk-pills {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 12px;
+  scrollbar-width: none;
+}
+.sk-pills::-webkit-scrollbar { display: none; }
+.sk-pill {
+  flex: none; display: flex; align-items: center; gap: 7px;
+  padding: 9px 13px; border-radius: 4px; cursor: pointer;
+  background: var(--s-elev); color: var(--s-muted);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.sk-pill .ct {
+  background: var(--s-bg); color: var(--s-dim);
+  padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700;
+}
+.sk-pill.on { background: var(--s-elev2); color: #fff; }
+.sk-pill.on .ct { color: var(--s-green); }
+
+/* ── Section head ────────────────────────────────────────────────── */
+.sk-sect {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px 10px;
+}
+.sk-sect .t { font-size: 14px; font-weight: 800; color: #fff; }
+.sk-sect .ic { color: var(--s-muted); display: flex; }
+.sk-sect .link {
+  margin-left: auto; font-size: 12px; font-weight: 700; color: var(--s-muted);
+  display: flex; align-items: center; gap: 4px; cursor: pointer;
+}
+
+/* ── Event card: the sportsbook row ──────────────────────────────── */
+.sk-event {
+  margin: 0 12px 8px; border-radius: 6px; overflow: hidden;
+  background: var(--s-surface); cursor: pointer;
+}
+.sk-event-top {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--s-dim);
+}
+.sk-event-top .lg { color: var(--s-muted); }
+.sk-event-top .time { margin-left: auto; }
+.sk-live {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--s-red); color: #fff; border-radius: 3px;
+  padding: 2px 6px; font-size: 9px; font-weight: 800; letter-spacing: .6px;
+}
+.sk-live .d {
+  width: 5px; height: 5px; border-radius: 50%; background: #fff;
+  animation: skBlink 1.4s ease-in-out infinite;
+}
+@keyframes skBlink { 50% { opacity: .25 } }
+
+.sk-teams { padding: 0 12px 10px; display: flex; flex-direction: column; gap: 7px; }
+.sk-team { display: flex; align-items: center; gap: 9px; }
+.sk-team .crest { width: 20px; height: 20px; }
+.sk-team .crest.small { width: 20px; height: 20px; }
+.sk-team .crest .fallback { font-family: "Archivo"; font-weight: 800; font-size: 8px; }
+.sk-team .nm { font-size: 13.5px; font-weight: 600; color: #fff; }
+.sk-team .sc { margin-left: auto; font-size: 14px; font-weight: 800; color: #fff; }
+.sk-team.dim .nm, .sk-team.dim .sc { color: var(--s-dim); }
+
+/* outcome buttons — the AI's side is the highlighted selection */
+.sk-odds { display: flex; gap: 4px; padding: 0 8px 8px; }
+.sk-odd {
+  flex: 1; min-width: 0; border-radius: 4px; cursor: pointer;
+  background: var(--s-elev); padding: 9px 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  border: 1px solid transparent; transition: background .15s;
+}
+.sk-odd:active { background: var(--s-elev2); }
+.sk-odd .l {
+  font-size: 11px; font-weight: 600; color: var(--s-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sk-odd .v { font-size: 13px; font-weight: 800; color: #fff; flex: none; }
+.sk-odd.pick {
+  background: rgba(0,231,1,.10); border-color: rgba(0,231,1,.55);
+}
+.sk-odd.pick .l { color: #fff; }
+.sk-odd.pick .v { color: var(--s-green); }
+.sk-odd.locked { color: var(--s-dim); }
+.sk-odd.locked .v { color: var(--s-dim); }
+
+/* the model bar under the markets */
+.sk-model {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; background: var(--s-elev);
+  font-size: 11px; font-weight: 700; color: var(--s-muted);
+}
+.sk-model .tag {
+  background: rgba(0,231,1,.14); color: var(--s-green);
+  padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 800; letter-spacing: .5px;
+}
+.sk-model .pct { margin-left: auto; color: var(--s-green); font-weight: 800; font-size: 12px; }
+.sk-model.locked .tag { background: rgba(177,186,211,.12); color: var(--s-muted); }
+.sk-model.locked .pct { color: var(--s-dim); }
+
+/* confidence meter */
+.sk-meter { height: 3px; background: var(--s-bg); }
+.sk-meter i { display: block; height: 100%; background: var(--s-green); }
+.sk-meter.locked i { background: var(--s-elev2); }
+
+/* ── Stat boxes ──────────────────────────────────────────────────── */
+.sk-stats { display: flex; gap: 8px; padding: 0 12px 12px; }
+.sk-stat {
+  flex: 1; background: var(--s-surface); border-radius: 6px; padding: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sk-stat .k { font-size: 10px; font-weight: 700; color: var(--s-dim); letter-spacing: .5px; }
+.sk-stat .v { font-size: 19px; font-weight: 800; color: #fff; }
+.sk-stat .v.green { color: var(--s-green); }
+.sk-stat .v.red { color: var(--s-red); }
+
+/* ── Table rows (My Picks) ───────────────────────────────────────── */
+.sk-table { margin: 0 12px; border-radius: 6px; overflow: hidden; background: var(--s-surface); }
+.sk-thead {
+  display: flex; gap: 8px; padding: 10px 12px;
+  font-size: 10px; font-weight: 700; color: var(--s-dim); letter-spacing: .5px;
+  background: var(--s-elev);
+}
+.sk-row {
+  display: flex; align-items: center; gap: 8px; padding: 12px;
+  border-top: 1px solid var(--s-bg); cursor: pointer;
+}
+.sk-row:first-child { border-top: 0; }
+.sk-row .game { flex: 1; min-width: 0; }
+.sk-row .game .mu {
+  font-size: 13px; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sk-row .game .meta { font-size: 11px; font-weight: 500; color: var(--s-dim); margin-top: 2px; }
+.sk-row .sel { width: 88px; flex: none; }
+.sk-row .sel .nm { font-size: 12px; font-weight: 700; color: var(--s-muted);
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-row .sel .od { font-size: 11px; font-weight: 700; color: var(--s-dim); margin-top: 2px; }
+.sk-row .res { width: 62px; flex: none; text-align: right; font-size: 12.5px; font-weight: 800; }
+.sk-row .res.win  { color: var(--s-green); }
+.sk-row .res.loss { color: var(--s-red); }
+.sk-row .res.open { color: var(--s-muted); }
+
+/* ── Settings list ───────────────────────────────────────────────── */
+.sk-list { margin: 0 12px 12px; border-radius: 6px; overflow: hidden; background: var(--s-surface); }
+.sk-item {
+  display: flex; align-items: center; gap: 12px; padding: 14px 12px;
+  border-top: 1px solid var(--s-bg); cursor: pointer;
+}
+.sk-item:first-child { border-top: 0; }
+.sk-item .ic { color: var(--s-muted); display: flex; flex: none; }
+.sk-item .t { font-size: 13.5px; font-weight: 600; color: #fff; }
+.sk-item .v { margin-left: auto; display: flex; align-items: center; gap: 8px;
+              font-size: 12px; font-weight: 600; color: var(--s-dim); }
+.sk-item.danger .t, .sk-item.danger .ic { color: var(--s-red); }
+
+/* ── Promo / upgrade banner ──────────────────────────────────────── */
+.sk-promo {
+  margin: 0 12px 12px; border-radius: 6px; padding: 16px;
+  background: linear-gradient(120deg, var(--s-surface), #16323f);
+  border-left: 3px solid var(--s-green);
+  display: flex; flex-direction: column; gap: 10px; cursor: pointer;
+}
+.sk-promo .t { font-size: 15px; font-weight: 800; color: #fff; }
+.sk-promo .s { font-size: 12.5px; font-weight: 500; color: var(--s-muted); line-height: 1.5; }
+.sk-promo .fine { font-size: 10.5px; font-weight: 500; color: var(--s-dim); text-align: center; }
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.sk-empty {
+  margin: 0 12px; padding: 44px 20px; border-radius: 6px; background: var(--s-surface);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+}
+.sk-empty .ic { color: var(--s-elev2); }
+.sk-empty .t { font-size: 14px; font-weight: 800; color: #fff; }
+.sk-empty .s { font-size: 12.5px; font-weight: 500; color: var(--s-dim); max-width: 230px; line-height: 1.5; }
+
+/* ── Bottom nav ──────────────────────────────────────────────────── */
+.sk-nav {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 800;
+  background: var(--s-surface); box-shadow: 0 -1px 0 rgba(0,0,0,.4);
+  display: flex; padding: 8px 6px 22px;
+}
+.sk-navitem {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 6px 0; cursor: pointer; color: var(--s-dim); position: relative;
+}
+.sk-navitem .lbl { font-size: 10px; font-weight: 700; letter-spacing: .2px; }
+.sk-navitem.on { color: var(--s-green); }
+.sk-navitem .badge {
+  position: absolute; top: 1px; left: 50%; margin-left: 5px;
+  min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px;
+  background: var(--s-red); color: #fff;
+  font-size: 9px; font-weight: 800; display: grid; place-items: center;
+}

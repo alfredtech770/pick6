@@ -21,7 +21,7 @@ struct Pick1SplashLoader: View {
 
             // Pulsing lime radial glow (matches `.splash-glow` 500×500 pulse 3s)
             RadialGradient(
-                colors: [Color(hex: "#D4FF3A").opacity(glowPulse ? 0.18 : 0.10), .clear],
+                colors: [Color(hex: "#C6FF34").opacity(glowPulse ? 0.18 : 0.10), .clear],
                 center: UnitPoint(x: 0.4, y: 0.5),
                 startRadius: 0,
                 endRadius: 280
@@ -90,7 +90,7 @@ struct Pick1SplashLoader: View {
 
     private var tickerStrip: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+            Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
             GeometryReader { geo in
                 let w = geo.size.width
                 let totalWidth = w * 2  // two copies for seamless loop
@@ -103,7 +103,7 @@ struct Pick1SplashLoader: View {
                                     .tracking(2.4)
                                     .foregroundColor(Color(hex: "#6E6F75"))
                                 Circle()
-                                    .fill(Color(hex: "#D4FF3A"))
+                                    .fill(Color(hex: "#C6FF34"))
                                     .frame(width: 4, height: 4)
                             }
                         }
@@ -113,7 +113,7 @@ struct Pick1SplashLoader: View {
                 .frame(height: 36)
             }
             .frame(height: 36)
-            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+            Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
         }
     }
 
@@ -124,11 +124,11 @@ struct Pick1SplashLoader: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color(hex: "#16181C"))
+                        .fill(Color(hex: "#232323"))
                     Rectangle()
-                        .fill(Color(hex: "#D4FF3A"))
+                        .fill(Color(hex: "#C6FF34"))
                         .frame(width: geo.size.width * loaderProgress)
-                        .shadow(color: Color(hex: "#D4FF3A").opacity(0.4), radius: 4)
+                        .shadow(color: Color(hex: "#C6FF34").opacity(0.4), radius: 4)
                 }
                 .clipShape(Capsule())
             }
@@ -161,9 +161,9 @@ struct Pick1Wordmark: View {
     /// Color of the "PICK" wordmark.
     var textColor: Color = Color(hex: "#F4F4F5")
     /// Color of the rounded tile that holds "1".
-    var tileColor: Color = Color(hex: "#D4FF3A")
+    var tileColor: Color = Color(hex: "#C6FF34")
     /// Color of the "1" digit inside the tile.
-    var digitColor: Color = Color(hex: "#0A0B0D")
+    var digitColor: Color = Color(hex: "#171717")
 
     /// Tile geometry per the spec:
     ///   width / height = 1.05em (slightly larger than cap height)

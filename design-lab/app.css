@@ -1,0 +1,803 @@
+/* app.css — component styles.
+   Each section header names the Swift struct it replicates so a change
+   here has an obvious home in the app source. */
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+
+/* ══════════════════════════════════════════════════════════════════
+   LAB CHROME (not part of the app)
+   ══════════════════════════════════════════════════════════════════ */
+body {
+  background: #0b0c0e;
+  color: var(--p1-fg);
+  font-family: "Archivo", -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 16px 60px;
+  gap: 20px;
+}
+.lab-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  justify-content: center;
+}
+.lab-bar .group {
+  display: flex; gap: 2px; padding: 4px;
+  background: #131518; border: 1px solid #232629; border-radius: 999px;
+}
+.lab-btn {
+  font-family: "ArchivoNarrow", sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--p1-mute); background: transparent; border: 0;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.lab-btn:hover { color: #cfd2d6; }
+.lab-btn.on { background: rgba(198,255,52,.14); color: var(--p1-lime); }
+.lab-note {
+  font-family: "JetBrainsMono", monospace; font-size: 10px;
+  color: #4d5158; text-align: center; max-width: 560px; line-height: 1.7;
+}
+
+/* Device frame */
+.device {
+  width: 393px; height: 852px;      /* iPhone 15 Pro logical points */
+  position: relative; flex: none;
+  border-radius: 54px;
+  background: #000;
+  box-shadow: 0 0 0 11px #1a1c1f, 0 0 0 13px #303338, 0 40px 90px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.device .notch {
+  position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+  width: 124px; height: 36px; border-radius: 20px; background: #000;
+  z-index: 900; pointer-events: none;
+}
+.status-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 32px 0; z-index: 899; pointer-events: none;
+  font-family: "Archivo", sans-serif; font-weight: 700; font-size: 15px;
+  color: #fff; letter-spacing: .2px;
+}
+.status-bar .icons { display: flex; gap: 6px; align-items: center; }
+
+/* ══════════════════════════════════════════════════════════════════
+   APP CANVAS — Pick1HomeHiFi root ZStack
+   ══════════════════════════════════════════════════════════════════ */
+.app {
+  position: absolute; inset: 0; overflow: hidden;
+  background:
+    radial-gradient(700px 700px at 105% 30%, rgba(21,24,33,.7), transparent 70%),
+    radial-gradient(800px 800px at 0% 0%,    rgba(26,28,33,.9), transparent 70%),
+    var(--canvas);
+  color: var(--p1-fg);
+}
+.scroll {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+.tabpage { display: none; }
+.tabpage.on { display: block; animation: fadeTab .28s ease; }
+@keyframes fadeTab { from { opacity: 0 } to { opacity: 1 } }
+
+/* Bottom clearance for the floating nav (Swift: .padding(.bottom, 120/140)) */
+.tail { height: 140px; }
+
+/* ══════════════════════════════════════════════════════════════════
+   HeroCard  — Pick1HomeHiFi.swift:688
+   ══════════════════════════════════════════════════════════════════ */
+.hero {
+  position: relative;
+  padding: 68px 22px 26px;                       /* .padding(.top, 68) */
+  border-radius: 0 0 var(--r-hero) var(--r-hero);/* BottomRoundedShape */
+  background: linear-gradient(to bottom, var(--card-top), var(--card-bot));
+  box-shadow: var(--sh-hero);
+  cursor: pointer;
+  isolation: isolate;
+}
+/* Top sheen — LinearGradient(white .05 → clear, top → 10%) */
+.hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,.05), transparent 10%),
+    linear-gradient(to bottom, transparent 60%, rgba(0,0,0,.22));
+}
+/* AcidBorder — conic lime stroke rotating once per 14s.
+   Two nested elements because each carries one mask: the outer fades the
+   trace out toward the top edge (Swift `.mask(LinearGradient(...))`), the
+   inner punches the fill out so only a 2px rim survives. */
+@property --acid-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes acidSpin { to { --acid-angle: 360deg } }
+
+.acid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  border-radius: inherit;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, transparent 20%, #000 45%);
+  mask-image: linear-gradient(to bottom, transparent, transparent 20%, #000 45%);
+}
+.acid-ring {
+  position: absolute; inset: 0; border-radius: inherit; padding: 2px;
+  background: conic-gradient(from var(--acid-angle),
+    rgba(198,255,52,.18) 0deg,
+    rgba(198,255,52,.18) 144deg,
+    rgba(198,255,52,1)   180deg,
+    rgba(198,255,52,.18) 216deg,
+    rgba(198,255,52,.18) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: acidSpin 14s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(198,255,52,.35));  /* outer halo */
+}
+
+.hero-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 3;
+}
+/* Pick1Logo — "PICK" Anton 34 + lime 30×30 tile with Anton 22 "1" */
+.logo { display: flex; align-items: flex-end; gap: 0; }
+.logo .word {
+  font-family: "Anton"; font-size: 34px; letter-spacing: -.34px;
+  color: #fff; line-height: .92;
+}
+.logo .tile {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--p1-lime);
+  display: grid; place-items: center;
+  font-family: "Anton"; font-size: 22px; color: var(--p1-ink); line-height: 1;
+}
+
+.hero-body { position: relative; z-index: 3; margin-top: 10px;
+             display: flex; flex-direction: column; gap: 20px; }
+
+/* Kicker row: "TODAY'S TOP MODEL PICK" + "LINE · DRAFTKINGS" */
+.hero-kicker {
+  display: flex; align-items: center; gap: 7px; color: var(--p1-lime);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 1.5px;
+}
+.hero-kicker.low { color: var(--gold); }
+.hero-kicker .line {
+  margin-left: auto; font-family: "JetBrainsMono"; font-weight: 700;
+  font-size: 9px; letter-spacing: 0;
+}
+
+/* Matchup: two crest columns hugging left with a floating VS */
+.hero-match { display: flex; align-items: flex-start; gap: 12px; }
+.hero-col { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 96px; }
+.hero-col .name {
+  font-family: "Anton"; font-size: 19px; color: #fff; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 96px;
+}
+.hero-vs {
+  font-family: "Anton"; font-size: 14px; color: rgba(255,255,255,.4);
+  margin-top: 30px;
+}
+
+/* Call + number */
+.hero-call { display: flex; flex-direction: column; gap: 4px; }
+.hero-labels {
+  display: flex; justify-content: space-between;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  color: var(--mute-2);
+}
+.hero-labels .l { letter-spacing: 2.4px; }
+.hero-labels .r { letter-spacing: 2.0px; }
+.hero-figures { display: flex; align-items: baseline; gap: 12px; }
+.hero-figures .pickname,
+.hero-figures .prob {
+  font-family: "Anton"; font-size: 46px; letter-spacing: -.5px;
+  color: var(--p1-lime); line-height: 1;
+}
+.hero-figures .pickname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero-figures .prob { margin-left: auto; }
+.hero-return {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: 6px;
+}
+.hero-return .k {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 1.8px; color: var(--mute-2);
+}
+.hero-return .v {
+  font-family: "JetBrainsMono"; font-weight: 700; font-size: 13px;
+  color: rgba(198,255,52,.9);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SportDropdown — Pick1HomeHiFi.swift:2426
+   ══════════════════════════════════════════════════════════════════ */
+.sportdrop { position: absolute; top: 82px; right: 22px; z-index: 60;
+             display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.sportdrop-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 13px; border-radius: 999px; cursor: pointer;
+  background: rgba(23,23,23,.85);
+  border: 1.2px solid rgba(255,255,255,.14);
+  transition: border-color .2s, transform .12s;
+}
+.sportdrop-btn:active { transform: scale(.95); }
+.sportdrop.open .sportdrop-btn { border-color: rgba(198,255,52,.6); }
+.sportdrop-btn .lbl {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.8px; color: #fff; white-space: nowrap;
+}
+.sportdrop-btn .ic, .sportdrop-btn .chev { color: var(--p1-lime); display: flex; }
+.sportdrop-btn .chev { transition: transform .25s cubic-bezier(.4,0,.2,1); }
+.sportdrop.open .sportdrop-btn .chev { transform: rotate(-180deg); }
+
+.sportdrop-menu {
+  width: 218px; padding: 8px; border-radius: var(--r-menu);
+  background: #1E1E1E; border: 1px solid rgba(255,255,255,.10);
+  box-shadow: var(--sh-menu);
+  display: flex; flex-direction: column; gap: 2px;
+  transform-origin: top right;
+  animation: menuIn .28s cubic-bezier(.2,.9,.3,1.1);
+}
+@keyframes menuIn { from { opacity: 0; transform: scale(.72) } to { opacity: 1; transform: scale(1) } }
+.sportdrop-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 13px; cursor: pointer;
+  animation: rowIn .3s both cubic-bezier(.2,.9,.3,1.1);
+}
+@keyframes rowIn { from { opacity: 0; transform: translateY(-7px) } to { opacity: 1; transform: none } }
+.sportdrop-row .dot {
+  width: 26px; height: 26px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,.06); color: var(--p1-lime);
+}
+.sportdrop-row .nm { font-family: "Archivo"; font-weight: 500; font-size: 14px; color: #C9CBCF; }
+.sportdrop-row .ct {
+  margin-left: auto; font-family: "JetBrainsMono"; font-weight: 700;
+  font-size: 11px; color: var(--p1-mute);
+}
+.sportdrop-row .ct.zero { color: var(--mute-3); }
+.sportdrop-row.on { background: rgba(198,255,52,.12); }
+.sportdrop-row.on .dot { background: var(--p1-lime); color: var(--p1-ink); }
+.sportdrop-row.on .nm { color: #fff; font-weight: 700; }
+.sportdrop-row.on .ct { color: var(--p1-lime); }
+.sportdrop-row .tick { color: var(--p1-lime); display: none; }
+.sportdrop-row.on .tick { display: flex; }
+
+/* ══════════════════════════════════════════════════════════════════
+   LatestWinsRail + WinReceiptCard — Pick1HomeHiFi.swift:1780 / 1913
+   ══════════════════════════════════════════════════════════════════ */
+.rail { padding: 14px 16px 10px; }
+.rail-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0 4px 12px; cursor: pointer;
+}
+.rail-head .t { font-family: "Anton"; font-size: 22px; color: #fff; }
+.rail-head .cta {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.6px; color: var(--p1-lime);
+}
+.rail-scroll {
+  display: flex; gap: 10px; overflow-x: auto; padding: 0 4px 4px;
+  scrollbar-width: none;
+}
+.rail-scroll::-webkit-scrollbar { display: none; }
+
+.receipt {
+  width: 186px; flex: none; padding: 14px; border-radius: var(--r-slate);
+  background:
+    linear-gradient(to bottom right, rgba(198,255,52,.14), transparent 50%),
+    var(--win-fill);
+  border: 1px solid rgba(198,255,52,.30);
+  display: flex; flex-direction: column; gap: 9px; cursor: pointer;
+  transition: transform .12s;
+}
+.receipt:active { transform: scale(.98); }
+.receipt.loss {
+  background:
+    linear-gradient(to bottom right, rgba(255,90,90,.10), transparent 50%),
+    var(--loss-fill);
+  border-color: rgba(255,90,90,.22);
+}
+.receipt .miss {
+  display: flex; align-items: center; gap: 6px; color: var(--loss);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px; letter-spacing: 1.2px;
+}
+.receipt .team { font-family: "Anton"; font-size: 23px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.receipt .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.receipt .score { font-family: "JetBrainsMono"; font-weight: 500; font-size: 12px; color: var(--mute-2); }
+.receipt .pct { font-family: "Archivo"; font-weight: 700; font-size: 13px; color: var(--p1-lime); }
+.receipt.loss .pct { color: var(--loss); }
+.receipt .payout { font-family: "JetBrainsMono"; font-weight: 700; font-size: 12px; color: var(--p1-lime); }
+
+/* Free-tier "members won more" regret card */
+.members {
+  width: 170px; flex: none; padding: 14px; border-radius: 16px;
+  background: var(--gold-fill); border: 1px solid rgba(232,198,74,.5);
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+  cursor: pointer;
+}
+.members .t { font-family: "Anton"; font-size: 15px; color: var(--gold); }
+.members .rec { font-family: "Anton"; font-size: 26px; color: #fff; }
+.members .net { font-family: "JetBrainsMono"; font-weight: 700; font-size: 12px; color: var(--gold); }
+.members .cta {
+  display: flex; align-items: center; gap: 4px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px; letter-spacing: 1.6px;
+  color: var(--p1-ink); background: var(--gold);
+  padding: 5px 10px; border-radius: 999px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FreeSlateSection / LockedSlateCard / ProSlateCard
+   Pick1HomeHiFi.swift:1978 / 2039 / 2170
+   ══════════════════════════════════════════════════════════════════ */
+.slate { padding: 8px 16px 0; display: flex; flex-direction: column; gap: 12px; }
+.slate-head {
+  display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px;
+}
+.slate-head .t { font-family: "Anton"; font-size: 22px; color: #fff; }
+.slate-head .lock {
+  display: flex; align-items: center; gap: 5px; color: var(--gold);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px; letter-spacing: 2px;
+}
+.slate-more {
+  text-align: center; padding-top: 2px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 2px; color: rgba(232,198,74,.85);
+}
+
+.gamecard {
+  padding: 14px; border-radius: var(--r-slate);
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--tint) 22%, transparent), transparent 55%),
+    var(--slate-fill);
+  border: 1px solid color-mix(in srgb, var(--tint) 30%, transparent);
+  display: flex; flex-direction: column; gap: 12px; cursor: pointer;
+  transition: transform .12s;
+}
+.gamecard:active { transform: scale(.985); }
+.gamecard .gc-top {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.gamecard .league {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 1.6px; color: var(--mute-2);
+}
+.gamecard .time {
+  font-family: "JetBrainsMono"; font-weight: 700; font-size: 11px; color: var(--mute-2);
+}
+.gamecard .gc-body { display: flex; align-items: center; gap: 12px; }
+.gamecard .gc-mid { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.gamecard .matchup {
+  font-family: "Anton"; font-size: 17px; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gamecard .matchup .vs { color: rgba(232,198,74,.8); }
+.gamecard.pro .matchup .vs { color: rgba(198,255,52,.75); }
+.gamecard .hidden-pick {
+  display: flex; align-items: center; gap: 5px; color: var(--gold);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px; letter-spacing: 1.4px;
+}
+.gamecard .ai-pick { display: flex; align-items: center; gap: 6px; }
+.gamecard .ai-pick .k {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 1.6px; color: var(--mute-2);
+}
+.gamecard .ai-pick .v {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.2px; color: var(--p1-lime);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gamecard .unlock {
+  margin-left: auto; flex: none;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 13px; border-radius: var(--r-chip);
+  border: 1.2px solid rgba(232,198,74,.65); color: var(--gold);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px; letter-spacing: 1.4px;
+}
+.gamecard .figures {
+  margin-left: auto; flex: none; text-align: right;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+}
+.gamecard .figures .pct { font-family: "Anton"; font-size: 24px; color: var(--p1-lime); line-height: 1; }
+.gamecard .figures .ret { font-family: "JetBrainsMono"; font-weight: 700; font-size: 10px; color: var(--mute-2); }
+.gamecard .figures .conf { font-family: "JetBrainsMono"; font-weight: 700; font-size: 8px; color: var(--p1-mute); }
+
+/* top-right state chips on the pro card */
+.chip-live { display: flex; align-items: center; gap: 5px; color: var(--p1-hot);
+             font-family: "JetBrainsMono"; font-weight: 700; font-size: 10px; }
+.chip-live .d { width: 6px; height: 6px; border-radius: 50%; background: var(--p1-hot); }
+.chip-won, .chip-lost {
+  display: flex; align-items: center; gap: 4px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px; letter-spacing: 1.6px;
+}
+.chip-won { color: var(--p1-lime); }
+.chip-lost { color: var(--loss); }
+
+/* ══════════════════════════════════════════════════════════════════
+   PremiumUpsellCard — Pick1HomeHiFi.swift:2331
+   ══════════════════════════════════════════════════════════════════ */
+.upsell {
+  margin: 6px 16px 0; padding: 20px; border-radius: var(--r-card);
+  background:
+    radial-gradient(260px 260px at 90% 10%, rgba(232,198,74,.16), transparent 70%),
+    linear-gradient(to bottom right, #1A160A, #0F0D07);
+  border: 1px solid rgba(232,198,74,.40);
+  display: flex; flex-direction: column; gap: 14px; align-items: flex-start;
+  cursor: pointer; transition: transform .12s;
+}
+.upsell:active { transform: scale(.99); }
+.upsell .pill {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px; letter-spacing: 1.8px;
+  color: var(--gold-ink); background: var(--gold);
+  padding: 6px 12px; border-radius: 999px;
+}
+.upsell .head { font-family: "Anton"; font-size: 34px; color: #fff; line-height: 1.05; }
+.upsell .head .acc { color: var(--gold); }
+.upsell .body {
+  font-family: "Archivo"; font-size: 13.5px; color: var(--p1-ink2); line-height: 1.55;
+}
+.upsell .checks { display: flex; flex-direction: column; gap: 9px; padding-top: 2px; }
+.upsell .check { display: flex; align-items: center; gap: 9px;
+                 font-family: "Archivo"; font-weight: 500; font-size: 13.5px; color: #fff; }
+.upsell .check .tick { color: var(--gold); display: flex; }
+.upsell .daypass { font-family: "Archivo"; font-weight: 600; font-size: 11px; color: var(--p1-ink2); }
+.upsell .cta-wrap { width: 100%; display: flex; flex-direction: column; gap: 9px; padding-top: 4px; }
+.upsell .cta {
+  text-align: center; padding: 16px; border-radius: 14px;
+  background: linear-gradient(to bottom, #F2D468, var(--gold));
+  font-family: "Anton"; font-size: 17px; letter-spacing: .4px; color: var(--gold-ink);
+}
+.upsell .fine {
+  text-align: center; font-family: "JetBrainsMono"; font-weight: 500;
+  font-size: 10px; color: var(--mute-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SectionHeader — Pick1HomeHiFi.swift:2823
+   ══════════════════════════════════════════════════════════════════ */
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.section-head .t {
+  font-family: "Anton"; font-size: 30px; letter-spacing: -.15px; color: var(--p1-fg);
+}
+.section-head .cta {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 2px; color: var(--p1-lime);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TopNavBar + PageHero + HubSectionHead — Pick1Screens.swift:21 / 83 / 143
+   ══════════════════════════════════════════════════════════════════ */
+.topnav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 18px; padding-top: 58px;   /* clears the status bar */
+  position: relative;
+}
+.topnav .sq {
+  width: 38px; height: 38px; border-radius: var(--r-chip);
+  background: var(--p1-panel); border: 1px solid var(--p1-line);
+  display: grid; place-items: center; color: var(--p1-fg); cursor: pointer;
+}
+.topnav .sq.ghost { background: transparent; border-color: transparent; cursor: default; }
+.topnav .crumb {
+  display: flex; align-items: center; gap: 6px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px; letter-spacing: 2.4px;
+}
+.topnav .crumb .a { color: var(--p1-mute); }
+.topnav .crumb .b { color: var(--p1-ink2); }
+.topnav .crumb .livedot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--p1-hot);
+  box-shadow: 0 0 4px var(--p1-hot);
+}
+
+.pagehero { padding: 6px 20px 6px; position: relative; }
+.pagehero::before {
+  content: ""; position: absolute; top: -40px; right: -60px;
+  width: 380px; height: 280px; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--glow), transparent);
+  filter: blur(30px); opacity: .9; pointer-events: none;
+}
+.pagehero .title {
+  position: relative; display: flex; align-items: baseline; gap: 12px;
+  font-family: "Anton"; font-size: 72px; letter-spacing: -.7px; line-height: .95;
+  color: var(--p1-fg);
+}
+.pagehero .title .acc { color: var(--p1-lime); }
+.pagehero .sub {
+  position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 2.4px; color: var(--p1-mute);
+}
+.pagehero .sub .sep { width: 4px; height: 4px; border-radius: 50%; background: var(--p1-mute); }
+
+.hub-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0 20px 10px;
+}
+.hub-head .t { font-family: "Anton"; font-size: 22px; color: var(--p1-fg); }
+.hub-head .meta {
+  display: flex; align-items: center; gap: 6px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 2.2px; color: var(--p1-mute);
+}
+.hub-head .meta .d { width: 6px; height: 6px; border-radius: 50%; background: var(--p1-hot); }
+
+/* ══════════════════════════════════════════════════════════════════
+   WinsView cards — Pick1Screens.swift:4173
+   ══════════════════════════════════════════════════════════════════ */
+.fav-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px 8px;
+}
+.fav-actions .count {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 2.2px; color: var(--p1-mute);
+}
+.fav-actions .clear {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px; letter-spacing: 1.8px;
+  color: var(--p1-ink2); background: var(--p1-panel);
+  border: 1px solid var(--p1-line); padding: 7px 12px; border-radius: 999px;
+}
+
+.wonlist { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.woncard {
+  padding: 14px; border-radius: var(--r-slate); cursor: pointer;
+  display: flex; flex-direction: column;
+}
+/* stateCardBackground(_:) */
+.woncard.won  { background: linear-gradient(to bottom right, rgba(198,255,52,.13), transparent 50%), var(--win-fill);  border: 1px solid rgba(198,255,52,.28); }
+.woncard.lost { background: linear-gradient(to bottom right, rgba(255,90,90,.13), transparent 50%),  var(--loss-fill); border: 1px solid rgba(255,90,90,.28); }
+.woncard.live { background: linear-gradient(to bottom right, rgba(255,90,54,.13), transparent 50%),  var(--live-fill); border: 1px solid rgba(255,90,54,.28); }
+.woncard.upcoming {
+  border-radius: var(--r-card);
+  background: linear-gradient(to bottom, var(--card-top), var(--card-bot));
+  border: 1px solid var(--p1-line); box-shadow: var(--sh-card);
+}
+.woncard .wc-top {
+  display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px;
+}
+.woncard .tag {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 2px; color: var(--p1-ink2);
+}
+.badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 999px;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px; letter-spacing: 1.8px;
+}
+.badge.won  { color: var(--p1-lime); background: rgba(198,255,52,.1);  border: 1px solid rgba(198,255,52,.3); }
+.badge.lost { color: var(--loss);    background: rgba(255,90,90,.1);   border: 1px solid rgba(255,90,90,.3); }
+.badge.live { color: var(--p1-hot);  background: rgba(255,90,54,.1);   border: 1px solid rgba(255,90,54,.3); }
+.badge.live .d { width: 6px; height: 6px; border-radius: 50%; background: var(--p1-hot); }
+.badge.awaiting { color: var(--amber); background: rgba(185,140,64,.1); border: 1px solid rgba(185,140,64,.3); }
+.badge.upcoming { color: var(--p1-mute); background: var(--p1-panel2); border: 1px solid var(--p1-line); }
+
+.woncard .teams { display: flex; align-items: center; gap: 10px; }
+.woncard .side { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+.woncard .side.away { justify-content: flex-end; }
+.woncard .side .nm {
+  font-family: "Anton"; font-size: 18px; color: var(--p1-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.woncard .side .nm.strike { color: var(--p1-mute); text-decoration: line-through; text-decoration-color: var(--p1-line2); }
+.woncard .score { display: flex; align-items: baseline; gap: 5px; flex: none; }
+.woncard .score .n { font-family: "Anton"; font-size: 24px; color: var(--p1-fg); }
+.woncard .score .n.mute { color: var(--p1-mute); }
+.woncard .score.livescore .n { color: var(--p1-hot); }
+.woncard .score .dash { font-family: "Anton"; font-size: 14px; color: var(--p1-mute); }
+.woncard .vsflat {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 2px; color: var(--p1-mute);
+}
+.woncard .foot {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--p1-line);
+}
+.woncard .foot .k {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 2px; color: var(--p1-mute);
+}
+.woncard .foot .v { font-family: "Archivo"; font-weight: 700; font-size: 11px; color: var(--p1-fg); }
+.woncard .foot .money { font-family: "JetBrainsMono"; font-weight: 700; font-size: 10px; color: var(--p1-lime); }
+.woncard .foot .factor { font-family: "JetBrainsMono"; font-size: 10px; color: var(--p1-mute);
+                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.woncard .foot .x {
+  margin-left: auto; flex: none; width: 26px; height: 26px; border-radius: 8px;
+  background: var(--p1-panel2); border: 1px solid var(--p1-line);
+  display: grid; place-items: center; color: var(--p1-mute); cursor: pointer;
+}
+
+/* Empty states (dashed frame) */
+.empty {
+  margin: 0 20px; padding: 40px 20px; text-align: center;
+  border: 1px dashed var(--p1-line2); border-radius: var(--r-card);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.empty .ic { color: var(--p1-mute); }
+.empty .t { font-family: "Anton"; font-size: 22px; color: var(--p1-fg); }
+.empty .s { font-family: "Archivo"; font-size: 12px; color: var(--p1-mute); max-width: 240px; line-height: 1.5; }
+.empty .btn {
+  margin-top: 8px; display: flex; align-items: center; gap: 7px;
+  padding: 11px 16px; border-radius: 999px; background: var(--p1-lime); color: var(--p1-ink);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px; letter-spacing: 1.4px;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LiveView — Pick1Screens.swift:4878
+   ══════════════════════════════════════════════════════════════════ */
+.live-tabs { display: flex; gap: 8px; padding: 0 16px 10px; }
+.live-tab {
+  flex: 1; text-align: center; padding: 11px; border-radius: var(--r-chip);
+  background: var(--p1-panel); border: 1px solid var(--p1-line); cursor: pointer;
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.8px; color: var(--p1-ink2);
+}
+.live-tab.on {
+  background: rgba(255,90,54,.12); border-color: rgba(255,90,54,.45); color: var(--p1-hot);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ProfileView — Pick1Screens.swift:3579
+   ══════════════════════════════════════════════════════════════════ */
+.profile-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; margin-bottom: 18px; position: relative; cursor: pointer;
+}
+.profile-head::before {
+  content: ""; position: absolute; top: -60px; right: -40px;
+  width: 380px; height: 300px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(198,255,52,.22), rgba(198,255,52,.06), transparent);
+  filter: blur(20px); pointer-events: none;
+}
+.avatar {
+  width: 72px; height: 72px; border-radius: 50%; flex: none; position: relative;
+  background: linear-gradient(to bottom right, var(--p1-lime), #a8e000);
+  box-shadow: 0 8px 10px rgba(198,255,52,.3);
+  display: grid; place-items: center;
+  font-family: "Anton"; font-size: 32px; color: var(--p1-ink);
+}
+.profile-meta { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.profile-meta .nm { font-family: "Anton"; font-size: 28px; color: var(--p1-fg);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-meta .handle { font-family: "JetBrainsMono"; font-weight: 500; font-size: 11px; color: var(--p1-ink2); }
+.profile-meta .tier {
+  align-self: flex-start; display: flex; align-items: center; gap: 4px;
+  padding: 3px 7px; border-radius: 999px; color: var(--p1-lime);
+  background: rgba(198,255,52,.08); border: 1px solid rgba(198,255,52,.3);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px; letter-spacing: 1.8px;
+}
+
+.settings { padding: 0 16px; display: flex; flex-direction: column; gap: 18px; }
+.settings-group {
+  border-radius: var(--r-card); overflow: hidden;
+  background: linear-gradient(to bottom, var(--card-top), var(--card-bot));
+  border: 1px solid var(--p1-line); box-shadow: var(--sh-card);
+}
+.setting-row {
+  display: flex; align-items: center; gap: 12px; padding: 15px 16px; cursor: pointer;
+  border-bottom: 1px solid rgba(47,47,47,.6);
+}
+.setting-row:last-child { border-bottom: 0; }
+.setting-row .ic {
+  width: 32px; height: 32px; border-radius: 10px; flex: none;
+  background: rgba(198,255,52,.10); color: var(--p1-lime);
+  display: grid; place-items: center;
+}
+.setting-row .t { font-family: "Archivo"; font-weight: 600; font-size: 14px; color: var(--p1-fg); }
+.setting-row .v {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font-family: "JetBrainsMono"; font-weight: 500; font-size: 11px; color: var(--p1-mute);
+}
+.setting-row.danger .ic { background: rgba(255,90,90,.10); color: var(--loss); }
+.setting-row.danger .t { color: var(--loss); }
+
+.upgrade-banner {
+  margin: 0 16px; padding: 16px 18px; border-radius: var(--r-card);
+  background:
+    radial-gradient(200px 200px at 92% 8%, rgba(232,198,74,.18), transparent 70%),
+    linear-gradient(to bottom right, #1A160A, #0F0D07);
+  border: 1px solid rgba(232,198,74,.4);
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+}
+.upgrade-banner .t { font-family: "Anton"; font-size: 20px; color: #fff; }
+.upgrade-banner .s { font-family: "Archivo"; font-size: 11.5px; color: var(--p1-ink2); margin-top: 3px; }
+.upgrade-banner .go {
+  margin-left: auto; flex: none; padding: 10px 14px; border-radius: 12px;
+  background: linear-gradient(to bottom, #F2D468, var(--gold)); color: var(--gold-ink);
+  font-family: "Anton"; font-size: 13px; letter-spacing: .4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FloatingNav — Pick1HomeHiFi.swift:3607
+   ══════════════════════════════════════════════════════════════════ */
+.nav {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 8px; z-index: 800;
+  display: flex; gap: 2px; padding: 8px; border-radius: 999px;
+  background: rgba(22,24,28,.82);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: var(--sh-nav);
+}
+.nav-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px; border-radius: 999px; cursor: pointer;
+  color: var(--p1-mute); border: 1px solid transparent;
+  transition: padding .22s cubic-bezier(.2,.9,.3,1.1), background .22s, color .22s;
+}
+.nav-item:active { transform: scale(.95); }
+.nav-item .lbl {
+  font-family: "Archivo"; font-weight: 700; font-size: 13px; color: var(--p1-fg);
+  white-space: nowrap; display: none;
+}
+.nav-item.on {
+  padding: 10px 18px; background: rgba(198,255,52,.14);
+  border-color: rgba(198,255,52,.25); color: var(--p1-lime);
+}
+.nav-item.on .lbl { display: block; animation: labelIn .22s ease; }
+@keyframes labelIn { from { opacity: 0; transform: scale(.85) } to { opacity: 1; transform: none } }
+
+.nav-live {
+  padding: 10px 12px; color: var(--loss);
+  background: rgba(255,59,59,.10); border-color: rgba(255,59,59,.28);
+}
+.nav-live .lbl {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.8px; color: var(--loss);
+}
+.nav-live.on {
+  padding: 10px 16px; background: var(--live-red);
+  border-color: rgba(255,90,90,.6);
+  box-shadow: 0 4px 10px rgba(255,59,59,.45);
+}
+.nav-live.on .lbl { color: #fff; }
+.nav-live .dotwrap { position: relative; width: 14px; height: 14px; display: grid; place-items: center; }
+.nav-live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live-red); }
+.nav-live.on .dot { background: #fff; }
+.nav-live .halo {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,59,59,.55); animation: halo 1.6s linear infinite;
+}
+.nav-live.on .halo { background: rgba(255,255,255,.55); }
+@keyframes halo {
+  from { width: 8px; height: 8px; opacity: 1 }
+  to   { width: 22px; height: 22px; opacity: 0 }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Crest / TeamLogo — Views/TeamLogo.swift (big 72, small 44)
+   ══════════════════════════════════════════════════════════════════ */
+.crest { flex: none; display: grid; place-items: center; position: relative; }
+.crest.big   { width: 72px; height: 72px; }
+.crest.small { width: 44px; height: 44px; }
+.crest img { width: 100%; height: 100%; object-fit: contain; }
+.crest .fallback {
+  width: 100%; height: 100%; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+  font-family: "Anton"; color: #fff;
+}
+.crest.big .fallback   { font-size: 22px; }
+.crest.small .fallback { font-size: 15px; }
+
+/* Sheet scrim + generic modal used by the detail stub */
+.sheet-scrim {
+  position: absolute; inset: 0; z-index: 950; background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end; animation: fadeTab .2s ease;
+}
+.sheet {
+  width: 100%; max-height: 88%; overflow-y: auto; scrollbar-width: none;
+  background: var(--canvas); border-radius: 26px 26px 0 0;
+  border-top: 1px solid var(--p1-line);
+  animation: sheetUp .34s cubic-bezier(.2,.9,.3,1.05);
+  padding-bottom: 30px;
+}
+.sheet::-webkit-scrollbar { display: none; }
+@keyframes sheetUp { from { transform: translateY(100%) } to { transform: none } }
+.sheet .grabber {
+  width: 36px; height: 5px; border-radius: 3px; background: #3A3A3A;
+  margin: 10px auto 4px;
+}

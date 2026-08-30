@@ -452,6 +452,12 @@ enum L10nKey: String, CaseIterable {
     case sw_disclaimer
     case sw_day_pass_line
     case sw_members_title
+    case sc_share_streak                  // "SHARE YOUR STREAK"
+    case sc_day_streak                    // "DAY WIN STREAK"
+    case sc_top_pick_note                 // "AI'S #1 PICK OF THE DAY"
+    case sc_ai_record                     // "ALL-TIME AI RECORD"
+    case sc_my_record                     // "MY RECORD"
+    case sc_share_record_cta              // "SHARE MY RECORD"
     case rd_upcoming_football
     case rd_predicted_score
     case rd_market_odds
@@ -659,6 +665,29 @@ enum L10nKey: String, CaseIterable {
     case rd_of_n_this_week
     case rd_unlock_more_one
     case rd_unlock_more_other
+
+    // Recovery surfaces: a subscription stuck in billing retry, and a
+    // trial the user has already switched off.
+    case rec_billing_title
+    case rec_billing_body
+    case rec_billing_cta
+    case rec_billing_dismiss
+    case rec_trial_banner_title
+    case rec_trial_banner_body
+    case rec_trial_banner_cta
+
+    // Same-unit price comparison, and the annual plan.
+    case paywall_per_month_suffix
+    case paywall_plan_annual
+    case paywall_unit_yr
+    case paywall_sub_annual
+
+    // Pick ticket header on the match detail page.
+    case tk_confidence
+    case tk_to_win
+    case tk_returns
+    case tk_no_market_short
+    case tk_logged
 }
 
 // MARK: - Manager

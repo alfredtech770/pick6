@@ -345,10 +345,10 @@ struct AthleteHeadshot: View {
             // sits inside a clean profile circle.
             Circle()
                 .fill(LinearGradient(
-                    colors: [Color(hex: "#22252B"), Color(hex: "#101114")],
+                    colors: [Color(hex: "#2F2F2F"), Color(hex: "#1D1D1D")],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing))
-                .overlay(Circle().stroke(Color(hex: "#2D3038"), lineWidth: 1))
+                .overlay(Circle().stroke(Color(hex: "#3A3A3A"), lineWidth: 1))
 
             if let url = headshotURL {
                 CachedImage(url: url) { image in
@@ -386,7 +386,7 @@ struct AthleteHeadshot: View {
             } placeholder: { Color.clear }
             .frame(width: d, height: d)
             .clipShape(Circle())
-            .overlay(Circle().stroke(Color(hex: "#0A0B0D"), lineWidth: 1.5))
+            .overlay(Circle().stroke(Color(hex: "#171717"), lineWidth: 1.5))
             .offset(x: 1, y: 1)
         }
     }
@@ -411,7 +411,7 @@ struct AthleteHeadshot: View {
                     img.resizable().scaledToFill()
                         .overlay(Color.black.opacity(0.45))   // dim so initials read
                 } placeholder: {
-                    Color(hex: "#22252B")
+                    Color(hex: "#2F2F2F")
                 }
                 .clipShape(Circle())
                 Text(initials)

@@ -29,11 +29,11 @@ import UIKit
 // MARK: - Design tokens (from the funnel :root)
 
 enum Fnl {
-    static let ink    = Color(hex: "#0a0b0d")   // screen background
+    static let ink    = Color(hex: "#171717")   // screen background
     static let lime   = Color(hex: "#cdfa3f")
-    static let panel  = Color(hex: "#101114")
-    static let panel2 = Color(hex: "#16181c")
-    static let line   = Color(hex: "#22252b")
+    static let panel  = Color(hex: "#1D1D1D")
+    static let panel2 = Color(hex: "#232323")
+    static let line   = Color(hex: "#2F2F2F")
     static let white  = Color(hex: "#f5f3ee")
     static let ink2   = Color(hex: "#b9b7b0")
     static let mute   = Color(hex: "#6e6f75")
@@ -271,7 +271,7 @@ struct Pick1OnboardingFunnel: View {
         case .referral:  ReferralScreen(onNext: next)
         case .rating:    RatingScreen(onNext: next)
         case .timeToWin: TimeToWinScreen(onNext: next)
-        case .paywall:   PaywallScreen(onDone: next)
+        case .paywall:   PaywallScreen(onDone: next, source: "onboarding")
         case .success:   SuccessScreen(onFinish: { savedIndex = 0; onFinish([]) })
         }
     }
@@ -739,7 +739,7 @@ private struct AnalysisScreen: View {
             VStack(spacing: 0) {
                 FnlKick(text: t(.funnel_analysis_kicker)).frame(maxWidth: .infinity)
                 ZStack {
-                    Circle().stroke(Color(hex: "#22252b"), lineWidth: 7)
+                    Circle().stroke(Color(hex: "#2F2F2F"), lineWidth: 7)
                     Circle().trim(from: 0, to: progress)
                         .stroke(Fnl.lime, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                         .rotationEffect(.degrees(-90))
@@ -1321,8 +1321,9 @@ private struct TimeToWinScreen: View {
 /// pricing/trial/Day-Pass presentation never drifts between surfaces.
 struct PaywallScreen: View {
     let onDone: () -> Void
+    var source: String = "in_app"
     @EnvironmentObject private var subs: SubscriptionManager
-    @State private var selected: String = "com.pick1.app.pro.weekly"
+    @State private var selected: String = "com.pick1.app.pro.monthly"
     @State private var busy = false
     @State private var showTerms = false
     @State private var showPrivacy = false
@@ -1425,7 +1426,7 @@ struct PaywallScreen: View {
         .onChange(of: subs.isPro) { _, v in if v { onDone() } }
         .onChange(of: subs.products.count) { _, _ in alignSelection() }
         .onAppear {
-            Analytics.paywallViewed()
+            Analytics.paywallViewed(source: source)
             alignSelection()
             guard !skipUnlocked else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.skipDelay) {
@@ -1441,7 +1442,9 @@ struct PaywallScreen: View {
     private func alignSelection() {
         guard !subs.products.isEmpty,
               !subs.products.contains(where: { $0.id == selected }) else { return }
-        selected = subs.products.first(where: { $0.id.hasSuffix("weekly") })?.id
+        selected = subs.products.first(where: { $0.id.hasSuffix("annual") })?.id
+            ?? subs.products.first(where: { $0.id.hasSuffix("monthly") })?.id
+            ?? subs.products.first(where: { $0.id.hasSuffix("weekly") })?.id
             ?? subs.products.first!.id
     }
 
@@ -1458,16 +1461,28 @@ struct PaywallScreen: View {
     @ViewBuilder private func planCard(_ p: Product) -> some View {
         let isSel = selected == p.id
         let isLife = p.id == SubscriptionManager.lifetimeProductId
-        Button { selected = p.id } label: {
+        Button {
+            selected = p.id
+            Analytics.track("paywall_plan_selected", ["product": p.id, "source": source])
+        } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(planName(p)).font(.anton(20)).foregroundColor(Fnl.white)
                     Text(planSub(p)).font(.archivo(12)).foregroundColor(Fnl.ink2)
                 }
                 Spacer()
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(p.displayPrice).font(.anton(22)).foregroundColor(isSel ? Fnl.lime : Fnl.white)
-                    Text(planUnit(p)).font(.archivo(12)).foregroundColor(Fnl.ink2)
+                VStack(alignment: .trailing, spacing: 1) {
+                    HStack(alignment: .firstTextBaseline, spacing: 2) {
+                        Text(p.displayPrice).font(.anton(22)).foregroundColor(isSel ? Fnl.lime : Fnl.white)
+                        Text(planUnit(p)).font(.archivo(12)).foregroundColor(Fnl.ink2)
+                    }
+                    // The same figure for every plan, so the comparison is
+                    // between like and like. See Product.monthlyEquivalentText.
+                    if let perMonth = p.monthlyEquivalentText {
+                        Text("\(perMonth) \(t(.paywall_per_month_suffix))")
+                            .font(.mono(10, weight: .medium))
+                            .foregroundColor(Fnl.ink2)
+                    }
                 }
             }
             .padding(16)
@@ -1476,7 +1491,8 @@ struct PaywallScreen: View {
             .overlay(alignment: .topTrailing) {
                 // BEST VALUE sits on Monthly (best per-week rate) now that
                 // Lifetime is retired; isLife kept for any cached product.
-                if isLife || p.id.hasSuffix("monthly") {
+                let hasAnnual = subs.products.contains { $0.id.hasSuffix("annual") }
+                if isLife || p.id.hasSuffix(hasAnnual ? "annual" : "monthly") {
                     Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
@@ -1514,6 +1530,7 @@ struct PaywallScreen: View {
         if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_plan_daypass) }
         if p.id.hasSuffix("weekly") { return t(.funnel_paywall_plan_weekly) }
         if p.id.hasSuffix("monthly") { return t(.funnel_paywall_plan_monthly) }
+        if p.id.hasSuffix("annual") { return t(.paywall_plan_annual) }
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_plan_lifetime) }
         return p.displayName.uppercased()
     }
@@ -1521,11 +1538,13 @@ struct PaywallScreen: View {
         if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_unit_day) }
         if p.id.hasSuffix("weekly") { return t(.funnel_paywall_unit_wk) }
         if p.id.hasSuffix("monthly") { return t(.funnel_paywall_unit_mo) }
+        if p.id.hasSuffix("annual") { return t(.paywall_unit_yr) }
         return ""
     }
     private func planSub(_ p: Product) -> String {
         if p.id == SubscriptionManager.dayPassProductId { return t(.funnel_paywall_sub_daypass) }
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_sub_lifetime) }
+        if p.id.hasSuffix("annual") { return t(.paywall_sub_annual) }
         return p.id.hasSuffix("weekly") ? t(.funnel_paywall_sub_weekly) : t(.funnel_paywall_sub_monthly)
     }
 

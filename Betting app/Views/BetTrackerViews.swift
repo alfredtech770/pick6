@@ -10,6 +10,8 @@ struct TrackBetSheet: View {
     let pick: Pick
     let accent: Color
     let onTrack: (Double?) -> Void
+    var isTracked: Bool = false
+    var onUntrack: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var stakeText: String = ""
@@ -27,7 +29,7 @@ struct TrackBetSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(t(.rd_bt_track_this))
+                Text(isTracked ? t(.rd_tracking) : t(.rd_track_your_pick))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#6E6F75"))
                 Text(pick.pick)
@@ -45,11 +47,11 @@ struct TrackBetSheet: View {
                     } label: {
                         Text("$\(Int(amt))")
                             .font(.archivo(14, weight: .bold))
-                            .foregroundColor(stakeText == String(Int(amt)) ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                            .foregroundColor(stakeText == String(Int(amt)) ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(stakeText == String(Int(amt)) ? accent : Color(hex: "#16181D")))
+                                .fill(stakeText == String(Int(amt)) ? accent : Color(hex: "#242424")))
                     }
                 }
             }
@@ -62,7 +64,7 @@ struct TrackBetSheet: View {
                     .font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#16181D")))
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#242424")))
 
             if let s = stake {
                 HStack {
@@ -81,14 +83,27 @@ struct TrackBetSheet: View {
             } label: {
                 Text(stake == nil ? t(.rd_bt_track_without_stake) : t(.rd_bt_track_bet))
                     .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .foregroundColor(Color(hex: "#171717"))
                     .frame(maxWidth: .infinity).padding(.vertical, 15)
                     .background(RoundedRectangle(cornerRadius: 14).fill(accent))
+            }
+
+            if isTracked, let onUntrack {
+                Button {
+                    onUntrack()
+                    dismiss()
+                } label: {
+                    Text("STOP TRACKING")
+                        .font(.archivoNarrow(12, weight: .bold)).tracking(1.5)
+                        .foregroundColor(Color(hex: "#FF5A5A"))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .background(Color(hex: "#171717").ignoresSafeArea())
     }
 }
 
@@ -96,7 +111,9 @@ struct TrackBetSheet: View {
 
 struct MyBetsCard: View {
     let picks: [Pick]
+    var onBrowse: () -> Void = {}
     @StateObject private var tracker = BetTracker.shared
+    @State private var showStreakShare = false
 
     var body: some View {
         let s = tracker.summary(picks: picks)
@@ -108,28 +125,63 @@ struct MyBetsCard: View {
             }
         }
         .task { if !tracker.loaded { await tracker.load() } }
+        .sheet(isPresented: $showStreakShare) {
+            StreakShareSheet(picks: picks)
+                .relocalizesOnLanguageChange()
+                .presentationDetents([.fraction(0.78), .large])
+        }
     }
 
     private var emptyState: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(Color(hex: "#6E6F75"))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(t(.rd_bt_ledger))
-                    .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
-                    .foregroundColor(Color(hex: "#B9B7B0"))
-                Text(t(.rd_bt_empty))
-                    .font(.archivo(12)).foregroundColor(Color(hex: "#6E6F75"))
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(t(.rd_bt_ledger))
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.6)
+                        .foregroundColor(Color(hex: "#B9B7B0"))
+                    Text(t(.rd_bt_empty))
+                        .font(.archivo(12)).foregroundColor(Color(hex: "#6E6F75"))
+                }
+                Spacer()
+            // No tracked bets yet — the AI's streak/record card is still
+            // shareable (and still pays the 24h-Premium reward).
+                Button {
+                    Haptics.tap()
+                    showStreakShare = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(red: 0.776, green: 1.0, blue: 0.204))
+                        .padding(10)
+                        .background(Circle().fill(Color(hex: "#242424")))
+                }
+                .buttonStyle(.plain)
             }
-            Spacer()
+            Button {
+                Analytics.emptyStateAction(screen: "profile_ledger")
+                onBrowse()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("TRACK YOUR FIRST PICK")
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
+                }
+                .foregroundColor(Color(hex: "#171717"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 11)
+                .background(RoundedRectangle(cornerRadius: 11).fill(Color(hex: "#C6FF34")))
+            }
+            .buttonStyle(.plain)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#101216")))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1E1E1E")))
     }
 
     private func filledCard(_ s: BetTracker.Summary) -> some View {
-        let win = Color(red: 0.831, green: 1.0, blue: 0.227)
+        let win = Color(red: 0.776, green: 1.0, blue: 0.204)
         let loss = Color(hex: "#FF5A5A")
         let profitColor = s.profit >= 0 ? win : loss
         let hitRate = s.settled > 0 ? Int((Double(s.wins) / Double(s.settled) * 100).rounded()) : 0
@@ -167,14 +219,32 @@ struct MyBetsCard: View {
                 statCell(t(.rd_bt_pending), "\(s.tracked - s.settled)", Color(hex: "#B9B7B0"))
             }
             .padding(.top, 2)
+
+            // Share the record → streak card (free users earn 24h Premium)
+            Button {
+                Haptics.tap()
+                showStreakShare = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 12, weight: .bold))
+                    Text(t(.sc_share_record_cta))
+                        .font(.archivoNarrow(12, weight: .bold)).tracking(1.6)
+                }
+                .foregroundColor(win)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(win.opacity(0.45), lineWidth: 1))
+            }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#101216")))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#1C1F25"), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1E1E1E")))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#292929"), lineWidth: 1))
     }
 
     private var divider: some View {
-        Rectangle().fill(Color(hex: "#1C1F25")).frame(width: 1, height: 30)
+        Rectangle().fill(Color(hex: "#292929")).frame(width: 1, height: 30)
     }
 
     private func statCell(_ label: String, _ value: String, _ color: Color) -> some View {

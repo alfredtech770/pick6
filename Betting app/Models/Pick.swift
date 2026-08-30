@@ -458,6 +458,52 @@ extension Pick {
         let ampm = parts[0] < 12 ? "AM" : "PM"
         return parts[1] == 0 ? "\(h12) \(ampm)" : "\(h12):\(String(format: "%02d", parts[1])) \(ampm)"
     }
+
+    /// Scheduled kickoff as an absolute date. The pipeline stores
+    /// `game_date` + `start_time` in America/New_York; converting that pair
+    /// once lets every UI surface present the game in the viewer's timezone.
+    var scheduledStartDate: Date? {
+        guard let t = startTime else { return nil }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "America/New_York")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.date(from: "\(gameDate) \(t)")
+    }
+
+    /// Kickoff formatted in the device's locale and timezone. Unlike
+    /// `startTimeDisplay`, this should be used for user-facing screens.
+    var localizedStartTimeDisplay: String? {
+        guard let date = scheduledStartDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.timeZone = .autoupdatingCurrent
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    /// Human schedule label in local time: TODAY · 8:30 PM,
+    /// TOMORROW · 12:30 AM, or FRI · 7:00 PM.
+    var localizedScheduleDisplay: String? {
+        guard let date = scheduledStartDate,
+              let time = localizedStartTimeDisplay else { return nil }
+        let cal = Calendar.autoupdatingCurrent
+        let day: String
+        if cal.isDateInToday(date) {
+            day = "TODAY"
+        } else if cal.isDateInTomorrow(date) {
+            day = "TOMORROW"
+        } else {
+            let formatter = DateFormatter()
+            formatter.locale = .autoupdatingCurrent
+            formatter.timeZone = .autoupdatingCurrent
+            formatter.dateFormat = "EEE"
+            day = formatter.string(from: date).uppercased()
+        }
+        return "\(day) · \(time)"
+    }
 }
 
 // MARK: - Pick render state
@@ -474,7 +520,7 @@ enum PickRenderState {
     case upcoming          // pending and game is in the future
 }
 
-enum ConfidenceTier {
+enum ConfidenceTier: Equatable {
     case high   // 80%+
     case medium // 65-79%
     case low    // below 65%

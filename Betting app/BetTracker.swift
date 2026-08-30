@@ -68,7 +68,7 @@ final class BetTracker: ObservableObject {
                         onConflict: "user_id,pick_id")
                 .execute()
             await load()
-            Analytics.track("bet_tracked", ["sport": pick.sport, "stake": stake ?? 0])
+            Analytics.pickTracked(league: pick.league, sport: pick.sport, hasStake: stake != nil)
         } catch { }
     }
 

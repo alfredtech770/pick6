@@ -65,6 +65,19 @@ final class FavoritesStore: ObservableObject {
         return nowFav
     }
 
+    /// Idempotent variant used by the unified Track Pick flow. Tracking a
+    /// prediction always puts it in My Picks; stopping tracking removes it.
+    @discardableResult
+    func set(_ pick: Pick, on: Bool) -> Bool {
+        let changed = ids.contains(pick.id) != on
+        if on { ids.insert(pick.id) } else { ids.remove(pick.id) }
+        if changed {
+            save()
+            syncToDB(pick: pick, on: on)
+        }
+        return on
+    }
+
     private struct FavRow: Encodable { let user_id: String; let game_id: String }
 
     private func syncToDB(pick: Pick, on: Bool) {

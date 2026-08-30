@@ -14,9 +14,15 @@ struct FreeMatchDetailView: View {
     @EnvironmentObject private var subs: SubscriptionManager
     /// Star → the same favorites rail as the pro detail ("Track your Pick").
     @EnvironmentObject private var favorites: FavoritesStore
+    @StateObject private var betTracker = BetTracker.shared
+    @State private var showTrackSheet = false
+
+    private var isTracking: Bool {
+        favorites.contains(pick.id) || betTracker.isTracked(pick.id)
+    }
 
     private let gold = Color(hex: "#E8C64A")
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     var body: some View {
         GeometryReader { geo in
@@ -43,7 +49,7 @@ struct FreeMatchDetailView: View {
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         }
         }
-        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .background(Color(hex: "#171717").ignoresSafeArea())
         // Sticky unlock bar — pinned while the page scrolls, with a fade
         // into the content above.
         .overlay(alignment: .bottom) {
@@ -52,14 +58,35 @@ struct FreeMatchDetailView: View {
                 .padding(.top, 26)
                 .padding(.bottom, 14)
                 .background(
-                    LinearGradient(colors: [Color(hex: "#0A0B0D").opacity(0),
-                                            Color(hex: "#0A0B0D").opacity(0.94),
-                                            Color(hex: "#0A0B0D")],
+                    LinearGradient(colors: [Color(hex: "#171717").opacity(0),
+                                            Color(hex: "#171717").opacity(0.94),
+                                            Color(hex: "#171717")],
                                    startPoint: .top, endPoint: .bottom)
                         .ignoresSafeArea(edges: .bottom)
                         .allowsHitTesting(false)
                 )
         }
+        .sheet(isPresented: $showTrackSheet) {
+            TrackBetSheet(
+                pick: pick,
+                accent: lime,
+                onTrack: { stake in
+                    favorites.set(pick, on: true)
+                    Task { await betTracker.track(pick: pick, stake: stake) }
+                },
+                isTracked: isTracking,
+                onUntrack: {
+                    favorites.set(pick, on: false)
+                    Analytics.pickUntracked(league: pick.league, sport: pick.sport)
+                    Task { await betTracker.untrack(pickId: pick.id) }
+                }
+            )
+            .presentationDetents([.height(isTracking ? 420 : 360)])
+            .onAppear {
+                Analytics.trackSheetViewed(league: pick.league, alreadyTracked: isTracking)
+            }
+        }
+        .task { if !betTracker.loaded { await betTracker.load() } }
     }
 
     // ── Top bar ──────────────────────────────────────────────────────
@@ -70,25 +97,25 @@ struct FreeMatchDetailView: View {
                     .font(.system(size: 15, weight: .heavy))
                     .foregroundColor(.white)
                     .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(hex: "#16181D")))
+                    .background(Circle().fill(Color(hex: "#242424")))
             }
             .buttonStyle(.plain)
             Spacer()
             Button {
                 Haptics.tap()
-                _ = favorites.toggle(pick.id)
+                showTrackSheet = true
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: favorites.contains(pick.id) ? "star.fill" : "star")
+                    Image(systemName: isTracking ? "checkmark.circle.fill" : "plus.circle")
                         .font(.system(size: 13, weight: .bold))
-                    Text(favorites.contains(pick.id) ? t(.rd_tracking) : t(.rd_track_your_pick))
+                    Text(isTracking ? t(.rd_tracking) : t(.rd_track_your_pick))
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
                 }
-                .foregroundColor(favorites.contains(pick.id) ? Color(hex: "#0A0B0D") : lime)
+                .foregroundColor(isTracking ? Color(hex: "#171717") : lime)
                 .padding(.horizontal, 12)
                 .frame(height: 40)
-                .background(Capsule().fill(favorites.contains(pick.id) ? lime : Color(hex: "#16181D"))
-                    .overlay(Capsule().stroke(lime.opacity(favorites.contains(pick.id) ? 0 : 0.5), lineWidth: 1)))
+                .background(Capsule().fill(isTracking ? lime : Color(hex: "#242424"))
+                    .overlay(Capsule().stroke(lime.opacity(isTracking ? 0 : 0.5), lineWidth: 1)))
             }
             .buttonStyle(.plain)
         }
@@ -104,7 +131,7 @@ struct FreeMatchDetailView: View {
 
     private var recentFormLegacyBody: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHead("RECENT FORM", chip: "FREE", chipColor: lime, chipInk: Color(hex: "#0A0B0D"))
+            sectionHead("RECENT FORM", chip: "FREE", chipColor: lime, chipInk: Color(hex: "#171717"))
             if let sc = pick.soccerComparison,
                let aBadges = formBadges(sc.away?.record), let hBadges = formBadges(sc.home?.record) {
                 formRow(team: pick.awayTeam, badges: aBadges)
@@ -122,8 +149,8 @@ struct FreeMatchDetailView: View {
                             .multilineTextAlignment(.trailing)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E"))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#292929"), lineWidth: 1)))
                 }
             } else {
                 formRow(team: pick.awayTeam, badges: nil)
@@ -158,7 +185,7 @@ struct FreeMatchDetailView: View {
                     ForEach(Array(badges.enumerated()), id: \.offset) { _, c in
                         Text(String(c))
                             .font(.archivoNarrow(11, weight: .bold))
-                            .foregroundColor(c == "L" ? .white : Color(hex: "#0A0B0D"))
+                            .foregroundColor(c == "L" ? .white : Color(hex: "#171717"))
                             .frame(width: 22, height: 22)
                             .background(RoundedRectangle(cornerRadius: 6).fill(
                                 c == "W" ? Color(hex: "#34D26B")
@@ -171,8 +198,8 @@ struct FreeMatchDetailView: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E"))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#292929"), lineWidth: 1)))
     }
 
     // ── PICK1'S CALL (locked) ────────────────────────────────────────
@@ -248,8 +275,8 @@ struct FreeMatchDetailView: View {
                         }
                     }
                     .padding(.horizontal, 14).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E"))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#292929"), lineWidth: 1)))
                 }
                 .buttonStyle(.plain)
             }
@@ -350,9 +377,12 @@ struct MatchupHeaderCard: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            // League + day is metadata, not an action, so it reads in the
+            // home's muted grey rather than in an accent. The sport still
+            // shows, as the bloom behind this card.
             Text("\(pick.league.uppercased()) · \(dayLabel)")
                 .font(.archivoNarrow(11, weight: .bold)).tracking(2.4)
-                .foregroundColor(Color(hex: "#8FA7E8"))
+                .foregroundColor(V4.ink2)
             if isFieldEvent {
                 // Single featured competitor + event name.
                 VStack(spacing: 10) {
@@ -363,7 +393,7 @@ struct MatchupHeaderCard: View {
                         .frame(maxWidth: 240)
                     Text(eventName.uppercased())
                         .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
-                        .foregroundColor(Color(hex: "#9AA4B8"))
+                        .foregroundColor(V4.mute)
                         .lineLimit(1).minimumScaleFactor(0.6)
                         .frame(maxWidth: 260)
                 }
@@ -371,23 +401,33 @@ struct MatchupHeaderCard: View {
                 HStack(alignment: .top, spacing: 26) {
                     column(pick.awayTeam)
                     Text("VS")
-                        .font(.anton(20)).foregroundColor(Color.white.opacity(0.35))
+                        .font(.anton(20)).foregroundColor(V4.mute)
                         .padding(.top, 26)
                     column(pick.homeTeam)
                 }
             }
-            Text(pick.startTimeDisplay.map { "\(dayLabel) · \($0) ET" } ?? dayLabel)
+            Text(pick.localizedScheduleDisplay ?? dayLabel)
                 .font(.mono(11, weight: .bold)).tracking(1.2)
-                .foregroundColor(Color(hex: "#9AA4B8"))
+                .foregroundColor(V4.mute)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 22)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: "#101524"), Color(hex: "#0C0F18")],
+                .fill(LinearGradient(colors: [V4.panelTop, V4.panelBot],
                                      startPoint: .top, endPoint: .bottom))
+                // Sport identity is a bloom, not a tint — the same move the
+                // home makes on its orbs and hero card.
+                .overlay(alignment: .top) {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [V4.glow(pick.sport).opacity(0.20), .clear],
+                                             center: .center, startRadius: 0, endRadius: 130))
+                        .frame(width: 300, height: 190)
+                        .offset(y: -80)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color(hex: "#26304A"), lineWidth: 1))
+                    .stroke(V4.line, lineWidth: 1))
         )
     }
 
@@ -426,7 +466,7 @@ struct MatchupHeaderCard: View {
 struct RecentFormSection: View {
     let pick: Pick
     var chip: String? = nil
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -436,7 +476,7 @@ struct RecentFormSection: View {
                 if let chip {
                     Text(chip)
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                         .padding(.horizontal, 11).padding(.vertical, 6)
                         .background(Capsule().fill(lime))
                 }
@@ -457,8 +497,8 @@ struct RecentFormSection: View {
                             .multilineTextAlignment(.trailing)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E"))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#292929"), lineWidth: 1)))
                 }
             }
         }
@@ -485,7 +525,7 @@ struct RecentFormSection: View {
                 ForEach(Array(badges.enumerated()), id: \.offset) { _, c in
                     Text(String(c))
                         .font(.archivoNarrow(11, weight: .bold))
-                        .foregroundColor(c == "L" ? .white : Color(hex: "#0A0B0D"))
+                        .foregroundColor(c == "L" ? .white : Color(hex: "#171717"))
                         .frame(width: 22, height: 22)
                         .background(RoundedRectangle(cornerRadius: 6).fill(
                             c == "W" ? Color(hex: "#34D26B")
@@ -495,7 +535,7 @@ struct RecentFormSection: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#101216"))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#1C1F25"), lineWidth: 1)))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E"))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#292929"), lineWidth: 1)))
     }
 }

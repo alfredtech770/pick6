@@ -143,8 +143,8 @@ enum Analytics {
     static func onboardingCompleted() {
         track("onboarding_completed")
     }
-    static func paywallViewed() {
-        track("paywall_viewed")
+    static func paywallViewed(source: String = "unknown") {
+        track("paywall_viewed", ["source": source])
         // Meta: purchase-intent signal — a step above install, below trial.
         // Gives AEM another event to prioritize between registration and trial.
         AppEvents.shared.logEvent(.initiatedCheckout)
@@ -155,12 +155,37 @@ enum Analytics {
         // Meta can see which sports drive the most activation.
         AppEvents.shared.logEvent(.viewedContent, parameters: [.contentType: league])
     }
+    static func trackSheetViewed(league: String, alreadyTracked: Bool) {
+        track("track_sheet_viewed", ["league": league, "already_tracked": alreadyTracked])
+    }
+    static func pickTracked(league: String, sport: String, hasStake: Bool) {
+        track("pick_tracked", ["league": league, "sport": sport, "has_stake": hasStake])
+    }
+    static func pickUntracked(league: String, sport: String) {
+        track("pick_untracked", ["league": league, "sport": sport])
+    }
+    static func emptyStateAction(screen: String) {
+        track("empty_state_action", ["screen": screen])
+    }
+    static func tabSelected(_ tab: String) {
+        track("tab_selected", ["tab": tab])
+    }
+    static func notificationPermissionResult(granted: Bool, source: String) {
+        track("notification_permission_result", ["granted": granted, "source": source])
+    }
     // ── Share-your-win viral loop ─────────────────────────────────
     static func shareWinOpened(league: String) {
         track("share_win_opened", ["league": league])
     }
     static func shareWinCompleted(granted: Bool) {
         track("share_win_completed", ["reward_granted": granted])
+    }
+    // ── Share-your-streak viral loop ──────────────────────────────
+    static func streakCardOpened(streak: Int) {
+        track("streak_card_opened", ["streak": streak])
+    }
+    static func streakCardShared(streak: Int, granted: Bool) {
+        track("streak_card_shared", ["streak": streak, "reward_granted": granted])
     }
     /// The gold MEMBERS WON MORE card on the free Latest Wins rail.
     static func memberCardTapped() {

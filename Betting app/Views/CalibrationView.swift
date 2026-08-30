@@ -54,7 +54,7 @@ final class CalibrationModel: ObservableObject {
 
 struct CalibrationCard: View {
     @StateObject private var model = CalibrationModel()
-    private let lime = Color(red: 0.831, green: 1.0, blue: 0.227)
+    private let lime = Color(red: 0.776, green: 1.0, blue: 0.204)
 
     var body: some View {
         Group {
@@ -101,8 +101,8 @@ struct CalibrationCard: View {
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#101216")))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#1C1F25"), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1E1E1E")))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#292929"), lineWidth: 1))
     }
 
     private func bandRow(_ b: CalibrationBand) -> some View {
