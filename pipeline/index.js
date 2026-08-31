@@ -1385,6 +1385,22 @@ async function savePicks(league, picks) {
     if (p.away_logo) row.away_logo = p.away_logo;
   });
 
+  // A race or tournament is ONE event, so it must be ONE row. The upsert key
+  // includes game_date, and for a multi-day event the model returned a
+  // different date on each run — the BMW Championship ended up as three rows
+  // naming two different winners. Reuse the date already stored against this
+  // game_id so the second run updates the first row instead of adding one.
+  if (sport === 'f1' || sport === 'golf') {
+    const ids = [...new Set(rows.map((r) => r.game_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: existing } = await supabase
+        .from('picks').select('game_id, game_date')
+        .eq('league', league).eq('result', 'pending').in('game_id', ids);
+      const held = new Map((existing || []).map((e) => [e.game_id, e.game_date]));
+      rows.forEach((r) => { if (held.has(r.game_id)) r.game_date = held.get(r.game_id); });
+    }
+  }
+
   const { error } = await supabase
     .from('picks')
     .upsert(rows, { onConflict: 'league,game_date,game_id' });
@@ -1449,6 +1465,26 @@ async function backfillMissingScores() {
   return 0;
 }
 
+/// Compare two competitor names for the same person.
+///
+/// The model wrote the same driver as both "Kimi Antonelli" and "Andrea Kimi
+/// Antonelli", so one feed listed him as two people and a grader comparing
+/// strings would have called a correct pick wrong. Match on the family name
+/// plus one other given name, which survives a dropped or added first name
+/// without merging two different people who share a surname.
+function sameCompetitor(a, b) {
+  const parts = (x) => String(x || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter(Boolean);
+  const pa = parts(a), pb = parts(b);
+  if (!pa.length || !pb.length) return false;
+  if (pa[pa.length - 1] !== pb[pb.length - 1]) return false;   // family name must match
+  const ga = new Set(pa.slice(0, -1)), gb = new Set(pb.slice(0, -1));
+  if (!ga.size || !gb.size) return true;                       // one side is surname-only
+  for (const g of ga) if (gb.has(g)) return true;
+  return false;
+}
+
 /// Lenient string match used when comparing pick text to team text.
 /// Same algorithm as the pick-validator: trim+lowercase, then exact or
 /// substring-either-way (e.g. "Cavaliers" matches "Cleveland Cavaliers").
@@ -1459,6 +1495,63 @@ function teamsMatch(pick, team) {
   if (a === b) return true;
   if (a.includes(b) || b.includes(a)) return true;
   return false;
+}
+
+/// Grade race / field events: F1, GOLF, NASCAR.
+///
+/// Both other graders decide a pick by matching it against home_team or
+/// away_team. A field event stores the EVENT as home_team and the literal
+/// string "Field" as away_team, with the pick being a driver or golfer, so
+/// that match could never succeed and every race and tournament stayed
+/// pending forever. They were not slow to grade, they were ungradable.
+///
+/// Free, authoritative sources, no model in the loop: Ergast for the race
+/// classification, ESPN's own leaderboard for golf.
+async function gradeFieldEvents() {
+  const { data: pending, error } = await supabase
+    .from('picks')
+    .select('id, game_id, league, home_team, pick, game_date')
+    .eq('result', 'pending')
+    .in('sport', ['f1', 'golf'])
+    .lt('game_date', todayISO());
+  if (error) { err('Field-event grade fetch failed:', error.message); return 0; }
+  if (!pending?.length) return 0;
+
+  let graded = 0;
+  for (const p of pending) {
+    let winner = null;
+    try {
+      if (p.league === 'F1') {
+        // game_id is "season-round", the exact key Ergast indexes results by.
+        const [season, round] = String(p.game_id || '').split('-');
+        if (!season || !round) continue;
+        const res = await axios.get(
+          `https://api.jolpi.ca/ergast/f1/${season}/${round}/results.json`, { timeout: 15000 });
+        const race = res.data?.MRData?.RaceTable?.Races?.[0];
+        // No Races entry means the race has not been classified yet. Leave
+        // it pending rather than inventing a loss.
+        const first = race?.Results?.find((r) => r.position === '1');
+        const d = first?.Driver;
+        if (d) winner = `${d.givenName} ${d.familyName}`;
+      } else if (p.league === 'GOLF') {
+        const board = await golf.fetchTournaments();
+        const id = String(p.game_id || '').replace(/^golf-/, '');
+        const t = board.find((x) => String(x.id) === id);
+        if (!t || t.state !== 'post') continue;
+        winner = t.players.find((x) => x.position === 1)?.name || null;
+      }
+    } catch (e) { err(`Field-event grade ${p.league} ${p.game_id}:`, e.message); continue; }
+    if (!winner) continue;
+
+    const won = sameCompetitor(p.pick, winner);
+    const { error: e2 } = await supabase.from('picks')
+      .update({ result: won ? 'win' : 'loss' }).eq('id', p.id);
+    if (e2) { err(`Field-event grade update ${p.id}:`, e2.message); continue; }
+    log(`${won ? '✅ WIN' : '❌ LOSS'}: ${p.pick} — ${p.home_team} won by ${winner}`);
+    graded++;
+  }
+  if (graded) log(`Graded ${graded} field-event pick(s).`);
+  return graded;
 }
 
 async function gradePicks() {
@@ -1526,12 +1619,15 @@ async function gradePicks() {
 const RESEARCH_GRADE_MODEL = 'claude-haiku-4-5-20251001';
 
 async function gradeViaResearch() {
+  // No lower bound. The window used to start 14 days back, so anything that
+  // slipped past it was never revisited OR swept and stayed pending forever —
+  // 209 such rows had accumulated. Researching is still bounded to the recent
+  // window below; the old tail is only ever swept.
   const { data: pending, error } = await supabase
     .from('picks')
     .select('id, game_id, league, home_team, away_team, pick, game_date')
     .eq('result', 'pending')
-    .lt('game_date', todayISO())
-    .gte('game_date', daysAgoISO(14));
+    .lt('game_date', todayISO());
   if (error || !pending?.length) return;
 
   // Only picks whose game has no live_scores row (feed-covered leagues are
@@ -1670,6 +1766,9 @@ async function runPipeline() {
     // sees the freshest performance stats. AI-free — uses whatever
     // sportsdata.io live polling has dropped into live_scores overnight.
     await gradePicks();
+    // Races and tournaments grade from their own free result feeds; neither
+    // of the other two graders can decide a field event.
+    await gradeFieldEvents().catch((e) => err('gradeFieldEvents failed:', e.message));
     // Then the bounded research grader for feed-less leagues (KBO/NPB/IPL) —
     // once per daily run only, never in the hourly ticks.
     await gradeViaResearch().catch((e) => err('gradeViaResearch failed:', e.message));
@@ -2266,15 +2365,17 @@ async function liveTick() {
   }
 }
 
-/// Hourly grading tick — AI-free. Just runs gradePicks() against the
-/// live_scores rows that sportsdata.io polling has populated. Cheap,
-/// deterministic, no Claude in the loop.
+/// Hourly grading tick — AI-free. Runs gradePicks() against the live_scores
+/// rows that sportsdata.io polling has populated, plus the race/tournament
+/// graders which read free result feeds. Cheap, deterministic, no Claude in
+/// the loop.
 let gradeLoopRunning = false;
 async function gradeAndBackfillTick() {
   if (gradeLoopRunning) return;
   gradeLoopRunning = true;
   try {
     await gradePicks();
+    await gradeFieldEvents();
   } catch (e) {
     err('Grade tick crashed:', e.message);
   } finally {
