@@ -122,6 +122,23 @@ function trackClaudeCost(usage) {
   return { spent: claudeCostUsd, callCost: total };
 }
 
+// Last failure from the Anthropic API, surfaced on /healthz.
+//
+// On 26 Aug the account ran out of credit. Every league then failed with
+// "Your credit balance is too low", which is not transient, so each returned
+// an empty array immediately and the run looked from the outside exactly like
+// a quiet day with no fixtures. The app served one stale pick for five days
+// and nothing said why. The logs had the answer; the logs are also the one
+// place nobody looks until a user complains.
+let lastClaudeError = null;
+
+/// True for failures that will hit EVERY league identically: no credit, bad
+/// key, revoked key. There is no point attempting thirty more calls against
+/// a dead account, and the distinction is what lets /healthz say WHY.
+function isAccountLevelFailure(msg = '') {
+  return /credit balance|billing|invalid x-api-key|authentication_error|permission_error|401|403/i.test(msg);
+}
+
 function claudeBudgetExceeded() {
   const today = new Date().toISOString().slice(0, 10);
   if (today !== claudeCostDate) return false;  // new day — reset on next track
@@ -1076,8 +1093,20 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
       final = await makeStream().finalMessage();
       break;
     } catch (e) {
-      const transient = /overloaded|529|rate.?limit/i.test(e.message || '');
-      err(`Claude (${league}) attempt ${attempt} failed:`, e.message);
+      const msg = e.message || '';
+      const transient = /overloaded|529|rate.?limit/i.test(msg);
+      err(`Claude (${league}) attempt ${attempt} failed:`, msg);
+      lastClaudeError = {
+        at: new Date().toISOString(),
+        league,
+        message: msg.slice(0, 300),
+        account_level: isAccountLevelFailure(msg),
+      };
+      if (isAccountLevelFailure(msg)) {
+        err(`🚨 ACCOUNT-LEVEL Anthropic failure — every league will fail identically. Aborting the run.`);
+        accountFailureThisRun = true;
+        return [];
+      }
       if (!transient || attempt === 3) return [];
       const waitMs = attempt * 45_000;
       log(`   retrying ${league} in ${waitMs / 1000}s…`);
@@ -1755,6 +1784,10 @@ async function savePerformanceSnapshot() {
 // ════════════════════════════════════════════════════════════════
 
 let pipelineRunning = false;
+/// Set when a league fails for an account-level reason. The league loop
+/// checks it and stops, rather than repeating the same failure once per
+/// league for the rest of the run.
+let accountFailureThisRun = false;
 
 async function runPipeline() {
   if (pipelineRunning) { log('Pipeline already running — skipping this tick.'); return; }
@@ -1781,8 +1814,13 @@ async function runPipeline() {
       .filter((s) => s && s !== 'NONE');   // 'none' = explicit no-filter
     const runOrder = leagueRunOrder();
     log(`   Run order (${runOrder.length} in-season): ${runOrder.map(([l]) => l).join(', ')}`);
+    accountFailureThisRun = false;
     for (const [league, cfg] of runOrder) {
       try {
+      if (accountFailureThisRun) {
+        log(`🛑 Stopping the run: the Anthropic account itself is failing, so the remaining leagues would fail identically.`);
+        break;
+      }
       if (onlyLeagues.length && !onlyLeagues.includes(league)) { continue; }
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
 
@@ -2414,6 +2452,10 @@ http.createServer(async (req, res) => {
       age_hours: ageHours === Infinity ? null : +ageHours.toFixed(2),
       claude_cost_today_usd: +claudeCostUsd.toFixed(2),
       web_search_uses_today: webSearchUses,
+      // The reason, not just the symptom. Diagnosing the 26-31 Aug outage
+      // took reading five days of Supabase tables to prove the container was
+      // alive and only the Claude path was dead; this makes it one request.
+      last_claude_error: lastClaudeError,
     }));
   } catch (e) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
