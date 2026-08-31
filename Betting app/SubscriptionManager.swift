@@ -139,11 +139,19 @@ final class SubscriptionManager: ObservableObject {
     /// on its own.
     static let annualProductId = "com.pick1.app.pro.annual"
 
+    /// Retired from the lineup 2026-08-25. The Day Pass never sold a single
+    /// unit (`day_pass_claims` is empty) and it undercut the trial: a user
+    /// weighing $2.99 for one day against three days free is being offered a
+    /// worse version of what they already get.
+    ///
+    /// `dayPassProductId` and the `claim_day_pass` path stay defined so a
+    /// past purchase would still redeem, exactly as Lifetime does. Remove it
+    /// from sale in App Store Connect too, or it stays purchasable by promo
+    /// link while no screen offers it.
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
         annualProductId,
-        dayPassProductId,
     ]
 
     /// Product ids the ENTITLEMENT check accepts — includes retired

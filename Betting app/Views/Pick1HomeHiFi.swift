@@ -2480,14 +2480,6 @@ struct PremiumUpsellCard: View {
                 }
                 .padding(.top, 2)
 
-                // Impulse alternative — the 24h Day Pass (shows once
-                // StoreKit returns the product).
-                if let dp = subs.dayPassProduct {
-                    Text(t(.sw_day_pass_line).replacingOccurrences(of: "{p}", with: dp.displayPrice))
-                        .font(.archivo(11, weight: .semibold))
-                        .foregroundColor(Color(hex: "#B9B7B0"))
-                }
-
                 VStack(spacing: 9) {
                     Text(subs.introOfferEligible ? t(.rd_prem_cta_trial) : t(.rd_prem_cta))
                         .font(.anton(17)).kerning(0.4)
