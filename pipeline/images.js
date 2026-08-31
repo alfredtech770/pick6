@@ -11,7 +11,8 @@
 //
 // Two entity kinds, resolved differently:
 //   TEAM_SPORTS   → club crest.    ESPN team search → TheSportsDB searchteams
-//   PLAYER_SPORTS → athlete photo. TheSportsDB searchplayers (cutout → thumb)
+//   PLAYER_SPORTS → athlete photo. ESPN search/v2 → headshot, then
+//                    TheSportsDB searchplayers (cutout → thumb)
 //
 // Not covered on purpose: golf and F1. Their picks are "<event> vs Field" —
 // neither column holds a person or a club, so there is nothing to resolve.
@@ -134,8 +135,54 @@ async function sportsDBPlayer(sport, name) {
   return match.strCutout || match.strThumb || null;
 }
 
+// ESPN's own athlete headshot, resolved through the same search/v2 endpoint
+// combat.js uses for fighter ids. TheSportsDB alone left every UFC pick with
+// no image at all and covered only the top of a tennis draw; ESPN has the
+// full UFC roster and the ranked half of the ATP tour.
+//
+// The uid carries the athlete id as "s:<sport>~a:<id>", which is the only
+// place in the payload it appears in a stable form.
+const ESPN_HEADSHOT_PATH = { tennis: 'tennis', combat: 'mma' };
+
+async function espnHeadshot(sport, name, plain = false) {
+  const path = ESPN_HEADSHOT_PATH[sport];
+  if (!path || espnBlocked) return null;
+  const q = plain
+    ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    : name;
+  const d = await getJSON(
+    `https://site.web.api.espn.com/apis/search/v2?query=${encodeURIComponent(q)}&limit=8`);
+  if (!d || d.__status === 403) { if (d?.__status === 403) espnBlocked = true; return null; }
+  for (const group of d.results || []) {
+    if (group.type !== 'player') continue;
+    for (const c of group.contents || []) {
+      // Only accept a hit whose own description names the right sport: a
+      // search for a tennis player will otherwise return a footballer with
+      // the same surname, and a wrong face is worse than no face.
+      const desc = String(c.description || '').toLowerCase();
+      const wantDesc = sport === 'combat' ? 'mma' : 'tennis';
+      if (!desc.includes(wantDesc)) continue;
+      const id = String(c.uid || '').match(/a:(\d+)/)?.[1];
+      if (!id) continue;
+      return `https://a.espncdn.com/i/headshots/${path}/players/full/${id}.png`;
+    }
+  }
+  // ESPN indexes some names without their diacritics, so an accented query
+  // can come back empty where the plain form matches. Tried once, and only
+  // when the accented form found nobody at all — not when it found the right
+  // athlete who simply has no photo on file.
+  if (!plain && name !== name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')) {
+    return espnHeadshot(sport, name, true);
+  }
+  return null;
+}
+
 async function resolveCrest(sport, name) {
   if (PLAYER_SPORTS[sport]) {
+    // ESPN first: its headshots are transparent cutouts at a consistent crop,
+    // which is what the card is designed around.
+    let u = await espnHeadshot(sport, name);
+    if (await loads(u)) return u;
     const p = await sportsDBPlayer(sport, name);
     return (await loads(p)) ? p : null;
   }
@@ -217,4 +264,4 @@ async function enrichImages(supabase, log, err, { sinceDaysAgo = 1 } = {}) {
   }
 }
 
-module.exports = { enrichImages };
+module.exports = { enrichImages, resolveCrest };
