@@ -14,7 +14,7 @@
 
 <!-- ─── Primary SEO ─────────────────────────────────────── -->
 <title>Pick1 — AI sports predictions across 9 sports</title>
-<meta name="description" content="Pick1's AI delivers tomorrow's highest-confidence pick across 9 sports — NBA, NFL, EPL, MLB, UFC and more — to your inbox at 9am ET. Free, daily, publicly logged. Plus 1 week free when we launch end of May." />
+<meta name="description" content="Pick1's AI delivers the day's highest-confidence pick across 9 sports — NBA, NFL, EPL, MLB, UFC and more. Confidence-scored, line-tracked, publicly logged. Free to download on iOS." />
 <link rel="canonical" href="https://pick1.live/" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="author" content="Pick1" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pick1.live/" />
 <meta property="og:title" content="Pick1 — AI sports predictions, publicly logged." />
-<meta property="og:description" content="Tomorrow's AI pick across 9 sports, delivered to your inbox at 9am ET. Confidence-scored. Publicly logged. Free, daily. Plus 1 week free at launch end of May." />
+<meta property="og:description" content="The day's highest-confidence AI pick across 9 sports — confidence-scored, line-tracked, publicly logged. Free to download on the App Store." />
 <meta property="og:image" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:image:secure_url" content="https://pick1.live/assets/og-image.png" />
 <meta property="og:image:type" content="image/png" />
@@ -38,7 +38,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:url" content="https://pick1.live/" />
 <meta name="twitter:title" content="Pick1 — AI sports predictions, publicly logged." />
-<meta name="twitter:description" content="Pick1's AI delivers tomorrow's top pick across 9 sports to your inbox at 9am ET. Free, daily, publicly logged. Plus 1 week free at launch end of May." />
+<meta name="twitter:description" content="Pick1's AI delivers the day's top pick across 9 sports — confidence-scored, publicly logged. Free to download on iOS, new picks daily." />
 <meta name="twitter:image" content="https://pick1.live/assets/og-image.png" />
 <meta name="twitter:image:alt" content="Pick1 — AI sports predictions across 9 sports. Publicly logged." />
 
@@ -90,15 +90,17 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD",
-        "description": "Daily AI pick delivered free starting tomorrow, plus 1 week free at launch — no credit card required",
-        "availability": "https://schema.org/PreOrder"
+        "description": "Free to download on iOS — daily AI pick across 9 sports, with a 7-day full-access trial",
+        "availability": "https://schema.org/InStock"
       }
     },
     {
       "@type": "MobileApplication",
       "@id": "https://pick1.live/#app",
       "name": "Pick1",
-      "operatingSystem": "iOS, Android",
+      "operatingSystem": "iOS",
+      "downloadUrl": "https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331",
+      "installUrl": "https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331",
       "applicationCategory": "SportsApplication",
       "applicationSubCategory": "Sports prediction & analytics",
       "description": "AI-powered sports predictions across 9 sports — NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket. Confidence scores from 0–100%, live win-probability tracking, public win/loss record. Like Kalshi or Polymarket, but built for sports.",
@@ -113,7 +115,7 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD",
-        "description": "1 week free at launch"
+        "description": "Free to download — 7-day full-access trial, then $39.99/mo"
       }
     },
     {
@@ -140,7 +142,7 @@
           "name": "How accurate is the AI?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Pick1 hasn't launched yet — we don't publish fabricated track records. At launch, every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% closing-line value (CLV) — the standard metric for measuring forecast accuracy against efficient market consensus. See pick1.live/methodology for details."
+            "text": "We don't publish fabricated track records — every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% closing-line value (CLV) — the standard metric for measuring forecast accuracy against efficient market consensus. See pick1.live/methodology for details."
           }
         }
       ]
@@ -171,8 +173,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<!-- Country-aware phone input (intl-tel-input v24) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/css/intlTelInput.css">
 <style>
 :root {
   --bg: #0a0b0d;
@@ -1292,9 +1292,45 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 }
 .coming-soon-line svg { width: 14px; height: 14px; opacity: 0.55; }
 
+/* ─── App Store download badge (app is live) ─── */
+.store-cta {
+  margin-top: 22px;
+  display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap;
+}
+.appstore-badge {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--ink); color: var(--bg);
+  padding: 11px 22px 11px 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.40);
+}
+.appstore-badge:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(0,0,0,0.52); }
+.appstore-badge:active { transform: translateY(0); }
+.appstore-badge .apple-logo { width: 28px; height: 28px; flex-shrink: 0; }
+.appstore-badge .ab-text { display: flex; flex-direction: column; line-height: 1.04; text-align: left; }
+.appstore-badge .ab-small {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.72;
+}
+.appstore-badge .ab-big {
+  font-family: 'Archivo', sans-serif;
+  font-size: 20px; font-weight: 800; letter-spacing: -0.01em;
+}
+.store-soon {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--mute);
+}
+.store-soon svg { width: 15px; height: 15px; opacity: 0.5; }
+
 @media (max-width: 920px) {
   .waitlist-wrap { margin-left: auto; margin-right: auto; }
   .coming-soon-line { justify-content: center; flex-wrap: wrap; }
+  .store-cta { justify-content: center; }
   .waitlist-note { justify-content: center; text-align: left; }
 }
 @media (max-width: 480px) {
@@ -1698,7 +1734,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     <a href="/blog">Blog</a>
     <a href="#pricing">Pricing</a>
   </nav>
-  <a class="cta-pill" href="#download">Join Waitlist</a>
+  <a class="cta-pill" href="https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331" target="_blank" rel="noopener">Download</a>
 </header>
 
 <a id="top"></a>
@@ -1708,38 +1744,19 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="hero">
   <div class="hero-text">
-    <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> DAILY AI PICK · DELIVERED FREE · STARTING TOMORROW</div>
-    <h1 class="display" data-reveal data-reveal-delay="2">TOMORROW'S PICK,<br/><em>IN YOUR INBOX.</em></h1>
-    <p class="lead" data-reveal data-reveal-delay="3">Every morning at 9am ET, Pick1's AI delivers tomorrow's highest-confidence pick across 9 sports — confidence-scored, line-tracked, publicly logged. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
+    <div class="kicker live" data-reveal data-reveal-delay="1"><span class="dot"></span> DAILY AI PICKS · 9 SPORTS · NOW ON iOS</div>
+    <h1 class="display" data-reveal data-reveal-delay="2">TOMORROW'S PICK,<br/><em>IN YOUR POCKET.</em></h1>
+    <p class="lead" data-reveal data-reveal-delay="3">Pick1's AI delivers the day's highest-confidence pick across 9 sports — confidence-scored, line-tracked, and publicly logged. Free to download, new picks every day.</p>
 
-    <div class="waitlist-wrap" data-reveal data-reveal-delay="4">
-      <form class="waitlist-form" data-source="hero" novalidate>
-        <label class="field">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-          <input type="text" name="name" placeholder="Your first name" required autocomplete="given-name" maxlength="40" />
-        </label>
-        <label class="field">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-          <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
-        </label>
-        <label class="field field-tel">
-          <input type="tel" name="whatsapp" required autocomplete="tel" />
-        </label>
-        <button type="submit">Get Tomorrow's Pick →</button>
-      </form>
-      <div class="waitlist-error" role="alert"></div>
-      <div class="waitlist-note">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
-        <span>Daily AI pick at <span class="accent">9am ET</span> · 1 week free at launch · Unsubscribe anytime</span>
-      </div>
-    </div>
-
-    <div class="coming-soon-line" data-reveal data-reveal-delay="5">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-      <span>Coming to App Store</span>
-      <span style="opacity:0.4">·</span>
-      <svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z" fill="currentColor"/></svg>
-      <span>Google Play</span>
+    <div class="store-cta" data-reveal data-reveal-delay="4">
+      <a class="appstore-badge" href="https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331" target="_blank" rel="noopener" aria-label="Download Pick1 on the App Store">
+        <svg class="apple-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        <span class="ab-text"><span class="ab-small">Download on the</span><span class="ab-big">App Store</span></span>
+      </a>
+      <span class="store-soon">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z"/></svg>
+        Google Play soon
+      </span>
     </div>
   </div>
 
@@ -1802,9 +1819,9 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="section" id="receipts">
   <div class="eyebrow-block">
-    <div class="kicker" data-reveal>WHAT YOU'LL SEE AT LAUNCH</div>
+    <div class="kicker" data-reveal>WHAT YOU'LL SEE IN THE APP</div>
     <h2 class="display" data-reveal data-reveal-delay="2">EVERY PICK,<br/>PUBLICLY <em>LOGGED.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Every pick the AI makes — winning or losing — gets a timestamped public ledger entry with the line we got, the closing line, and the outcome. The receipts below show the format you'll see at launch.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Every pick the AI makes — winning or losing — gets a timestamped public ledger entry with the line we got, the closing line, and the outcome. The receipts below show the format you see in the app.</p>
   </div>
   <div class="receipts-grid">
     <div class="receipt" data-reveal>
@@ -1863,9 +1880,9 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="section tight">
   <div class="eyebrow-block">
-    <div class="kicker" data-reveal><span class="dot"></span> LAUNCH PREVIEW</div>
+    <div class="kicker" data-reveal><span class="dot"></span> INSIDE THE APP</div>
     <h2 class="display" data-reveal data-reveal-delay="2">AI WORKS <em>24/7.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">At launch, every pick the AI makes will be public, timestamped, and tracked in a feed like the one below — no selective sharing. The picks shown here are illustrative of the format.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Every pick the AI makes is public, timestamped, and tracked in a feed like the one below — no selective sharing. The picks shown here are illustrative of the format.</p>
   </div>
   <div class="feed" data-reveal data-reveal-delay="2">
     <div class="feed-header">
@@ -1989,28 +2006,28 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
   <div class="eyebrow-block">
     <div class="kicker" data-reveal>BE THE FIRST</div>
     <h2 class="display" data-reveal data-reveal-delay="2">YOUR RECEIPTS<br/>GO <em>HERE.</em></h2>
-    <p class="lead" data-reveal data-reveal-delay="3">Pick1 hasn't launched yet — there are no real testimonials to show, and we're not going to fake them. When we go live, your wins (and losses) become the proof.</p>
+    <p class="lead" data-reveal data-reveal-delay="3">Pick1 just launched — so instead of faking testimonials, we publish the receipts. As real results come in, your wins (and losses) become the proof.</p>
   </div>
   <div class="quotes">
     <div class="quote" data-reveal>
-      <div class="quote-stat"><span class="amt">★ Beta</span><span class="lbl">First 100 signups</span></div>
-      <p class="quote-text">First 100 waitlist members get a personal welcome at launch and are invited to the closed beta a week before public release.</p>
+      <div class="quote-stat"><span class="amt">★ Live</span><span class="lbl">Now on iOS</span></div>
+      <p class="quote-text">Pick1 is live on the App Store — download free, start your 7-day full-access trial, and get the day's highest-confidence AI pick across all 9 sports.</p>
       <div class="quote-attrib">
         <div class="quote-avatar" style="background: linear-gradient(135deg, #d4ff3a, #a8e000); color: #0a0b0d;">★</div>
         <div>
-          <div class="quote-name">Closed beta access</div>
-          <div class="quote-loc">Limited spots</div>
+          <div class="quote-name">Free to download</div>
+          <div class="quote-loc">iPhone &amp; iPad</div>
         </div>
       </div>
     </div>
     <div class="quote" data-reveal data-reveal-delay="2">
-      <div class="quote-stat"><span class="amt">9am ET</span><span class="lbl">Daily AI pick</span></div>
-      <p class="quote-text">Every waitlist signup gets Pick1's highest-confidence call delivered to their inbox at 9am ET — starting tomorrow. Free, daily, publicly logged. Plus 1 week of full access free when we launch.</p>
+      <div class="quote-stat"><span class="amt">Daily</span><span class="lbl">New AI pick</span></div>
+      <p class="quote-text">Open the app for Pick1's highest-confidence call across 9 sports — confidence-scored, line-tracked, and publicly logged. A fresh pick every day.</p>
       <div class="quote-attrib">
         <div class="quote-avatar" style="background: linear-gradient(135deg, #d4ff3a, #a8d827);color:#0a0b0d">✓</div>
         <div>
           <div class="quote-name">Tomorrow's pick</div>
-          <div class="quote-loc">Delivered free, daily</div>
+          <div class="quote-loc">In the app, daily</div>
         </div>
       </div>
     </div>
@@ -2053,8 +2070,8 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Multi-event combos + market comparison</span></li>
         <li><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Full P&L history & analytics</span></li>
       </ul>
-      <a class="plan-cta" href="#download">Join Waitlist · 1 Week Free</a>
-      <div class="trial">Free at launch · No card required · Cancel anytime</div>
+      <a class="plan-cta" href="https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331" target="_blank" rel="noopener">Download · 7 Days Free</a>
+      <div class="trial">7 days free, then $39.99/mo · Cancel anytime</div>
     </div>
   </div>
 </section>
@@ -2090,7 +2107,7 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
     </div>
     <div class="faq-item" data-reveal>
       <button class="faq-q">How accurate is the AI, really? <span class="plus"></span></button>
-      <div class="faq-a"><div class="faq-a-inner">Pick1 hasn't launched yet — so we won't show you a fabricated track record. Once we go live, every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% CLV (closing-line value), which is the standard metric for measuring forecast accuracy against efficient market consensus. Read more about the methodology in <a href="/methodology" style="color:var(--accent)">/methodology</a>.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">We won't show you a fabricated track record — every prediction (correct or incorrect) is timestamped to a public ledger you can audit. Our internal backtest target is +3% CLV (closing-line value), which is the standard metric for measuring forecast accuracy against efficient market consensus. Read more about the methodology in <a href="/methodology" style="color:var(--accent)">/methodology</a>.</div></div>
     </div>
   </div>
 </section>
@@ -2100,27 +2117,16 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 <!-- ════════════════════════════════════════════════════════════ -->
 <section class="final-cta" id="download">
   <h2 class="display" data-reveal>GET TOMORROW'S<br/><em>PICK FREE.</em></h2>
-  <p class="lead" data-reveal data-reveal-delay="2">The AI's highest-confidence call across 9 sports, delivered to your inbox at 9am ET — starting tomorrow. Free, daily, no card. Plus <em style="font-style:normal;color:var(--accent)">1 week free</em> when we launch end of May.</p>
-  <div class="waitlist-wrap" data-reveal data-reveal-delay="3">
-    <form class="waitlist-form" data-source="final" novalidate>
-      <label class="field">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        <input type="text" name="name" placeholder="Your first name" required autocomplete="given-name" maxlength="40" />
-      </label>
-      <label class="field">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-        <input type="email" name="email" placeholder="you@email.com" required autocomplete="email" />
-      </label>
-      <label class="field field-tel">
-        <input type="tel" name="whatsapp" required autocomplete="tel" />
-      </label>
-      <button type="submit">Get Tomorrow's Pick →</button>
-    </form>
-    <div class="waitlist-error" role="alert"></div>
-    <div class="waitlist-note">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-9"/></svg>
-      <span>Daily AI pick at <span class="accent">9am ET</span> · 1 week free at launch · Unsubscribe anytime</span>
-    </div>
+  <p class="lead" data-reveal data-reveal-delay="2">The AI's highest-confidence call across 9 sports — confidence-scored, line-tracked, and publicly logged. Download free on iOS and get a fresh pick every day.</p>
+  <div class="store-cta" data-reveal data-reveal-delay="2" style="justify-content:center;margin-top:24px;">
+    <a class="appstore-badge" href="https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331" target="_blank" rel="noopener" aria-label="Download Pick1 on the App Store">
+      <svg class="apple-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+      <span class="ab-text"><span class="ab-small">Download on the</span><span class="ab-big">App Store</span></span>
+    </a>
+  </div>
+  <div class="store-soon" data-reveal data-reveal-delay="3" style="justify-content:center;margin-top:16px;">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3c-.3.4-.5 1-.5 1.7v16c0 .7.2 1.3.5 1.7l9.1-9.7-9.1-9.7zm10.7 8.3l2.8-1.6L7.4 3.5l6.9 7.1zm0 2.8L7.4 20.5 17.1 15l-2.8-1.6zm5.5-3l-2.6-1.5-3 3 3 3 2.6-1.5c.6-.3 1-.9 1-1.5 0-.6-.4-1.2-1-1.5z"/></svg>
+    Android coming soon
   </div>
 </section>
 
@@ -2160,16 +2166,13 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
 </footer>
 
 <!-- Mobile sticky CTA -->
-<a href="#download" class="sticky-cta">GET TOMORROW'S PICK · FREE →</a>
+<a href="https://apps.apple.com/us/app/pick1-ai-sports-picks/id6761689331" target="_blank" rel="noopener" class="sticky-cta">DOWNLOAD ON THE APP STORE →</a>
 
 <!-- Vercel Analytics + Speed Insights (auto-served when deployed on Vercel,
      silently 404 on other hosts so they're a no-op until migration). -->
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 
-<!-- intl-tel-input: country-aware phone field (loaded synchronously
-     so window.intlTelInput exists when our IIFE runs) -->
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/js/intlTelInput.min.js"></script>
 
 <script>
 (() => {
@@ -2319,202 +2322,6 @@ h2.display { font-size: clamp(40px, 5.5vw, 76px); }
       // Close all others
       document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
       if (!isOpen) item.classList.add('open');
-    });
-  });
-
-  // ─── Klaviyo waitlist signup ──────────────────────────────
-  // Waitlist signups are proxied through a Vercel serverless function
-  // (/api/subscribe) which holds the Brevo API key server-side. No
-  // credentials live in this page.
-
-  // ─── Initialize intl-tel-input on every WhatsApp field ────
-  // Country dropdown (separate dial code), auto-detected default
-  // country from IP (falls back to FR), with a few preferred at top.
-  const itiInstances = new WeakMap();
-  if (window.intlTelInput) {
-    document.querySelectorAll('input[name="whatsapp"]').forEach(input => {
-      const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-      const iti = window.intlTelInput(input, {
-        initialCountry: 'auto',
-        geoIpLookup: (callback) => {
-          fetch('https://ipapi.co/json/', { mode: 'cors' })
-            .then(r => r.json())
-            .then(d => callback((d && d.country_code) || 'fr'))
-            .catch(() => callback('fr'));
-        },
-        separateDialCode: true,
-        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@24/build/js/utils.js',
-        preferredCountries: ['fr', 'us', 'gb', 'de', 'es', 'it'],
-        autoPlaceholder: 'aggressive',
-        // Force fullscreen popup on touch devices so the dropdown
-        // doesn't try to anchor inline (which caused page-scroll bugs)
-        useFullscreenPopup: isTouch,
-        dropdownContainer: isTouch ? document.body : null,
-      });
-      itiInstances.set(input, iti);
-    });
-  }
-
-  // ── Attribution helpers ────────────────────────────────────
-  // Read a cookie by name (used for fbp / fbc, which Meta sets when its Pixel loads).
-  const readCookie = (name) => {
-    const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.$?*|{}()[\]\\\/+^]/g, '\\$&') + '=([^;]*)'));
-    return m ? decodeURIComponent(m[1]) : '';
-  };
-
-  // Capture UTM params on first page-load and persist for the session so a user who
-  // arrives from an ad and signs up later still attributes correctly.
-  const collectUtm = () => {
-    try {
-      const stored = sessionStorage.getItem('pick1_utm');
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    const params = new URLSearchParams(location.search);
-    const utm = {};
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].forEach(k => {
-      const v = params.get(k);
-      if (v) utm[k] = v;
-    });
-    if (Object.keys(utm).length) {
-      try { sessionStorage.setItem('pick1_utm', JSON.stringify(utm)); } catch {}
-    }
-    return utm;
-  };
-
-  // Generate an event ID we can share between the browser Pixel and the server-side
-  // Conversions API call so Meta dedupes them into a single conversion.
-  const newEventId = () => {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-    return 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-  };
-
-  const subscribeProfile = async ({ email, name, whatsappE164, eventId }, source) => {
-    const utm = collectUtm();
-    const fbp = readCookie('_fbp');
-    const fbc = readCookie('_fbc');
-    try {
-      const resp = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          name,
-          phone: whatsappE164,
-          source: source || 'site',
-          eventId,
-          fbp,
-          fbc,
-          utm,
-          eventSourceUrl: location.href,
-          userAgent: navigator.userAgent,
-        }),
-      });
-      if (resp.ok) return { ok: true };
-      let detail = '';
-      try {
-        const j = await resp.json();
-        detail = j?.error || '';
-      } catch {}
-      return { ok: false, detail: 'Something went wrong. Please try again.' };
-    } catch {
-      return { ok: false, detail: 'Network error. Please try again.' };
-    }
-  };
-
-  const showSuccess = (wrap, name) => {
-    const greeting = name ? `You're in, ${name}.` : `You're on the list.`;
-    wrap.innerHTML = `
-      <div class="waitlist-success">
-        <span class="check">✓</span>
-        <div>
-          <strong>${greeting}</strong>
-          Your first AI pick lands at <span style="color:var(--accent);font-weight:800">9am ET tomorrow</span>. Plus 1 week free when we launch.
-        </div>
-      </div>
-    `;
-  };
-
-  document.querySelectorAll('.waitlist-form').forEach(form => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const wrap     = form.closest('.waitlist-wrap');
-      const nameEl   = form.querySelector('input[name="name"]');
-      const emailEl  = form.querySelector('input[name="email"]');
-      const phoneEl  = form.querySelector('input[name="whatsapp"]');
-      const button   = form.querySelector('button');
-      const errorEl  = wrap.querySelector('.waitlist-error');
-      const name     = (nameEl?.value || '').trim();
-      const email    = (emailEl?.value || '').trim();
-      const source   = form.dataset.source || 'site';
-
-      // Name + email validation
-      if (!name || name.length < 2) {
-        errorEl.textContent = 'Please enter your first name.';
-        nameEl.focus(); return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errorEl.textContent = 'Please enter a valid email.';
-        emailEl.focus(); return;
-      }
-
-      // Phone validation via intl-tel-input — uses libphonenumber under
-      // the hood for proper country-aware validation. getNumber() returns
-      // E.164 format ("+33612345678") regardless of how the user typed it.
-      const iti = itiInstances.get(phoneEl);
-      let whatsappE164 = '';
-      if (iti) {
-        if (!iti.isValidNumber()) {
-          const code = iti.getValidationError();
-          const msgs = {
-            1: 'Please pick a country and enter the rest of the number.',
-            2: 'That number is too short — check the country.',
-            3: 'That number is too long for the selected country.',
-            4: 'That number doesn\'t look right — please check.',
-          };
-          errorEl.textContent = msgs[code] || 'Please enter a valid WhatsApp number.';
-          phoneEl.focus(); return;
-        }
-        whatsappE164 = iti.getNumber(); // E.164 format
-      } else {
-        // Fallback if intl-tel-input failed to load — basic E.164 check
-        const raw = (phoneEl?.value || '').trim();
-        const cleaned = raw.replace(/[\s\-().]/g, '');
-        if (!/^\+?\d{8,15}$/.test(cleaned)) {
-          errorEl.textContent = 'Please enter a valid WhatsApp number with country code.';
-          phoneEl.focus(); return;
-        }
-        whatsappE164 = cleaned.startsWith('+') ? cleaned : '+' + cleaned;
-      }
-
-      errorEl.textContent = '';
-      const originalLabel = button.textContent;
-      button.disabled = true;
-      button.textContent = 'Joining…';
-
-      // Generate one event ID per submission. It's sent to both the browser Pixel
-      // and the server-side Conversions API so Meta dedupes them as one conversion.
-      const eventId = newEventId();
-
-      const result = await subscribeProfile({ email, name, whatsappE164, eventId }, source);
-      if (result.ok) {
-        // Browser-side Lead event. The server fires the matching CAPI event with the
-        // same eventID so Meta dedupes them. Skips silently if the Pixel isn't configured.
-        if (window.fbq) {
-          try {
-            fbq('track', 'Lead', { content_name: 'Pick1 Waitlist' }, { eventID: eventId });
-          } catch (err) {
-            // Pixel errors should never break the signup flow.
-          }
-        }
-        // Redirect to thank-you page so we get a clean URL signal for retargeting and
-        // can build a "completed waitlist" custom audience off the /launch/thanks path.
-        // Using the cleanUrls path (no .html) avoids a 308 hop on Vercel.
-        window.location.href = '/launch/thanks?name=' + encodeURIComponent(name);
-      } else {
-        errorEl.textContent = result.detail || 'Something went wrong. Please try again.';
-        button.disabled = false;
-        button.textContent = originalLabel;
-      }
     });
   });
 
