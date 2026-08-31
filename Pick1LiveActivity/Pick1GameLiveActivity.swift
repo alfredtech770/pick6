@@ -7,7 +7,7 @@ import WidgetKit
 import SwiftUI
 import UIKit
 
-private let lime = Color(red: 0.831, green: 1.0, blue: 0.227)   // #D4FF3A
+private let lime = Color(red: 0.776, green: 1.0, blue: 0.204)   // #C6FF34
 private let ink  = Color(red: 0.027, green: 0.031, blue: 0.039) // #07080A
 
 /// The team mark for the Live Activity: real crest if we shipped one,

@@ -1,0 +1,261 @@
+/* redesign.css — "card-art" home.
+   Every game gets generated artwork built from the two teams' real colours:
+   opposing radial washes, halftone screen, diagonal gloss, vignette. No
+   image assets — the art is CSS, so a new team only needs a colour pair. */
+
+/* ── Display type: Anton with a slight lean, like the reference ───── */
+.v2 .display {
+  font-family: "Anton"; color: #fff; letter-spacing: .2px;
+  transform: skewX(-8deg); transform-origin: left bottom; display: inline-block;
+}
+
+/* ── Top bar: title + stat chips (the reference's currency row) ───── */
+.v2-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 60px 18px 14px;
+}
+.v2-topbar .display { font-size: 22px; }
+.v2-chips { display: flex; gap: 8px; }
+.v2-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 11px; border-radius: 11px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+  font-family: "JetBrainsMono"; font-weight: 700; font-size: 11px; color: #fff;
+}
+.v2-chip .k {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 1.4px; color: var(--mute-2);
+}
+.v2-chip.lime {
+  background: rgba(198,255,52,.14); border-color: rgba(198,255,52,.30); color: var(--p1-lime);
+}
+.v2-chip.lime .k { color: rgba(198,255,52,.65); }
+
+/* ══════════════════════════════════════════════════════════════════
+   GENERATED MATCHUP ART
+   --away / --home are the teams' primary colours, injected per card.
+   ══════════════════════════════════════════════════════════════════ */
+.art {
+  position: relative; overflow: hidden; isolation: isolate;
+  /* Each side gets a hot core fading into its team colour, so the two
+     washes stay saturated where the crest sits and meet in the middle. */
+  background:
+    radial-gradient(circle at 13% 46%,
+      color-mix(in srgb, var(--away) 72%, white) 0%,
+      var(--away) 26%, transparent 60%),
+    radial-gradient(circle at 87% 46%,
+      color-mix(in srgb, var(--home) 72%, white) 0%,
+      var(--home) 26%, transparent 60%),
+    linear-gradient(155deg, #21252d 0%, #0a0b0e 100%);
+}
+/* halftone screen — the dotted texture in the reference art */
+.art::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background-image: radial-gradient(rgba(255,255,255,.20) 1px, transparent 1.3px);
+  background-size: 6px 6px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 45%, transparent 95%);
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 45%, transparent 95%);
+  opacity: .5;
+}
+/* diagonal gloss sweep + vignette */
+.art::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    linear-gradient(114deg, transparent 26%, rgba(255,255,255,.13) 44%, transparent 58%),
+    radial-gradient(ellipse at 50% 44%, transparent 46%, rgba(0,0,0,.52) 100%);
+}
+.art > * { position: relative; z-index: 3; }
+
+/* Crest treatment inside art — lifted, with a colour bloom behind it */
+.art .crest img { filter: drop-shadow(0 6px 14px rgba(0,0,0,.7)); }
+.art .crest .fallback { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+
+/* ── Hero panel ──────────────────────────────────────────────────── */
+.v2-carousel {
+  display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 0 16px 10px; scrollbar-width: none;
+}
+.v2-carousel::-webkit-scrollbar { display: none; }
+.v2-panel {
+  flex: 0 0 calc(100% - 32px); scroll-snap-align: center;
+  border-radius: 26px; overflow: hidden; cursor: pointer;
+  background: linear-gradient(to bottom, #16181d, #0d0f12);
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 18px 34px rgba(0,0,0,.6), 0 4px 8px rgba(0,0,0,.4);
+}
+.v2-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px;
+}
+.v2-panel-head .display { font-size: 19px; }
+.v2-timer {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12);
+  font-family: "JetBrainsMono"; font-weight: 700; font-size: 10px; color: #fff;
+}
+.v2-timer.live { background: rgba(255,59,59,.16); border-color: rgba(255,59,59,.45); color: #FF7A7A; }
+.v2-timer .d { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* the artwork block itself */
+.v2-art {
+  height: 208px; margin: 0 12px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.v2-art .side {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 17px;
+}
+.v2-art .crest { transform: scale(1.15); }
+.v2-art .nm {
+  font-family: "Anton"; font-size: 15px; color: #fff; letter-spacing: .4px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+  max-width: 110px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v2-art .vs {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: "Anton"; font-size: 15px; color: #0a0b0e;
+  background: linear-gradient(to bottom, #fff, #cfd3d8);
+  box-shadow: 0 6px 16px rgba(0,0,0,.6), inset 0 -2px 4px rgba(0,0,0,.18);
+}
+/* the picked side gets a lime ring — the model's call, read at a glance */
+.v2-art .side.picked .crest::after {
+  content: ""; position: absolute; inset: -9px; border-radius: 50%;
+  border: 2px solid var(--p1-lime);
+  box-shadow: 0 0 18px rgba(198,255,52,.55), inset 0 0 12px rgba(198,255,52,.25);
+}
+.v2-art .side.picked .nm { color: var(--p1-lime); }
+
+/* the call strip under the art */
+.v2-call { display: flex; align-items: center; gap: 12px; padding: 14px 16px 4px; }
+.v2-call .k {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 1.8px; color: var(--mute-2); display: block; margin-bottom: 2px;
+}
+.v2-call .pick { font-family: "Anton"; font-size: 26px; color: #fff; line-height: 1; }
+.v2-call .prob { margin-left: auto; text-align: right; }
+.v2-call .prob .n { font-family: "Anton"; font-size: 30px; color: var(--p1-lime); line-height: 1; }
+.v2-cta {
+  margin: 12px 12px 14px; padding: 15px; border-radius: 15px; text-align: center;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10);
+  font-family: "Archivo"; font-weight: 700; font-size: 14px; color: #fff;
+}
+.v2-cta.gold {
+  background: linear-gradient(to bottom, #F2D468, var(--gold));
+  border-color: transparent; color: var(--gold-ink);
+  font-family: "Anton"; font-size: 16px; letter-spacing: .4px;
+}
+
+/* carousel dots */
+.v2-dots { display: flex; justify-content: center; gap: 5px; padding: 2px 0 16px; }
+.v2-dots i {
+  width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.22);
+  transition: width .25s, background .25s;
+}
+.v2-dots i.on { width: 16px; border-radius: 3px; background: var(--p1-lime); }
+
+/* ── Section head ────────────────────────────────────────────────── */
+.v2-sect {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 4px 20px 12px;
+}
+.v2-sect .display { font-size: 21px; }
+.v2-sect .cta {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px;
+  letter-spacing: 1.6px; color: var(--p1-lime);
+}
+.v2-sect .cta.gold { color: var(--gold); display: flex; align-items: center; gap: 5px; }
+
+/* ── Board grid: one art tile per game ───────────────────────────── */
+.v2-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px;
+}
+.v2-tile {
+  border-radius: 18px; overflow: hidden; cursor: pointer; position: relative;
+  background: linear-gradient(to bottom, #16181d, #0d0f12);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 18px rgba(0,0,0,.5);
+}
+.v2-tile-art {
+  height: 104px; display: flex; align-items: center; justify-content: center; gap: 2px;
+}
+.v2-tile-art .crest { transform: scale(.72); }
+.v2-tile-art .vs {
+  flex: none; font-family: "Anton"; font-size: 12px; color: rgba(255,255,255,.75);
+  text-shadow: 0 2px 6px rgba(0,0,0,.9);
+}
+.v2-tile-art .side.picked .crest::after {
+  content: ""; position: absolute; inset: -7px; border-radius: 50%;
+  border: 2px solid var(--p1-lime); box-shadow: 0 0 14px rgba(198,255,52,.5);
+}
+.v2-tile-league {
+  position: absolute; top: 9px; left: 10px; z-index: 4;
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 8px; border-radius: 7px;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 1.2px; color: #fff;
+}
+.v2-tile-time {
+  position: absolute; top: 9px; right: 10px; z-index: 4;
+  padding: 4px 8px; border-radius: 7px;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  font-family: "JetBrainsMono"; font-weight: 700; font-size: 9px; color: #fff;
+}
+.v2-tile-time.live { background: rgba(255,59,59,.85); }
+.v2-tile-foot { padding: 10px 12px 12px; display: flex; align-items: center; gap: 8px; }
+.v2-tile-foot .mu {
+  font-family: "Anton"; font-size: 13px; color: #fff; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v2-tile-foot .sub {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 9px;
+  letter-spacing: 1.2px; color: var(--p1-lime); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v2-tile-foot .sub.hidden-pick { color: var(--gold); display: flex; align-items: center; gap: 4px; }
+.v2-tile-foot .pct {
+  margin-left: auto; flex: none;
+  font-family: "Anton"; font-size: 20px; color: var(--p1-lime); line-height: 1;
+}
+
+/* Locked tiles: the art stays visible, the call is obscured */
+.v2-tile.locked .v2-tile-art { filter: saturate(.5) brightness(.62); }
+.v2-tile.locked .v2-tile-art .vs { opacity: 0; }   /* the lock takes its place */
+.v2-tile.locked .lockbadge {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  z-index: 5; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(20,17,10,.82); border: 1px solid rgba(232,198,74,.55);
+  color: var(--gold);
+}
+
+/* ── Wins rail restyled to match the card language ───────────────── */
+.v2 .rail { padding: 16px 16px 6px; }
+.v2 .rail-head { padding-bottom: 12px; }
+.v2 .receipt { border-radius: 16px; }
+
+/* ── Free-tier closer ────────────────────────────────────────────── */
+.v2-upsell {
+  margin: 16px; border-radius: 22px; overflow: hidden; cursor: pointer;
+  border: 1px solid rgba(232,198,74,.42);
+  background:
+    radial-gradient(240px 200px at 88% 6%, rgba(232,198,74,.20), transparent 70%),
+    linear-gradient(to bottom right, #1A160A, #0F0D07);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 13px; align-items: flex-start;
+}
+.v2-upsell .pill {
+  font-family: "ArchivoNarrow"; font-weight: 700; font-size: 10px; letter-spacing: 1.8px;
+  color: var(--gold-ink); background: var(--gold); padding: 6px 12px; border-radius: 999px;
+}
+.v2-upsell .head { font-family: "Anton"; font-size: 30px; color: #fff; line-height: 1.05;
+                   transform: skewX(-8deg); transform-origin: left bottom; }
+.v2-upsell .head .acc { color: var(--gold); }
+.v2-upsell .body { font-family: "Archivo"; font-size: 13px; color: var(--p1-ink2); line-height: 1.55; }
+.v2-upsell .fine {
+  width: 100%; text-align: center; font-family: "JetBrainsMono"; font-weight: 500;
+  font-size: 10px; color: var(--mute-2);
+}
+.v2-upsell .v2-cta { width: 100%; margin: 2px 0 0; }

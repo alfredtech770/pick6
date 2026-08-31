@@ -16,6 +16,20 @@ import SwiftUI
 
 // MARK: - Type stack
 
+// Anton for display, Archivo for body, Archivo Narrow for small tracked
+// labels, JetBrains Mono for anything that sits in a column (probabilities,
+// scores, prices) and needs tabular figures.
+//
+// HISTORY, so this does not get swapped back by accident. In July the whole
+// stack was repointed at Inter, with the role names kept so the change was one
+// file rather than 694 call sites. Anton is roughly 1.6x more condensed than
+// Inter, so that swap also carried size-compensation factors (0.82 on display,
+// 0.94 on labels) to stop headlines overflowing. Ethan asked for the original
+// faces back on 2026-08-25, so the compensation is gone with them: these are
+// the real faces at their real sizes again.
+//
+// Inter is still bundled and still registered at launch. Nothing else reads it
+// directly, but leaving it in place keeps the revert cheap either way.
 extension Font {
     static func anton(_ size: CGFloat) -> Font {
         .custom("Anton-Regular", size: size, relativeTo: .body)
@@ -59,8 +73,61 @@ struct Pick1HomeHiFi: View {
     enum Tab: Hashable { case home, picks, live, profile }
     @State private var tab: Tab = .home
     @State private var detailPick: Pick?           // game-card tap → detail sheet
+    /// True when the detail was opened by TRACK on a v4 game row.
+    @State private var openTrackOnDetail = false
     @State private var sportHub: String?           // sport-chip tap → hub sheet
     @State private var showPaywall: Bool = false
+    @State private var paywallSource: String = "unknown"
+
+    // ── Recovery surfaces (see Pick1RecoveryBanners.swift) ──
+    /// One-per-trial-period gate for the save sheet, so a user who turns
+    /// renewal off, back on, and off again is asked on the next period and
+    /// never twice for the same one.
+    @State private var trialSaveGate = TrialSaveGate()
+    @State private var showTrialSave = false
+    /// The billing-retry banner is dismissible, but only for the current
+    /// expiry: a NEW failed renewal brings it back rather than staying
+    /// silenced forever on a stale tap.
+    @AppStorage("pick1.billingBannerDismissedFor") private var billingDismissedFor: Double = 0
+
+    private var billingRetryVisible: Bool {
+        #if DEBUG
+        // Neither recovery state can be produced on demand in the simulator,
+        // so they get review hooks like every other screen here.
+        if CommandLine.arguments.contains("-forceBillingRetry") { return true }
+        #endif
+        guard subs.renewal.isInBillingRetry else { return false }
+        return billingDismissedFor != (subs.renewal.expiration?.timeIntervalSince1970 ?? 0)
+    }
+
+    /// A trial the user has already switched off, while it still has time on
+    /// it. Below an hour there is nothing useful left to offer.
+    private var lapsingTrialHours: Int? {
+        #if DEBUG
+        if CommandLine.arguments.contains("-forceLapsingTrial") { return 31 }
+        #endif
+        guard subs.renewal.isLapsingTrial,
+              let h = subs.renewal.hoursToExpiry, h > 1 else { return nil }
+        return Int(h.rounded(.up))
+    }
+
+    @ViewBuilder private var recoveryBanners: some View {
+        // Billing retry outranks the trial banner: money already agreed to
+        // and blocked beats money still being decided.
+        if billingRetryVisible {
+            P1BillingRetryBanner(onDismiss: {
+                billingDismissedFor = subs.renewal.expiration?.timeIntervalSince1970 ?? 0
+            })
+            .padding(.top, 6)
+            .padding(.bottom, 4)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        } else if let hours = lapsingTrialHours {
+            P1LapsingTrialBanner(hoursLeft: hours, onOpen: { showTrialSave = true })
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
 
     /// DEBUG: `-openPaywall` presents the paywall after launch;
     /// `-openTopDetail` opens the top pick's full detail (sim review).
@@ -181,15 +248,22 @@ struct Pick1HomeHiFi: View {
                             isPro: effectiveIsPro,
                             onClose: { sportHub = nil },
                             onTapPick: { detailPick = $0 },
-                            onUnlock: { showPaywall = true }
+                            onUnlock: { openPaywall(source: "sport_hub") }
                         )
                     } else {
-                        HomeHiFiContent(vm: vm,
-                                        isPro: effectiveIsPro,
-                                        onTapPick: { detailPick = $0 },
-                                        onTapSport: { sportHub = $0 },
-                                        onUnlock: { showPaywall = true })
-                            .ignoresSafeArea(edges: .top)
+                        // Home v4 ("Glow Style"). It carries its own
+                        // Tonight / Live / Results selector, which is why the
+                        // Live tab was removed from FloatingNav: keeping both
+                        // gave the app two different routes to the same screen.
+                        // No `.ignoresSafeArea(.top)` here, unlike the old
+                        // HomeHiFiContent: v4 draws its own top bar and was
+                        // being clipped by the notch. 86pt at the bottom is
+                        // the floating nav pill plus its negative padding.
+                        Pick1HomeV4(vm: vm,
+                                    onSelectPick: { openTrackOnDetail = false; detailPick = $0 },
+                                    onTrackPick: { openTrackOnDetail = true; detailPick = $0 },
+                                    onUpgrade: { openPaywall(source: "home_v4") },
+                                    bottomInset: 86)
                     }
                 case .picks:
                     // Picks tab renders the Wins design exactly — the
@@ -198,16 +272,18 @@ struct Pick1HomeHiFi: View {
                     // not a pushed sheet).
                     WinsView(vm: vm,
                              onClose: {},
-                             onTapPick: { detailPick = $0 })
+                             onTapPick: { detailPick = $0 },
+                             onBrowsePicks: { tab = .home })
                 case .live:
                     LiveView(vm: vm,
                              isPro: effectiveIsPro,
                              onTapPick: { detailPick = $0 },
-                             onUnlock: { showPaywall = true })
+                             onUnlock: { openPaywall(source: "live") },
+                             onBrowsePicks: { tab = .home })
                 case .profile:
                     ProfileView(vm: vm,
                                 isPro: effectiveIsPro,
-                                onShowPaywall: { showPaywall = true },
+                                onShowPaywall: { openPaywall(source: "profile") },
                                 onSignOut: {
                                     // Sign out FIRST — it clears local
                                     // state synchronously so the UI
@@ -221,7 +297,8 @@ struct Pick1HomeHiFi: View {
                                         await auth.signOut()
                                         await vm.stopLiveSession()
                                     }
-                                })
+                                },
+                                onBrowsePicks: { tab = .home })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -231,6 +308,16 @@ struct Pick1HomeHiFi: View {
             .id(tab)
             .transition(.opacity)
             .animation(Pick1Springs.smooth, value: tab)
+            .onChange(of: tab) { _, newTab in
+                let name: String
+                switch newTab {
+                case .home: name = "home"
+                case .picks: name = "my_picks"
+                case .live: name = "live"
+                case .profile: name = "profile"
+                }
+                Analytics.tabSelected(name)
+            }
             // Subtle "tick" haptic on every tab change — the standard
             // iOS selection feedback. Cheap signal that the tap landed.
             .sensoryFeedback(.selection, trigger: tab)
@@ -238,14 +325,44 @@ struct Pick1HomeHiFi: View {
             // a soft crossfade so the page swap doesn't snap.
             .animation(Pick1Springs.smooth, value: sportHub)
 
-            FloatingNav(tab: $tab, liveCount: liveCount)
+            // Hidden whenever a detail is open. `MatchDetailView` is a
+            // sheet, not a full-screen cover, so without this the floating
+            // nav stays parked over the detail and eats the bottom of it.
+            if detailPick == nil {
+                FloatingNav(tab: $tab, liveCount: liveCount)
                 // Pushed below the safe-area bottom so the nav sits
                 // alongside the home-indicator gesture bar instead of
                 // floating above it. -12pt on .padding(.bottom) lets
                 // the pill bleed into the indicator zone — still well
                 // above the actual screen edge, but visually anchored
                 // to the bottom rather than hovering.
-                .padding(.bottom, -12)
+                    .padding(.bottom, -12)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+        }
+        .animation(Pick1Springs.smooth, value: detailPick?.id)
+        // Recovery banners sit above the tab content rather than over it:
+        // a user in billing retry was seeing the same locked screen as
+        // somebody who had never subscribed, and an alert that overlaps the
+        // thing it is talking about is worse than no alert. Hidden while a
+        // detail sheet is up so it never peeks out behind one.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if detailPick == nil && !showPaywall {
+                recoveryBanners
+            }
+        }
+        .animation(Pick1Springs.smooth, value: billingRetryVisible)
+        .animation(Pick1Springs.smooth, value: lapsingTrialHours)
+        // The save sheet is the full argument and fires once per trial
+        // period; the banner is the quiet way back to it afterwards.
+        .sheet(isPresented: $showTrialSave) {
+            Pick1TrialSaveSheet(vm: vm, onClose: { showTrialSave = false })
+        }
+        .onChange(of: subs.renewal) { _, r in
+            if trialSaveGate.shouldPresent(r) {
+                trialSaveGate.markPresented(r)
+                showTrialSave = true
+            }
         }
         .preferredColorScheme(.dark)
         // Slim "Update available" banner pinned to the top — shows
@@ -296,6 +413,19 @@ struct Pick1HomeHiFi: View {
             }
         }
         .task { await updateChecker.check() }
+        // Renewal state drives both recovery banners and the save sheet, and
+        // nothing else was refreshing it — `refreshRenewalState` existed and
+        // had exactly one caller, a sheet that was never wired up. Read it
+        // once the products are in (it needs one to query the group) and
+        // again on every foreground, since a card can be fixed outside the
+        // app and the user comes straight back.
+        .task {
+            if subs.products.isEmpty { await subs.loadProducts() }
+            await subs.refreshRenewalState()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await subs.refreshRenewalState() } }
+        }
         // Drive Live Activities off the live-score feed: start/update/end
         // a Lock-Screen + Dynamic Island card for each favorited game that's
         // in play (Apple Sports style).
@@ -323,7 +453,8 @@ struct Pick1HomeHiFi: View {
         .sheet(item: $detailPick) { pick in
             MatchDetailView(pick: pick,
                             liveScore: liveScore(for: pick),
-                            onClose: { detailPick = nil })
+                            onClose: { detailPick = nil },
+                            openTrackSheet: openTrackOnDetail)
                 // Constrain the sheet to vertical-only interaction.
                 // Without these, iOS' interactive-dismiss gesture can pick
                 // up small horizontal motion in the rubber-band and the
@@ -343,8 +474,8 @@ struct Pick1HomeHiFi: View {
         // they do in onboarding.
         .fullScreenCover(isPresented: $showPaywall) {
             ZStack(alignment: .topTrailing) {
-                Color(hex: "#0A0B0D").ignoresSafeArea()
-                PaywallScreen(onDone: { showPaywall = false })
+                Color(hex: "#171717").ignoresSafeArea()
+                PaywallScreen(onDone: { showPaywall = false }, source: paywallSource)
                 Button {
                     Haptics.tap()
                     showPaywall = false
@@ -353,7 +484,7 @@ struct Pick1HomeHiFi: View {
                         .font(.system(size: 13, weight: .heavy))
                         .foregroundColor(Color(hex: "#8A8D94"))
                         .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color(hex: "#16181D")))
+                        .background(Circle().fill(Color(hex: "#242424")))
                 }
                 .buttonStyle(.plain)
                 .padding(.trailing, 18)
@@ -372,6 +503,11 @@ struct Pick1HomeHiFi: View {
                 .presentationContentInteraction(.scrolls)
                 .relocalizesOnLanguageChange()
         }
+    }
+
+    private func openPaywall(source: String) {
+        paywallSource = source
+        showPaywall = true
     }
 
     private var liveCount: Int {
@@ -529,7 +665,7 @@ struct HomeHiFiContent: View {
                     } else {
                         let visible = vm.visiblePicks(isPro: true)
                         if vm.isLoading && visible.isEmpty {
-                            ProgressView().tint(Color(hex: "#D4FF3A"))
+                            ProgressView().tint(Color(hex: "#C6FF34"))
                                 .padding(.top, 40)
                         } else if visible.isEmpty {
                             EmptyTodayState()
@@ -762,7 +898,7 @@ struct HeroCard: View {
             LinearGradient(
                 colors: [
                     Color(hex: "#14161A"),
-                    Color(hex: "#0E0F12")
+                    Color(hex: "#1B1B1B")
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -783,11 +919,11 @@ struct HeroCard: View {
         // Replaced — see heroSurface. Returning the same surface for
         // any caller that still references this name.
         ZStack {
-            Color(hex: "#D4FF3A")
+            Color(hex: "#C6FF34")
             RadialGradient(
                 colors: [
                     Color(hex: "#eaff7a"),
-                    Color(hex: "#D4FF3A").opacity(0.0)
+                    Color(hex: "#C6FF34").opacity(0.0)
                 ],
                 center: UnitPoint(x: 1.1, y: -0.2),
                 startRadius: 30,
@@ -822,6 +958,22 @@ struct HeroCard: View {
     // Big flags + a huge probability number — clear at a glance.
     private var heroBody: some View {
         VStack(alignment: .leading, spacing: 20) {
+            if let pick {
+                HStack(spacing: 7) {
+                    Image(systemName: pick.confidenceTier == .low ? "chart.line.uptrend.xyaxis" : "sparkles")
+                        .font(.system(size: 10, weight: .bold))
+                    Text(pick.confidenceTier == .low ? "TODAY'S BEST AVAILABLE LEAN" : "TODAY'S TOP MODEL PICK")
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.5)
+                    Spacer(minLength: 8)
+                    if let source = pick.oddsSource, pick.marketOdds != nil {
+                        Text("LINE · \(source.uppercased())")
+                            .font(.mono(9, weight: .bold))
+                    }
+                }
+                .foregroundColor(pick.confidenceTier == .low
+                                 ? Color(hex: "#E8C64A")
+                                 : Color(hex: "#C6FF34"))
+            }
             // 2. Big matchup marks
             if let pick {
                 if pick.sport == "f1" || pick.sport == "golf" {
@@ -859,28 +1011,31 @@ struct HeroCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(heroPickName)
                         .font(.anton(46)).tracking(-0.5)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .lineLimit(1).minimumScaleFactor(0.45)
                         .allowsTightening(true)
                     Spacer(minLength: 8)
                     if let pick {
                         Text("\(Int(pick.probability.rounded()))%")
                             .font(.anton(46)).tracking(-0.5)
-                            .foregroundColor(Color(hex: "#D4FF3A"))
+                            .foregroundColor(Color(hex: "#C6FF34"))
                             .lineLimit(1).minimumScaleFactor(0.6)
                     }
                 }
-                // Hypothetical return — same framing + odds source as the
-                // detail page's POTENTIAL RETURN (App Review-proven).
-                if let pick {
+                // Only a real captured market quote earns payout framing.
+                // Confidence-implied odds are useful as a model price on the
+                // detail screen, but presenting them as a possible return in
+                // the first impression made a low-confidence call look like
+                // an executable sportsbook offer.
+                if let pick, let market = pick.marketOdds, market > 1.0 {
                     HStack {
                         Text(t(.rd_possible_return))
                             .font(.archivoNarrow(10, weight: .bold)).tracking(1.8)
                             .foregroundColor(Color(hex: "#8A8D94"))
                         Spacer(minLength: 8)
-                        Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+                        Text("$100 → $\(Int((market * 100).rounded()))")
                             .font(.mono(13, weight: .bold))
-                            .foregroundColor(Color(hex: "#D4FF3A").opacity(0.9))
+                            .foregroundColor(Color(hex: "#C6FF34").opacity(0.9))
                     }
                     .padding(.top, 6)
                 }
@@ -934,9 +1089,11 @@ struct HeroCard: View {
     }
 
     private var timeText: String {
-        guard let date = pick?.createdAt else { return "TONIGHT" }
+        guard let date = pick?.scheduledStartDate else { return "TONIGHT" }
         let f = DateFormatter()
-        f.dateFormat = "h:mm a"
+        f.locale = .autoupdatingCurrent
+        f.timeZone = .autoupdatingCurrent
+        f.timeStyle = .short
         return f.string(from: date)
     }
 
@@ -978,11 +1135,11 @@ struct AcidBorder<S: Shape>: View {
             .stroke(
                 AngularGradient(
                     gradient: Gradient(stops: [
-                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.00),
-                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.40),
-                        .init(color: Color(hex: "#D4FF3A").opacity(1.00), location: 0.50),
-                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 0.60),
-                        .init(color: Color(hex: "#D4FF3A").opacity(0.18), location: 1.00),
+                        .init(color: Color(hex: "#C6FF34").opacity(0.18), location: 0.00),
+                        .init(color: Color(hex: "#C6FF34").opacity(0.18), location: 0.40),
+                        .init(color: Color(hex: "#C6FF34").opacity(1.00), location: 0.50),
+                        .init(color: Color(hex: "#C6FF34").opacity(0.18), location: 0.60),
+                        .init(color: Color(hex: "#C6FF34").opacity(0.18), location: 1.00),
                     ]),
                     center: .center,
                     angle: .degrees(angle)
@@ -991,7 +1148,7 @@ struct AcidBorder<S: Shape>: View {
             )
             // Outer halo — the bright spotlight bleeds slightly past
             // the border itself, picking up the LED-trace feel.
-            .shadow(color: Color(hex: "#D4FF3A").opacity(0.35),
+            .shadow(color: Color(hex: "#C6FF34").opacity(0.35),
                     radius: 4, x: 0, y: 0)
             .onAppear {
                 withAnimation(.linear(duration: period)
@@ -1053,11 +1210,11 @@ struct Pick1Logo: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: "#D4FF3A"))
+                    .fill(Color(hex: "#C6FF34"))
                     .frame(width: 30, height: 30)
                 Text("1")
                     .font(.anton(22))
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .foregroundColor(Color(hex: "#171717"))
                     .padding(.bottom, 2)
             }
             .padding(.leading, 4)
@@ -1076,9 +1233,9 @@ struct HeroPill: View {
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(isLive ? Color(hex: "#FF3B30") : Color(hex: "#D4FF3A"))
+                .fill(isLive ? Color(hex: "#FF3B30") : Color(hex: "#C6FF34"))
                 .frame(width: 6, height: 6)
-                .shadow(color: (isLive ? Color(hex: "#FF3B30") : Color(hex: "#D4FF3A")).opacity(0.6), radius: 3)
+                .shadow(color: (isLive ? Color(hex: "#FF3B30") : Color(hex: "#C6FF34")).opacity(0.6), radius: 3)
                 .opacity(isLive ? (pulse ? 0.35 : 1.0) : 1.0)
             Text(isLive ? t(.card_live) : t(.rd_ai_powered))
                 .font(.archivoNarrow(11, weight: .bold))
@@ -1109,7 +1266,7 @@ struct HeroMetaPill: View {
         HStack(spacing: 10) {
             Text(time)
                 .font(.mono(12, weight: .bold))
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
             if !channel.isEmpty {
                 Circle().fill(Color(hex: "#555555")).frame(width: 3, height: 3)
                 Text(channel)
@@ -1120,7 +1277,7 @@ struct HeroMetaPill: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(hex: "#0A0B0D"))
+        .background(Color(hex: "#171717"))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
@@ -1333,7 +1490,22 @@ func teamShortName(_ team: String, sport: String? = nil) -> String {
     // Team sports — short names render as-is, long ones drop to the
     // nickname token ("Boston Celtics" → "CELTICS").
     if trimmed.count <= 12 { return trimmed.uppercased() }
-    if let last = trimmed.split(separator: " ").last, last.count <= 12 {
+    // Take the last token that carries the club's identity.
+    //
+    // Two traps, both seen in production. German names carry a founding-year
+    // suffix ("1. FSV Mainz 05", "SC Paderborn 07"), which rendered the pick
+    // as "05" and "07" — hence the letters test. And plenty of clubs end on a
+    // word that is not a name at all: "Athletic Club" rendered as "CLUB", so
+    // the ticket read "to win vs CLUB". Generic tokens are skipped, and only
+    // if every token is generic do we fall back to the first one.
+    let generic: Set<String> = ["CLUB", "FC", "CF", "SC", "AC", "AS", "SV",
+                                "FK", "CD", "UD", "RC", "RCD", "SK", "IF",
+                                "BK", "KV", "SSC", "AFC", "CFC"]
+    let named = trimmed.split(separator: " ").filter {
+        $0.rangeOfCharacter(from: .letters) != nil
+            && !generic.contains($0.uppercased())
+    }
+    if let last = named.last, last.count <= 12 {
         return String(last).uppercased()
     }
     return crestAbbrev(trimmed)
@@ -1494,7 +1666,7 @@ struct WinsThisWeekTile: View {
             HStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
                 Text(t(.rd_wins_tile))
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2.2)
@@ -1504,7 +1676,7 @@ struct WinsThisWeekTile: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(wins)")
                     .font(.anton(72))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
                     .tracking(-1.4)
                     .monospacedDigit()
                     .lineLimit(1)
@@ -1528,7 +1700,7 @@ struct WinsThisWeekTile: View {
                 if losses > 0 {
                     Text("\(wins)-\(losses)")
                         .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .lineLimit(1)
                         .fixedSize()
                 }
@@ -1620,17 +1792,17 @@ struct AccuracyTile: View {
     private func segmentColor(at i: Int) -> Color {
         let revIndex = slots - 1 - i        // newest is rightmost
         guard revIndex < last10.count else {
-            return Color(hex: "#2D3038")    // unused slot
+            return Color(hex: "#3A3A3A")    // unused slot
         }
         return last10[revIndex]
-            ? Color(hex: "#D4FF3A")
-            : Color(hex: "#2D3038")
+            ? Color(hex: "#C6FF34")
+            : Color(hex: "#3A3A3A")
     }
 
     /// Big-number color shifts with mood.
     private var numberColor: Color {
         switch mood {
-        case .bullish, .strong: return Color(hex: "#D4FF3A")
+        case .bullish, .strong: return Color(hex: "#C6FF34")
         case .neutral:          return Color(hex: "#F5F3EE")
         case .cold:             return Color(hex: "#FF5A36")
         case .empty:            return Color(hex: "#6E6F75")
@@ -1651,13 +1823,13 @@ struct AccuracyTile: View {
             Text(t(.rd_on_fire))
                 .font(.archivoNarrow(9, weight: .bold))
                 .tracking(1.8)
-                .foregroundColor(Color(hex: "#0A0B0D"))
+                .foregroundColor(Color(hex: "#171717"))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Capsule().fill(Color(hex: "#D4FF3A")))
+                .background(Capsule().fill(Color(hex: "#C6FF34")))
         } else if let d = delta, abs(d) >= 1, mood != .empty {
             let up = d >= 0
-            let color = up ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A36")
+            let color = up ? Color(hex: "#C6FF34") : Color(hex: "#FF5A36")
             Text(up ? "↑ \(Int(d.rounded()))%"
                    : "↓ \(Int((-d).rounded()))%")
                 .font(.mono(10, weight: .bold))
@@ -1670,10 +1842,10 @@ struct AccuracyTile: View {
 /// + 4-shadow stack (inset top white + inset bottom black + drop 10/24 + drop 2/6).
 private var tileBackground: some View {
     RoundedRectangle(cornerRadius: 22, style: .continuous)
-        .fill(Color(hex: "#101114"))
+        .fill(Color(hex: "#1D1D1D"))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
         )
         // Inset top highlight — bright stroke faded to clear in the top half
         .overlay(
@@ -1695,7 +1867,7 @@ private var tileBackground: some View {
 
 struct SparklineView: View {
     var points: [CGFloat] = [50, 50, 50, 50, 50]
-    var color: Color = Color(hex: "#D4FF3A")
+    var color: Color = Color(hex: "#C6FF34")
 
     var body: some View {
         GeometryReader { geo in
@@ -1744,7 +1916,7 @@ struct LatestWinsRail: View {
     /// Free-tier only: appends the "MEMBERS WON MORE" upsell card at the
     /// end of the rail (yesterday's slate record + flat-$100 return).
     var onUnlock: (() -> Void)? = nil
-    private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
+    private let win = Color(hex: "#C6FF34")   // brand lime — matches the P1 logo
 
     /// Net flat-$100 return across yesterday's settled slate — wins pay
     /// (odds × 100 − 100), losses cost 100. Clamped at 0; the upsell
@@ -1844,7 +2016,7 @@ struct LatestWinsRail: View {
                                         Image(systemName: "lock.open.fill").font(.system(size: 9, weight: .bold))
                                         Text(t(.rd_unlock)).font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                                     }
-                                    .foregroundColor(Color(hex: "#0A0B0D"))
+                                    .foregroundColor(Color(hex: "#171717"))
                                     .padding(.horizontal, 10).padding(.vertical, 5)
                                     .background(Capsule().fill(Color(hex: "#E8C64A")))
                                 }
@@ -1872,7 +2044,7 @@ struct LatestWinsRail: View {
 /// One graded win: "✓ WON · NBA / CELTICS / W 118-104   81%".
 struct WinReceiptCard: View {
     let pick: Pick
-    private let win = Color(hex: "#D4FF3A")   // brand lime — matches the P1 logo
+    private let win = Color(hex: "#C6FF34")   // brand lime — matches the P1 logo
     private let loss = Color(hex: "#FF5A5A")
 
     private var accent: Color { pick.isWin ? win : loss }
@@ -1904,8 +2076,8 @@ struct WinReceiptCard: View {
             }
             // What a \$100 backer took home (wins) — same hypothetical
             // framing as the hero/detail return rows.
-            if pick.isWin {
-                Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
+            if pick.isWin, let market = pick.marketOdds, market > 1.0 {
+                Text("$100 → $\(Int((market * 100).rounded()))")
                     .font(.mono(12, weight: .bold))
                     .foregroundColor(accent)
             }
@@ -2008,7 +2180,7 @@ struct LockedSlateCard: View {
         } label: {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("\(sportEmoji) \(pick.league.uppercased())")
+                    Text("\(Image(systemName: sportSymbol)) \(pick.league.uppercased())")
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                         .foregroundColor(Color(hex: "#8A8D94"))
                     Spacer()
@@ -2067,19 +2239,12 @@ struct LockedSlateCard: View {
     /// Real kickoff ("5 PM" / "7:35 PM" ET) — empty when unknown; never
     /// the pick-creation timestamp.
     private var timeText: String {
-        [upcomingDayLabel(pick), pick.startTimeDisplay.map { "\($0) ET" }]
+        [upcomingDayLabel(pick), pick.localizedStartTimeDisplay]
             .compactMap { $0 }.joined(separator: " · ")
     }
-    private var sportEmoji: String {
-        switch pick.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
+    /// Was an emoji map. Sport marks now come from `P1Symbol` so every
+    /// surface draws one stroke weight in the app's own colours.
+    private var sportSymbol: String { P1Symbol.sport(pick.sport) }
     /// Per-sport edge tint (the design's colored card washes).
     private var tint: Color {
         switch pick.sport {
@@ -2130,13 +2295,13 @@ func upcomingDayLabel(_ pick: Pick) -> String? {
 struct ProSlateCard: View {
     let pick: Pick
     let liveScore: LiveScore?
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     var body: some View {
         let state = pick.renderState(liveScore: liveScore)
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("\(sportEmoji) \(pick.league.uppercased())")
+                Text("\(Image(systemName: sportSymbol)) \(pick.league.uppercased())")
                     .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
@@ -2180,9 +2345,15 @@ struct ProSlateCard: View {
                     Text("\(Int(pick.probability.rounded()))%")
                         .font(.anton(24))
                         .foregroundColor(lime)
-                    Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
-                        .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#8A8D94"))
+                    if let market = pick.marketOdds, market > 1.0 {
+                        Text("$100 → $\(Int((market * 100).rounded()))")
+                            .font(.mono(10, weight: .bold))
+                            .foregroundColor(Color(hex: "#8A8D94"))
+                    } else {
+                        Text("MODEL CONFIDENCE")
+                            .font(.mono(8, weight: .bold))
+                            .foregroundColor(Color(hex: "#6E6F75"))
+                    }
                 }
             }
         }
@@ -2231,7 +2402,7 @@ struct ProSlateCard: View {
             .foregroundColor(Color(hex: "#FF5A5A"))
         case .awaitingResult, .upcoming:
             Text([upcomingDayLabel(pick),
-                  pick.startTimeDisplay.map { "\($0) ET" }]
+                  pick.localizedStartTimeDisplay]
                     .compactMap { $0 }.joined(separator: " · "))
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#8A8D94"))
@@ -2252,16 +2423,9 @@ struct ProSlateCard: View {
         if pick.awayTeam.lowercased() == "field" { return pick.homeTeam }
         return pick.homeTeam
     }
-    private var sportEmoji: String {
-        switch pick.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
+    /// Was an emoji map. Sport marks now come from `P1Symbol` so every
+    /// surface draws one stroke weight in the app's own colours.
+    private var sportSymbol: String { P1Symbol.sport(pick.sport) }
     private var tint: Color {
         switch pick.sport {
         case "basketball": return Color(hex: "#2FA85B")
@@ -2387,7 +2551,7 @@ struct SportDropdown: View {
     /// there (tennis, golf, …) can never silently miss the dropdown —
     /// this used to be a second hardcoded copy and tennis fell through.
     private var sports: [String] { vm.sports.filter { $0 != "all" } }
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 10) {
@@ -2423,7 +2587,7 @@ struct SportDropdown: View {
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
             .background(
-                Capsule().fill(Color(hex: "#0A0B0D").opacity(0.85))
+                Capsule().fill(Color(hex: "#171717").opacity(0.85))
                     .overlay(Capsule().stroke(
                         isOpen ? lime.opacity(0.6) : Color.white.opacity(0.14),
                         lineWidth: 1.2))
@@ -2452,7 +2616,7 @@ struct SportDropdown: View {
         .frame(width: 218)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(hex: "#101216"))
+                .fill(Color(hex: "#1E1E1E"))
                 .overlay(RoundedRectangle(cornerRadius: 20)
                     .stroke(Color.white.opacity(0.10), lineWidth: 1))
                 .shadow(color: .black.opacity(0.6), radius: 24, y: 14)
@@ -2476,7 +2640,7 @@ struct SportDropdown: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(active ? Color(hex: "#0A0B0D") : lime)
+                    .foregroundColor(active ? Color(hex: "#171717") : lime)
                     .frame(width: 26, height: 26)
                     .background(Circle().fill(active ? lime : Color.white.opacity(0.06)))
                 Text(label)
@@ -2652,13 +2816,13 @@ struct HiFiSportChip: View {
             .padding(.leading, 10)
             .padding(.trailing, 13)
             .padding(.vertical, 7)
-            .foregroundColor(isActive ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+            .foregroundColor(isActive ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
             .background(
                 Capsule()
-                    .fill(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#101114"))
+                    .fill(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#1D1D1D"))
             )
             .overlay(
-                Capsule().stroke(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#22252B"), lineWidth: 1)
+                Capsule().stroke(isActive ? Color(hex: "#F5F3EE") : Color(hex: "#2F2F2F"), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -2683,7 +2847,7 @@ struct ValueBoard: View {
             HStack(spacing: 6) {
                 Image(systemName: "diamond.fill")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
                 Text(t(.rd_best_value_today))
                     .font(.archivoNarrow(11, weight: .bold)).tracking(2.0)
                     .foregroundColor(Color(hex: "#F5F3EE"))
@@ -2720,7 +2884,7 @@ struct ValueBoard: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("+\(edgePts(pick))%")
                                 .font(.anton(16))
-                                .foregroundColor(Color(hex: "#D4FF3A"))
+                                .foregroundColor(Color(hex: "#C6FF34"))
                             Text("us \(Int(pick.probability))% · mkt \(impliedPct(pick))%")
                                 .font(.archivoNarrow(8, weight: .bold)).tracking(0.4)
                                 .foregroundColor(Color(hex: "#6E6F75"))
@@ -2742,9 +2906,9 @@ struct ValueBoard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color(hex: "#D4FF3A").opacity(0.18), lineWidth: 1))
+                    .stroke(Color(hex: "#C6FF34").opacity(0.18), lineWidth: 1))
         )
     }
 
@@ -2800,7 +2964,7 @@ struct SectionHeader: View {
                         Text(cta)
                             .font(.archivoNarrow(11, weight: .bold))
                             .tracking(2)
-                            .foregroundColor(Color(hex: "#D4FF3A"))
+                            .foregroundColor(Color(hex: "#C6FF34"))
                     }
                     .buttonStyle(.plain)
                 } else {
@@ -2906,7 +3070,7 @@ struct GameCard: View {
 
             // AI pick + mini ring
             Divider()
-                .background(Color(hex: "#22252B"))
+                .background(Color(hex: "#2F2F2F"))
                 .padding(.top, 14)
 
             HStack {
@@ -2920,13 +3084,13 @@ struct GameCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.55)
                         .tracking(0.17)
-                        .foregroundColor(concealPick ? Color(hex: "#6E6F75") : Color(hex: "#D4FF3A"))
+                        .foregroundColor(concealPick ? Color(hex: "#6E6F75") : Color(hex: "#C6FF34"))
                 }
                 Spacer()
                 if concealPick {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                 } else {
                     MiniRing(percent: pick.probability)
                 }
@@ -3003,7 +3167,7 @@ struct GameCard: View {
                             p.move(to: CGPoint(x: 0, y: 0.5))
                             p.addLine(to: CGPoint(x: proxy.size.width, y: 0.5))
                         }
-                        .stroke(Color(hex: "#22252B"),
+                        .stroke(Color(hex: "#2F2F2F"),
                                 style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     }
                 )
@@ -3018,7 +3182,7 @@ struct GameCard: View {
                 if concealPick {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .frame(width: 36, height: 36)
                 } else {
                     MiniRing(percent: pick.probability)
@@ -3038,22 +3202,22 @@ struct GameCard: View {
     private var lockChip: some View {
         Image(systemName: "lock.fill")
             .font(.system(size: 10, weight: .heavy))
-            .foregroundColor(Color(hex: "#D4FF3A"))
+            .foregroundColor(Color(hex: "#C6FF34"))
             .padding(.horizontal, 9).padding(.vertical, 5)
-            .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.12)))
-            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.35), lineWidth: 1))
+            .background(Capsule().fill(Color(hex: "#C6FF34").opacity(0.12)))
+            .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.35), lineWidth: 1))
     }
 
     // ─── Shared card background (matches design's `.gcard`) ─────
     private var homeCardBackground: some View {
         RoundedRectangle(cornerRadius: 22, style: .continuous)
             .fill(LinearGradient(
-                colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                colors: [Color(hex: "#14161a"), Color(hex: "#1B1B1B")],
                 startPoint: .top, endPoint: .bottom
             ))
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -3193,16 +3357,16 @@ struct PredictionResultBadge: View {
         HStack(spacing: 6) {
             Image(systemName: won ? "trophy.fill" : "xmark.circle.fill")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#6E6F75"))
+                .foregroundColor(won ? Color(hex: "#171717") : Color(hex: "#6E6F75"))
             Text(won ? "PREDICTION HIT" : "PREDICTION MISSED")
                 .font(.archivoNarrow(11, weight: .bold))
                 .tracking(2.2)
-                .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#6E6F75"))
+                .foregroundColor(won ? Color(hex: "#171717") : Color(hex: "#6E6F75"))
             if won {
                 Text(t(.rd_ai_called_it))
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(1.4)
-                    .foregroundColor(Color(hex: "#0A0B0D").opacity(0.65))
+                    .foregroundColor(Color(hex: "#171717").opacity(0.65))
             }
             Spacer(minLength: 0)
         }
@@ -3211,14 +3375,14 @@ struct PredictionResultBadge: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(won ? Color(hex: "#D4FF3A") : Color(hex: "#16181C"))
+                .fill(won ? Color(hex: "#C6FF34") : Color(hex: "#232323"))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(won ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"),
+                .stroke(won ? Color(hex: "#C6FF34") : Color(hex: "#3A3A3A"),
                         lineWidth: 1)
         )
-        .shadow(color: won ? Color(hex: "#D4FF3A").opacity(0.35) : .clear,
+        .shadow(color: won ? Color(hex: "#C6FF34").opacity(0.35) : .clear,
                 radius: 10, x: 0, y: 4)
         .padding(.bottom, 12)
     }
@@ -3238,7 +3402,7 @@ struct RefundGuaranteeBadge: View {
 
     private var accent: Color {
         switch phase {
-        case .pending:  return Color(hex: "#D4FF3A")   // lime
+        case .pending:  return Color(hex: "#C6FF34")   // lime
         case .hit:      return Color(hex: "#22C55E")   // green
         case .refunded: return Color(hex: "#22C55E")   // green = money back
         }
@@ -3337,7 +3501,7 @@ struct ConfChip: View {
         HStack(spacing: 5) {
             Text("AI")
                 .font(.mono(11, weight: .medium))
-                .foregroundColor(hot ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                .foregroundColor(hot ? Color(hex: "#C6FF34") : Color(hex: "#B9B7B0"))
             Text("\(Int(percent.rounded()))%")
                 .font(.mono(11, weight: .bold))
                 .foregroundColor(Color(hex: "#F5F3EE"))
@@ -3351,11 +3515,11 @@ struct ConfChip: View {
         .padding(.vertical, 4)
         .background(
             Capsule()
-                .fill(hot ? Color(hex: "#D4FF3A").opacity(0.08) : Color(hex: "#16181C"))
+                .fill(hot ? Color(hex: "#C6FF34").opacity(0.08) : Color(hex: "#232323"))
         )
         .overlay(
             Capsule()
-                .stroke(hot ? Color(hex: "#D4FF3A").opacity(0.4) : Color(hex: "#2D3038"), lineWidth: 1)
+                .stroke(hot ? Color(hex: "#C6FF34").opacity(0.4) : Color(hex: "#3A3A3A"), lineWidth: 1)
         )
     }
 }
@@ -3412,7 +3576,7 @@ struct ScoreView: View {
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Text("\(h)").font(.anton(28)).tracking(-0.28)
                         .foregroundColor(pickWon(home: h, away: a, pick: pick)
-                                         ? Color(hex: "#D4FF3A")
+                                         ? Color(hex: "#C6FF34")
                                          : Color(hex: "#F5F3EE"))
                         .monospacedDigit()
                         .contentTransition(.numericText())
@@ -3516,10 +3680,10 @@ struct MiniRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(hex: "#2D3038"), lineWidth: 3)
+                .stroke(Color(hex: "#3A3A3A"), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: max(0.02, min(1, displayed / 100)))
-                .stroke(Color(hex: "#D4FF3A"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .stroke(Color(hex: "#C6FF34"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(displayed.rounded()))")
                 .font(.mono(11, weight: .heavy))
@@ -3574,8 +3738,9 @@ struct FloatingNav: View {
             NavItem(icon: "star",
                     label: loc.t(.nav_picks),
                     isActive: tab == .picks) { tab = .picks }
-            LiveNavItem(isActive: tab == .live,
-                        liveCount: liveCount) { tab = .live }
+            // Live moved into Home v4's own selector. The `.live` case is
+            // still handled in the tab switch so existing deep links and any
+            // programmatic `tab = .live` keep working.
             NavItem(icon: "person",
                     label: loc.t(.nav_profile),
                     isActive: tab == .profile) { tab = .profile }
@@ -3583,7 +3748,7 @@ struct FloatingNav: View {
         .padding(8)   // spec: padding 8px around the row
         // iOS 26 Liquid Glass — true refractive material rather than
         // the older blur-and-tint trick. `.regular` glass with a dark
-        // panel tint preserves the design's #16181C feel while letting
+        // panel tint preserves the design's #232323 feel while letting
         // content underneath bend through the capsule edges.
         // NOTE: `.interactive()` was previously applied here but it
         // adds a press response on the *whole glass*, which can race
@@ -3591,7 +3756,7 @@ struct FloatingNav: View {
         // Profile tab on the trailing edge). Plain glass below; the
         // individual NavItem buttons handle press feedback via their
         // own .buttonStyle(.plain).
-        .glassCompat(in: .capsule, tint: Color(hex: "#16181C").opacity(0.55))
+        .glassCompat(in: .capsule, tint: Color(hex: "#232323").opacity(0.55))
         // Subtle 1pt rim — Liquid Glass already draws an edge, but a
         // very faint white-on-white stroke keeps the pill legible
         // against bright lime hero backdrops.
@@ -3620,7 +3785,7 @@ struct NavItem: View {
                 Image(systemName: icon)
                     .font(.system(size: 17, weight: .semibold))
                     // Active icon turns lime; inactive stays mute.
-                    .foregroundColor(isActive ? Color(hex: "#D4FF3A")
+                    .foregroundColor(isActive ? Color(hex: "#C6FF34")
                                               : Color(hex: "#6E6F75"))
                 if isActive {
                     Text(label)
@@ -3635,12 +3800,12 @@ struct NavItem: View {
             .padding(.horizontal, isActive ? 18 : 14)
             .background(
                 Capsule()
-                    .fill(isActive ? Color(hex: "#D4FF3A").opacity(0.14)
+                    .fill(isActive ? Color(hex: "#C6FF34").opacity(0.14)
                                    : Color.clear)
             )
             .overlay(
                 Capsule()
-                    .stroke(isActive ? Color(hex: "#D4FF3A").opacity(0.25)
+                    .stroke(isActive ? Color(hex: "#C6FF34").opacity(0.25)
                                      : Color.clear,
                             lineWidth: 1)
             )
@@ -3776,19 +3941,19 @@ struct ProUnlockCard: View {
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.4)
                 }
-                .foregroundColor(Color(hex: "#0A0B0D").opacity(0.7))
+                .foregroundColor(Color(hex: "#171717").opacity(0.7))
 
                 Text(lockedCount == 1 ? t(.rd_unlock_more_one) : t(.rd_unlock_more_other, count: lockedCount))
                     .font(.anton(28))
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .foregroundColor(Color(hex: "#171717"))
 
                 HStack(spacing: 6) {
                     Text(subs.introOfferEligible ? t(.rd_trial_badge) : t(.rd_go_pro_from))
                         .font(.archivo(12, weight: .bold))
-                        .foregroundColor(Color(hex: "#0A0B0D").opacity(0.85))
+                        .foregroundColor(Color(hex: "#171717").opacity(0.85))
                     Image(systemName: "arrow.right")
                         .font(.system(size: 11, weight: .heavy))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -3818,9 +3983,9 @@ struct LimeGlassSurface: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         ZStack {
             // Lime gradient base.
-            Color(hex: "#D4FF3A")
+            Color(hex: "#C6FF34")
             RadialGradient(
-                colors: [Color(hex: "#eaff7a"), Color(hex: "#D4FF3A").opacity(0)],
+                colors: [Color(hex: "#eaff7a"), Color(hex: "#C6FF34").opacity(0)],
                 center: UnitPoint(x: 1.1, y: -0.2),
                 startRadius: 30,
                 endRadius: 350
@@ -3832,7 +3997,7 @@ struct LimeGlassSurface: View {
             // lime color still drives the chroma. Kept LOW — at higher
             // opacity the glass composites the dark backdrop through and
             // muddies the lime toward olive (visibly darker than the
-            // brand #D4FF3A on buttons).
+            // brand #C6FF34 on buttons).
             Color.clear
                 .glassCompat(in: shape, interactive: true)
                 .opacity(0.18)
@@ -3922,7 +4087,7 @@ struct LockedPickCard: View {
 
                     // Divider + AI PICKS footer (mirrors GameCard)
                     Divider()
-                        .background(Color(hex: "#22252B"))
+                        .background(Color(hex: "#2F2F2F"))
                         .padding(.top, 14)
 
                     HStack {
@@ -3934,7 +4099,7 @@ struct LockedPickCard: View {
                             Text(pick.displayPick.uppercased())
                                 .font(.anton(17))
                                 .tracking(0.17)
-                                .foregroundColor(Color(hex: "#D4FF3A"))
+                                .foregroundColor(Color(hex: "#C6FF34"))
                         }
                         Spacer()
                         MiniRing(percent: pick.probability)
@@ -3951,17 +4116,17 @@ struct LockedPickCard: View {
                 VStack(spacing: 6) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                     Text(t(.rd_unlock_with_pro))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(2.4)
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 12)
-                .background(Color(hex: "#D4FF3A"))
+                .background(Color(hex: "#C6FF34"))
                 .clipShape(Capsule())
-                .shadow(color: Color(hex: "#D4FF3A").opacity(0.5),
+                .shadow(color: Color(hex: "#C6FF34").opacity(0.5),
                         radius: 14, x: 0, y: 8)
             }
             .padding(.horizontal, 16)
@@ -3971,12 +4136,12 @@ struct LockedPickCard: View {
                 // locked card doesn't look like a different surface.
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(LinearGradient(
-                        colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+                        colors: [Color(hex: "#14161a"), Color(hex: "#1B1B1B")],
                         startPoint: .top, endPoint: .bottom
                     ))
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)

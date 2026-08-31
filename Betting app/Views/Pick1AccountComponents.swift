@@ -19,11 +19,11 @@ struct LimeToggle: View {
 
     var body: some View {
         Capsule()
-            .fill(isOn ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
+            .fill(isOn ? Color(hex: "#C6FF34") : Color(hex: "#3A3A3A"))
             .frame(width: 36, height: 22)
             .overlay(
                 Circle()
-                    .fill(isOn ? Color(hex: "#0A0B0D") : Color(hex: "#F5F3EE"))
+                    .fill(isOn ? Color(hex: "#171717") : Color(hex: "#F5F3EE"))
                     .frame(width: 18, height: 18)
                     .offset(x: isOn ? 7 : -7)
             )
@@ -54,7 +54,7 @@ struct StatusPill: View {
         var fg: Color {
             switch self {
             case .good: return Color(hex: "#4ade80")
-            case .mid:  return Color(hex: "#D4FF3A")
+            case .mid:  return Color(hex: "#C6FF34")
             case .bad:  return Color(hex: "#FF5A36")
             }
         }
@@ -133,10 +133,10 @@ struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                 )
         )
     }
@@ -150,7 +150,7 @@ struct StatTile: View {
 /// available height. Mirrors the spec's `<Spark>` component.
 struct Sparkline: View {
     let pts: [Double]
-    var color: Color = Color(hex: "#D4FF3A")
+    var color: Color = Color(hex: "#C6FF34")
 
     var body: some View {
         GeometryReader { geo in

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pick1 — design lab</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="redesign.css">
+<link rel="stylesheet" href="stake.css">
+<link rel="stylesheet" href="mono.css">
+</head>
+<body>
+
+<div class="lab-bar">
+  <div class="group">
+    <button class="lab-btn" data-lab-tab="home">Home</button>
+    <button class="lab-btn" data-lab-tab="picks">Picks</button>
+    <button class="lab-btn" data-lab-tab="live">Live</button>
+    <button class="lab-btn" data-lab-tab="profile">Profile</button>
+  </div>
+  <div class="group">
+    <button class="lab-btn" data-lab-tier="free">Free</button>
+    <button class="lab-btn" data-lab-tier="pro">Premium</button>
+  </div>
+  <div class="group">
+    <button class="lab-btn" data-lab-style="shipped">Shipped</button>
+    <button class="lab-btn" data-lab-style="cardart">Card art</button>
+    <button class="lab-btn" data-lab-style="stake">Stake</button>
+    <button class="lab-btn" data-lab-style="mono">Mono</button>
+  </div>
+</div>
+
+<div class="device">
+  <div class="notch"></div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 10.5l2-2.4a3.1 3.1 0 00-4 0zM3.6 5.6l1.5 1.6a4.5 4.5 0 015.8 0l1.5-1.6a6.8 6.8 0 00-8.8 0zM.6 2.4l1.5 1.6a9.2 9.2 0 0111.8 0l1.5-1.6a11.4 11.4 0 00-14.8 0z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.2" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4.2v3.6a2 2 0 000-3.6z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+  <div class="app" id="app"></div>
+</div>
+
+<p class="lab-note">
+  Replica of the live SwiftUI build — tokens.css mirrors Pick1Theme.swift,
+  app.css names the struct each block comes from.<br>
+  Not yet replicated: MatchDetailView, PaywallScreen, SportHubView, the onboarding funnel.
+</p>
+
+<script src="app.js"></script>
+<script src="redesign.js"></script>
+<script src="stake.js"></script>
+<script src="mono.js"></script>
+</body>
+</html>

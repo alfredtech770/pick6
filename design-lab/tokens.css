@@ -1,0 +1,89 @@
+/* tokens.css — design tokens lifted 1:1 from the Swift source.
+   Pick1Theme.swift + the literal hexes used inside Pick1HomeHiFi.swift
+   and Pick1Screens.swift. Change a value here and every screen follows,
+   the same way changing Pick1Theme.swift would. */
+
+/* ── Fonts (the exact TTFs shipped in the app bundle) ─────────────── */
+@font-face { font-family: "Anton";     src: url("fonts/Anton-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-Regular.ttf")   format("truetype"); font-weight: 400; }
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-Medium.ttf")    format("truetype"); font-weight: 500; }
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-SemiBold.ttf")  format("truetype"); font-weight: 600; }
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-Bold.ttf")      format("truetype"); font-weight: 700; }
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-ExtraBold.ttf") format("truetype"); font-weight: 800; }
+@font-face { font-family: "Archivo";   src: url("fonts/Archivo-Black.ttf")     format("truetype"); font-weight: 900; }
+
+@font-face { font-family: "ArchivoNarrow"; src: url("fonts/ArchivoNarrow-Medium.ttf")   format("truetype"); font-weight: 500; }
+@font-face { font-family: "ArchivoNarrow"; src: url("fonts/ArchivoNarrow-SemiBold.ttf") format("truetype"); font-weight: 600; }
+@font-face { font-family: "ArchivoNarrow"; src: url("fonts/ArchivoNarrow-Bold.ttf")     format("truetype"); font-weight: 700; }
+
+@font-face { font-family: "JetBrainsMono"; src: url("fonts/JetBrainsMono-Regular.ttf")   format("truetype"); font-weight: 400; }
+@font-face { font-family: "JetBrainsMono"; src: url("fonts/JetBrainsMono-Medium.ttf")    format("truetype"); font-weight: 500; }
+@font-face { font-family: "JetBrainsMono"; src: url("fonts/JetBrainsMono-Bold.ttf")      format("truetype"); font-weight: 700; }
+@font-face { font-family: "JetBrainsMono"; src: url("fonts/JetBrainsMono-ExtraBold.ttf") format("truetype"); font-weight: 800; }
+
+:root {
+  /* ── Palette: Pick1Theme.swift ─────────────────────────────────── */
+  --p1-ink:        #171717;
+  --p1-panel:      #1D1D1D;
+  --p1-panel2:     #232323;
+  --p1-line:       #2F2F2F;
+  --p1-line2:      #3A3A3A;
+  --p1-mute:       #6E6F75;
+  --p1-ink2:       #B9B7B0;
+  --p1-fg:         #F5F3EE;
+  --p1-lime:       #C6FF34;
+  --p1-lime-ink:   #171717;
+  --p1-hot:        #FF5A36;
+  --p1-red:        #E8002D;
+
+  /* ── Literals used in the views (not in the theme file) ────────── */
+  --canvas:        #07080a;   /* Pick1HomeHiFi root ZStack */
+  --card-top:      #14161A;   /* cardBackground gradient top */
+  --card-bot:      #1B1B1B;   /* cardBackground gradient bottom */
+  --slate-fill:    #0F1114;   /* Locked/ProSlateCard fill */
+  --gold:          #E8C64A;   /* premium / locked accent */
+  --gold-ink:      #14110A;
+  --gold-fill:     #14110A;
+  --loss:          #FF5A5A;
+  --live-red:      #FF3B3B;   /* FloatingNav live button */
+  --amber:         #B98C40;   /* awaiting badge */
+  --mute-2:        #8A8D94;   /* secondary mute used across cards */
+  --mute-3:        #3A3D44;   /* zero-count in dropdown */
+  --win-fill:      #111309;   /* won receipt fill */
+  --loss-fill:     #130E0E;   /* lost receipt fill */
+  --live-fill:     #130F0C;   /* live receipt fill */
+
+  /* ── Per-sport card tints (LockedSlateCard / ProSlateCard) ─────── */
+  --tint-basketball: #2FA85B;
+  --tint-soccer:     #3563C7;
+  --tint-football:   #C73535;
+  --tint-baseball:   #C7852F;
+  --tint-hockey:     #35AEC7;
+  --tint-combat:     #C74A2F;
+  --tint-f1:         #C72F49;
+  --tint-golf:       #3E9E4E;
+  --tint-cricket:    #2FA89B;
+  --tint-default:    #6E6F75;
+
+  /* ── Radii ─────────────────────────────────────────────────────── */
+  --r-hero:   32px;  /* BottomRoundedShape */
+  --r-card:   22px;  /* cardBackground */
+  --r-slate:  18px;  /* receipt / slate cards */
+  --r-menu:   20px;  /* sport dropdown */
+  --r-chip:   12px;
+
+  /* ── Shadows ───────────────────────────────────────────────────── */
+  --sh-hero:  0 14px 18px rgba(0,0,0,.55), 0 4px 6px rgba(0,0,0,.30);
+  --sh-card:  0 10px 10px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.4);
+  --sh-nav:   0 20px 20px rgba(0,0,0,.45), 0 4px 5px rgba(0,0,0,.3);
+  --sh-menu:  0 14px 24px rgba(0,0,0,.6);
+}
+
+/* ── Type ramp helpers — mirror Font.anton / .archivo / .archivoNarrow
+   / .mono in Pick1HomeHiFi.swift. SwiftUI .tracking(n) maps to
+   letter-spacing: n px at the same point size. ─────────────────────── */
+.anton { font-family: "Anton", sans-serif; font-weight: 400; }
+.arch  { font-family: "Archivo", sans-serif; }
+.archn { font-family: "ArchivoNarrow", sans-serif; font-weight: 700; }
+.mono  { font-family: "JetBrainsMono", monospace; font-weight: 700; }

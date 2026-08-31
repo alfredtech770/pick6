@@ -27,18 +27,29 @@ extension Color {
 
 // MARK: - Colors
 
+// Home v2 ("Switch Style") palette. The neutrals moved from warm-grey to a
+// cool, slightly blue-shifted ramp — that shift is what makes the lime read
+// as electric rather than olive, so the darks and the accent have to move
+// together. Ink2 / Foreground / Mute / Hot were already identical in the
+// design and are unchanged.
 extension Color {
-    static let p1Ink        = Color(hex: "#0A0B0D")
-    static let p1Panel      = Color(hex: "#101114")
-    static let p1Panel2     = Color(hex: "#16181C")
-    static let p1Line       = Color(hex: "#22252B")
-    static let p1Line2      = Color(hex: "#2D3038")
+    static let p1Ink        = Color(hex: "#0A0B0D")   // v2: deeper, cooler
+    static let p1Panel      = Color(hex: "#15171B")   // v2: blue-shifted
+    static let p1Panel2     = Color(hex: "#1C1F24")   // v2: blue-shifted
+    static let p1Line       = Color(hex: "#26292F")   // v2: blue-shifted
+    static let p1Line2      = Color(hex: "#333740")
     static let p1Mute       = Color(hex: "#6E6F75")
     static let p1Ink2       = Color(hex: "#B9B7B0")
     static let p1Foreground = Color(hex: "#F5F3EE")
-    static let p1Lime       = Color(hex: "#D4FF3A")
-    static let p1LimeInk    = Color(hex: "#0A0B0D")
+    static let p1Lime       = Color(hex: "#CDFA3F")   // v2: brighter, greener
+    static let p1LimeInk    = Color(hex: "#0A0B0D")   // tracks p1Ink
     static let p1Hot        = Color(hex: "#FF5A36")
+
+    /// Semantic result colors introduced by v2. `p1Win` is the settled-win
+    /// green — deliberately distinct from `p1Green`, which is still used for
+    /// generic positive UI (and for sport branding) elsewhere in the app.
+    static let p1Win        = Color(hex: "#4ADE80")
+    static let p1Violet     = Color(hex: "#8B5CF6")
     static let p1Red        = Color(hex: "#E8002D")
     static let p1RedDeep    = Color(hex: "#C9082A")
     static let p1Orange     = Color(hex: "#FF8000")

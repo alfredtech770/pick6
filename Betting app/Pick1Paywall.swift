@@ -185,7 +185,7 @@ struct OBPaywallScreen: View {
         }
         .padding(.horizontal, 18)
         .onAppear {
-            Analytics.paywallViewed()
+            Analytics.paywallViewed(source: "onboarding")
             // Reset on each presentation so the delay always plays.
             skipUnlocked = false
             DispatchQueue.main.asyncAfter(deadline: .now() + skipDelay) {
@@ -928,4 +928,3 @@ private struct FAQRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
-

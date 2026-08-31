@@ -11,6 +11,7 @@
 // Font.anton/archivo/archivoNarrow/mono) live in Pick1HomeHiFi.swift.
 
 import SwiftUI
+import UserNotifications
 
 // ════════════════════════════════════════════════════════════════
 // MARK: - Shared chrome
@@ -37,10 +38,10 @@ struct TopNavBar: View {
                         .frame(width: 38, height: 38)
                         .background(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(hex: "#101114"))
+                                .fill(Color(hex: "#1D1D1D"))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                                 )
                         )
                 }
@@ -102,7 +103,7 @@ struct PageHero: View {
                     .font(.anton(72))
                     .lineSpacing(-12)
                     .tracking(-0.7)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
             }
             .padding(.top, 6)
 
@@ -176,19 +177,19 @@ struct HubSectionHead: View {
 }
 
 /// Reusable card background — matches the design spec for `.gcard`:
-/// vertical gradient #14161a → #0e0f12, --line border, plus a 4-shadow
+/// vertical gradient #14161a → #1B1B1B, --line border, plus a 4-shadow
 /// stack (inset top white highlight + drop shadow main + drop secondary)
 /// to give every card the "stadium-scoreboard 3D lift" the design calls
 /// for. Used by every list/card surface in the app for visual consistency.
 private var cardBackground: some View {
     RoundedRectangle(cornerRadius: 22, style: .continuous)
         .fill(LinearGradient(
-            colors: [Color(hex: "#14161a"), Color(hex: "#0e0f12")],
+            colors: [V4.panelTop, V4.panelBot],
             startPoint: .top, endPoint: .bottom
         ))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                .stroke(V4.line, lineWidth: 1)
         )
         // Inset top highlight — a 1pt bright stroke faded to clear in the
         // top half of the card. Mimics CSS `inset 0 1px 0 rgba(255,255,255,0.07)`.
@@ -226,7 +227,7 @@ private func receiptCardBackground(accent: Color, fill: String) -> some View {
 @ViewBuilder
 func stateCardBackground(_ state: PickRenderState) -> some View {
     switch state {
-    case .won:  receiptCardBackground(accent: Color(hex: "#D4FF3A"), fill: "#111309")
+    case .won:  receiptCardBackground(accent: Color(hex: "#C6FF34"), fill: "#111309")
     case .lost: receiptCardBackground(accent: Color(hex: "#FF5A5A"), fill: "#130E0E")
     case .live: receiptCardBackground(accent: Color(hex: "#FF5A36"), fill: "#130F0C")
     case .awaitingResult, .upcoming: cardBackground
@@ -258,6 +259,10 @@ struct MatchDetailView: View {
     let pick: Pick
     let liveScore: LiveScore?
     let onClose: () -> Void
+    /// Present already showing the stake sheet. Set when the user arrived by
+    /// tapping TRACK on a Home v4 game row: they picked the action, so making
+    /// them find the bar again is friction.
+    var openTrackSheet: Bool = false
 
     /// Tab identity follows the Detail Pages design: SUMMARY · LINEUPS ·
     /// ODDS · H2H. The `lineups` slot is sport-aware via `tabLabel(_:)`
@@ -281,6 +286,7 @@ struct MatchDetailView: View {
     /// matches never appeared in the Wins page.
     @EnvironmentObject private var favorites: FavoritesStore
     private var starred: Bool { favorites.contains(pick.id) }
+    private var isTracking: Bool { starred || betTracker.isTracked(pick.id) }
 
     private func tabLabel(_ which: Tab) -> String {
         switch which {
@@ -312,22 +318,50 @@ struct MatchDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     detailTopNav
-                    // scoreHeader is the live element — it's already
-                    // state-aware: real score + period while live/final,
-                    // "VS · kickoff time" before the game starts. No
-                    // fabricated stat tiles (the old statIconRow showed
-                    // fake per-stat splits for every game, even upcoming
-                    // ones — removed).
-                    // Pre-game: the shared tease-style matchup header (blue
-                    // card, big marks, real kickoff). Live/settled games keep
-                    // the score header — the score is the story then.
-                    if pick.isPending && !(liveScore?.isLive ?? false) {
-                        MatchupHeaderCard(pick: pick)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 26)
-                    } else {
-                        scoreHeader
+                    // The pick, as a ticket. One object states the call, the
+                    // terms and its own outcome; everything below it argues
+                    // for the call. This replaces three separate blocks (the
+                    // matchup header, the PICK1'S CALL heading and the hero
+                    // card) that between them printed the confidence three
+                    // times and the track action twice.
+                    P1PickTicket(pick: pick,
+                                 homeScore: liveScore?.homeScore ?? pick.homeScore,
+                                 awayScore: liveScore?.awayScore ?? pick.awayScore,
+                                 isLive: liveScore?.isLive ?? false,
+                                 scoreLine: scorePredictionLine,
+                                 confidence: confidenceDisplay,
+                                 loggedAt: loggedTimeText)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 14)
+
+                    // What the ticket does not have room for, kept as a quiet
+                    // strip rather than dropped: edge versus the market, and
+                    // the clock.
+                    HStack(spacing: 0) {
+                        ForEach(Array(pickHeroStats.enumerated()), id: \.element.label) { i, stat in
+                            if i > 0 { Rectangle().fill(V4.line).frame(width: 1, height: 22) }
+                            VStack(spacing: 3) {
+                                Text(stat.label)
+                                    .font(.archivoNarrow(8.5, weight: .bold)).tracking(1.4)
+                                    .foregroundColor(Color(hex: "#6E6F75"))
+                                    .lineLimit(1).minimumScaleFactor(0.7)
+                                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                                    Text(stat.value)
+                                        .font(.anton(15))
+                                        .foregroundColor(Color(hex: "#F5F3EE"))
+                                    if let suffix = stat.suffix {
+                                        Text(suffix)
+                                            .font(.mono(9, weight: .semibold))
+                                            .foregroundColor(Color(hex: "#B9B7B0"))
+                                    }
+                                }
+                                .lineLimit(1).minimumScaleFactor(0.6)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
                     }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 24)
                     // Won pick → the share-your-gains viral loop. Free
                     // users earn 24h of Premium for a completed share.
                     if pick.isWin {
@@ -341,11 +375,11 @@ struct MatchDetailView: View {
                                 Text(t(.sw_share_win))
                                     .font(.anton(15)).kerning(0.4)
                             }
-                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .foregroundColor(Color(hex: "#171717"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(RoundedRectangle(cornerRadius: 13)
-                                .fill(Color(hex: "#D4FF3A")))
+                                .fill(Color(hex: "#C6FF34")))
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 16)
@@ -362,30 +396,14 @@ struct MatchDetailView: View {
                             .padding(.bottom, 12)
                     }
                     // (RECENT FORM lives in the TEAM STATS tab — not repeated here.)
-                    // PICK1'S CALL · ✓ UNLOCKED — the premium mirror of the
-                    // free tease's locked section.
-                    HStack {
-                        Text(t(.rd_pick1s_call)).font(.anton(19)).foregroundColor(.white)
-                        Spacer()
-                        HStack(spacing: 5) {
-                            Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy))
-                            Text(t(.rd_unlocked))
-                                .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                        }
-                        .foregroundColor(Color(hex: "#D4FF3A"))
-                        .padding(.horizontal, 11).padding(.vertical, 6)
-                        .background(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.55), lineWidth: 1.2))
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
-                    pickHeroCard
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 28)
-                    if let factors = pick.factors, !factors.isEmpty {
-                        whyFactorsPanel(factors)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 28)
-                    }
+                    // The PICK1'S CALL heading and `pickHeroCard` used to sit
+                    // here. Both are now the ticket above: the heading named a
+                    // section whose only content was the card, and the card
+                    // restated the call the header had just made.
+                    // The "WHY <team>" factor panel used to sit here. Removed
+                    // at Ethan's request 2026-08-25: the same `pick.factors`
+                    // already drive the home hero's "why the AI likes it", and
+                    // the OUR CALL tab below carries the reasoning in prose.
                     tabsRow
                     Group {
                         switch tab {
@@ -430,7 +448,7 @@ struct MatchDetailView: View {
             if showToast {
                 Text(t(.card_saved_toast, count: Int(pick.probability)))
                     .font(.archivo(12, weight: .bold))
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .foregroundColor(Color(hex: "#171717"))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color(hex: "#F5F3EE"))
@@ -444,6 +462,24 @@ struct MatchDetailView: View {
         }
         }
         .preferredColorScheme(.dark)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            unifiedTrackBar
+        }
+        .onAppear { if openTrackSheet { showTrackSheet = true } }
+        .sheet(isPresented: $showTrackSheet) {
+            TrackBetSheet(
+                pick: pick,
+                accent: sportAccent,
+                onTrack: { stake in startTracking(stake: stake) },
+                isTracked: isTracking,
+                onUntrack: { stopTracking() }
+            )
+            .presentationDetents([.height(isTracking ? 420 : 360)])
+            .onAppear {
+                Analytics.trackSheetViewed(league: pick.league, alreadyTracked: isTracking)
+            }
+        }
+        .task { if !betTracker.loaded { await betTracker.load() } }
         // Engagement signal → PostHog (pick_viewed) + Meta (ViewContent,
         // content_type = league). Fires once whenever a pick detail opens,
         // from any screen that presents MatchDetailView.
@@ -451,61 +487,17 @@ struct MatchDetailView: View {
     }
 
     private var detailTopNav: some View {
-        // No title — just the return arrow (leading) and TRACK YOUR PICK
-        // (trailing overlay below). The matchup card right under carries
-        // all the context.
+        // Back arrow only. This used to carry a TRACK YOUR PICK capsule as a
+        // trailing overlay, which meant the same action sat on screen twice
+        // at once: here, and in the sticky bar that is pinned to the bottom
+        // on every scroll position. The sticky bar wins, because it is
+        // reachable with a thumb and never scrolls away.
         TopNavBar(
             crumb: "",
             crumbAccent: "",
             live: false,
             onBack: onClose
         )
-        .overlay(alignment: .trailing) {
-            // Star button — rebuilt with `clipShape(RoundedRectangle)`
-            // so the corners are guaranteed rounded. The previous version
-            // relied on the background's own shape, which on some iOS
-            // versions and at the simulator's pixel density rendered
-            // as a hard square. Clipping the whole button to the same
-            // RoundedRectangle that draws the border makes the corner
-            // radius authoritative.
-            Button {
-                let wasStarred = starred
-                favorites.toggle(pick)
-                // Haptic + brief toast on add; only haptic on remove
-                // (toast on every tap would be noisy).
-                if !wasStarred {
-                    Haptics.success()
-                    withAnimation(Pick1Springs.smooth) { showToast = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                        withAnimation(Pick1Springs.smooth) { showToast = false }
-                    }
-                } else {
-                    Haptics.selection()
-                }
-            } label: {
-                // Labeled capsule — same "TRACK YOUR PICK" affordance as the
-                // free tease detail, so the action reads identically on
-                // every detail page (star fills + lime when tracking).
-                HStack(spacing: 6) {
-                    Image(systemName: starred ? "star.fill" : "star")
-                        .font(.system(size: 13, weight: .bold))
-                        .scaleEffect(starred ? 1.0 : 0.92)
-                        .animation(Pick1Springs.bouncy, value: starred)
-                    Text(starred ? t(.rd_tracking) : t(.rd_track_your_pick))
-                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.2)
-                }
-                .foregroundColor(starred ? Color(hex: "#0A0B0D") : Color(hex: "#D4FF3A"))
-                .padding(.horizontal, 12)
-                .frame(height: 38)
-                .background(Capsule().fill(starred ? Color(hex: "#D4FF3A") : Color(hex: "#101114"))
-                    .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(starred ? 0 : 0.5), lineWidth: 1)))
-                .contentShape(Capsule())
-                .pressableScale(0.95)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(starred ? "Remove from favorites" : "Add to favorites")
-            .padding(.trailing, 18)
-        }
     }
 
     /// Authoritative state for this whole detail surface. Drives the
@@ -516,33 +508,25 @@ struct MatchDetailView: View {
         pick.renderState(liveScore: liveScore)
     }
 
-    /// Per-sport accent color so each sport's detail page reads
-    /// distinctly instead of every page being the same lime. Mirrors
-    /// the SportHub's `glowColor` palette: NBA orange, NHL blue, UFC
-    /// red, F1 ferrari-red, cricket saffron, NFL purple, MLB
-    /// red-orange, soccer lime. Applied to the dominant accent
-    /// surfaces (pick hero card, tab pills, active stat tile, score
-    /// header pill + winner highlight).
-    private var sportAccent: Color {
-        switch pick.sport {
-        case "basketball": return Color(hex: "#E75A28")   // orange
-        case "soccer":     return Color(hex: "#D4FF3A")   // lime
-        case "football":   return Color(hex: "#785AF0")   // purple
-        case "baseball":   return Color(hex: "#FF5A36")   // red-orange
-        case "hockey":     return Color(hex: "#5B8CFF")   // blue
-        case "combat":     return Color(hex: "#FF3C28")   // red
-        case "f1":         return Color(hex: "#E10600")   // ferrari red
-        case "golf":       return Color(hex: "#3FA34D")   // fairway green
-        case "tennis":     return Color(hex: "#C6FF3A")   // electric yellow-green
-        case "cricket":    return Color(hex: "#FFD93D")   // saffron
-        default:           return Color(hex: "#D4FF3A")
-        }
-    }
+    /// The action colour, and it is lime on every sport.
+    ///
+    /// This used to be a per-sport accent (UFC red, NFL purple, NHL blue…)
+    /// so each detail page "read distinctly". Against the v4 home that
+    /// backfired: opening a fight pick turned the whole page red while the
+    /// home it came from was lime on ink, and the two screens stopped
+    /// looking like the same app. v4 already carries sport identity the
+    /// right way — as a *glow*, not as a tint — so identity moves to
+    /// `sportGlow` and the accent goes back to the brand.
+    private var sportAccent: Color { Color.p1Lime }
+
+    /// Sport identity, used only for blooms and washes behind content —
+    /// never for text or fills. Same source as the home's orbs.
+    private var sportGlow: Color { V4.glow(pick.sport) }
 
     /// Dark ink that reads well on top of `sportAccent` (all the
     /// accents are bright enough that near-black text/icons sit on
     /// them cleanly, matching the original lime-on-ink treatment).
-    private var sportAccentInk: Color { Color(hex: "#0A0B0D") }
+    private var sportAccentInk: Color { Color(hex: "#171717") }
 
     private var scheduledOrLiveLabel: String {
         switch state {
@@ -639,9 +623,9 @@ struct MatchDetailView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
         )
     }
 
@@ -744,11 +728,11 @@ struct MatchDetailView: View {
         case .live:
             Text(liveScore?.quarter.flatMap { Int($0) }.map { "Q\($0)" } ?? "LIVE")
                 .font(.mono(12, weight: .bold))
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(Color(hex: "#D4FF3A").opacity(0.08))
-                .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.22), lineWidth: 1))
+                .background(Color(hex: "#C6FF34").opacity(0.08))
+                .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.22), lineWidth: 1))
                 .clipShape(Capsule())
         case .awaitingResult:
             HStack(spacing: 5) {
@@ -790,8 +774,8 @@ struct MatchDetailView: View {
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color(hex: "#101114"))
-                    .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    .background(Color(hex: "#1D1D1D"))
+                    .overlay(Capsule().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                     .clipShape(Capsule())
             }
         }
@@ -862,7 +846,7 @@ struct MatchDetailView: View {
                 Text("VS")
                     .font(.anton(28))
                     .tracking(2.8)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
                 if let kickoff = liveScore?.startTime {
                     Text(kickoffTimeText(kickoff))
                         .font(.mono(11, weight: .bold))
@@ -906,12 +890,12 @@ struct MatchDetailView: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(active
                               ? sportAccent.opacity(0.1)
-                              : Color(hex: "#101114"))
+                              : Color(hex: "#1D1D1D"))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .stroke(active
                                         ? sportAccent.opacity(0.3)
-                                        : Color(hex: "#22252B"), lineWidth: 1)
+                                        : Color(hex: "#2F2F2F"), lineWidth: 1)
                         )
                 )
             Text(tile.label)
@@ -954,13 +938,13 @@ struct MatchDetailView: View {
                 VStack(alignment: .trailing, spacing: -2) {
                     Text("\(Int(pick.probability))%")
                         .font(.anton(40)).tracking(-0.4)
-                        .foregroundColor(Color(hex: "#F5F3EE"))
+                        .foregroundColor(V4.win)
                     Text(t(.rd_win_prob))
                         .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                         .foregroundColor(Color(hex: "#6E6F75"))
                 }
             }
-            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+            Rectangle().fill(V4.line).frame(height: 1)
                 .padding(.top, 12)
             HStack {
                 Text("\(t(.rd_logged)) \(loggedTimeText)")
@@ -979,7 +963,7 @@ struct MatchDetailView: View {
             // "EXPECTED RETURN −6.0% vs market consensus" read as
             // analyst jargon; AI edge now lives in the stat row.)
             VStack(alignment: .center, spacing: 4) {
-                Text(t(.rd_potential_payout))
+                Text(hasMarketOdds ? t(.rd_potential_payout) : "MODEL FAIR PRICE")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.2)
                     .foregroundColor(Color(hex: "#6E6F75"))
@@ -1067,7 +1051,7 @@ struct MatchDetailView: View {
             .padding(.top, 14)
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(Color(hex: "#22252B"))
+                    .fill(V4.line)
                     .frame(height: 1)
             }
         }
@@ -1075,7 +1059,7 @@ struct MatchDetailView: View {
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(LinearGradient(
-                    colors: [Color(hex: "#14161A"), Color(hex: "#0d0e11")],
+                    colors: [V4.panelTop, V4.panelBot],
                     startPoint: .top, endPoint: .bottom
                 ))
                 // Accent glow FIRST, then clip everything to the card shape
@@ -1084,7 +1068,7 @@ struct MatchDetailView: View {
                 .overlay(alignment: .topTrailing) {
                     Circle()
                         .fill(RadialGradient(
-                            colors: [sportAccent.opacity(0.22), .clear],
+                            colors: [sportGlow.opacity(0.22), .clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: 90
@@ -1096,7 +1080,7 @@ struct MatchDetailView: View {
                 // …stroke last so the border isn't half-clipped.
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(V4.line, lineWidth: 1)
                 )
         )
     }
@@ -1150,7 +1134,7 @@ struct MatchDetailView: View {
     /// Pregame:  "AI PREDICTED SCORE  2-1"
     /// Graded:   exact hit / winner-only / miss, with the actual final.
     private var scorePredictionLine: (icon: String, text: String, color: Color)? {
-        let lime = Color(hex: "#D4FF3A")
+        let lime = Color(hex: "#C6FF34")
         let green = Color(hex: "#22C55E")
         let mute = Color(hex: "#6E6F75")
         if pick.isPending {
@@ -1184,13 +1168,16 @@ struct MatchDetailView: View {
 
     /// Always-signed formatted string, e.g. "+24.7%" or "-3.2%".
     private var expectedReturnText: String {
-        String(format: "%+.1f%%", expectedReturnPercent)
+        guard hasMarketOdds else { return "—" }
+        return String(format: "%+.1f%%", expectedReturnPercent)
     }
 
     /// "1.83x" — the payout multiplier on the picked outcome.
     /// "$100 → $165" — the number users actually feel. Leads the box.
     private var payoutMultiplierText: String {
-        "$100 → $\(Int((100 * decimalOdds).rounded()))"
+        hasMarketOdds
+            ? "$100 → $\(Int((100 * decimalOdds).rounded()))"
+            : String(format: "%.2fx FAIR ODDS", decimalOdds)
     }
 
     /// Multiplier demoted to the support line.
@@ -1208,7 +1195,8 @@ struct MatchDetailView: View {
     /// Lime accent when the AI sees positive edge, muted ink otherwise
     /// so a negative number doesn't shout at the user.
     private var expectedReturnColor: Color {
-        expectedReturnPercent >= 0 ? sportAccent : Color(hex: "#B9B7B0")
+        guard hasMarketOdds else { return Color(hex: "#B9B7B0") }
+        return expectedReturnPercent >= 0 ? sportAccent : Color(hex: "#B9B7B0")
     }
 
     /// Three stat columns rendered below the win block. The labels
@@ -1293,15 +1281,15 @@ struct MatchDetailView: View {
                     Text(tabLabel(t))
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(tab == t ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                        .foregroundColor(tab == t ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(tab == t ? sportAccent : Color(hex: "#101114"))
+                                .fill(tab == t ? sportAccent : Color(hex: "#1D1D1D"))
                         )
                         .overlay(
-                            Capsule().stroke(tab == t ? sportAccent : Color(hex: "#22252B"), lineWidth: 1)
+                            Capsule().stroke(tab == t ? sportAccent : Color(hex: "#2F2F2F"), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
@@ -1367,7 +1355,7 @@ struct MatchDetailView: View {
             }
             .padding(.top, 4)
             .overlay(alignment: .top) {
-                Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
                     .padding(.top, -10)
             }
         }
@@ -1414,7 +1402,7 @@ struct MatchDetailView: View {
                     .padding(.vertical, 9)
                     .overlay(alignment: .top) {
                         if idx > 0 {
-                            Rectangle().fill(Color(hex: "#22252B")).frame(height: 1)
+                            Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
                         }
                     }
                 }
@@ -1474,7 +1462,7 @@ struct MatchDetailView: View {
                     }
                     .padding(.vertical, 10)
                     .overlay(alignment: .top) {
-                        if idx > 0 { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                        if idx > 0 { Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1) }
                     }
                 }
 
@@ -1717,14 +1705,14 @@ struct MatchDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Text(p.stat)
                         .font(.anton(18))
-                        .foregroundColor(p.hot ? Color(hex: "#D4FF3A")
+                        .foregroundColor(p.hot ? Color(hex: "#C6FF34")
                                                 : Color(hex: "#F5F3EE"))
                 }
                 .padding(.vertical, 8)
                 .overlay(alignment: .top) {
                     if i > 0 {
                         Rectangle()
-                            .fill(Color(hex: "#22252B"))
+                            .fill(Color(hex: "#2F2F2F"))
                             .frame(height: 1)
                     }
                 }
@@ -1778,14 +1766,14 @@ struct MatchDetailView: View {
                     }.frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .padding(.vertical, 12)
-                .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
-                .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                .overlay(alignment: .top) { Rectangle().fill(V4.line).frame(height: 1) }
+                .overlay(alignment: .bottom) { Rectangle().fill(V4.line).frame(height: 1) }
                 valueVerdict(edge: ourPct - imp).padding(.top, 12)
             } else {
                 Text(t(.rd_no_market_line))
                     .font(.archivo(12)).foregroundColor(Color(hex: "#8A8D94"))
                     .padding(.vertical, 12)
-                    .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1) }
+                    .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1) }
             }
 
             // 3. More predictions — the per-sport prop markets (exact score,
@@ -1815,7 +1803,7 @@ struct MatchDetailView: View {
                                 if let prob = prop.probability {
                                     Text("\(prob)%")
                                         .font(.anton(24))
-                                        .foregroundColor(sportAccent)
+                                        .foregroundColor(V4.win)
                                 }
                             }
                             HStack(spacing: 8) {
@@ -1825,31 +1813,45 @@ struct MatchDetailView: View {
                                         .lineLimit(2)
                                 }
                                 Spacer(minLength: 6)
-                                // Return on EVERY market: real book odds get the
-                                // solid pill; otherwise an estimate implied from
-                                // our own probability, labeled EST.
-                                if let odds = prop.odds {
-                                    Text("$100 → $\(Int((odds * 100).rounded()))")
+                                // A return on EVERY market, and the two kinds
+                                // look different on purpose. A real book quote
+                                // is money a user can go and get, so it gets
+                                // the solid pill. An estimate derived from our
+                                // own probability is not, so it is outlined and
+                                // says EST. Making them look identical would be
+                                // the same error the ticket header used to make.
+                                if let money = prop.returnOnHundred,
+                                   let q = prop.quotedOdds {
+                                    if q.isMarket {
+                                        Text(money)
+                                            .font(.mono(12, weight: .bold))
+                                            .foregroundColor(Color(hex: "#171717"))
+                                            .padding(.horizontal, 9).padding(.vertical, 5)
+                                            .background(Capsule().fill(sportAccent))
+                                    } else {
+                                        HStack(spacing: 5) {
+                                            Text(money)
+                                            Text("EST").foregroundColor(Color(hex: "#6E6F75"))
+                                        }
                                         .font(.mono(12, weight: .bold))
-                                        .foregroundColor(Color(hex: "#0A0B0D"))
+                                        .foregroundColor(Color(hex: "#B9B7B0"))
                                         .padding(.horizontal, 9).padding(.vertical, 5)
-                                        .background(Capsule().fill(sportAccent))
-                                } else if let prob = prop.probability, prob > 0 {
-                                    Text("$100 → $\(Int((100.0 / Double(prob) * 100).rounded())) EST.")
-                                        .font(.mono(11, weight: .bold))
-                                        .foregroundColor(sportAccent)
-                                        .padding(.horizontal, 9).padding(.vertical, 5)
-                                        .background(Capsule().stroke(sportAccent.opacity(0.5), lineWidth: 1))
+                                        .background(Capsule().strokeBorder(V4.line, lineWidth: 1))
+                                    }
                                 }
                             }
                         }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        // Neutral card, one accent element — the home's game-card
+                        // language. A wall of accent-tinted cards was exactly what
+                        // made this page shout compared with the home.
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(sportAccent.opacity(0.05))
+                                .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
+                                                     startPoint: .top, endPoint: .bottom))
                                 .overlay(RoundedRectangle(cornerRadius: 16)
-                                    .stroke(sportAccent.opacity(0.22), lineWidth: 1))
+                                    .stroke(V4.line, lineWidth: 1))
                         )
                     }
                 }
@@ -1876,7 +1878,7 @@ struct MatchDetailView: View {
                             .foregroundColor(i == 0 ? sportAccent : Color(hex: "#B9B7B0"))
                         if i == 0 {
                             Text(t(.rd_best)).font(.archivoNarrow(8, weight: .bold)).tracking(1.0)
-                                .foregroundColor(Color(hex: "#0A0B0D"))
+                                .foregroundColor(Color(hex: "#171717"))
                                 .padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(Capsule().fill(sportAccent))
                         }
@@ -1888,46 +1890,23 @@ struct MatchDetailView: View {
                     .foregroundColor(Color(hex: "#4A4B50")).padding(.top, 2)
             }
 
-            // 4. Potential return
+            // 4. Market return when executable odds exist; otherwise show
+            // the model's fair price without implying a sportsbook payout.
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(t(.rd_potential_return)).font(.archivoNarrow(9, weight: .bold)).tracking(1.6).foregroundColor(Color(hex: "#6E6F75"))
-                    Text(pick.oddsSource.map { "LINE VIA \($0.uppercased())" } ?? "FAIR PRICE FROM OUR CONFIDENCE")
+                    Text(hasMarketOdds ? t(.rd_potential_return) : "MODEL FAIR PRICE")
+                        .font(.archivoNarrow(9, weight: .bold)).tracking(1.6).foregroundColor(Color(hex: "#6E6F75"))
+                    Text(pick.oddsSource.map { "LINE VIA \($0.uppercased())" } ?? "DERIVED FROM MODEL CONFIDENCE")
                         .font(.archivoNarrow(8, weight: .bold)).tracking(1.0).foregroundColor(Color(hex: "#4A4B50"))
                 }
                 Spacer()
-                Text("$100 → $\(Int((payout * 100).rounded()))")
+                Text(hasMarketOdds
+                     ? "$100 → $\(Int((payout * 100).rounded()))"
+                     : String(format: "%.2fx", payout))
                     .font(.anton(18)).foregroundColor(sportAccent)
             }
             .padding(.top, 16)
-            .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#22252B")).frame(height: 1).padding(.top, 8) }
-
-            // 5. Track this bet — turns our call into the user's own ledger.
-            Button {
-                if betTracker.isTracked(pick.id) {
-                    Task { await betTracker.untrack(pickId: pick.id) }
-                } else {
-                    showTrackSheet = true
-                }
-            } label: {
-                let tracked = betTracker.isTracked(pick.id)
-                HStack(spacing: 8) {
-                    Image(systemName: tracked ? "checkmark.circle.fill" : "plus.circle")
-                        .font(.system(size: 15, weight: .bold))
-                    Text(tracked ? "TRACKING THIS BET" : "TRACK THIS BET")
-                        .font(.archivoNarrow(12, weight: .bold)).tracking(1.4)
-                }
-                .foregroundColor(tracked ? sportAccent : Color(hex: "#0A0B0D"))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(tracked ? Color(hex: "#16181D") : sportAccent)
-                        .overlay(RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(tracked ? sportAccent.opacity(0.5) : .clear, lineWidth: 1))
-                )
-            }
-            .padding(.top, 16)
+            .overlay(alignment: .top) { Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1).padding(.top, 8) }
 
             Text(t(.rd_not_advice))
                 .font(.archivoNarrow(8, weight: .bold)).tracking(1.2)
@@ -1942,13 +1921,44 @@ struct MatchDetailView: View {
                 .relocalizesOnLanguageChange()
                 .presentationDetents([.fraction(0.78), .large])
         }
-        .sheet(isPresented: $showTrackSheet) {
-            TrackBetSheet(pick: pick, accent: sportAccent) { stake in
-                Task { await betTracker.track(pick: pick, stake: stake) }
+    }
+
+    private var unifiedTrackBar: some View {
+        Button { showTrackSheet = true } label: {
+            HStack(spacing: 9) {
+                Image(systemName: isTracking ? "checkmark.circle.fill" : "plus.circle.fill")
+                    .font(.system(size: 16, weight: .bold))
+                Text(isTracking ? "TRACKING · TAP TO EDIT" : t(.rd_track_your_pick))
+                    .font(.archivoNarrow(13, weight: .bold)).tracking(1.5)
+                Spacer()
+                Text("\(Int(pick.probability.rounded()))%")
+                    .font(.anton(18))
             }
-            .presentationDetents([.height(360)])
+            .foregroundColor(isTracking ? sportAccent : Color(hex: "#171717"))
+            .padding(.horizontal, 18)
+            .frame(height: 54)
+            .background(RoundedRectangle(cornerRadius: 15)
+                .fill(isTracking ? Color(hex: "#202124") : sportAccent)
+                .overlay(RoundedRectangle(cornerRadius: 15)
+                    .strokeBorder(sportAccent.opacity(isTracking ? 0.55 : 0), lineWidth: 1)))
         }
-        .task { if !betTracker.loaded { await betTracker.load() } }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
+
+    private func startTracking(stake: Double?) {
+        favorites.set(pick, on: true)
+        Haptics.success()
+        Task { await betTracker.track(pick: pick, stake: stake) }
+    }
+
+    private func stopTracking() {
+        favorites.set(pick, on: false)
+        Analytics.pickUntracked(league: pick.league, sport: pick.sport)
+        Haptics.selection()
+        Task { await betTracker.untrack(pickId: pick.id) }
     }
 
     /// Human confidence word — uses the stored value when it's a word,
@@ -1973,52 +1983,6 @@ struct MatchDetailView: View {
 
     /// WHY {TEAM} · BREAKDOWN — meter rows from the pipeline's factor
     /// ratings (real data points; strength is the model's own 0-100 read).
-    private func whyFactorsPanel(_ factors: [PickFactor]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("\(t(.rd_why)) \(pick.shortDisplayPick.uppercased())")
-                    .font(.anton(19)).foregroundColor(.white)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                Spacer()
-                Text(t(.rd_breakdown))
-                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                    .foregroundColor(sportAccent)
-                    .padding(.horizontal, 11).padding(.vertical, 6)
-                    .background(Capsule().stroke(sportAccent.opacity(0.5), lineWidth: 1.2))
-            }
-            .padding(.horizontal, 4)
-            VStack(spacing: 14) {
-                ForEach(factors) { f in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(f.label.uppercased())
-                                .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
-                                .foregroundColor(Color(hex: "#C9CBCF"))
-                            Spacer(minLength: 10)
-                            Text(f.value.uppercased())
-                                .font(.archivo(12, weight: .bold))
-                                .foregroundColor(Color(hex: "#F5F3EE"))
-                                .lineLimit(1).minimumScaleFactor(0.6)
-                                .multilineTextAlignment(.trailing)
-                        }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color(hex: "#22252B")).frame(height: 7)
-                                Capsule().fill(sportAccent)
-                                    .frame(width: geo.size.width * CGFloat(f.strength) / 100.0, height: 7)
-                            }
-                        }
-                        .frame(height: 7)
-                    }
-                }
-            }
-            .padding(16)
-            .background(cardBackground)
-        }
-    }
-
-    /// The value verdict pill: VALUE when our probability beats the market's
-    /// implied price, NO EDGE when the market is ahead, FAIR in between.
     private func valueVerdict(edge: Int) -> some View {
         let isValue = edge >= 6
         let isNoEdge = edge <= -6
@@ -2026,11 +1990,11 @@ struct MatchDetailView: View {
         let sub = isValue ? t(.rd_value_sub)
             : (isNoEdge ? t(.rd_no_edge_sub)
                         : t(.rd_fair_price_body))
-        let fg = isValue ? Color(hex: "#0A0B0D") : (isNoEdge ? Color(hex: "#F0A8A0") : Color(hex: "#E7E4DC"))
-        let bg = isValue ? sportAccent : (isNoEdge ? Color(hex: "#2A1416") : Color(hex: "#16181C"))
+        let fg = isValue ? Color(hex: "#171717") : (isNoEdge ? Color(hex: "#F0A8A0") : Color(hex: "#E7E4DC"))
+        let bg = isValue ? sportAccent : (isNoEdge ? Color(hex: "#2A1416") : Color(hex: "#232323"))
         return VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.archivoNarrow(12, weight: .bold)).tracking(1.4).foregroundColor(fg)
-            Text(sub).font(.archivo(11)).foregroundColor(isValue ? Color(hex: "#0A0B0D").opacity(0.7) : Color(hex: "#8A8D94"))
+            Text(sub).font(.archivo(11)).foregroundColor(isValue ? Color(hex: "#171717").opacity(0.7) : Color(hex: "#8A8D94"))
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -2067,7 +2031,7 @@ struct MatchDetailView: View {
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color(hex: "#16181C"))
+                                    .fill(Color(hex: "#232323"))
                             )
                     }
 
@@ -2075,21 +2039,21 @@ struct MatchDetailView: View {
                         .font(.anton(18))
                         .tracking(-0.2)
                         .foregroundColor(o.cold ? Color(hex: "#F5F3EE")
-                                                 : Color(hex: "#0A0B0D"))
+                                                 : Color(hex: "#171717"))
                         .frame(minWidth: 56)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(o.cold ? Color(hex: "#16181C")
-                                              : Color(hex: "#D4FF3A"))
+                                .fill(o.cold ? Color(hex: "#232323")
+                                              : Color(hex: "#C6FF34"))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(o.cold ? Color(hex: "#22252B") : .clear,
+                                        .stroke(o.cold ? Color(hex: "#2F2F2F") : .clear,
                                                 lineWidth: 1)
                                 )
                                 .shadow(color: o.cold ? .clear
-                                                       : Color(hex: "#D4FF3A").opacity(0.4),
+                                                       : Color(hex: "#C6FF34").opacity(0.4),
                                         radius: 6, x: 0, y: 4)
                         )
                 }
@@ -2098,7 +2062,7 @@ struct MatchDetailView: View {
                 .overlay(alignment: .bottom) {
                     if i < rows.count - 1 {
                         Rectangle()
-                            .fill(Color(hex: "#22252B"))
+                            .fill(Color(hex: "#2F2F2F"))
                             .frame(height: 1)
                     }
                 }
@@ -2120,7 +2084,7 @@ struct MatchDetailView: View {
                     VStack(spacing: 2) {
                         Text("\(s.n)")
                             .font(.anton(32))
-                            .foregroundColor(s.lime ? Color(hex: "#D4FF3A")
+                            .foregroundColor(s.lime ? Color(hex: "#C6FF34")
                                                     : Color(hex: "#F5F3EE"))
                         Text(s.label)
                             .font(.archivoNarrow(9, weight: .bold))
@@ -2134,7 +2098,7 @@ struct MatchDetailView: View {
             .padding(.bottom, 14)
             .overlay(alignment: .bottom) {
                 Rectangle()
-                    .fill(Color(hex: "#22252B"))
+                    .fill(Color(hex: "#2F2F2F"))
                     .frame(height: 1)
             }
 
@@ -2148,7 +2112,7 @@ struct MatchDetailView: View {
                         .frame(width: 50, alignment: .leading)
                     Text(g.home)
                         .font(.archivo(12, weight: g.winner == "h" ? .bold : .regular))
-                        .foregroundColor(g.winner == "h" ? Color(hex: "#D4FF3A")
+                        .foregroundColor(g.winner == "h" ? Color(hex: "#C6FF34")
                                                           : Color(hex: "#B9B7B0"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("\(g.hScore)–\(g.aScore)")
@@ -2157,7 +2121,7 @@ struct MatchDetailView: View {
                         .padding(.horizontal, 6)
                     Text(g.away)
                         .font(.archivo(12, weight: g.winner == "a" ? .bold : .regular))
-                        .foregroundColor(g.winner == "a" ? Color(hex: "#D4FF3A")
+                        .foregroundColor(g.winner == "a" ? Color(hex: "#C6FF34")
                                                           : Color(hex: "#B9B7B0"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(g.comp)
@@ -2169,7 +2133,7 @@ struct MatchDetailView: View {
                 .overlay(alignment: .top) {
                     if i > 0 {
                         Rectangle()
-                            .fill(Color(hex: "#22252B"))
+                            .fill(Color(hex: "#2F2F2F"))
                             .frame(height: 1)
                     }
                 }
@@ -2451,7 +2415,7 @@ struct StatBarRow: View {
     let homePct: Double
     /// Home-side bar fill. Defaults to lime so any other caller is
     /// unaffected; the match-detail Summary passes the sport accent.
-    var accent: Color = Color(hex: "#D4FF3A")
+    var accent: Color = Color(hex: "#C6FF34")
 
     var body: some View {
         VStack(spacing: 6) {
@@ -2473,8 +2437,8 @@ struct StatBarRow: View {
                 let w = geo.size.width
                 let homeWidth = w * homePct
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: "#16181C"))
-                        .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    Capsule().fill(Color(hex: "#232323"))
+                        .overlay(Capsule().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                     HStack(spacing: 0) {
                         Capsule().fill(accent)
                             .frame(width: homeWidth)
@@ -2672,7 +2636,7 @@ struct SportHubView: View {
                     .font(.anton(72))
                     .lineSpacing(-12)
                     .tracking(-0.6)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
             }
         }
     }
@@ -2846,17 +2810,17 @@ struct SportHubView: View {
             if l.count > 0 {
                 Text("\(l.count)")
                     .font(.mono(10, weight: .bold))
-                    .foregroundColor(l.active ? Color(hex: "#0A0B0D").opacity(0.5)
+                    .foregroundColor(l.active ? Color(hex: "#171717").opacity(0.5)
                                               : Color(hex: "#6E6F75"))
             }
         }
-        .foregroundColor(l.active ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+        .foregroundColor(l.active ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Capsule().fill(l.active ? Color(hex: "#F5F3EE")
-                                             : Color(hex: "#101114")))
+                                             : Color(hex: "#1D1D1D")))
         .overlay(Capsule().stroke(l.active ? Color(hex: "#F5F3EE")
-                                            : Color(hex: "#22252B"),
+                                            : Color(hex: "#2F2F2F"),
                                   lineWidth: 1))
     }
 
@@ -3031,7 +2995,7 @@ struct SportHubView: View {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .fill(LinearGradient(
                                     colors: [team.color.opacity(isPicked ? 0.16 : 0.09),
-                                             Color(hex: "#0E0F12")],
+                                             Color(hex: "#1B1B1B")],
                                     startPoint: .leading, endPoint: .trailing))
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .stroke(team.color.opacity(isPicked ? 0.75 : 0.30),
@@ -3114,10 +3078,10 @@ struct SportHubView: View {
             ydayTile(label: "HIT RATE",
                      value: "\(rate)",
                      unit: "%",
-                     color: Color(hex: "#D4FF3A"))
+                     color: Color(hex: "#C6FF34"))
             ydayTile(label: "TOP CONF",
                      value: bestText,
-                     color: Color(hex: "#D4FF3A"))
+                     color: Color(hex: "#C6FF34"))
         }
     }
 
@@ -3144,10 +3108,10 @@ struct SportHubView: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                 )
         )
     }
@@ -3206,7 +3170,7 @@ struct SportHubView: View {
             .padding(.vertical, 10)
             .overlay(alignment: .bottom) {
                 Rectangle()
-                    .fill(Color(hex: "#22252B"))
+                    .fill(Color(hex: "#2F2F2F"))
                     .frame(height: 1)
             }
 
@@ -3299,7 +3263,7 @@ struct SportHubView: View {
         // Per-sport tint from agent's spec (sport-hubs.jsx SPORT_GLOW).
         switch sport {
         case "basketball": return Color(hex: "#E75A28")    // orange
-        case "soccer":     return Color(hex: "#D4FF3A")    // lime
+        case "soccer":     return Color(hex: "#C6FF34")    // lime
         case "football":   return Color(hex: "#785AF0")    // purple
         case "baseball":   return Color(hex: "#FF5A36")    // red-orange
         case "hockey":     return Color(hex: "#5B8CFF")    // blue
@@ -3307,7 +3271,7 @@ struct SportHubView: View {
         case "f1":         return Color(hex: "#E10600")    // ferrari red
         case "tennis":     return Color(hex: "#C6FF3A")    // yellow-green (matches detail accent)
         case "cricket":    return Color(hex: "#FFD93D")    // saffron
-        default:           return Color(hex: "#D4FF3A")
+        default:           return Color(hex: "#C6FF34")
         }
     }
 
@@ -3333,10 +3297,10 @@ struct SmallPickHero: View {
                     Spacer()
                     Text("\(Int(pick.probability))% CONF")
                         .font(.mono(10, weight: .heavy))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .padding(.horizontal, 9)
                         .padding(.vertical, 4)
-                        .background(Color(hex: "#0A0B0D"))
+                        .background(Color(hex: "#171717"))
                         .clipShape(Capsule())
                 }
                 HStack(alignment: .center, spacing: 16) {
@@ -3344,7 +3308,7 @@ struct SmallPickHero: View {
                         Text(pick.shortDisplayPick.uppercased())
                             .font(.anton(34))
                             .lineSpacing(-6)
-                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .foregroundColor(Color(hex: "#171717"))
                             .lineLimit(2)
                             .minimumScaleFactor(0.5)
                         Text("\(t(.rd_over_prefix))\(opp.uppercased())")
@@ -3354,11 +3318,11 @@ struct SmallPickHero: View {
                     }
                     Spacer(minLength: 8)
                     HiFiConfidenceRing(percent: pick.probability,
-                                       color: Color(hex: "#0A0B0D"),
+                                       color: Color(hex: "#171717"),
                                        trackColor: Color.black.opacity(0.15),
                                        size: 72,
                                        stroke: 5,
-                                       numberColor: Color(hex: "#0A0B0D"),
+                                       numberColor: Color(hex: "#171717"),
                                        label: "AI CONF")
                 }
             }
@@ -3430,7 +3394,7 @@ struct CompactPickCard: View {
                         .foregroundColor(Color(hex: "#6E6F75"))
                     Text(pick.shortDisplayPick.uppercased())
                         .font(.archivo(11, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
@@ -3444,7 +3408,7 @@ struct CompactPickCard: View {
             .overlay(alignment: .top) {
                 Rectangle()
                     .frame(height: 1)
-                    .foregroundColor(Color(hex: "#22252B"))
+                    .foregroundColor(Color(hex: "#2F2F2F"))
             }
         }
         .padding(14)
@@ -3546,7 +3510,7 @@ struct ConfPill: View {
         return HStack(spacing: 5) {
             Text("AI")
                 .font(.mono(10, weight: .medium))
-                .foregroundColor(hot ? Color(hex: "#D4FF3A") : Color(hex: "#B9B7B0"))
+                .foregroundColor(hot ? Color(hex: "#C6FF34") : Color(hex: "#B9B7B0"))
             Text("\(Int(probability))%")
                 .font(.mono(10, weight: .heavy))
                 .foregroundColor(Color(hex: "#F5F3EE"))
@@ -3555,8 +3519,8 @@ struct ConfPill: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(Capsule().fill(hot ? Color(hex: "#D4FF3A").opacity(0.08) : Color(hex: "#16181C")))
-        .overlay(Capsule().stroke(hot ? Color(hex: "#D4FF3A").opacity(0.3) : Color(hex: "#2D3038"), lineWidth: 1))
+        .background(Capsule().fill(hot ? Color(hex: "#C6FF34").opacity(0.08) : Color(hex: "#232323")))
+        .overlay(Capsule().stroke(hot ? Color(hex: "#C6FF34").opacity(0.3) : Color(hex: "#3A3A3A"), lineWidth: 1))
         .animation(Pick1Springs.snappy, value: probability)
     }
 }
@@ -3570,6 +3534,7 @@ struct ProfileView: View {
     var isPro: Bool = false
     let onShowPaywall: () -> Void
     let onSignOut: () -> Void
+    var onBrowsePicks: () -> Void = {}
 
     /// Live, mutable user state. Read for display, mutated via the
     /// Edit Profile sheet (which calls auth.saveProfile).
@@ -3604,10 +3569,10 @@ struct ProfileView: View {
                                 .frame(width: 38, height: 38)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color(hex: "#101114"))
+                                        .fill(Color(hex: "#1D1D1D"))
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                                .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                                         )
                                 )
                         }
@@ -3677,6 +3642,10 @@ struct ProfileView: View {
             LegalSheet(doc: .terms, isOpen: $showTerms)
                 .presentationDragIndicator(.visible)
         }
+        .task { await refreshNotificationStatus() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            Task { await refreshNotificationStatus() }
+        }
     }
 
     private var profileHead: some View {
@@ -3692,14 +3661,14 @@ struct ProfileView: View {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(
-                                colors: [Color(hex: "#D4FF3A"), Color(hex: "#a8e000")],
+                                colors: [Color(hex: "#C6FF34"), Color(hex: "#a8e000")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ))
-                            .shadow(color: Color(hex: "#D4FF3A").opacity(0.3), radius: 10, x: 0, y: 8)
+                            .shadow(color: Color(hex: "#C6FF34").opacity(0.3), radius: 10, x: 0, y: 8)
                         Text(initial)
                             .font(.anton(32))
-                            .foregroundColor(Color(hex: "#0A0B0D"))
+                            .foregroundColor(Color(hex: "#171717"))
                     }
                     .frame(width: 72, height: 72)
 
@@ -3720,11 +3689,11 @@ struct ProfileView: View {
                                 .font(.archivoNarrow(9, weight: .bold))
                                 .tracking(1.8)
                         }
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(Color(hex: "#D4FF3A").opacity(0.08))
-                        .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+                        .background(Color(hex: "#C6FF34").opacity(0.08))
+                        .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.3), lineWidth: 1))
                         .clipShape(Capsule())
                     }
                     Spacer()
@@ -3736,8 +3705,8 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .topTrailing) {
             RadialGradient(
-                colors: [Color(hex: "#D4FF3A").opacity(0.22),
-                         Color(hex: "#D4FF3A").opacity(0.06),
+                colors: [Color(hex: "#C6FF34").opacity(0.22),
+                         Color(hex: "#C6FF34").opacity(0.06),
                          .clear],
                 center: UnitPoint(x: 0.5, y: 0.5),
                 startRadius: 0,
@@ -3789,7 +3758,7 @@ struct ProfileView: View {
         return "PICK1 FAN"
     }
 
-    @State private var notificationsOn: Bool = true
+    @State private var notificationsOn: Bool = false
     @State private var showLanguagePicker: Bool = false
     @State private var showPrivacySecurity: Bool = false
     @State private var showInvite: Bool = false
@@ -3836,7 +3805,7 @@ struct ProfileView: View {
     /// Hairline divider used between rows inside a grouped settings card.
     private var divider: some View {
         Rectangle()
-            .fill(Color(hex: "#22252B"))
+            .fill(Color(hex: "#2F2F2F"))
             .frame(height: 1)
             .padding(.leading, 62)   // align past the icon tile
     }
@@ -3853,7 +3822,7 @@ struct ProfileView: View {
             }
 
             // ── MY BETS (personal P&L) ─────────────────────────────
-            MyBetsCard(picks: vm.picks)
+            MyBetsCard(picks: vm.picks, onBrowse: onBrowsePicks)
 
             // ── ACCOUNT / PREFS ────────────────────────────────────
             VStack(alignment: .leading, spacing: 10) {
@@ -3865,7 +3834,10 @@ struct ProfileView: View {
                         icon: "bell.fill",
                         title: loc.t(.settings_notifications),
                         sub: loc.t(.settings_notifications_sub),
-                        isOn: $notificationsOn
+                        isOn: Binding(
+                            get: { notificationsOn },
+                            set: { updateNotificationPreference($0) }
+                        )
                     )
                     divider
                     settingsLinkRow(
@@ -3964,7 +3936,7 @@ struct ProfileView: View {
     /// (radial gradient + ink shadow) so the upsell feels consistent
     /// with the home-screen unlock affordance.
     private var profileUpgradeCard: some View {
-        let ink = Color(hex: "#0A0B0D")
+        let ink = Color(hex: "#171717")
         // Benefit-led conversion card: concrete value checklist + price anchor
         // instead of a bare "UPGRADE" ask. Weekly carries a 3-day StoreKit
         // intro-offer trial again (2026-07); trial copy is eligibility-gated.
@@ -3993,7 +3965,7 @@ struct ProfileView: View {
                     // home unlock card's "→" affordance.
                     Image(systemName: "arrow.right")
                         .font(.system(size: 14, weight: .heavy))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .frame(width: 40, height: 40)
                         .background(Circle().fill(ink))
                 }
@@ -4006,7 +3978,7 @@ struct ProfileView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 9, weight: .heavy))
-                                .foregroundColor(Color(hex: "#D4FF3A"))
+                                .foregroundColor(Color(hex: "#C6FF34"))
                                 .frame(width: 17, height: 17)
                                 .background(Circle().fill(ink))
                             Text(b)
@@ -4022,7 +3994,7 @@ struct ProfileView: View {
                     Text(subs.introOfferEligible ? "3 DAYS FREE · THEN $14.99/WK" : "FROM $14.99/WK")
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.6)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(Capsule().fill(ink))
                     Text(t(.rd_cancel_anytime))
@@ -4061,6 +4033,36 @@ struct ProfileView: View {
         .padding(14)
     }
 
+    /// Mirror the real iOS authorization state. The prior toggle only
+    /// changed local view state, so Profile could say alerts were enabled
+    /// even when the system had denied them.
+    private func updateNotificationPreference(_ wantsOn: Bool) {
+        if wantsOn {
+            Task {
+                let granted = (try? await UNUserNotificationCenter.current()
+                    .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+                notificationsOn = granted
+                Analytics.notificationPermissionResult(granted: granted, source: "profile")
+                if granted { PushManager.shared.registerIfAuthorized() }
+            }
+        } else {
+            Analytics.track("notification_settings_opened", ["source": "profile_disable"])
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                openURL(url)
+            }
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            notificationsOn = true
+        default:
+            notificationsOn = false
+        }
+    }
+
     /// Row with icon + title/sub + chevron (or trailing label).
     /// Used for Subscription, Help, Sign Out, Delete, etc.
     private func settingsLinkRow(icon: String, title: String, sub: String,
@@ -4083,11 +4085,11 @@ struct ProfileView: View {
                     Text(t)
                         .font(.mono(10, weight: .heavy))
                         .tracking(0.5)
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(Color(hex: "#D4FF3A").opacity(0.10)))
-                        .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.28),
+                        .background(Capsule().fill(Color(hex: "#C6FF34").opacity(0.10)))
+                        .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.28),
                                                    lineWidth: 1))
                 } else {
                     Image(systemName: "chevron.right")
@@ -4104,15 +4106,15 @@ struct ProfileView: View {
     private func settingsIconTile(_ icon: String, danger: Bool) -> some View {
         Image(systemName: icon)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundColor(danger ? Color(hex: "#FF5A36") : Color(hex: "#D4FF3A"))
+            .foregroundColor(danger ? Color(hex: "#FF5A36") : Color(hex: "#C6FF34"))
             .frame(width: 34, height: 34)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(hex: "#16181C"))
+                    .fill(Color(hex: "#232323"))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
             )
     }
 }
@@ -4125,6 +4127,7 @@ struct WinsView: View {
     @ObservedObject var vm: PicksViewModel
     let onClose: () -> Void
     let onTapPick: (Pick) -> Void
+    var onBrowsePicks: () -> Void = {}
 
     /// Persistent favorites — populated by tapping the star on
     /// MatchDetailView. Driving the list off this store (instead of
@@ -4141,7 +4144,7 @@ struct WinsView: View {
                          titleAccent: t(.rd_picks_word),
                          sub: [t(.rd_saved_matches, count: wonPicks.count),
                                t(.rd_tap_star_favorite)],
-                         glow: Color(hex: "#D4FF3A"))
+                         glow: Color(hex: "#C6FF34"))
                     .padding(.bottom, 6)
 
                 favActionsRow
@@ -4216,7 +4219,7 @@ struct WinsView: View {
                             Text(t(.rd_clear_all))
                                 .font(.archivoNarrow(10, weight: .heavy))
                                 .tracking(1.8)
-                                .foregroundColor(Color(hex: "#0A0B0D"))
+                                .foregroundColor(Color(hex: "#171717"))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 7)
                                 .background(Capsule().fill(Color(hex: "#FF5A36")))
@@ -4235,8 +4238,8 @@ struct WinsView: View {
                         .foregroundColor(Color(hex: "#B9B7B0"))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 7)
-                        .background(Capsule().fill(Color(hex: "#101114")))
-                        .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                        .background(Capsule().fill(Color(hex: "#1D1D1D")))
+                        .overlay(Capsule().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
@@ -4256,12 +4259,28 @@ struct WinsView: View {
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
+            Button {
+                Analytics.emptyStateAction(screen: "my_picks")
+                onBrowsePicks()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "sparkles")
+                    Text("BROWSE TODAY'S PICKS")
+                        .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
+                }
+                .foregroundColor(Color(hex: "#171717"))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(Capsule().fill(Color(hex: "#C6FF34")))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
         }
         .padding(.vertical, 40)
         .frame(maxWidth: .infinity)
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color(hex: "#2D3038"), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .stroke(Color(hex: "#3A3A3A"), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
         )
     }
 
@@ -4325,7 +4344,7 @@ struct WinsView: View {
                     Text(teamShortName(pick.homeTeam, sport: pick.sport))
                         .font(.anton(18))
                         .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(homeStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -4352,7 +4371,7 @@ struct WinsView: View {
                     Text(teamShortName(pick.awayTeam, sport: pick.sport))
                         .font(.anton(18))
                         .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(awayStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                     TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
                 }
@@ -4373,7 +4392,7 @@ struct WinsView: View {
                     // Same hypothetical money framing as Latest Wins.
                     Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
                         .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                 } else {
                     Text("· \(pick.keyFactor ?? pick.league.uppercased())")
                         .font(.mono(10))
@@ -4388,15 +4407,15 @@ struct WinsView: View {
                         .font(.system(size: 10, weight: .heavy))
                         .foregroundColor(Color(hex: "#6E6F75"))
                         .frame(width: 26, height: 26)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: "#16181C")))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "#22252B"), lineWidth: 1))
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: "#232323")))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
             .padding(.top, 10)
             .overlay(alignment: .top) {
                 DashedLine()
-                    .stroke(Color(hex: "#22252B"),
+                    .stroke(Color(hex: "#2F2F2F"),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     .frame(height: 1)
             }
@@ -4429,10 +4448,10 @@ struct WinsView: View {
                 Text(t(.rd_won))
                     .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#D4FF3A"))
+            .foregroundColor(Color(hex: "#C6FF34"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#D4FF3A").opacity(0.1))
-            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#C6FF34").opacity(0.1))
+            .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .lost:
             HStack(spacing: 5) {
@@ -4465,8 +4484,8 @@ struct WinsView: View {
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color(hex: "#16181C"))
-                .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                .background(Color(hex: "#232323"))
+                .overlay(Capsule().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                 .clipShape(Capsule())
         }
     }
@@ -4558,7 +4577,7 @@ struct PredictionHistoryView: View {
                 }
             }
         }
-        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .background(Color(hex: "#171717").ignoresSafeArea())
     }
 
     // MARK: data
@@ -4596,7 +4615,7 @@ struct PredictionHistoryView: View {
 
     private var grabber: some View {
         Capsule()
-            .fill(Color(hex: "#2D3038"))
+            .fill(Color(hex: "#3A3A3A"))
             .frame(width: 38, height: 5)
             .padding(.top, 8)
             .padding(.bottom, 6)
@@ -4608,7 +4627,7 @@ struct PredictionHistoryView: View {
                 Text(t(.rd_track))
                     .font(.anton(26)).foregroundColor(Color(hex: "#F5F3EE"))
                 + Text(t(.rd_record))
-                    .font(.anton(26)).foregroundColor(Color(hex: "#D4FF3A"))
+                    .font(.anton(26)).foregroundColor(Color(hex: "#C6FF34"))
                 Text("\(wonCount)–\(lostCount) \(t(.rd_on_graded))")
                     .font(.archivoNarrow(10, weight: .bold))
                     .tracking(2)
@@ -4620,8 +4639,8 @@ struct PredictionHistoryView: View {
                     .font(.system(size: 12, weight: .heavy))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .frame(width: 32, height: 32)
-                    .background(Circle().fill(Color(hex: "#16181C")))
-                    .overlay(Circle().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    .background(Circle().fill(Color(hex: "#232323")))
+                    .overlay(Circle().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
             }
             .buttonStyle(.plain)
         }
@@ -4640,14 +4659,14 @@ struct PredictionHistoryView: View {
                     Text("\(filterTitle(f)) \(count)")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(1.6)
-                        .foregroundColor(filter == f ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                        .foregroundColor(filter == f ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(
-                            Capsule().fill(filter == f ? Color(hex: "#D4FF3A") : Color(hex: "#101114"))
+                            Capsule().fill(filter == f ? Color(hex: "#C6FF34") : Color(hex: "#1D1D1D"))
                         )
                         .overlay(
-                            Capsule().stroke(filter == f ? Color.clear : Color(hex: "#22252B"), lineWidth: 1)
+                            Capsule().stroke(filter == f ? Color.clear : Color(hex: "#2F2F2F"), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
@@ -4705,7 +4724,7 @@ struct PredictionHistoryView: View {
                     Text(teamShortName(pick.homeTeam, sport: pick.sport))
                         .font(.anton(17))
                         .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(homeStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -4727,7 +4746,7 @@ struct PredictionHistoryView: View {
                     Text(teamShortName(pick.awayTeam, sport: pick.sport))
                         .font(.anton(17))
                         .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(awayStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                     TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
                 }
@@ -4749,7 +4768,7 @@ struct PredictionHistoryView: View {
             .padding(.top, 10)
             .overlay(alignment: .top) {
                 DashedLine()
-                    .stroke(Color(hex: "#22252B"),
+                    .stroke(Color(hex: "#2F2F2F"),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     .frame(height: 1)
             }
@@ -4766,10 +4785,10 @@ struct PredictionHistoryView: View {
             Text(won ? "WON" : "LOST")
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
         }
-        .foregroundColor(won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A"))
+        .foregroundColor(won ? Color(hex: "#C6FF34") : Color(hex: "#FF5A5A"))
         .padding(.horizontal, 8).padding(.vertical, 3)
-        .background((won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A")).opacity(0.1))
-        .overlay(Capsule().stroke((won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A")).opacity(0.3), lineWidth: 1))
+        .background((won ? Color(hex: "#C6FF34") : Color(hex: "#FF5A5A")).opacity(0.1))
+        .overlay(Capsule().stroke((won ? Color(hex: "#C6FF34") : Color(hex: "#FF5A5A")).opacity(0.3), lineWidth: 1))
         .clipShape(Capsule())
     }
 
@@ -4782,10 +4801,10 @@ struct PredictionHistoryView: View {
         let dollars = Int((pick.decimalOdds * 100).rounded())
         Text("$100 → $\(dollars)")
             .font(.mono(11, weight: .bold))
-            .foregroundColor(won ? Color(hex: "#0A0B0D") : Color(hex: "#FF5A5A"))
+            .foregroundColor(won ? Color(hex: "#171717") : Color(hex: "#FF5A5A"))
             .padding(.horizontal, 9).padding(.vertical, 4)
             .background(
-                Capsule().fill(won ? Color(hex: "#D4FF3A") : Color(hex: "#FF5A5A").opacity(0.12))
+                Capsule().fill(won ? Color(hex: "#C6FF34") : Color(hex: "#FF5A5A").opacity(0.12))
             )
             .overlay(
                 Capsule().stroke(won ? Color.clear : Color(hex: "#FF5A5A").opacity(0.35), lineWidth: 1)
@@ -4814,6 +4833,7 @@ struct LiveView: View {
     var isPro: Bool = true
     let onTapPick: (Pick) -> Void
     var onUnlock: () -> Void = {}
+    var onBrowsePicks: () -> Void = {}
 
     @EnvironmentObject private var favorites: FavoritesStore
     /// Single filter on the Live page: everything live (default) vs
@@ -5064,15 +5084,15 @@ struct LiveView: View {
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.6)
                 }
-                .foregroundColor(favoritesOnly ? Color(hex: "#0A0B0D") : Color(hex: "#B9B7B0"))
+                .foregroundColor(favoritesOnly ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(Capsule().fill(favoritesOnly
                                            ? Color(hex: "#F5F3EE")
-                                           : Color(hex: "#101114")))
+                                           : Color(hex: "#1D1D1D")))
                 .overlay(Capsule().stroke(favoritesOnly
                                           ? Color(hex: "#F5F3EE")
-                                          : Color(hex: "#22252B"), lineWidth: 1))
+                                          : Color(hex: "#2F2F2F"), lineWidth: 1))
             }
             .buttonStyle(.plain)
             Spacer()
@@ -5087,7 +5107,7 @@ struct LiveView: View {
                 Text("\(t(.rd_next_up)) · \(minutesUntil(next))")
                     .font(.archivoNarrow(9, weight: .bold))
                     .tracking(2.4)
-                    .foregroundColor(Color(hex: "#D4FF3A"))
+                    .foregroundColor(Color(hex: "#C6FF34"))
                 Text("\(teamShortName(next.homeTeam)) vs \(teamShortName(next.awayTeam))")
                     .font(.anton(20))
                     .foregroundColor(Color(hex: "#F5F3EE"))
@@ -5109,13 +5129,13 @@ struct LiveView: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(LinearGradient(
-                    colors: [Color(hex: "#D4FF3A").opacity(0.10),
-                             Color(hex: "#D4FF3A").opacity(0.03)],
+                    colors: [Color(hex: "#C6FF34").opacity(0.10),
+                             Color(hex: "#C6FF34").opacity(0.03)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color(hex: "#D4FF3A").opacity(0.28), lineWidth: 1)
+                        .stroke(Color(hex: "#C6FF34").opacity(0.28), lineWidth: 1)
                 )
         )
     }
@@ -5160,6 +5180,24 @@ struct LiveView: View {
                 .font(.archivo(12, weight: .regular))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .multilineTextAlignment(.center)
+            if let next = nextUpcomingPick {
+                Text("NEXT · \(next.localizedScheduleDisplay ?? "SOON")")
+                    .font(.mono(10, weight: .bold)).tracking(1.1)
+                    .foregroundColor(Color(hex: "#C6FF34"))
+                    .padding(.top, 5)
+            }
+            Button {
+                Analytics.emptyStateAction(screen: "live")
+                onBrowsePicks()
+            } label: {
+                Text("BROWSE TODAY'S PICKS")
+                    .font(.archivoNarrow(11, weight: .bold)).tracking(1.4)
+                    .foregroundColor(Color(hex: "#171717"))
+                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .background(Capsule().fill(Color(hex: "#C6FF34")))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 7)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 50)
@@ -5230,8 +5268,8 @@ struct LiveView: View {
             TimelineView(.periodic(from: .now, by: 30)) { _ in
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color(hex: "#22252B"))
-                        Capsule().fill(Color(hex: "#D4FF3A"))
+                        Capsule().fill(Color(hex: "#2F2F2F"))
+                        Capsule().fill(Color(hex: "#C6FF34"))
                             .frame(width: geo.size.width * gameProgress(score))
                             .animation(.easeOut(duration: 0.6), value: gameProgress(score))
                     }
@@ -5254,7 +5292,7 @@ struct LiveView: View {
             .padding(.top, 12)
             .overlay(alignment: .top) {
                 DashedLine()
-                    .stroke(Color(hex: "#22252B"),
+                    .stroke(Color(hex: "#2F2F2F"),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     .frame(height: 1)
             }
@@ -5353,7 +5391,7 @@ struct AllPicksView: View {
                 PageHero(title: t(.rd_todays_word),
                          titleAccent: t(.rd_picks_word),
                          sub: [t(.rd_n_picks, count: vm.todayPicks.count), t(.rd_avg_conf, count: Int(avgConf))],
-                         glow: Color(hex: "#D4FF3A"))
+                         glow: Color(hex: "#C6FF34"))
                     .padding(.bottom, 18)
                 SportFilter(vm: vm)
                     .padding(.bottom, 12)
@@ -5427,7 +5465,7 @@ struct LanguagePickerSheet: View {
                     Spacer()
                     Button(loc.t(.action_done)) { isOpen = false }
                         .font(.archivo(13, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
@@ -5439,7 +5477,7 @@ struct LanguagePickerSheet: View {
                         languageRow(lang)
                         if lang.code != ProfileView.languages.last?.code {
                             Rectangle()
-                                .fill(Color(hex: "#22252B"))
+                                .fill(Color(hex: "#2F2F2F"))
                                 .frame(height: 1)
                                 .padding(.leading, 56)
                         }
@@ -5447,18 +5485,18 @@ struct LanguagePickerSheet: View {
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color(hex: "#101114"))
+                        .fill(Color(hex: "#1D1D1D"))
                         .overlay(
                             RoundedRectangle(cornerRadius: 22,
                                              style: .continuous)
-                                .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                         )
                 )
                 .padding(.horizontal, 16)
                 Spacer().frame(height: 40)
             }
         }
-        .background(Color(hex: "#0A0B0D").ignoresSafeArea())
+        .background(Color(hex: "#171717").ignoresSafeArea())
         .preferredColorScheme(.dark)
     }
 
@@ -5482,13 +5520,13 @@ struct LanguagePickerSheet: View {
                     .frame(width: 38, height: 38)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(hex: "#16181C"))
+                            .fill(Color(hex: "#232323"))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(selection == lang.code
-                                    ? Color(hex: "#D4FF3A").opacity(0.4)
-                                    : Color(hex: "#22252B"),
+                                    ? Color(hex: "#C6FF34").opacity(0.4)
+                                    : Color(hex: "#2F2F2F"),
                                     lineWidth: 1)
                     )
                 VStack(alignment: .leading, spacing: 2) {
@@ -5505,12 +5543,12 @@ struct LanguagePickerSheet: View {
                 Text(lang.code.uppercased())
                     .font(.mono(10, weight: .heavy))
                     .foregroundColor(selection == lang.code
-                                     ? Color(hex: "#D4FF3A")
+                                     ? Color(hex: "#C6FF34")
                                      : Color(hex: "#6E6F75"))
                 if selection == lang.code {
                     Image(systemName: "checkmark")
                         .font(.system(size: 13, weight: .heavy))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                 }
             }
             .padding(14)
@@ -5561,7 +5599,7 @@ struct PrivacySecuritySheet: View {
                                 title: "Email",
                                 value: auth.userEmail ?? "—")
                         Rectangle()
-                            .fill(Color(hex: "#22252B"))
+                            .fill(Color(hex: "#2F2F2F"))
                             .frame(height: 1)
                             .padding(.leading, 56)
                         infoRow(icon: "key.fill",
@@ -5570,10 +5608,10 @@ struct PrivacySecuritySheet: View {
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
                     .padding(.horizontal, 18)
@@ -5616,19 +5654,19 @@ struct PrivacySecuritySheet: View {
                     Button(action: save) {
                         Group {
                             if saving {
-                                ProgressView().tint(Color(hex: "#0A0B0D"))
+                                ProgressView().tint(Color(hex: "#171717"))
                             } else {
                                 Text(didSave ? "Update Password" : "Set Password")
                                     .font(.archivo(14, weight: .heavy))
                             }
                         }
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(canSave ? Color(hex: "#D4FF3A")
-                                              : Color(hex: "#2D3038"))
+                                .fill(canSave ? Color(hex: "#C6FF34")
+                                              : Color(hex: "#3A3A3A"))
                         )
                     }
                     .buttonStyle(.plain)
@@ -5668,10 +5706,10 @@ struct PrivacySecuritySheet: View {
                     .frame(width: 38, height: 38)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
             }
@@ -5700,15 +5738,15 @@ struct PrivacySecuritySheet: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
                 .frame(width: 34, height: 34)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(hex: "#16181C"))
+                        .fill(Color(hex: "#232323"))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -5728,7 +5766,7 @@ struct PrivacySecuritySheet: View {
                                 icon: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
             SecureField("", text: text, prompt:
                 Text(placeholder).foregroundColor(Color(hex: "#6E6F75")))
                 .font(.archivo(14, weight: .medium))
@@ -5740,10 +5778,10 @@ struct PrivacySecuritySheet: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                 )
         )
     }
@@ -5831,10 +5869,10 @@ struct LegalSheet: View {
                     .frame(width: 38, height: 38)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
             }
@@ -5892,14 +5930,14 @@ struct EditProfileSheet: View {
                         ZStack {
                             Circle()
                                 .fill(LinearGradient(
-                                    colors: [Color(hex: "#D4FF3A"), Color(hex: "#a8e000")],
+                                    colors: [Color(hex: "#C6FF34"), Color(hex: "#a8e000")],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ))
-                                .shadow(color: Color(hex: "#D4FF3A").opacity(0.3), radius: 14, x: 0, y: 12)
+                                .shadow(color: Color(hex: "#C6FF34").opacity(0.3), radius: 14, x: 0, y: 12)
                             Text(initialPreview)
                                 .font(.anton(46))
-                                .foregroundColor(Color(hex: "#0A0B0D"))
+                                .foregroundColor(Color(hex: "#171717"))
                         }
                         .frame(width: 100, height: 100)
                         Spacer()
@@ -5920,10 +5958,10 @@ struct EditProfileSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
                     .padding(.horizontal, 18)
@@ -5944,24 +5982,24 @@ struct EditProfileSheet: View {
                     fieldLabel(t(.profile_dob))
                     HStack {
                         Image(systemName: "calendar")
-                            .foregroundColor(Color(hex: "#D4FF3A"))
+                            .foregroundColor(Color(hex: "#C6FF34"))
                         DatePicker("", selection: $dob,
                                    in: ...Date(),
                                    displayedComponents: .date)
                             .labelsHidden()
                             .colorScheme(.dark)
                             .datePickerStyle(.compact)
-                            .accentColor(Color(hex: "#D4FF3A"))
+                            .accentColor(Color(hex: "#C6FF34"))
                         Spacer()
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
                     .padding(.horizontal, 18)
@@ -5979,18 +6017,18 @@ struct EditProfileSheet: View {
                     Button(action: save) {
                         Group {
                             if saving {
-                                ProgressView().tint(Color(hex: "#0A0B0D"))
+                                ProgressView().tint(Color(hex: "#171717"))
                             } else {
                                 Text(t(.rd_save_changes))
                                     .font(.archivo(14, weight: .heavy))
                             }
                         }
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(canSave ? Color(hex: "#D4FF3A") : Color(hex: "#2D3038"))
+                                .fill(canSave ? Color(hex: "#C6FF34") : Color(hex: "#3A3A3A"))
                         )
                     }
                     .buttonStyle(.plain)
@@ -6007,7 +6045,7 @@ struct EditProfileSheet: View {
                     // destructive operations in.
                     if onDeleteAccount != nil {
                         Rectangle()
-                            .fill(Color(hex: "#22252B"))
+                            .fill(Color(hex: "#2F2F2F"))
                             .frame(height: 1)
                             .padding(.horizontal, 18)
                             .padding(.bottom, 18)
@@ -6047,11 +6085,11 @@ struct EditProfileSheet: View {
                     .frame(width: 34, height: 34)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(hex: "#16181C"))
+                            .fill(Color(hex: "#232323"))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                            .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                     )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t(.profile_delete_account))
@@ -6069,7 +6107,7 @@ struct EditProfileSheet: View {
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(hex: "#101114"))
+                    .fill(Color(hex: "#1D1D1D"))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(Color(hex: "#FF5A36").opacity(0.15), lineWidth: 1)
@@ -6088,10 +6126,10 @@ struct EditProfileSheet: View {
                     .frame(width: 38, height: 38)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "#101114"))
+                            .fill(Color(hex: "#1D1D1D"))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                                    .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                             )
                     )
             }
@@ -6121,7 +6159,7 @@ struct EditProfileSheet: View {
                               keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
             TextField("", text: text, prompt:
                 Text(placeholder).foregroundColor(Color(hex: "#6E6F75")))
                 .font(.archivo(14, weight: .medium))
@@ -6133,10 +6171,10 @@ struct EditProfileSheet: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(hex: "#22252B"), lineWidth: 1)
+                        .stroke(Color(hex: "#2F2F2F"), lineWidth: 1)
                 )
         )
         .padding(.horizontal, 18)
@@ -6424,7 +6462,7 @@ struct SettledOutcomeCard: View {
                     Text(teamShortName(pick.homeTeam, sport: pick.sport))
                         .font(.anton(18))
                         .foregroundColor(homeStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(homeStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(homeStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -6446,7 +6484,7 @@ struct SettledOutcomeCard: View {
                     Text(teamShortName(pick.awayTeam, sport: pick.sport))
                         .font(.anton(18))
                         .foregroundColor(awayStrike ? Color(hex: "#6E6F75") : Color(hex: "#F5F3EE"))
-                        .strikethrough(awayStrike, color: Color(hex: "#2D3038"))
+                        .strikethrough(awayStrike, color: Color(hex: "#3A3A3A"))
                         .lineLimit(1)
                     TeamLogo(sport: pick.sport, team: pick.awayTeam, size: .small)
                 }
@@ -6464,7 +6502,7 @@ struct SettledOutcomeCard: View {
                 if state == .won {
                     Text("$100 → $\(Int((pick.decimalOdds * 100).rounded()))")
                         .font(.mono(10, weight: .bold))
-                        .foregroundColor(Color(hex: "#D4FF3A"))
+                        .foregroundColor(Color(hex: "#C6FF34"))
                 } else {
                     Text(pick.keyFactor ?? pick.league.uppercased())
                         .font(.mono(10, weight: .medium))
@@ -6475,7 +6513,7 @@ struct SettledOutcomeCard: View {
             .padding(.top, 10)
             .overlay(alignment: .top) {
                 DashedLine()
-                    .stroke(Color(hex: "#22252B"),
+                    .stroke(Color(hex: "#2F2F2F"),
                             style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     .frame(height: 1)
             }
@@ -6502,10 +6540,10 @@ struct SettledOutcomeCard: View {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
                 Text(t(.rd_won)).font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
             }
-            .foregroundColor(Color(hex: "#D4FF3A"))
+            .foregroundColor(Color(hex: "#C6FF34"))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color(hex: "#D4FF3A").opacity(0.10))
-            .overlay(Capsule().stroke(Color(hex: "#D4FF3A").opacity(0.3), lineWidth: 1))
+            .background(Color(hex: "#C6FF34").opacity(0.10))
+            .overlay(Capsule().stroke(Color(hex: "#C6FF34").opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
         case .lost:
             HStack(spacing: 5) {
@@ -6536,8 +6574,8 @@ struct SettledOutcomeCard: View {
                 .font(.archivoNarrow(9, weight: .bold)).tracking(1.8)
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color(hex: "#16181C"))
-                .overlay(Capsule().stroke(Color(hex: "#22252B"), lineWidth: 1))
+                .background(Color(hex: "#232323"))
+                .overlay(Capsule().stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
                 .clipShape(Capsule())
         }
     }

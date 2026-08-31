@@ -86,7 +86,7 @@ struct UpdateBanner: View {
         HStack(spacing: 12) {
             Image(systemName: "arrow.down.circle.fill")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(Color(hex: "#D4FF3A"))
+                .foregroundColor(Color(hex: "#C6FF34"))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(loc.t(.update_title))
@@ -106,9 +106,9 @@ struct UpdateBanner: View {
                     Text(loc.t(.update_cta))
                         .font(.archivoNarrow(11, weight: .heavy))
                         .tracking(1.2)
-                        .foregroundColor(Color(hex: "#0A0B0D"))
+                        .foregroundColor(Color(hex: "#171717"))
                         .padding(.horizontal, 14).padding(.vertical, 7)
-                        .background(Capsule().fill(Color(hex: "#D4FF3A")))
+                        .background(Capsule().fill(Color(hex: "#C6FF34")))
                 }
                 .buttonStyle(.plain)
 
@@ -125,10 +125,10 @@ struct UpdateBanner: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(hex: "#16181C"))
+                .fill(Color(hex: "#232323"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color(hex: "#D4FF3A").opacity(0.35), lineWidth: 1)
+                        .stroke(Color(hex: "#C6FF34").opacity(0.35), lineWidth: 1)
                 )
                 .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
         )

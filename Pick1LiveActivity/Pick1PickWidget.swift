@@ -8,7 +8,7 @@
 import WidgetKit
 import SwiftUI
 
-private let wlime = Color(red: 0.831, green: 1.0, blue: 0.227)
+private let wlime = Color(red: 0.776, green: 1.0, blue: 0.204)
 private let wink  = Color(red: 0.027, green: 0.031, blue: 0.039)
 
 // MARK: - Model + fetch

@@ -28,11 +28,11 @@ enum WC {
     static let red        = Color(hex: "#E30613")
 
     // Shared Pick1 tokens reused by the design
-    static let accent    = Color(hex: "#D4FF3A")
-    static let accentInk = Color(hex: "#0A0B0D")
-    static let bg        = Color(hex: "#0A0B0D")
-    static let panel     = Color(hex: "#101114")
-    static let line      = Color(hex: "#22252B")
+    static let accent    = Color(hex: "#C6FF34")
+    static let accentInk = Color(hex: "#171717")
+    static let bg        = Color(hex: "#171717")
+    static let panel     = Color(hex: "#1D1D1D")
+    static let line      = Color(hex: "#2F2F2F")
     static let ink       = Color(hex: "#F5F3EE")
     static let ink2      = Color(hex: "#B9B7B0")
     static let mute      = Color(hex: "#6E6F75")

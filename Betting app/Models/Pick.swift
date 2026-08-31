@@ -458,6 +458,52 @@ extension Pick {
         let ampm = parts[0] < 12 ? "AM" : "PM"
         return parts[1] == 0 ? "\(h12) \(ampm)" : "\(h12):\(String(format: "%02d", parts[1])) \(ampm)"
     }
+
+    /// Scheduled kickoff as an absolute date. The pipeline stores
+    /// `game_date` + `start_time` in America/New_York; converting that pair
+    /// once lets every UI surface present the game in the viewer's timezone.
+    var scheduledStartDate: Date? {
+        guard let t = startTime else { return nil }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "America/New_York")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.date(from: "\(gameDate) \(t)")
+    }
+
+    /// Kickoff formatted in the device's locale and timezone. Unlike
+    /// `startTimeDisplay`, this should be used for user-facing screens.
+    var localizedStartTimeDisplay: String? {
+        guard let date = scheduledStartDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.timeZone = .autoupdatingCurrent
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    /// Human schedule label in local time: TODAY · 8:30 PM,
+    /// TOMORROW · 12:30 AM, or FRI · 7:00 PM.
+    var localizedScheduleDisplay: String? {
+        guard let date = scheduledStartDate,
+              let time = localizedStartTimeDisplay else { return nil }
+        let cal = Calendar.autoupdatingCurrent
+        let day: String
+        if cal.isDateInToday(date) {
+            day = "TODAY"
+        } else if cal.isDateInTomorrow(date) {
+            day = "TOMORROW"
+        } else {
+            let formatter = DateFormatter()
+            formatter.locale = .autoupdatingCurrent
+            formatter.timeZone = .autoupdatingCurrent
+            formatter.dateFormat = "EEE"
+            day = formatter.string(from: date).uppercased()
+        }
+        return "\(day) · \(time)"
+    }
 }
 
 // MARK: - Pick render state
@@ -474,7 +520,7 @@ enum PickRenderState {
     case upcoming          // pending and game is in the future
 }
 
-enum ConfidenceTier {
+enum ConfidenceTier: Equatable {
     case high   // 80%+
     case medium // 65-79%
     case low    // below 65%
@@ -552,5 +598,32 @@ struct LiveScore: Identifiable, Codable, Equatable {
         return s.contains("final")
             || s == "f" || s == "ft" || s == "aet" || s == "closed"
             || s == "f/ot" || s == "f/so" || s == "ended"
+    }
+}
+
+extension BettingProp {
+    /// Decimal odds to quote this market at, and whether they came from a book.
+    ///
+    /// The detail page promised "a return on EVERY market: real book odds get
+    /// the solid pill; otherwise an estimate implied from our own probability"
+    /// but only the first half was ever written, so any prop the pipeline
+    /// found no quote for showed a confidence figure and no money at all.
+    ///
+    /// The estimate uses the same clamp as `Pick.decimalOdds` rather than a
+    /// raw 100/p, so the two never disagree: probabilities are held to
+    /// 40-90% and the price floored at 1.20. Without that a prop called at
+    /// 95% would advertise a 1.05x return, which is both misleading and
+    /// nothing any book would actually offer.
+    var quotedOdds: (value: Double, isMarket: Bool)? {
+        if let o = odds, o > 1.0 { return (o, true) }
+        guard let p = probability, p > 0 else { return nil }
+        let clamped = max(0.40, min(0.90, Double(p) / 100.0))
+        return (max(1.20, 1.0 / clamped), false)
+    }
+
+    /// "$100 → $182" on the reference stake the rest of the app quotes.
+    var returnOnHundred: String? {
+        guard let q = quotedOdds else { return nil }
+        return "$100 → $\(Int((100 * q.value).rounded()))"
     }
 }

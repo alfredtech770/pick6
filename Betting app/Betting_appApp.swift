@@ -73,7 +73,28 @@ struct Betting_appApp: App {
                 // app without a session (public feeds work; account features
                 // show signed-out states). Screenshots + design review only —
                 // compiled out of Release.
-                if CommandLine.arguments.contains("-showHomeUnauthenticated") {
+                if CommandLine.arguments.contains("-showHomeV4") {
+                    Pick1HomeV4DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showOnboardingV2") {
+                    Pick1OnboardingV2DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showWinBackV2") {
+                    Pick1WinBackV2DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showProfileV2") {
+                    Pick1ProfileV2DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showPaywallV2") {
+                    Pick1PaywallV2DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showHomeV2") {
+                    // Design review for Home v2 ("Switch Style"). Standalone on
+                    // purpose: v2 does not yet carry the free/Pro lock, so it
+                    // must not stand in for the real home outside this flag.
+                    Pick1HomeV2DebugHost()
+                        .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showHomeUnauthenticated") {
                     Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
                 } else {
@@ -118,12 +139,16 @@ struct Betting_appApp: App {
         // ArchivoNarrow = small-caps labels, JetBrainsMono = stats/numbers).
         // BarlowCondensed remains for legacy onboarding screens.
         let fontNames = [
-            // Display
+            // Inter — display, body and labels (see the Font extension in
+            // Pick1HomeHiFi.swift). InterDisplay is the large-text optical size.
+            "InterDisplay-Bold", "InterDisplay-Black",
+            "Inter-Regular", "Inter-Medium", "Inter-SemiBold",
+            "Inter-Bold", "Inter-ExtraBold", "Inter-Black",
+            // Superseded by Inter, still registered for the legacy screens
+            // that name these faces directly rather than going through Font.
             "Anton-Regular",
-            // UI sans
             "Archivo-Regular", "Archivo-Medium", "Archivo-SemiBold",
             "Archivo-Bold", "Archivo-ExtraBold", "Archivo-Black",
-            // Narrow labels
             "ArchivoNarrow-Medium", "ArchivoNarrow-SemiBold", "ArchivoNarrow-Bold",
             // Stats / numbers
             "JetBrainsMono-Regular", "JetBrainsMono-Medium",

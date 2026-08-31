@@ -132,9 +132,17 @@ final class SubscriptionManager: ObservableObject {
     /// Lifetime was REMOVED from the lineup 2026-07 (also pulled from sale
     /// in ASC). `lifetimeProductId` stays defined and the entitlement path
     /// still honors it so any past purchaser keeps Pro forever.
+    /// Auto-renewable annual plan. NOT yet created in App Store Connect: until
+    /// it is, `Product.products(for:)` simply omits it and every screen that
+    /// reads `products` shows the two plans that do exist. Create it in the
+    /// "Pick1 Pro" group with the same 3-day introductory offer and it appears
+    /// on its own.
+    static let annualProductId = "com.pick1.app.pro.annual"
+
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
+        annualProductId,
         dayPassProductId,
     ]
 
@@ -415,6 +423,73 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
+    // MARK: - Renewal state
+
+    /// What StoreKit knows about the *next* billing event, as opposed to the
+    /// current entitlement. `isPro` alone cannot tell a converting trialist
+    /// from one who has already switched auto-renew off, and that distinction
+    /// is the whole game: of 457 expired trials in production, 395 ended
+    /// EXPIRED/VOLUNTARY (the user turned renewal off during the 3 free days)
+    /// and 60 ended on failed payments. Those two need opposite interventions.
+    struct RenewalState: Equatable {
+        var isInTrial = false
+        var willAutoRenew = true
+        var isInBillingRetry = false
+        var expiration: Date?
+
+        /// The user is mid-trial and has already opted out — they keep access
+        /// until expiry and will never be charged unless they change it back.
+        var isLapsingTrial: Bool { isInTrial && !willAutoRenew }
+
+        var hoursToExpiry: Double? {
+            guard let expiration else { return nil }
+            return expiration.timeIntervalSinceNow / 3600
+        }
+    }
+
+    @Published private(set) var renewal = RenewalState()
+
+    /// Reads `Product.SubscriptionInfo.Status` for our subscription group.
+    /// Safe to call often; it is a local StoreKit read, not a network round
+    /// trip.
+    ///
+    /// This used to start from `activeProductId`, which is only set when
+    /// `refreshEntitlements` found a LIVE entitlement — and that made
+    /// `isInBillingRetry` almost impossible to observe. Billing retry without
+    /// a grace period is precisely the state where Apple has already revoked
+    /// access, so there is no entitlement, so `activeProductId` was nil, so
+    /// the guard fell through and reset the state to `isInBillingRetry:
+    /// false`. On 24 Aug that was 41 people, more than the 37 paying, all of
+    /// whom had agreed to pay and hit a card failure, and none of whom the app
+    /// could tell apart from a free user.
+    ///
+    /// Status is a property of the subscription GROUP, so any auto-renewable
+    /// product in it answers for all of them. Reading it that way sees the
+    /// lapsed states too.
+    func refreshRenewalState() async {
+        let groupProduct = products.first(where: { $0.id == activeProductId && $0.subscription != nil })
+            ?? products.first(where: { $0.subscription != nil })
+
+        guard let product = groupProduct,
+              let statuses = try? await product.subscription?.status,
+              let current = statuses.first(where: { $0.state == .subscribed || $0.state == .inGracePeriod || $0.state == .inBillingRetryPeriod })
+        else {
+            renewal = RenewalState(isInTrial: false, willAutoRenew: true,
+                                   isInBillingRetry: false, expiration: activeExpiration)
+            return
+        }
+
+        guard case .verified(let info) = current.renewalInfo,
+              case .verified(let tx) = current.transaction else { return }
+
+        renewal = RenewalState(
+            isInTrial: tx.offer?.paymentMode == .freeTrial,
+            willAutoRenew: info.willAutoRenew,
+            isInBillingRetry: current.state == .inBillingRetryPeriod || current.state == .inGracePeriod,
+            expiration: tx.expirationDate
+        )
+    }
+
     // MARK: - Entitlement check
 
     /// Walks `StoreKit.Transaction.currentEntitlements` and updates `isPro`.
@@ -540,5 +615,44 @@ final class SubscriptionManager: ObservableObject {
         default:     unit = ""
         }
         return "\(product.displayPrice)\(unit)"
+    }
+}
+
+// MARK: - Same-unit price comparison
+
+extension Product {
+    /// What this plan actually costs per month, in the storefront's currency.
+    ///
+    /// The paywall used to quote each plan in whatever unit flattered it:
+    /// "$2.14/day" under Weekly, "$9.99/week" under Monthly. Both are true,
+    /// and together they make the more expensive plan look cheaper, because
+    /// $14.99 a week is $64.96 a month against Monthly's $39.99. On
+    /// 2026-08-24, 658 of 684 subscriptions were weekly, and weekly reaches
+    /// a paid period 17% of the time against monthly's 77%. Quoting every
+    /// plan in the same unit is both the honest comparison and the unit
+    /// people actually budget in.
+    ///
+    /// Nil for a plan already billed monthly (nothing to convert) and for
+    /// non-renewing products like the Day Pass.
+    var monthlyEquivalentText: String? {
+        guard let period = subscription?.subscriptionPeriod, period.value > 0 else { return nil }
+        if period.unit == .month && period.value == 1 { return nil }
+
+        let n = Decimal(period.value)
+        let perMonth: Decimal
+        switch period.unit {
+        // 30 days rather than 4 weeks: a 4-week month understates the true
+        // cost of a weekly plan by roughly 8%, which is exactly the error
+        // this is here to correct.
+        case .day:   perMonth = price * 30 / n
+        case .week:  perMonth = price * 30 / (n * 7)
+        case .month: perMonth = price / n
+        case .year:  perMonth = price / (n * 12)
+        @unknown default: return nil
+        }
+        var rounded = Decimal()
+        var raw = perMonth
+        NSDecimalRound(&rounded, &raw, 2, .plain)
+        return rounded.formatted(priceFormatStyle)
     }
 }

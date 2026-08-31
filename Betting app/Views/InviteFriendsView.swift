@@ -14,8 +14,8 @@ struct InviteFriendsView: View {
     @State private var redeeming = false
     @State private var banner: (text: String, ok: Bool)?
 
-    private let lime = Color(hex: "#D4FF3A")
-    private let ink = Color(hex: "#0A0B0D")
+    private let lime = Color(hex: "#C6FF34")
+    private let ink = Color(hex: "#171717")
 
     private var shareText: String {
         let code = referral.code ?? ""
@@ -69,7 +69,7 @@ struct InviteFriendsView: View {
     }
 
     private var grabber: some View {
-        Capsule().fill(Color(hex: "#2D3038"))
+        Capsule().fill(Color(hex: "#3A3A3A"))
             .frame(width: 38, height: 5).padding(.top, 8).padding(.bottom, 10)
     }
 
@@ -83,7 +83,7 @@ struct InviteFriendsView: View {
                     .font(.system(size: 12, weight: .heavy))
                     .foregroundColor(Color(hex: "#B9B7B0"))
                     .frame(width: 32, height: 32)
-                    .background(Circle().fill(Color(hex: "#16181C")))
+                    .background(Circle().fill(Color(hex: "#232323")))
             }
             .buttonStyle(.plain)
         }
@@ -128,8 +128,8 @@ struct InviteFriendsView: View {
                     .font(.archivo(15, weight: .bold))
                     .foregroundColor(Color(hex: "#F5F3EE"))
                     .padding(.horizontal, 14).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#101114")))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "#22252B"), lineWidth: 1))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#1D1D1D")))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "#2F2F2F"), lineWidth: 1))
 
                 Button {
                     Task { await redeem() }

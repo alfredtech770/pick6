@@ -24,7 +24,7 @@ struct ShareWinSheet: View {
     @State private var rewardGranted = false
     @State private var shareImage: UIImage?
 
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     private var amount: Double {
         max(1, min(100_000, Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 100))
@@ -33,7 +33,7 @@ struct ShareWinSheet: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Capsule().fill(Color(hex: "#2D3038"))
+            Capsule().fill(Color(hex: "#3A3A3A"))
                 .frame(width: 42, height: 5).padding(.top, 10)
 
             Text(t(.sw_share_win))
@@ -59,7 +59,7 @@ struct ShareWinSheet: View {
                         .multilineTextAlignment(.trailing)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#16181C")))
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#232323")))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(lime.opacity(0.4), lineWidth: 1))
             }
             .padding(.horizontal, 24)
@@ -82,7 +82,7 @@ struct ShareWinSheet: View {
             } label: {
                 Text(t(.sw_share_cta))
                     .font(.anton(17)).kerning(0.4)
-                    .foregroundColor(Color(hex: "#0A0B0D"))
+                    .foregroundColor(Color(hex: "#171717"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(RoundedRectangle(cornerRadius: 14).fill(lime))
@@ -101,8 +101,8 @@ struct ShareWinSheet: View {
         // presentationBackground the system sheet gray peeked through
         // around the content.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "#0A0B0D"))
-        .presentationBackground(Color(hex: "#0A0B0D"))
+        .background(Color(hex: "#171717"))
+        .presentationBackground(Color(hex: "#171717"))
         .presentationDragIndicator(.visible)
         .onAppear { Analytics.shareWinOpened(league: pick.league) }
         .sheet(isPresented: $showShare) {
@@ -136,7 +136,7 @@ struct ShareWinSheet: View {
         let renderer = ImageRenderer(content:
             ShareWinCard(pick: pick, amount: amount, returned: returned)
                 .frame(width: 340)
-                .background(Color(hex: "#0A0B0D"))
+                .background(Color(hex: "#171717"))
         )
         renderer.scale = 3
         return renderer.uiImage
@@ -149,7 +149,7 @@ struct ShareWinCard: View {
     let pick: Pick
     let amount: Double
     let returned: Int
-    private let lime = Color(hex: "#D4FF3A")
+    private let lime = Color(hex: "#C6FF34")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -160,7 +160,7 @@ struct ShareWinCard: View {
                     Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
                     Text(t(.rd_won)).font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                 }
-                .foregroundColor(Color(hex: "#0A0B0D"))
+                .foregroundColor(Color(hex: "#171717"))
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(Capsule().fill(lime))
             }
@@ -195,7 +195,7 @@ struct ShareWinCard: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(hex: "#101114"))
+                .fill(Color(hex: "#1D1D1D"))
                 .overlay(
                     LinearGradient(colors: [lime.opacity(0.16), .clear],
                                    startPoint: .topLeading, endPoint: .center)

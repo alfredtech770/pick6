@@ -274,8 +274,14 @@ const espnNorm = ({ Status, ...g }) => ({ ...g, status: Status || 'Scheduled' })
 // run year-round and are never gated.
 const SEASON_MONTHS = {
   NBA:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
-  NHL:        [10, 11, 12, 1, 2, 3, 4, 5, 6],
+  // September included: NHL preseason starts in the third week and those
+  // games are real, bettable fixtures.
+  NHL:        [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+  KHL:        [9, 10, 11, 12, 1, 2, 3, 4],
+  IIHF:       [5],                                     // world championship
   NFL:        [8, 9, 10, 11, 12, 1, 2],
+  NCAAF:      [8, 9, 10, 11, 12, 1],                   // bowls + playoff in Jan
+  UFL:        [3, 4, 5, 6],                            // spring football
   MLB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   EPL:        [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
   LALIGA:     [8, 9, 10, 11, 12, 1, 2, 3, 4, 5],
@@ -291,11 +297,22 @@ const SEASON_MONTHS = {
   KBO:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   NPB:        [3, 4, 5, 6, 7, 8, 9, 10, 11],
   NASCAR:     [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  // Cricket. IPL alone left the sport dark from July to February — nine
+  // months with no cricket league in the registry at all, which is why the
+  // app showed none. Internationals run essentially year-round and are the
+  // backbone; the franchise leagues fill the peaks.
   IPL:        [3, 4, 5, 6],
+  T20I:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  HUNDRED:    [7, 8],
+  CPL:        [8, 9],
+  T20BLAST:   [5, 6, 7],
+  PSL:        [4, 5],
+  BBL:        [12, 1],
   WC:         [6, 7],                                  // 2026 tournament only
-  ATP:        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  GOLF:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  ATP:        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  GOLF:       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   F1:         [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  FORMULAE:   [12, 1, 2, 3, 4, 5, 6, 7, 8],            // covers the F1 winter
   // Rugby and AFL play weekly, so these windows are what keep them from
   // burning a research call every day of an eight-month off-season.
   AFL:        [3, 4, 5, 6, 7, 8, 9],                   // home-and-away + finals
@@ -315,6 +332,57 @@ function inSeason(league) {
   const months = SEASON_MONTHS[league];
   if (!months) return true;               // unlisted ⇒ year-round
   return months.includes(Number(todayISO().slice(5, 7)));
+}
+
+// The ten sports the app actually shows (Pick1HomeV4.swift `P1_SPORTS`).
+// Rugby and AFL are still generated — the model calls them fine — but no
+// screen renders them, so they run after everything a user can see rather
+// than competing with it for the daily budget.
+const APP_SPORTS = new Set([
+  'basketball', 'football', 'soccer', 'hockey', 'baseball',
+  'combat', 'f1', 'tennis', 'cricket', 'golf',
+]);
+
+/// Leagues to run today, ordered so every SPORT gets a turn before any
+/// sport gets a second one.
+///
+/// The loop used to walk `Object.entries(LEAGUES)` — plain declaration
+/// order — and the daily cost ceiling normally trips about two thirds of
+/// the way down. Whatever happened to sit at the tail of the object
+/// literal therefore never ran at all. On 24 Aug the run reached LIGUE1,
+/// 23rd of 32, and stopped: WNBA sits 27th, so the app had no basketball
+/// for sixteen days while the WNBA season was in full swing, and KBO, NPB
+/// and NASCAR never ran either. Coverage must not depend on where a key
+/// happens to sit in a literal.
+///
+/// Round-robin by sport means that when the budget does run out it drops
+/// the fourth soccer league of the day, not the only basketball one.
+function leagueRunOrder() {
+  const bySport = new Map();
+  for (const [league, cfg] of Object.entries(LEAGUES)) {
+    // Out-of-season leagues are dropped here rather than inside the loop.
+    // Left in, a sport whose only in-season league sits second in its own
+    // bucket would still wait a full extra round for a turn it deserves
+    // immediately. They cost nothing downstream: an out-of-season feed
+    // returns no games and `upsertLiveScores` no-ops on an empty array.
+    if (!inSeason(league)) continue;
+    if (!bySport.has(cfg.sport)) bySport.set(cfg.sport, []);
+    bySport.get(cfg.sport).push([league, cfg]);
+  }
+  const visible = [...bySport.entries()].filter(([sp]) => APP_SPORTS.has(sp));
+  const hidden  = [...bySport.entries()].filter(([sp]) => !APP_SPORTS.has(sp));
+
+  const interleave = (buckets) => {
+    const out = [];
+    for (let round = 0; ; round++) {
+      let any = false;
+      for (const [, list] of buckets) {
+        if (list[round]) { out.push(list[round]); any = true; }
+      }
+      if (!any) return out;
+    }
+  };
+  return [...interleave(visible), ...interleave(hidden)];
 }
 
 const LEAGUES = {
@@ -491,10 +559,41 @@ const LEAGUES = {
     notes: 'ATP/WTA singles. Use web_search to find today\'s completed-draw matches — Grand Slams take priority when running (Wimbledon Jun-Jul, US Open Aug-Sep, etc.), otherwise the biggest tour events. Surface 2-4 matches with the clearest edges (ranking gaps, surface specialists, head-to-head). Pick is the player to win the match; home_team/away_team are the two players.',
   },
 
-  // ─── Cricket (IPL) — research mode; Claude web-searches today's slate
+  // ─── Cricket — research mode; Claude web-searches today's slate.
+  //
+  // IPL used to be the ONLY cricket league here, so from July to February
+  // the registry had no cricket at all. Worse, its notes told the model to
+  // also cover "any notable T20I/Test internationals", so August picks came
+  // back labelled IPL months after the IPL final — real fixtures under a
+  // competition that was not playing. Internationals now have their own
+  // entry and IPL is strictly IPL.
   IPL: {
     sport: 'cricket', promptMode: 'research', fetcher: null,
-    notes: 'Indian Premier League season runs Mar–May. Use web_search to find today\'s IPL fixtures (and any notable T20I/Test internationals). Surface 1–4 picks per match day. Pick is the team to win the match.',
+    notes: 'Indian Premier League (Mar–May, final in late May/early June). Use web_search to find today\'s IPL fixtures. Surface 1–4 picks per match day. Pick is the team to win the match. Return an empty array if the IPL is not currently playing — do NOT substitute other cricket.',
+  },
+  T20I: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'International cricket — T20Is, ODIs and Tests between full-member nations, plus major ICC events (World Cups, Champions Trophy, Asia Cup). This runs essentially year-round and is the backbone of cricket coverage. Use web_search to find matches being played today or starting today. For a Test, the pick is the match result (a draw is a genuine outcome and often the honest call on a flat pitch — say so rather than forcing a winner). For white-ball, pick the team to win. Surface 1–4 picks.',
+  },
+  HUNDRED: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'The Hundred — England, 100-ball, men\'s and women\'s competitions run together (Aug). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  CPL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Caribbean Premier League — T20, Aug–Sep. Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  T20BLAST: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'T20 Blast — England and Wales domestic T20 (May–Jul, finals day in Jul). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  PSL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Pakistan Super League — T20 (Apr–May). Use web_search to find today\'s fixtures. Pick the team to win.',
+  },
+  BBL: {
+    sport: 'cricket', promptMode: 'research', fetcher: null,
+    notes: 'Big Bash League — Australia, T20 (Dec–Jan). Use web_search to find today\'s fixtures. Pick the team to win.',
   },
 
   // 2026 World Cup — branded "Summer Football" in the app (App Review
@@ -523,16 +622,38 @@ const LEAGUES = {
     notes: 'Major League Soccer — US/Canada top flight (Feb–Oct). Pick the match result; draw allowed.' },
   LIGAMX: { sport: 'soccer', promptMode: 'research', fetcher: null,
     notes: 'Liga MX — Mexican top flight. Pick the match result; draw allowed.' },
-  WNBA: { sport: 'basketball', promptMode: 'research', fetcher: null,
-    notes: 'WNBA — women\'s pro basketball (May–Sep). Pick the game winner.' },
+  // Grounded on ESPN's scoreboard rather than researched: the fixture
+  // list, team names and season records come from the feed, and the model
+  // only judges the games it is handed. `researchFallback` keeps the
+  // league alive if ESPN ever 404s mid-season.
+  WNBA: {
+    sport: 'basketball', promptMode: 'team',
+    fetcher: espnfixtures.fetcherFor('WNBA'), researchFallback: true,
+    notes: 'WNBA — women\'s pro basketball (May–Sep, playoffs into Oct). Home advantage is smaller than the NBA\'s and rest matters more: the schedule is compressed and rosters are short, so a team on the second night of a back-to-back with a star rested is a real edge. Pick the game winner.',
+    normalizer: espnNorm,
+  },
   EUROLEAGUE: { sport: 'basketball', promptMode: 'research', fetcher: null,
     notes: 'EuroLeague — top European club basketball (Oct–May). Pick the game winner.' },
   NCAAB: { sport: 'basketball', promptMode: 'research', fetcher: null,
     notes: 'NCAA Division I men\'s basketball (Nov–Apr). Pick the game winner.' },
+  // Hockey outside the NHL. The NHL alone leaves the sport dark from mid-June
+  // to late September; the KHL starting in early September closes most of
+  // that, and the IIHF Worlds cover May. July and August have no meaningful
+  // professional hockey anywhere, and no league entry can invent one.
+  KHL: { sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'KHL — Kontinental Hockey League (Sep–Apr, Gagarin Cup playoffs Mar–Apr). Use web_search to find today\'s fixtures. Pick the game winner; note that KHL regulation ties go to overtime and shootout, so the market line is for the 60-minute result unless stated otherwise.' },
+  IIHF: { sport: 'hockey', promptMode: 'research', fetcher: null,
+    notes: 'IIHF World Championship — national teams (May). Use web_search to find today\'s fixtures. Pick the game winner.' },
   KBO: { sport: 'baseball', promptMode: 'research', fetcher: null,
     notes: 'KBO — Korean pro baseball (Mar–Oct). Pick the game winner.' },
   NPB: { sport: 'baseball', promptMode: 'research', fetcher: null,
     notes: 'NPB — Japanese pro baseball (Mar–Oct). Pick the game winner.' },
+  NCAAF: { sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'NCAA Division I college football (Aug–Dec, bowls and the playoff into Jan). Use web_search to find today\'s fixtures — there are far too many games to cover, so surface the 2–4 with the clearest edges, favouring ranked teams and conference games. Spreads run wide here; a 30-point favourite is normal and says little about the win probability being anything other than very high. Pick the game winner.' },
+  UFL: { sport: 'football', promptMode: 'research', fetcher: null,
+    notes: 'United Football League — spring American football (Mar–Jun). Use web_search to find today\'s fixtures. Pick the game winner.' },
+  FORMULAE: { sport: 'f1', promptMode: 'research', fetcher: null,
+    notes: 'Formula E — all-electric single-seaters, season runs Dec–Aug across city street circuits. Use web_search to find the next E-Prix. Pick the race winner; populate field_odds with the top contenders. Note that Formula E results are far less predictable than F1 — street circuits, energy management and a tight field mean favourites win a much smaller share of races, so keep probabilities honest and low.' },
   NASCAR: { sport: 'f1', promptMode: 'research', fetcher: null,
     notes: 'NASCAR Cup Series (Feb–Nov). Use web_search to find the next race. Pick the race winner; populate field_odds with the top contenders\' win/podium probabilities.' },
 
@@ -1264,6 +1385,22 @@ async function savePicks(league, picks) {
     if (p.away_logo) row.away_logo = p.away_logo;
   });
 
+  // A race or tournament is ONE event, so it must be ONE row. The upsert key
+  // includes game_date, and for a multi-day event the model returned a
+  // different date on each run — the BMW Championship ended up as three rows
+  // naming two different winners. Reuse the date already stored against this
+  // game_id so the second run updates the first row instead of adding one.
+  if (sport === 'f1' || sport === 'golf') {
+    const ids = [...new Set(rows.map((r) => r.game_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: existing } = await supabase
+        .from('picks').select('game_id, game_date')
+        .eq('league', league).eq('result', 'pending').in('game_id', ids);
+      const held = new Map((existing || []).map((e) => [e.game_id, e.game_date]));
+      rows.forEach((r) => { if (held.has(r.game_id)) r.game_date = held.get(r.game_id); });
+    }
+  }
+
   const { error } = await supabase
     .from('picks')
     .upsert(rows, { onConflict: 'league,game_date,game_id' });
@@ -1328,6 +1465,26 @@ async function backfillMissingScores() {
   return 0;
 }
 
+/// Compare two competitor names for the same person.
+///
+/// The model wrote the same driver as both "Kimi Antonelli" and "Andrea Kimi
+/// Antonelli", so one feed listed him as two people and a grader comparing
+/// strings would have called a correct pick wrong. Match on the family name
+/// plus one other given name, which survives a dropped or added first name
+/// without merging two different people who share a surname.
+function sameCompetitor(a, b) {
+  const parts = (x) => String(x || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter(Boolean);
+  const pa = parts(a), pb = parts(b);
+  if (!pa.length || !pb.length) return false;
+  if (pa[pa.length - 1] !== pb[pb.length - 1]) return false;   // family name must match
+  const ga = new Set(pa.slice(0, -1)), gb = new Set(pb.slice(0, -1));
+  if (!ga.size || !gb.size) return true;                       // one side is surname-only
+  for (const g of ga) if (gb.has(g)) return true;
+  return false;
+}
+
 /// Lenient string match used when comparing pick text to team text.
 /// Same algorithm as the pick-validator: trim+lowercase, then exact or
 /// substring-either-way (e.g. "Cavaliers" matches "Cleveland Cavaliers").
@@ -1338,6 +1495,63 @@ function teamsMatch(pick, team) {
   if (a === b) return true;
   if (a.includes(b) || b.includes(a)) return true;
   return false;
+}
+
+/// Grade race / field events: F1, GOLF, NASCAR.
+///
+/// Both other graders decide a pick by matching it against home_team or
+/// away_team. A field event stores the EVENT as home_team and the literal
+/// string "Field" as away_team, with the pick being a driver or golfer, so
+/// that match could never succeed and every race and tournament stayed
+/// pending forever. They were not slow to grade, they were ungradable.
+///
+/// Free, authoritative sources, no model in the loop: Ergast for the race
+/// classification, ESPN's own leaderboard for golf.
+async function gradeFieldEvents() {
+  const { data: pending, error } = await supabase
+    .from('picks')
+    .select('id, game_id, league, home_team, pick, game_date')
+    .eq('result', 'pending')
+    .in('sport', ['f1', 'golf'])
+    .lt('game_date', todayISO());
+  if (error) { err('Field-event grade fetch failed:', error.message); return 0; }
+  if (!pending?.length) return 0;
+
+  let graded = 0;
+  for (const p of pending) {
+    let winner = null;
+    try {
+      if (p.league === 'F1') {
+        // game_id is "season-round", the exact key Ergast indexes results by.
+        const [season, round] = String(p.game_id || '').split('-');
+        if (!season || !round) continue;
+        const res = await axios.get(
+          `https://api.jolpi.ca/ergast/f1/${season}/${round}/results.json`, { timeout: 15000 });
+        const race = res.data?.MRData?.RaceTable?.Races?.[0];
+        // No Races entry means the race has not been classified yet. Leave
+        // it pending rather than inventing a loss.
+        const first = race?.Results?.find((r) => r.position === '1');
+        const d = first?.Driver;
+        if (d) winner = `${d.givenName} ${d.familyName}`;
+      } else if (p.league === 'GOLF') {
+        const board = await golf.fetchTournaments();
+        const id = String(p.game_id || '').replace(/^golf-/, '');
+        const t = board.find((x) => String(x.id) === id);
+        if (!t || t.state !== 'post') continue;
+        winner = t.players.find((x) => x.position === 1)?.name || null;
+      }
+    } catch (e) { err(`Field-event grade ${p.league} ${p.game_id}:`, e.message); continue; }
+    if (!winner) continue;
+
+    const won = sameCompetitor(p.pick, winner);
+    const { error: e2 } = await supabase.from('picks')
+      .update({ result: won ? 'win' : 'loss' }).eq('id', p.id);
+    if (e2) { err(`Field-event grade update ${p.id}:`, e2.message); continue; }
+    log(`${won ? '✅ WIN' : '❌ LOSS'}: ${p.pick} — ${p.home_team} won by ${winner}`);
+    graded++;
+  }
+  if (graded) log(`Graded ${graded} field-event pick(s).`);
+  return graded;
 }
 
 async function gradePicks() {
@@ -1405,12 +1619,15 @@ async function gradePicks() {
 const RESEARCH_GRADE_MODEL = 'claude-haiku-4-5-20251001';
 
 async function gradeViaResearch() {
+  // No lower bound. The window used to start 14 days back, so anything that
+  // slipped past it was never revisited OR swept and stayed pending forever —
+  // 209 such rows had accumulated. Researching is still bounded to the recent
+  // window below; the old tail is only ever swept.
   const { data: pending, error } = await supabase
     .from('picks')
     .select('id, game_id, league, home_team, away_team, pick, game_date')
     .eq('result', 'pending')
-    .lt('game_date', todayISO())
-    .gte('game_date', daysAgoISO(14));
+    .lt('game_date', todayISO());
   if (error || !pending?.length) return;
 
   // Only picks whose game has no live_scores row (feed-covered leagues are
@@ -1549,6 +1766,9 @@ async function runPipeline() {
     // sees the freshest performance stats. AI-free — uses whatever
     // sportsdata.io live polling has dropped into live_scores overnight.
     await gradePicks();
+    // Races and tournaments grade from their own free result feeds; neither
+    // of the other two graders can decide a field event.
+    await gradeFieldEvents().catch((e) => err('gradeFieldEvents failed:', e.message));
     // Then the bounded research grader for feed-less leagues (KBO/NPB/IPL) —
     // once per daily run only, never in the hourly ticks.
     await gradeViaResearch().catch((e) => err('gradeViaResearch failed:', e.message));
@@ -1559,7 +1779,9 @@ async function runPipeline() {
     const onlyLeagues = (process.env.RUN_LEAGUES || '')
       .split(',').map((s) => s.trim().toUpperCase())
       .filter((s) => s && s !== 'NONE');   // 'none' = explicit no-filter
-    for (const [league, cfg] of Object.entries(LEAGUES)) {
+    const runOrder = leagueRunOrder();
+    log(`   Run order (${runOrder.length} in-season): ${runOrder.map(([l]) => l).join(', ')}`);
+    for (const [league, cfg] of runOrder) {
       try {
       if (onlyLeagues.length && !onlyLeagues.includes(league)) { continue; }
       if (cfg.enabled === false) { log(`⏸️  ${league} is disabled — skipping pick generation.`); continue; }
@@ -2143,15 +2365,17 @@ async function liveTick() {
   }
 }
 
-/// Hourly grading tick — AI-free. Just runs gradePicks() against the
-/// live_scores rows that sportsdata.io polling has populated. Cheap,
-/// deterministic, no Claude in the loop.
+/// Hourly grading tick — AI-free. Runs gradePicks() against the live_scores
+/// rows that sportsdata.io polling has populated, plus the race/tournament
+/// graders which read free result feeds. Cheap, deterministic, no Claude in
+/// the loop.
 let gradeLoopRunning = false;
 async function gradeAndBackfillTick() {
   if (gradeLoopRunning) return;
   gradeLoopRunning = true;
   try {
     await gradePicks();
+    await gradeFieldEvents();
   } catch (e) {
     err('Grade tick crashed:', e.message);
   } finally {
