@@ -26,6 +26,18 @@ struct TrackBetSheet: View {
 
     private var odds: Double { pick.marketOdds ?? pick.impliedOddsForPayout ?? 1.9 }
 
+    /// Reference stake the projection falls back to before the user picks
+    /// one. Never submitted: `stake` stays nil until they actually choose,
+    /// so "track without a stake" still logs no stake and nobody's ROI gets
+    /// a $100 bet they did not make.
+    private static let referenceStake: Double = 100
+
+    private var projected: Double { (stake ?? Self.referenceStake) * odds }
+    private var hasStake: Bool { stake != nil }
+
+    @State private var confirming = false
+    @FocusState private var amountFocused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
@@ -36,60 +48,114 @@ struct TrackBetSheet: View {
                     .font(.anton(22)).foregroundColor(Color(hex: "#F5F3EE"))
             }
 
-            Text(t(.rd_bt_stake_sub))
-                .font(.archivo(13)).foregroundColor(Color(hex: "#8A8D94"))
+            // The money, at the top and always on screen.
+            //
+            // It used to be a small line UNDER the amount field that appeared
+            // only once something had been typed, so the sheet opened blank
+            // on the one number the whole app is built around. Seeded with
+            // the $100 reference and muted until the stake is real, it now
+            // answers "what do I get" before being asked.
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("$\(Int((stake ?? Self.referenceStake).rounded()))")
+                    .font(.anton(26))
+                    .foregroundColor(hasStake ? Color(hex: "#F5F3EE") : Color(hex: "#6E6F75"))
+                    .contentTransition(.numericText())
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                Text("$\(Int(projected.rounded()))")
+                    .font(.anton(38))
+                    .foregroundColor(hasStake ? accent : Color(hex: "#8A8D94"))
+                    .contentTransition(.numericText())
+                    .shadow(color: accent.opacity(hasStake ? 0.4 : 0), radius: 14)
+                Spacer(minLength: 0)
+            }
+            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: stake)
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: "#1E1E1E")))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(accent.opacity(hasStake ? 0.35 : 0.08), lineWidth: 1))
+            .overlay(alignment: .topTrailing) {
+                Text(hasStake ? t(.rd_bt_to_return).uppercased()
+                              : "\(t(.rd_bt_to_return).uppercased()) · $100")
+                    .font(.archivoNarrow(8, weight: .bold)).tracking(1.3)
+                    .foregroundColor(Color(hex: "#6E6F75"))
+                    .padding(.top, 9).padding(.trailing, 12)
+            }
 
-            // Quick stake chips
+            // Quick stake chips. Tapping one springs the number above rather
+            // than snapping it, which is the whole point of putting the money
+            // where the thumb already is.
             HStack(spacing: 8) {
                 ForEach(quick, id: \.self) { amt in
+                    let on = stakeText == String(Int(amt))
                     Button {
-                        stakeText = String(Int(amt))
+                        Haptics.tap()
+                        amountFocused = false
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                            stakeText = on ? "" : String(Int(amt))
+                        }
                     } label: {
                         Text("$\(Int(amt))")
                             .font(.archivo(14, weight: .bold))
-                            .foregroundColor(stakeText == String(Int(amt)) ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
+                            .foregroundColor(on ? Color(hex: "#171717") : Color(hex: "#B9B7B0"))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 11)
                             .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(stakeText == String(Int(amt)) ? accent : Color(hex: "#242424")))
+                                .fill(on ? accent : Color(hex: "#242424")))
+                            .scaleEffect(on ? 1.05 : 1)
                     }
+                    .buttonStyle(.plain)
                 }
             }
 
-            // Custom amount
             HStack(spacing: 8) {
                 Text("$").font(.anton(20)).foregroundColor(Color(hex: "#6E6F75"))
                 TextField(t(.rd_bt_amount), text: $stakeText)
                     .keyboardType(.decimalPad)
+                    .focused($amountFocused)
                     .font(.anton(20)).foregroundColor(Color(hex: "#F5F3EE"))
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#242424")))
-
-            if let s = stake {
-                HStack {
-                    Text(t(.rd_bt_to_return)).font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
-                        .foregroundColor(Color(hex: "#6E6F75"))
-                    Spacer()
-                    Text("$\(Int((s * odds).rounded()))")
-                        .font(.anton(18)).foregroundColor(accent)
-                }
-            }
+            .overlay(RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(accent.opacity(amountFocused ? 0.5 : 0), lineWidth: 1))
+            .animation(.easeOut(duration: 0.2), value: amountFocused)
 
             Spacer(minLength: 0)
 
+            // The confirm morphs into a tick before the sheet leaves, so the
+            // action is acknowledged on the control that performed it rather
+            // than by the sheet simply vanishing.
             Button {
-                onTrack(stake); dismiss()
+                guard !confirming else { return }
+                Haptics.success()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { confirming = true }
+                onTrack(stake)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { dismiss() }
             } label: {
-                Text(stake == nil ? t(.rd_bt_track_without_stake) : t(.rd_bt_track_bet))
-                    .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
-                    .foregroundColor(Color(hex: "#171717"))
-                    .frame(maxWidth: .infinity).padding(.vertical, 15)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(accent))
+                Group {
+                    if confirming {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 18, weight: .heavy))
+                            .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    } else {
+                        Text(stake == nil ? t(.rd_bt_track_without_stake) : t(.rd_bt_track_bet))
+                            .font(.archivoNarrow(13, weight: .bold)).tracking(1.6)
+                    }
+                }
+                .foregroundColor(Color(hex: "#171717"))
+                .frame(maxWidth: .infinity).padding(.vertical, 15)
+                .background(RoundedRectangle(cornerRadius: 14).fill(accent))
+                .scaleEffect(confirming ? 0.97 : 1)
             }
+            .buttonStyle(.plain)
+            .disabled(confirming)
 
             if isTracked, let onUntrack {
                 Button {
+                    Haptics.tap()
                     onUntrack()
                     dismiss()
                 } label: {
