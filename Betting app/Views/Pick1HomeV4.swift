@@ -1137,8 +1137,16 @@ struct Pick1HomeV4: View {
 
     @ViewBuilder private var tonight: some View {
         if !sports.isEmpty {
+            // Spacing and the trailing inset are tuned so the SIXTH orb
+            // always peeks in from the right edge. At 15pt spacing with 22pt
+            // on both sides, exactly five 56pt orbs filled the width and the
+            // next one began a couple of points past the screen: the rail
+            // scrolled, but nothing on screen said so. Sports are ordered by
+            // their best call's confidence, so the low-confidence ones — a
+            // 31% Grand Prix, a 55% league game — are precisely the ones that
+            // land off the edge, and they were being read as missing.
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 15) {
+                HStack(spacing: 12) {
                     ForEach(sports, id: \.self) { s in
                         P1V4Orb(sport: s, isOn: s == activeSport) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -1147,10 +1155,20 @@ struct Pick1HomeV4: View {
                         }
                     }
                 }
-                .padding(.horizontal, 22)
+                .padding(.leading, 22)
+                .padding(.trailing, 8)
                 .padding(.top, 18)
                 .padding(.bottom, 6)
             }
+            // The peek does the work; this softens the cut so a half orb
+            // reads as "more this way" rather than as a clipped one.
+            .mask(
+                LinearGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.9),
+                    .init(color: .black.opacity(0.15), location: 1),
+                ], startPoint: .leading, endPoint: .trailing)
+            )
         }
 
         if let hero {

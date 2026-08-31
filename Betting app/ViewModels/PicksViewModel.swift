@@ -503,8 +503,17 @@ class PicksViewModel: ObservableObject {
         // 48-hour slate: today + tomorrow (ET dates). Evening users see
         // tonight's board AND tomorrow's early games instead of a thin
         // end-of-day feed.
+        //
+        // The window runs to -14, not -1, so EVENT sports survive it. A Grand
+        // Prix pick is written a week or two ahead — the pipeline deliberately
+        // carries future-dated F1 rows and dedups on them — so a 48-hour board
+        // hid Racing for roughly twelve days out of every fourteen. Same for a
+        // golf tournament announced early. Team fixtures are unaffected: the
+        // pipeline only ever writes them for today or tomorrow, so nothing new
+        // arrives in the extra days. `P1V4Screen` sorts by date, so a far
+        // fixture sits below a near one rather than jumping the board.
         async let today    = fetchPicks(from: Self.dateString(daysAgo: 0),
-                                        to: Self.dateString(daysAgo: -1))
+                                        to: Self.dateString(daysAgo: -14))
         async let yest     = fetchPicks(forDate: Self.dateString(daysAgo: 1))
         async let history  = fetchPicks(sinceDaysAgo: 30)
         async let scores   = fetchLiveScoresInner()
@@ -610,10 +619,10 @@ class PicksViewModel: ObservableObject {
         }
     }
 
-    // Convenience for older callers. Same 48h window as loadAll.
+    // Convenience for older callers. Same window as loadAll.
     func fetchTodayPicks() async {
         let resp = await fetchPicks(from: Self.dateString(daysAgo: 0),
-                                    to: Self.dateString(daysAgo: -1))
+                                    to: Self.dateString(daysAgo: -14))
         self.todayPicks = resp
     }
 
