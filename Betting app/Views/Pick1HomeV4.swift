@@ -1000,6 +1000,28 @@ struct Pick1HomeV4: View {
     private var hero: Pick? { sportPicks.first }
     private var rest: [Pick] { Array(sportPicks.dropFirst()) }
 
+    /// The whole day's board minus the hero, best first.
+    private var boardRest: [Pick] {
+        coveredToday
+            .filter { $0.id != hero?.id }
+            .sorted { $0.probability > $1.probability }
+    }
+
+    /// What actually fills the games list.
+    ///
+    /// A sport with exactly ONE call today leaves `rest` empty, and the games
+    /// section used to be gated on that, so the page rendered a hero and then
+    /// a wall of black. Golf is the standing case: one tournament pick, whose
+    /// confidence is frequently the day's highest, which also makes it the
+    /// DEFAULT sport. On 31 Aug the app opened on Scheffler at 95% and showed
+    /// no games at all while eleven picks sat in the board behind it.
+    ///
+    /// Rather than hide the day, fall back to the rest of it, and say so in
+    /// the heading so the list never silently means something other than what
+    /// the selected sport implies.
+    private var shownRest: [Pick] { rest.isEmpty ? boardRest : rest }
+    private var restIsWholeBoard: Bool { rest.isEmpty && !boardRest.isEmpty }
+
     /// Within the selected sport the hero IS the free pick, so everything
     /// under it is locked for a free user. Rows still render, blurred, because
     /// a visible locked slate converts better than a hidden one.
@@ -1022,8 +1044,8 @@ struct Pick1HomeV4: View {
         return top.id
     }
 
-    private var visibleRest: [Pick] { rest.filter { !locked($0) } }
-    private var hiddenRest: [Pick] { rest.filter { locked($0) } }
+    private var visibleRest: [Pick] { shownRest.filter { !locked($0) } }
+    private var hiddenRest: [Pick] { shownRest.filter { locked($0) } }
 
     private var liveNow: [(pick: Pick, score: LiveScore)] {
         let live = vm.liveScores.filter(\.isLive)
@@ -1137,18 +1159,24 @@ struct Pick1HomeV4: View {
                      backers: 312) { onSelectPick(hero) }
         }
 
-        if !rest.isEmpty {
+        if !shownRest.isEmpty {
             HStack(alignment: .firstTextBaseline) {
                 (
-                    Text("TODAY'S ").foregroundStyle(.white)
-                    + Text("GAMES").foregroundStyle(Color.p1Lime)
+                    restIsWholeBoard
+                        ? Text("EVERYTHING ").foregroundStyle(.white)
+                            + Text("ELSE").foregroundStyle(Color.p1Lime)
+                        : Text("TODAY'S ").foregroundStyle(.white)
+                            + Text("GAMES").foregroundStyle(Color.p1Lime)
                 )
                 .font(.anton(18))
                 Spacer(minLength: 8)
-                Text("ALL CALLED BY 6 AM")
+                Text(restIsWholeBoard
+                     ? "\(v4Name(activeSport ?? "").uppercased()) HAS ONE CALL TODAY"
+                     : "ALL CALLED BY 6 AM")
                     .font(.mono(9, weight: .bold))
                     .tracking(0.72)
                     .foregroundStyle(V4.mute)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             .padding(.horizontal, 22)
             .padding(.top, 24)
