@@ -123,8 +123,10 @@ struct TrackBetSheet: View {
                 .strokeBorder(accent.opacity(amountFocused ? 0.5 : 0), lineWidth: 1))
             .animation(.easeOut(duration: 0.2), value: amountFocused)
 
-            Spacer(minLength: 0)
-
+            // No Spacer here. It pushed the confirm to the bottom of the
+            // detent and left a dead band between the amount field and the
+            // button; the sheet now hugs its content and the detent is sized
+            // to match.
             // The confirm morphs into a tick before the sheet leaves, so the
             // action is acknowledged on the control that performed it rather
             // than by the sheet simply vanishing.

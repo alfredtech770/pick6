@@ -477,7 +477,7 @@ struct MatchDetailView: View {
             // Sized for the content, not guessed: the money block at the top
             // added roughly 110pt, and the old 360 clipped the sheet's own
             // title off the top edge.
-            .presentationDetents([.height(isTracking ? 545 : 485)])
+            .presentationDetents([.height(isTracking ? 480 : 420)])
             .onAppear {
                 Analytics.trackSheetViewed(league: pick.league, alreadyTracked: isTracking)
             }
