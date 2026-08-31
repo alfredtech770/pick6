@@ -400,11 +400,10 @@ struct MatchDetailView: View {
                     // here. Both are now the ticket above: the heading named a
                     // section whose only content was the card, and the card
                     // restated the call the header had just made.
-                    if let factors = pick.factors, !factors.isEmpty {
-                        whyFactorsPanel(factors)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 28)
-                    }
+                    // The "WHY <team>" factor panel used to sit here. Removed
+                    // at Ethan's request 2026-08-25: the same `pick.factors`
+                    // already drive the home hero's "why the AI likes it", and
+                    // the OUR CALL tab below carries the reasoning in prose.
                     tabsRow
                     Group {
                         switch tab {
@@ -1968,52 +1967,6 @@ struct MatchDetailView: View {
 
     /// WHY {TEAM} · BREAKDOWN — meter rows from the pipeline's factor
     /// ratings (real data points; strength is the model's own 0-100 read).
-    private func whyFactorsPanel(_ factors: [PickFactor]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("\(t(.rd_why)) \(pick.shortDisplayPick.uppercased())")
-                    .font(.anton(19)).foregroundColor(.white)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                Spacer()
-                Text(t(.rd_breakdown))
-                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                    .foregroundColor(sportAccent)
-                    .padding(.horizontal, 11).padding(.vertical, 6)
-                    .background(Capsule().stroke(sportAccent.opacity(0.5), lineWidth: 1.2))
-            }
-            .padding(.horizontal, 4)
-            VStack(spacing: 14) {
-                ForEach(factors) { f in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(f.label.uppercased())
-                                .font(.archivoNarrow(11, weight: .bold)).tracking(1.2)
-                                .foregroundColor(Color(hex: "#C9CBCF"))
-                            Spacer(minLength: 10)
-                            Text(f.value.uppercased())
-                                .font(.archivo(12, weight: .bold))
-                                .foregroundColor(Color(hex: "#F5F3EE"))
-                                .lineLimit(1).minimumScaleFactor(0.6)
-                                .multilineTextAlignment(.trailing)
-                        }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color(hex: "#2F2F2F")).frame(height: 7)
-                                Capsule().fill(sportAccent)
-                                    .frame(width: geo.size.width * CGFloat(f.strength) / 100.0, height: 7)
-                            }
-                        }
-                        .frame(height: 7)
-                    }
-                }
-            }
-            .padding(16)
-            .background(cardBackground)
-        }
-    }
-
-    /// The value verdict pill: VALUE when our probability beats the market's
-    /// implied price, NO EDGE when the market is ahead, FAIR in between.
     private func valueVerdict(edge: Int) -> some View {
         let isValue = edge >= 6
         let isNoEdge = edge <= -6

@@ -205,7 +205,7 @@ struct FreeMatchDetailView: View {
     // ── PICK1'S CALL (locked) ────────────────────────────────────────
     private var pick1sCall: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHead("PICK1'S CALL", chip: "🔒 PREMIUM", chipColor: Color(hex: "#2A230F"), chipInk: gold)
+            sectionHead("PICK1'S CALL", chip: "PREMIUM", chipColor: Color(hex: "#2A230F"), chipInk: gold)
             Button { Haptics.tap(); onUnlock() } label: {
                 VStack(spacing: 10) {
                     Image(systemName: "lock.fill")
@@ -250,7 +250,7 @@ struct FreeMatchDetailView: View {
     // ── WHY · CONFIDENCE BREAKDOWN (locked) ──────────────────────────
     private var whyBreakdown: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHead("WHY · CONFIDENCE BREAKDOWN", chip: "🔒 PREMIUM", chipColor: Color(hex: "#2A230F"), chipInk: gold)
+            sectionHead("WHY · CONFIDENCE BREAKDOWN", chip: "PREMIUM", chipColor: Color(hex: "#2A230F"), chipInk: gold)
             ForEach(whyRows, id: \.self) { title in
                 Button { Haptics.tap(); onUnlock() } label: {
                     HStack(spacing: 12) {
@@ -345,16 +345,9 @@ struct FreeMatchDetailView: View {
         let tomorrow = todayFmt.string(from: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
         return pick.gameDate == tomorrow ? "TOMORROW" : pick.gameDate
     }
-    private var sportEmoji: String {
-        switch pick.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
+    /// Was an emoji map. Sport marks now come from `P1Symbol` so every
+    /// surface draws one stroke weight in the app's own colours.
+    private var sportSymbol: String { P1Symbol.sport(pick.sport) }
 }
 
 

@@ -2180,7 +2180,7 @@ struct LockedSlateCard: View {
         } label: {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("\(sportEmoji) \(pick.league.uppercased())")
+                    Text("\(Image(systemName: sportSymbol)) \(pick.league.uppercased())")
                         .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                         .foregroundColor(Color(hex: "#8A8D94"))
                     Spacer()
@@ -2242,16 +2242,9 @@ struct LockedSlateCard: View {
         [upcomingDayLabel(pick), pick.localizedStartTimeDisplay]
             .compactMap { $0 }.joined(separator: " · ")
     }
-    private var sportEmoji: String {
-        switch pick.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
+    /// Was an emoji map. Sport marks now come from `P1Symbol` so every
+    /// surface draws one stroke weight in the app's own colours.
+    private var sportSymbol: String { P1Symbol.sport(pick.sport) }
     /// Per-sport edge tint (the design's colored card washes).
     private var tint: Color {
         switch pick.sport {
@@ -2308,7 +2301,7 @@ struct ProSlateCard: View {
         let state = pick.renderState(liveScore: liveScore)
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("\(sportEmoji) \(pick.league.uppercased())")
+                Text("\(Image(systemName: sportSymbol)) \(pick.league.uppercased())")
                     .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                     .foregroundColor(Color(hex: "#8A8D94"))
                 Spacer()
@@ -2430,16 +2423,9 @@ struct ProSlateCard: View {
         if pick.awayTeam.lowercased() == "field" { return pick.homeTeam }
         return pick.homeTeam
     }
-    private var sportEmoji: String {
-        switch pick.sport {
-        case "basketball": return "🏀"; case "baseball": return "⚾️"
-        case "hockey": return "🏒"; case "football": return "🏈"
-        case "soccer": return "⚽️"; case "combat": return "🥊"
-        case "f1": return "🏎️"; case "golf": return "⛳️"
-        case "cricket": return "🏏"; case "tennis": return "🎾"
-        default: return "🎯"
-        }
-    }
+    /// Was an emoji map. Sport marks now come from `P1Symbol` so every
+    /// surface draws one stroke weight in the app's own colours.
+    private var sportSymbol: String { P1Symbol.sport(pick.sport) }
     private var tint: Color {
         switch pick.sport {
         case "basketball": return Color(hex: "#2FA85B")

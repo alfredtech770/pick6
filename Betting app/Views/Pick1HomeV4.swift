@@ -69,17 +69,6 @@ enum V4 {
     ]
 }
 
-func v4Emoji(_ sport: String) -> String {
-    switch sport {
-    case "basketball": return "🏀"; case "baseball": return "⚾️"
-    case "hockey": return "🏒";     case "football": return "🏈"
-    case "soccer": return "⚽️";     case "combat": return "🥊"
-    case "f1": return "🏎️";         case "golf": return "⛳️"
-    case "cricket": return "🏏";    case "tennis": return "🎾"
-    case "rugby", "afl": return "🏉"
-    default: return "🎯"
-    }
-}
 
 /// The ten sports Pick1 covers, in the order Ethan set them. This is the
 /// authority: a sport not on this list is not shown, whatever the pipeline
@@ -215,8 +204,7 @@ struct P1V4Orb: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 0) {
-                Text(v4Emoji(sport))
-                    .font(.system(size: 23))
+                P1SportMark(sport: sport, size: 23, glowing: isOn, active: isOn)
                     .frame(width: 56, height: 56)
                     .background(
                         Circle().fill(
@@ -225,9 +213,6 @@ struct P1V4Orb: View {
                         )
                     )
                     .overlay(Circle().strokeBorder(isOn ? Color.p1Lime : V4.line, lineWidth: 1.5))
-                    // Off-state orbs are drained rather than dimmed, so the
-                    // selected sport is the only colour in the row.
-                    .saturation(isOn ? 1 : 0.45)
                     .shadow(color: isOn ? Color.p1Lime.opacity(0.45) : .clear, radius: 13)
                     .scaleEffect(isOn ? 1.12 : 1)
 
@@ -257,6 +242,9 @@ struct P1V4Orb: View {
 // MARK: - Factor bar
 
 struct P1V4FactorRow: View {
+    /// SF Symbol name, derived from `label` by `P1Symbol.factor(_:)`. It used
+    /// to be an emoji picked by row index, which meant the glyph never had
+    /// anything to do with the row it sat on.
     let icon: String
     let label: String
     let note: String
@@ -265,19 +253,31 @@ struct P1V4FactorRow: View {
     @State private var filled = false
 
     var body: some View {
-        HStack(spacing: 9) {
-            Text(icon).font(.system(size: 13)).frame(width: 18)
-            (
-                Text(label).foregroundStyle(.white)
-                + Text(note.isEmpty ? "" : " \(note)").foregroundStyle(V4.mute)
-            )
-            .font(.archivoNarrow(11.5, weight: .bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            // The mockup's notes were short ("(last 10)"). Real factor values
-            // are data points ("Snell 2.1 ERA"), so the label column needs
-            // roughly half the row before the bar gets what is left.
-            .frame(width: 148, alignment: .leading)
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(colors.first ?? Color.p1Lime)
+                .frame(width: 18)
+                .accessibilityHidden(true)
+
+            // Label above, value below. They used to share one 148pt line
+            // with the value in brackets, which produced nested parentheses
+            // ("Market prior (1.43 at DK (~66% no-vig))") and truncated
+            // mid-word on anything real. Two lines cost nothing here and the
+            // value is the part a reader is checking.
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.archivoNarrow(11.5, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1).minimumScaleFactor(0.75)
+                if !note.isEmpty {
+                    Text(note)
+                        .font(.mono(9, weight: .medium))
+                        .foregroundStyle(V4.mute)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                }
+            }
+            .frame(width: 152, alignment: .leading)
 
             GeometryReader { geo in
                 Capsule().fill(.white.opacity(0.08))
@@ -312,10 +312,14 @@ struct P1V4Hero: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("⚡ TODAY'S #1 PICK")
-                    .font(.archivoNarrow(10, weight: .bold))
-                    .tracking(2.0)
-                    .foregroundStyle(Color.p1Lime)
+                HStack(spacing: 5) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 9, weight: .black))
+                    Text("TODAY'S #1 PICK")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(2.0)
+                }
+                .foregroundStyle(Color.p1Lime)
 
                 Text(pick.displayPick.uppercased())
                     .font(.anton(26))
@@ -349,9 +353,9 @@ struct P1V4Hero: View {
                         .padding(.top, 20)
 
                     ForEach(Array(factors.prefix(3).enumerated()), id: \.element.id) { i, f in
-                        P1V4FactorRow(icon: ["🔥", "🧠", "💧"][i % 3],
+                        P1V4FactorRow(icon: P1Symbol.factor(f.label),
                                       label: f.label,
-                                      note: f.value.isEmpty ? "" : "(\(f.value))",
+                                      note: f.value,
                                       value: f.strength,
                                       colors: V4.barGradients[i % V4.barGradients.count])
                     }
@@ -536,7 +540,7 @@ struct P1V4GameRow: View {
 
                 if isLocked {
                     HStack(spacing: 6) {
-                        Text("🔒").font(.system(size: 12))
+                        Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
                         Text("UNLOCK")
                             .font(.archivoNarrow(11, weight: .bold))
                             .tracking(1.1)
@@ -641,7 +645,7 @@ struct P1V4LockMore: View {
                 .blur(radius: 5)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("🔒 \(hidden.count) MORE PICKS\nCALLED TODAY")
+                Text("\(Image(systemName: "lock.fill"))  \(hidden.count) MORE PICKS\nCALLED TODAY")
                     .font(.anton(11))
                     .tracking(0.44)
                     .foregroundStyle(V4.ink)
@@ -678,7 +682,7 @@ struct P1V4LiveCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("\(v4Emoji(pick.sport)) \(pick.league.uppercased()) · YOUR PICK: \(pick.shortDisplayPick.uppercased()) · \(Int(pick.probability.rounded()))%")
+                Text("\(pick.league.uppercased()) · YOUR PICK: \(pick.shortDisplayPick.uppercased()) · \(Int(pick.probability.rounded()))%")
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
                 if let q = score.quarter ?? score.status {
@@ -755,9 +759,7 @@ struct P1V4ResultRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            Text(v4Emoji(pick.sport))
-                .font(.system(size: 19))
-                .shadow(color: V4.glow(pick.sport).opacity(0.7), radius: 4)
+            P1SportMark(sport: pick.sport, size: 18)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(pick.shortDisplayPick.uppercased())
@@ -836,9 +838,7 @@ struct P1V4YourRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            Text(v4Emoji(pick.sport))
-                .font(.system(size: 19))
-                .shadow(color: V4.glow(pick.sport).opacity(0.7), radius: 4)
+            P1SportMark(sport: pick.sport, size: 18)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(pick.shortDisplayPick.uppercased())
@@ -1310,7 +1310,7 @@ struct Pick1HomeV4: View {
         HStack(spacing: 10) {
             resultBox("\(vm.totalWins)/\(settled.count)", "Picks won")
             resultBox("\(Int(vm.winRate.rounded()))%", "Hit rate")
-            resultBox("🔥 \(vm.currentStreak)", "Win streak")
+            resultBox("\(Image(systemName: "flame.fill")) \(vm.currentStreak)", "Win streak")
         }
         .padding(.horizontal, 22)
         .padding(.top, 16)

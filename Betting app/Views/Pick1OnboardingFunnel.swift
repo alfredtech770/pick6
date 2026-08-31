@@ -514,10 +514,10 @@ private struct FeaturesScreen: View {
     let onNext: () -> Void
     private var feats: [(String, String, String)] {
         [
-            ("🎯", t(.funnel_feat1_title), t(.funnel_feat1_body)),
-            ("📊", t(.funnel_feat2_title), t(.funnel_feat2_body)),
-            ("🧾", t(.funnel_feat3_title), t(.funnel_feat3_body)),
-            ("💰", t(.funnel_feat4_title), t(.funnel_feat4_body)),
+            ("target", t(.funnel_feat1_title), t(.funnel_feat1_body)),
+            ("chart.bar.fill", t(.funnel_feat2_title), t(.funnel_feat2_body)),
+            ("doc.text.fill", t(.funnel_feat3_title), t(.funnel_feat3_body)),
+            ("dollarsign.circle.fill", t(.funnel_feat4_title), t(.funnel_feat4_body)),
         ]
     }
     var body: some View {
@@ -527,8 +527,9 @@ private struct FeaturesScreen: View {
             VStack(spacing: 0) {
                 ForEach(Array(feats.enumerated()), id: \.offset) { i, f in
                     HStack(alignment: .top, spacing: 16) {
-                        Text(f.0)
-                            .font(.system(size: 24))
+                        Image(systemName: f.0)
+                            .font(.system(size: 21, weight: .semibold))
+                            .foregroundColor(Fnl.lime)
                             .frame(width: 48, height: 48)
                             .background(RoundedRectangle(cornerRadius: 13).fill(Fnl.lime.opacity(0.1))
                                 .overlay(RoundedRectangle(cornerRadius: 13).stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
@@ -677,11 +678,11 @@ private struct QuizScreen: View {
 
     static var questions: [(String, [(String, String)])] {
         [
-            (t(.funnel_quiz1_q), [("📅",t(.funnel_quiz1_opt1)),("🗓️",t(.funnel_quiz1_opt2)),("🎲",t(.funnel_quiz1_opt3)),("🆕",t(.funnel_quiz1_opt4))]),
-            (t(.funnel_quiz2_q), [("🧠",t(.funnel_quiz2_opt1)),("📰",t(.funnel_quiz2_opt2)),("📊",t(.funnel_quiz2_opt3)),("🤷",t(.funnel_quiz2_opt4))]),
-            (t(.funnel_quiz3_q), [("📉",t(.funnel_quiz3_opt1)),("➖",t(.funnel_quiz3_opt2)),("📈",t(.funnel_quiz3_opt3)),("🤔",t(.funnel_quiz3_opt4))]),
-            (t(.funnel_quiz4_q), [("😤",t(.funnel_quiz4_opt1)),("🎰",t(.funnel_quiz4_opt2)),("🕳️",t(.funnel_quiz4_opt3)),("⏱️",t(.funnel_quiz4_opt4))]),
-            (t(.funnel_quiz5_q), [("💵",t(.funnel_quiz5_opt1)),("💰",t(.funnel_quiz5_opt2)),("💸",t(.funnel_quiz5_opt3)),("🏦",t(.funnel_quiz5_opt4))]),
+            (t(.funnel_quiz1_q), [("calendar",t(.funnel_quiz1_opt1)),("calendar.badge.clock",t(.funnel_quiz1_opt2)),("dice.fill",t(.funnel_quiz1_opt3)),("sparkles",t(.funnel_quiz1_opt4))]),
+            (t(.funnel_quiz2_q), [("brain.head.profile",t(.funnel_quiz2_opt1)),("newspaper.fill",t(.funnel_quiz2_opt2)),("chart.bar.fill",t(.funnel_quiz2_opt3)),("questionmark.circle.fill",t(.funnel_quiz2_opt4))]),
+            (t(.funnel_quiz3_q), [("chart.line.downtrend.xyaxis",t(.funnel_quiz3_opt1)),("minus",t(.funnel_quiz3_opt2)),("chart.line.uptrend.xyaxis",t(.funnel_quiz3_opt3)),("questionmark.bubble.fill",t(.funnel_quiz3_opt4))]),
+            (t(.funnel_quiz4_q), [("flame.fill",t(.funnel_quiz4_opt1)),("seal.fill",t(.funnel_quiz4_opt2)),("circle.dashed",t(.funnel_quiz4_opt3)),("stopwatch.fill",t(.funnel_quiz4_opt4))]),
+            (t(.funnel_quiz5_q), [("banknote.fill",t(.funnel_quiz5_opt1)),("dollarsign.circle.fill",t(.funnel_quiz5_opt2)),("arrow.down.right.circle.fill",t(.funnel_quiz5_opt3)),("building.columns.fill",t(.funnel_quiz5_opt4))]),
         ]
     }
 
@@ -699,7 +700,7 @@ private struct QuizScreen: View {
                 ForEach(Array(q.1.enumerated()), id: \.offset) { i, opt in
                     Button { onPick(i) } label: {
                         HStack(spacing: 14) {
-                            Text(opt.0).font(.system(size: 26))
+                            Image(systemName: opt.0).font(.system(size: 22, weight: .semibold)).foregroundColor(Fnl.lime)
                             Text(opt.1).font(.archivo(16, weight: .bold)).foregroundColor(Fnl.white)
                             Spacer(minLength: 0)
                             ZStack {
@@ -983,7 +984,7 @@ private struct SuccessScreen: View {
                 FnlLockup().padding(.top, 24)
                 Spacer()
                 VStack(spacing: 18) {
-                    Text("🎉").font(.system(size: 70))
+                    Image(systemName: "checkmark.seal.fill").font(.system(size: 62, weight: .semibold)).foregroundColor(Fnl.lime)
                     FnlHeadline(text: t(.funnel_success_headline), accent: Fnl.win, size: 60, center: true)
                         .multilineTextAlignment(.center)
                     // Copy is honest about tier — "Pro" only when they actually
@@ -1013,9 +1014,9 @@ private struct SocialProofScreen: View {
     // App Review "misleading content" risk. Refresh the figures per release.
     private var stats: [(emoji: String, big: String, title: String, sub: String)] {
         [
-            ("🧾", "296", t(.funnel_social1_title), t(.funnel_social1_sub)),
-            ("🎯", "74%", t(.funnel_social2_title), t(.funnel_social2_sub)),
-            ("📊", "62%", t(.funnel_social3_title), t(.funnel_social3_sub)),
+            ("doc.text.fill", "296", t(.funnel_social1_title), t(.funnel_social1_sub)),
+            ("target", "74%", t(.funnel_social2_title), t(.funnel_social2_sub)),
+            ("chart.bar.fill", "62%", t(.funnel_social3_title), t(.funnel_social3_sub)),
         ]
     }
     var body: some View {
@@ -1101,8 +1102,8 @@ private struct GoalsScreen: View {
     let onNext: () -> Void
     private var goals: [(String, String)] {
         [
-            ("💸", t(.funnel_goal1)), ("🎯", t(.funnel_goal2)),
-            ("📈", t(.funnel_goal3)), ("🏆", t(.funnel_goal4)),
+            ("arrow.down.right.circle.fill", t(.funnel_goal1)), ("target", t(.funnel_goal2)),
+            ("chart.line.uptrend.xyaxis", t(.funnel_goal3)), ("trophy.fill", t(.funnel_goal4)),
         ]
     }
     var body: some View {
@@ -1114,7 +1115,7 @@ private struct GoalsScreen: View {
                 ForEach(Array(goals.enumerated()), id: \.offset) { i, g in
                     Button { selected = i } label: {
                         HStack(spacing: 14) {
-                            Text(g.0).font(.system(size: 24))
+                            Image(systemName: g.0).font(.system(size: 21, weight: .semibold)).foregroundColor(Fnl.lime)
                             Text(g.1).font(.archivo(16, weight: .semibold)).foregroundColor(Fnl.white)
                             Spacer(minLength: 0)
                             ZStack {
@@ -1147,8 +1148,8 @@ private struct NotificationsScreen: View {
     private var perks: [(String, String)] {
         [
             ("⚡️", t(.funnel_notif_perk1)),
-            ("🔴", t(.funnel_notif_perk2)),
-            ("🏆", t(.funnel_notif_perk3)),
+            ("dot.radiowaves.left.and.right", t(.funnel_notif_perk2)),
+            ("trophy.fill", t(.funnel_notif_perk3)),
         ]
     }
     var body: some View {
@@ -1160,7 +1161,7 @@ private struct NotificationsScreen: View {
             VStack(spacing: 12) {
                 ForEach(Array(perks.enumerated()), id: \.offset) { _, p in
                     HStack(spacing: 14) {
-                        Text(p.0).font(.system(size: 22))
+                        Image(systemName: p.0).font(.system(size: 19, weight: .semibold)).foregroundColor(Fnl.lime)
                             .frame(width: 44, height: 44)
                             .background(RoundedRectangle(cornerRadius: 12).fill(Fnl.lime.opacity(0.1))
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Fnl.lime.opacity(0.3), lineWidth: 1)))
