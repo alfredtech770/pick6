@@ -262,8 +262,11 @@ struct Pick1HomeHiFi: View {
                         Pick1HomeV4(vm: vm,
                                     onSelectPick: { openTrackOnDetail = false; detailPick = $0 },
                                     onTrackPick: { openTrackOnDetail = true; detailPick = $0 },
+                                    onProfile: { tab = .profile },
                                     onUpgrade: { openPaywall(source: "home_v4") },
-                                    bottomInset: 86)
+                                    // Was 86 to clear the floating pill.
+                                    // Nothing floats there now.
+                                    bottomInset: 8)
                     }
                 case .picks:
                     // Picks tab renders the Wins design exactly — the
@@ -298,7 +301,8 @@ struct Pick1HomeHiFi: View {
                                         await vm.stopLiveSession()
                                     }
                                 },
-                                onBrowsePicks: { tab = .home })
+                                onBrowsePicks: { tab = .home },
+                                onBack: { tab = .home })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -325,20 +329,11 @@ struct Pick1HomeHiFi: View {
             // a soft crossfade so the page swap doesn't snap.
             .animation(Pick1Springs.smooth, value: sportHub)
 
-            // Hidden whenever a detail is open. `MatchDetailView` is a
-            // sheet, not a full-screen cover, so without this the floating
-            // nav stays parked over the detail and eats the bottom of it.
-            if detailPick == nil {
-                FloatingNav(tab: $tab, liveCount: liveCount)
-                // Pushed below the safe-area bottom so the nav sits
-                // alongside the home-indicator gesture bar instead of
-                // floating above it. -12pt on .padding(.bottom) lets
-                // the pill bleed into the indicator zone — still well
-                // above the actual screen edge, but visually anchored
-                // to the bottom rather than hovering.
-                    .padding(.bottom, -12)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
+            // The floating bottom nav is gone. It carried Home, Favourites
+            // and Profile; Home is the screen you are already on, Favourites
+            // is the segment's own YOUR PICKS tab, and Profile moved to the
+            // top-right button. All three were duplicates or no-ops, and the
+            // pill was covering content on every screen to provide them.
         }
         .animation(Pick1Springs.smooth, value: detailPick?.id)
         // Recovery banners sit above the tab content rather than over it:

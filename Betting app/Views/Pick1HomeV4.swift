@@ -95,6 +95,10 @@ func v4Name(_ sport: String) -> String {
 struct P1V4TopBar: View {
     var coins: Int?
     var onCoinTap: () -> Void = {}
+    /// Profile lives here now. The floating bottom nav is gone, so this is
+    /// the only route to it, which is also why it is a labelled target and
+    /// not a bare avatar.
+    var onProfile: () -> Void = {}
 
     var body: some View {
         HStack {
@@ -115,32 +119,29 @@ struct P1V4TopBar: View {
                 Color.clear.frame(width: 34, height: 1)
             }
 
+            // The canonical wordmark, the same component the splash draws,
+            // rather than a second lockup invented for this bar. The bolt
+            // disc that used to sit beside it was a third mark competing
+            // with the tile for the same job.
+            Pick1Wordmark(size: 28)
+
             Spacer(minLength: 8)
 
-            VStack(spacing: 3) {
-                P1BoltMark()
-                    .fill(V4.ink)
-                    .frame(width: 19, height: 19)
-                    .frame(width: 34, height: 34)
+            Button(action: onProfile) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(V4.ink2)
+                    .frame(width: 36, height: 36)
                     .background(
                         Circle().fill(
-                            LinearGradient(colors: [Color.p1Lime, Color(hex: "#8FC218")],
+                            LinearGradient(colors: [V4.panelTop, V4.panelBot],
                                            startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
                     )
-                    .shadow(color: Color.p1Lime.opacity(0.5), radius: 13)
-                Text("PICK1")
-                    .font(.archivoNarrow(8, weight: .bold))
-                    .tracking(2.4)
-                    .foregroundStyle(V4.mute)
+                    .overlay(Circle().strokeBorder(V4.line, lineWidth: 1))
             }
-
-            Spacer(minLength: 8)
-
-            // No avatar here: the floating nav already owns Profile, and two
-            // routes to the same screen made the top bar look busier than it
-            // needed to be. The spacer keeps the bolt optically centred.
-            Color.clear.frame(width: 34, height: 1)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Profile")
         }
         .padding(.horizontal, 22)
         .padding(.top, 8)
@@ -948,6 +949,7 @@ struct Pick1HomeV4: View {
     var onSelectPick: (Pick) -> Void = { _ in }
     /// Opens the pick with its bet drawer already expanded.
     var onTrackPick: (Pick) -> Void = { _ in }
+    var onProfile: () -> Void = {}
     var onUpgrade: () -> Void = {}
     /// Space owned by whatever sits under this screen. The production shell
     /// floats a nav pill over the bottom, so both the scroll content and the
@@ -1131,7 +1133,8 @@ struct Pick1HomeV4: View {
 
             ScrollView(showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    P1V4TopBar(coins: Self.showUnbacked ? 2_450 : nil)
+                    P1V4TopBar(coins: Self.showUnbacked ? 2_450 : nil,
+                               onProfile: onProfile)
 
                     P1V4Segment(selection: $tab)
 

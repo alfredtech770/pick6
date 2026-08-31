@@ -3569,6 +3569,10 @@ struct ProfileView: View {
     let onShowPaywall: () -> Void
     let onSignOut: () -> Void
     var onBrowsePicks: () -> Void = {}
+    /// The floating bottom nav used to be the only way off this screen, so
+    /// its TopNavBar shipped with `showBack: false`. With the nav gone the
+    /// page would have been a trap.
+    var onBack: (() -> Void)? = nil
 
     /// Live, mutable user state. Read for display, mutated via the
     /// Edit Profile sheet (which calls auth.saveProfile).
@@ -3589,7 +3593,8 @@ struct ProfileView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                TopNavBar(crumb: "APP · ", crumbAccent: "PROFILE", live: false, onBack: {}, showBack: false)
+                TopNavBar(crumb: "APP · ", crumbAccent: "PROFILE", live: false,
+                          onBack: { onBack?() }, showBack: onBack != nil)
                     .overlay(alignment: .trailing) {
                         // Top-right Edit button — opens the
                         // EditProfileSheet (same destination as tapping
