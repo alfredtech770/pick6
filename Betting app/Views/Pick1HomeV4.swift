@@ -199,6 +199,10 @@ struct P1V4Segment: View {
 struct P1V4Orb: View {
     let sport: String
     let isOn: Bool
+    /// False for a sport with nothing on the board. It still appears, because
+    /// the ten sports are the product's coverage claim, but it reads as quiet
+    /// rather than pretending to hold something.
+    var hasPicks: Bool = true
     var action: () -> Void
 
     var body: some View {
@@ -213,6 +217,7 @@ struct P1V4Orb: View {
                         )
                     )
                     .overlay(Circle().strokeBorder(isOn ? Color.p1Lime : V4.line, lineWidth: 1.5))
+                    .opacity(hasPicks ? 1 : 0.45)
                     .shadow(color: isOn ? Color.p1Lime.opacity(0.45) : .clear, radius: 13)
                     .scaleEffect(isOn ? 1.12 : 1)
 
@@ -220,6 +225,7 @@ struct P1V4Orb: View {
                     .font(.archivoNarrow(8.5, weight: .bold))
                     .tracking(0.85)
                     .foregroundStyle(isOn ? Color.p1Lime : V4.mute)
+                    .opacity(hasPicks ? 1 : 0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .padding(.top, 6)
@@ -981,13 +987,28 @@ struct Pick1HomeV4: View {
 
     /// Sports with a slate today, strongest first, so the orb row opens on
     /// the day's real edge instead of a fixed order.
-    private var sports: [String] {
+    /// Sports that have at least one call on the board, best first.
+    private var stockedSports: [String] {
         Dictionary(grouping: vm.todayPicks.filter { P1_SPORTS.contains($0.sport) },
                    by: \.sport)
             .map { (sport: $0.key, best: $0.value.map(\.probability).max() ?? 0) }
             .sorted { $0.best > $1.best }
             .map(\.sport)
     }
+
+    /// The rail: all ten, always.
+    ///
+    /// It used to list only the sports with picks, so on a normal day three
+    /// or four of the ten simply did not exist in the UI. A user told the app
+    /// covers ten sports counted five and concluded they were missing. Quiet
+    /// sports now appear, drained and unglowing, and say why when tapped —
+    /// which also stops the rail's length changing every morning.
+    private var sports: [String] {
+        let stocked = stockedSports
+        return stocked + P1_SPORTS.filter { !stocked.contains($0) }
+    }
+
+    private func hasPicks(_ sport: String) -> Bool { stockedSports.contains(sport) }
     private var activeSport: String? { selectedSport.flatMap { sports.contains($0) ? $0 : nil } ?? sports.first }
     private var sportPicks: [Pick] {
         guard let s = activeSport else { return [] }
@@ -1021,6 +1042,18 @@ struct Pick1HomeV4: View {
     /// the selected sport implies.
     private var shownRest: [Pick] { rest.isEmpty ? boardRest : rest }
     private var restIsWholeBoard: Bool { rest.isEmpty && !boardRest.isEmpty }
+
+    /// The line beside the games heading. Three cases, and the difference
+    /// matters: a sport with nothing must not be described as having "one
+    /// call", which is what a single condition here used to do the moment
+    /// quiet sports became selectable.
+    private var restMetaLine: String {
+        guard restIsWholeBoard else { return "ALL CALLED BY 6 AM" }
+        let name = v4Name(activeSport ?? "").uppercased()
+        return sportPicks.isEmpty
+            ? "NO \(name) CALLS TODAY"
+            : "\(name) HAS ONE CALL TODAY"
+    }
 
     /// Within the selected sport the hero IS the free pick, so everything
     /// under it is locked for a free user. Rows still render, blurred, because
@@ -1148,7 +1181,7 @@ struct Pick1HomeV4: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(sports, id: \.self) { s in
-                        P1V4Orb(sport: s, isOn: s == activeSport) {
+                        P1V4Orb(sport: s, isOn: s == activeSport, hasPicks: hasPicks(s)) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 selectedSport = s
                             }
@@ -1175,6 +1208,31 @@ struct Pick1HomeV4: View {
             P1V4Hero(pick: hero,
                      showUnbacked: Self.showUnbacked,
                      backers: 312) { onSelectPick(hero) }
+        } else if let s = activeSport, !coveredToday.isEmpty {
+            // Selected a sport with nothing on it. Say so plainly rather than
+            // dropping the user onto a board that silently belongs to other
+            // sports, and keep that board underneath so the tap is not a
+            // dead end.
+            VStack(spacing: 7) {
+                P1SportMark(sport: s, size: 26, glowing: false)
+                Text("NO \(v4Name(s).uppercased()) CALLS TODAY")
+                    .font(.anton(17))
+                    .foregroundStyle(.white)
+                Text("Every sport is scored each morning and only the calls worth making are published. Nothing here today.")
+                    .font(.archivo(12.5))
+                    .foregroundStyle(V4.mute)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .frame(maxWidth: 290)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 26)
+            .background(RoundedRectangle(cornerRadius: 20)
+                .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
+                                     startPoint: .top, endPoint: .bottom)))
+            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(V4.line, lineWidth: 1))
+            .padding(.horizontal, 22)
+            .padding(.top, 14)
         }
 
         if !shownRest.isEmpty {
@@ -1188,9 +1246,7 @@ struct Pick1HomeV4: View {
                 )
                 .font(.anton(18))
                 Spacer(minLength: 8)
-                Text(restIsWholeBoard
-                     ? "\(v4Name(activeSport ?? "").uppercased()) HAS ONE CALL TODAY"
-                     : "ALL CALLED BY 6 AM")
+                Text(restMetaLine)
                     .font(.mono(9, weight: .bold))
                     .tracking(0.72)
                     .foregroundStyle(V4.mute)
