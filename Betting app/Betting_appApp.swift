@@ -94,6 +94,14 @@ struct Betting_appApp: App {
                     // must not stand in for the real home outside this flag.
                     Pick1HomeV2DebugHost()
                         .preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showOnboarding") {
+                    // Review hook for the production funnel. Flipping
+                    // `hasFinishedOnboarding` from outside the app does not
+                    // work reliably (simctl writes land in the wrong defaults
+                    // domain), and signing out to see the funnel destroys the
+                    // session you were testing with.
+                    Pick1OnboardingFunnel { _ in }
+                        .preferredColorScheme(.dark)
                 } else if CommandLine.arguments.contains("-showHomeUnauthenticated") {
                     Pick1HomeHiFi()
                         .preferredColorScheme(.dark)
