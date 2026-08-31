@@ -637,5 +637,6 @@ enum GermanStrings {
         .tk_logged: "Erfasst",
         .settings_rate_app: "Pick1 bewerten",
         .settings_rate_app_sub: "Bewertung im App Store abgeben",
+        .tk_max_win: "Max. Gewinn",
     ]
 }

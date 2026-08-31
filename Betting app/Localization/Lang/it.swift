@@ -637,5 +637,6 @@ enum ItalianStrings {
         .tk_logged: "Registrato",
         .settings_rate_app: "Valuta Pick1",
         .settings_rate_app_sub: "Lascia una recensione sull'App Store",
+        .tk_max_win: "Vincita max",
     ]
 }

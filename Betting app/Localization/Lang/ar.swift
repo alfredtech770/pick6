@@ -639,5 +639,6 @@ enum ArabicStrings {
         .tk_logged: "مُسجَّل",
         .settings_rate_app: "قيّم Pick1",
         .settings_rate_app_sub: "اترك تقييمًا على App Store",
+        .tk_max_win: "أقصى ربح",
     ]
 }

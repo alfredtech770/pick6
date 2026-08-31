@@ -692,6 +692,9 @@ enum L10nKey: String, CaseIterable {
     // User-initiated App Store review.
     case settings_rate_app
     case settings_rate_app_sub
+
+    // Biggest payout available across this match's markets.
+    case tk_max_win
 }
 
 // MARK: - Manager

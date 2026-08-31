@@ -637,5 +637,6 @@ enum FrenchStrings {
         .tk_logged: "Enregistré",
         .settings_rate_app: "Noter Pick1",
         .settings_rate_app_sub: "Laisser un avis sur l'App Store",
+        .tk_max_win: "Gain max",
     ]
 }

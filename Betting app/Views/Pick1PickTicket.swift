@@ -128,6 +128,35 @@ struct P1PickTicket: View {
     private var hasMarketOdds: Bool { (pick.marketOdds ?? 0) > 1.0 }
     private var odds: Double { pick.marketOdds ?? pick.impliedOddsForPayout ?? 0 }
 
+    /// The biggest return available anywhere on this match, on the same $100
+    /// the rest of the app quotes: the main call, or whichever prop market
+    /// pays more.
+    ///
+    /// Deliberately carries the market's NAME and its probability rather than
+    /// standing alone as a number. The biggest payout is by definition the
+    /// least likely outcome, so a bare "you could win $412" would be a lure.
+    /// With "Red card: YES, 24%" beside it the reader can see what they are
+    /// looking at, which is the same rule the home card follows when it puts
+    /// the win probability next to the biggest return.
+    private var maxWin: (money: String, market: String, prob: Int)? {
+        var best: (Double, String, Int)? = nil
+
+        // The main call itself is a market, and often the best one.
+        if let mainProb = Optional(Int(pick.probability.rounded())), odds > 1 {
+            best = (odds, teamShortName(pick.pick, sport: pick.sport), mainProb)
+        }
+        for prop in pick.bettingProps ?? [] {
+            guard let q = prop.quotedOdds, let p = prop.probability else { continue }
+            if best == nil || q.value > best!.0 {
+                best = (q.value, "\(prop.label): \(prop.value)", p)
+            }
+        }
+        // Nothing to crow about if the best market IS the main call at the
+        // price already shown two lines above.
+        guard let b = best, b.0 > odds * 1.05 else { return nil }
+        return ("$\(Int((100 * b.0).rounded()))", b.1, b.2)
+    }
+
     private var stampText: String? {
         if pick.isWin { return "WIN" }
         if pick.isLoss { return "LOSS" }
@@ -232,6 +261,31 @@ struct P1PickTicket: View {
                 .padding(.top, 18)
                 .overlay(alignment: .top) {
                     Rectangle().fill(V4.line).frame(height: 1).padding(.top, 8)
+                }
+
+                if let mw = maxWin, !settled {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.up.right.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(V4.gold)
+                        Text(t(.tk_max_win).uppercased())
+                            .font(.archivoNarrow(9, weight: .bold)).tracking(1.4)
+                            .foregroundStyle(V4.mute)
+                        Text("$100 → \(mw.money)")
+                            .font(.anton(15))
+                            .foregroundStyle(V4.gold)
+                        Spacer(minLength: 6)
+                        Text("\(mw.market.uppercased()) · \(mw.prob)%")
+                            .font(.mono(8.5, weight: .bold))
+                            .foregroundStyle(V4.mute)
+                            .lineLimit(1).minimumScaleFactor(0.55)
+                    }
+                    .padding(.horizontal, 11).padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(V4.gold.opacity(0.07)))
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .strokeBorder(V4.gold.opacity(0.30), lineWidth: 1))
+                    .padding(.top, 12)
                 }
 
                 if let scoreLine {

@@ -638,5 +638,6 @@ enum EnglishStrings {
         .tk_logged: "Logged",
         .settings_rate_app: "Rate Pick1",
         .settings_rate_app_sub: "Leave a review on the App Store",
+        .tk_max_win: "Max win",
     ]
 }
