@@ -1813,15 +1813,31 @@ struct MatchDetailView: View {
                                         .lineLimit(2)
                                 }
                                 Spacer(minLength: 6)
-                                // Return on EVERY market: real book odds get the
-                                // solid pill; otherwise an estimate implied from
-                                // our own probability, labeled EST.
-                                if let odds = prop.odds {
-                                    Text("$100 → $\(Int((odds * 100).rounded()))")
+                                // A return on EVERY market, and the two kinds
+                                // look different on purpose. A real book quote
+                                // is money a user can go and get, so it gets
+                                // the solid pill. An estimate derived from our
+                                // own probability is not, so it is outlined and
+                                // says EST. Making them look identical would be
+                                // the same error the ticket header used to make.
+                                if let money = prop.returnOnHundred,
+                                   let q = prop.quotedOdds {
+                                    if q.isMarket {
+                                        Text(money)
+                                            .font(.mono(12, weight: .bold))
+                                            .foregroundColor(Color(hex: "#171717"))
+                                            .padding(.horizontal, 9).padding(.vertical, 5)
+                                            .background(Capsule().fill(sportAccent))
+                                    } else {
+                                        HStack(spacing: 5) {
+                                            Text(money)
+                                            Text("EST").foregroundColor(Color(hex: "#6E6F75"))
+                                        }
                                         .font(.mono(12, weight: .bold))
-                                        .foregroundColor(Color(hex: "#171717"))
+                                        .foregroundColor(Color(hex: "#B9B7B0"))
                                         .padding(.horizontal, 9).padding(.vertical, 5)
-                                        .background(Capsule().fill(sportAccent))
+                                        .background(Capsule().strokeBorder(V4.line, lineWidth: 1))
+                                    }
                                 }
                             }
                         }

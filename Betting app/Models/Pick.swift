@@ -600,3 +600,30 @@ struct LiveScore: Identifiable, Codable, Equatable {
             || s == "f/ot" || s == "f/so" || s == "ended"
     }
 }
+
+extension BettingProp {
+    /// Decimal odds to quote this market at, and whether they came from a book.
+    ///
+    /// The detail page promised "a return on EVERY market: real book odds get
+    /// the solid pill; otherwise an estimate implied from our own probability"
+    /// but only the first half was ever written, so any prop the pipeline
+    /// found no quote for showed a confidence figure and no money at all.
+    ///
+    /// The estimate uses the same clamp as `Pick.decimalOdds` rather than a
+    /// raw 100/p, so the two never disagree: probabilities are held to
+    /// 40-90% and the price floored at 1.20. Without that a prop called at
+    /// 95% would advertise a 1.05x return, which is both misleading and
+    /// nothing any book would actually offer.
+    var quotedOdds: (value: Double, isMarket: Bool)? {
+        if let o = odds, o > 1.0 { return (o, true) }
+        guard let p = probability, p > 0 else { return nil }
+        let clamped = max(0.40, min(0.90, Double(p) / 100.0))
+        return (max(1.20, 1.0 / clamped), false)
+    }
+
+    /// "$100 → $182" on the reference stake the rest of the app quotes.
+    var returnOnHundred: String? {
+        guard let q = quotedOdds else { return nil }
+        return "$100 → $\(Int((100 * q.value).rounded()))"
+    }
+}
