@@ -34,4 +34,16 @@ enum RatingsPrompt {
         AppStore.requestReview(in: scene)
         UserDefaults.standard.set(version, forKey: lastVersionKey)
     }
+
+    /// The URL for a user who WANTS to leave a review, from a tap they made.
+    ///
+    /// Deliberately not `AppStore.requestReview`. That call is a *request*:
+    /// iOS decides whether to show anything, silently caps it to roughly
+    /// three a year, and shows nothing at all in a build installed from
+    /// Xcode. Wired to a button it looks broken, because most taps do
+    /// nothing. `?action=write-review` opens the App Store on the review
+    /// sheet every time, which is what a deliberate tap should do.
+    static var writeReviewURL: URL? {
+        URL(string: "https://apps.apple.com/app/id\(UpdateChecker.appStoreId)?action=write-review")
+    }
 }

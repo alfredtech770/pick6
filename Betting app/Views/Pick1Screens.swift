@@ -3896,6 +3896,20 @@ struct ProfileView: View {
                     )
                     divider
                     settingsLinkRow(
+                        icon: "star.fill",
+                        title: loc.t(.settings_rate_app),
+                        sub: loc.t(.settings_rate_app_sub),
+                        trailing: nil,
+                        action: {
+                            // Opens the App Store review sheet directly. The
+                            // automatic prompt still fires on its own terms
+                            // after a win; this is the door for someone who
+                            // came looking for it.
+                            if let url = RatingsPrompt.writeReviewURL { openURL(url) }
+                        }
+                    )
+                    divider
+                    settingsLinkRow(
                         icon: "doc.text.fill",
                         title: loc.t(.settings_terms),
                         sub: "Service terms · effective Apr 30, 2026",

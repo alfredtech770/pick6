@@ -183,7 +183,7 @@ enum EnglishStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "WIN\nSMARTER.\n*NOT HARDER.*",
-        .funnel_welcome_lead:            "The AI that calls one game a day across 9 sports — and logs every result in public.",
+        .funnel_welcome_lead:            "The AI that calls one game a day across 10 sports — and logs every result in public.",
         .funnel_welcome_cta:             "GET STARTED →",
         .funnel_welcome_member:          "Already a member? ",
         .funnel_welcome_signin:          "Sign in",
@@ -191,7 +191,7 @@ enum EnglishStrings {
         .funnel_feat_kicker:             "Meet Pick1",
         .funnel_feat_headline:           "ONE APP.\nEVERY *EDGE.*",
         .funnel_feat1_title:             "One daily AI pick",
-        .funnel_feat1_body:              "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis & Cricket.",
+        .funnel_feat1_body:              "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket and golf.",
         .funnel_feat2_title:             "Calibrated confidence",
         .funnel_feat2_body:              "When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\"",
         .funnel_feat3_title:             "Public results ledger",
@@ -274,7 +274,7 @@ enum EnglishStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "The Pick1 fix · 1 of 3",
         .funnel_green1_headline:         "DATA, NOT\n*EMOTION.*",
-        .funnel_green1_lead:             "One AI-calculated pick a day — the single highest-edge call across 9 sports.",
+        .funnel_green1_lead:             "One AI-calculated pick a day — the single highest-edge call across 10 sports.",
         .funnel_green1_cta:              "NEXT →",
         .funnel_green2_kicker:           "The Pick1 fix · 2 of 3",
         .funnel_green2_headline:         "SEE THE\n*REASONING.*",
@@ -360,7 +360,7 @@ enum EnglishStrings {
         // Paywall
         .funnel_paywall_kicker:          "Go Pro",
         .funnel_paywall_headline:        "UNLOCK\nEVERY *PICK.*",
-        .funnel_paywall_feat1:           "Daily AI pick across 9 sports",
+        .funnel_paywall_feat1:           "Daily AI pick across 10 sports",
         .funnel_paywall_feat2:           "Calibrated confidence + reasoning",
         .funnel_paywall_feat3:           "Public ledger, live tracking & ROI",
         .funnel_paywall_feat4:           "Best line across 6 sportsbooks",
@@ -636,5 +636,7 @@ enum EnglishStrings {
         .tk_returns: "$100 returns",
         .tk_no_market_short: "No market line",
         .tk_logged: "Logged",
+        .settings_rate_app: "Rate Pick1",
+        .settings_rate_app_sub: "Leave a review on the App Store",
     ]
 }

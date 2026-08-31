@@ -145,16 +145,22 @@ struct Pick1OnboardingFunnel: View {
 
             // Per-screen content, re-keyed on index so the slide transition
             // fires on every advance.
+            // UIKit's push, which SwiftUI does not ship. The incoming screen
+            // travels the full width from the trailing edge while the
+            // outgoing one drifts only a third of the way out and fades.
+            // That mismatch is the whole trick: equal travel reads as two
+            // slides, unequal travel reads as depth, which is why every
+            // Apple push does it.
             screen(for: step)
                 .id(index)
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .opacity))
+                    removal: .offset(x: -110).combined(with: .opacity)))
 
             if step.showsChrome { chrome }
         }
         .preferredColorScheme(.dark)
-        .animation(.spring(response: 0.4, dampingFraction: 0.86), value: index)
+        .animation(.spring(response: 0.44, dampingFraction: 0.82), value: index)
         .onAppear {
             restoreProgress()
             Analytics.track("funnel_step_viewed", ["step": step.analyticsName, "index": index])
@@ -210,6 +216,10 @@ struct Pick1OnboardingFunnel: View {
                     Capsule().fill(Fnl.lime)
                         .frame(width: max(4, geo.size.width * CGFloat(progress)))
                         .shadow(color: Fnl.lime.opacity(0.6), radius: 6)
+                        // Springs with the page rather than snapping to the
+                        // new width, so finishing a step reads as one motion.
+                        .animation(.spring(response: 0.5, dampingFraction: 0.85),
+                                   value: progress)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
             }
@@ -698,7 +708,10 @@ private struct QuizScreen: View {
                 .padding(.bottom, 26)
             VStack(spacing: 12) {
                 ForEach(Array(q.1.enumerated()), id: \.offset) { i, opt in
-                    Button { onPick(i) } label: {
+                    Button {
+                        Haptics.tap()
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.62)) { onPick(i) }
+                    } label: {
                         HStack(spacing: 14) {
                             Image(systemName: opt.0).font(.system(size: 22, weight: .semibold)).foregroundColor(Fnl.lime)
                             Text(opt.1).font(.archivo(16, weight: .bold)).foregroundColor(Fnl.white)
@@ -708,13 +721,20 @@ private struct QuizScreen: View {
                                     .background(Circle().fill(selected == i ? Fnl.lime : .clear))
                                 if selected == i {
                                     Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundColor(Fnl.ink)
+                                        .transition(.scale(scale: 0.4).combined(with: .opacity))
                                 }
                             }
                             .frame(width: 26, height: 26)
+                            .scaleEffect(selected == i ? 1.12 : 1)
                         }
                         .padding(.horizontal, 20).padding(.vertical, 18)
                         .background(RoundedRectangle(cornerRadius: 16).fill(selected == i ? Fnl.lime.opacity(0.08) : Fnl.panel)
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(selected == i ? Fnl.lime : Fnl.line, lineWidth: 2)))
+                        // The chosen row lifts a hair and glows; the others
+                        // stay put. Movement on the thing you touched is what
+                        // makes the tap feel answered.
+                        .scaleEffect(selected == i ? 1.02 : 1)
+                        .shadow(color: Fnl.lime.opacity(selected == i ? 0.22 : 0), radius: 14, y: 4)
                     }
                     .buttonStyle(.plain)
                 }
@@ -1350,7 +1370,9 @@ struct PaywallScreen: View {
     }
 
     var body: some View {
-        FnlScreen(topInset: 14) {
+        // 14 put the GO PRO kicker and the ✕ hard against the Dynamic
+        // Island. Dense is right for this screen, cramped is not.
+        FnlScreen(topInset: 34) {
             FnlKick(text: t(.funnel_paywall_kicker)).padding(.bottom, 14)
             FnlHeadline(text: t(.funnel_paywall_headline))
             if let echo = goalEcho {
@@ -1441,8 +1463,15 @@ struct PaywallScreen: View {
     /// selected while the CTA silently bought the first product. Align the
     /// selection to what's actually available (prefer Lifetime when present).
     private func alignSelection() {
-        guard !subs.products.isEmpty,
-              !subs.products.contains(where: { $0.id == selected }) else { return }
+        guard !subs.products.isEmpty else { return }
+        // Annual outranks the stored default. The old guard bailed as soon as
+        // `selected` named a product that existed, and the default constant
+        // names Monthly, so Annual could never be preselected once it shipped.
+        if let annual = subs.products.first(where: { $0.id.hasSuffix("annual") }) {
+            selected = annual.id
+            return
+        }
+        guard !subs.products.contains(where: { $0.id == selected }) else { return }
         selected = subs.products.first(where: { $0.id.hasSuffix("annual") })?.id
             ?? subs.products.first(where: { $0.id.hasSuffix("monthly") })?.id
             ?? subs.products.first(where: { $0.id.hasSuffix("weekly") })?.id

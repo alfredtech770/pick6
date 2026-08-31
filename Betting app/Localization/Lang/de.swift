@@ -182,7 +182,7 @@ enum GermanStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*",
-        .funnel_welcome_lead:            "Die KI, die täglich ein Spiel in 9 Sportarten tippt — und jedes Ergebnis öffentlich protokolliert.",
+        .funnel_welcome_lead:            "Die KI, die täglich ein Spiel in 10 Sportarten tippt — und jedes Ergebnis öffentlich protokolliert.",
         .funnel_welcome_cta:             "LOSLEGEN →",
         .funnel_welcome_member:          "Schon dabei? ",
         .funnel_welcome_signin:          "Anmelden",
@@ -273,7 +273,7 @@ enum GermanStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "Die Pick1-Lösung · 1 von 3",
         .funnel_green1_headline:         "DATEN, NICHT\n*EMOTION.*",
-        .funnel_green1_lead:             "Ein KI-berechneter Tipp pro Tag — der eine Tipp mit dem größten Vorteil in 9 Sportarten.",
+        .funnel_green1_lead:             "Ein KI-berechneter Tipp pro Tag — der eine Tipp mit dem größten Vorteil in 10 Sportarten.",
         .funnel_green1_cta:              "WEITER →",
         .funnel_green2_kicker:           "Die Pick1-Lösung · 2 von 3",
         .funnel_green2_headline:         "SIEH DIE\n*BEGRÜNDUNG.*",
@@ -312,7 +312,7 @@ enum GermanStrings {
         .funnel_compare_row3:            "Vor Anpfiff protokolliert",
         .funnel_compare_row4:            "Bestquoten-Finder",
         .funnel_compare_row5:            "Keine „garantierten Treffer\"",
-        .funnel_compare_row6:            "9 Sportarten, ein Tipp",
+        .funnel_compare_row6:            "10 Sportarten, ein Tipp",
         // Goals
         .funnel_goals_kicker:            "Setze dein Ziel",
         .funnel_goals_headline:          "WAS IST DEIN\n*ZIEL?*",
@@ -359,7 +359,7 @@ enum GermanStrings {
         // Paywall
         .funnel_paywall_kicker:          "Werde Pro",
         .funnel_paywall_headline:        "SCHALTE JEDEN\n*TIPP FREI.*",
-        .funnel_paywall_feat1:           "Täglicher KI-Tipp in 9 Sportarten",
+        .funnel_paywall_feat1:           "Täglicher KI-Tipp in 10 Sportarten",
         .funnel_paywall_feat2:           "Kalibrierte Sicherheit + Begründung",
         .funnel_paywall_feat3:           "Öffentliches Register, Live-Tracking & ROI",
         .funnel_paywall_feat4:           "Beste Quote bei 6 Buchmachern",
@@ -635,5 +635,7 @@ enum GermanStrings {
         .tk_returns: "100 $ bringen",
         .tk_no_market_short: "Keine Marktquote",
         .tk_logged: "Erfasst",
+        .settings_rate_app: "Pick1 bewerten",
+        .settings_rate_app_sub: "Bewertung im App Store abgeben",
     ]
 }

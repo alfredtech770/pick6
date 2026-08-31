@@ -182,7 +182,7 @@ enum FrenchStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GAGNEZ\nPLUS MALIN.\n*PAS PLUS DUR.*",
-        .funnel_welcome_lead:            "L'IA qui désigne un match par jour sur 9 sports — et note chaque résultat en public.",
+        .funnel_welcome_lead:            "L'IA qui désigne un match par jour sur 10 sports — et note chaque résultat en public.",
         .funnel_welcome_cta:             "COMMENCER →",
         .funnel_welcome_member:          "Déjà membre ? ",
         .funnel_welcome_signin:          "Se connecter",
@@ -190,7 +190,7 @@ enum FrenchStrings {
         .funnel_feat_kicker:             "Voici Pick1",
         .funnel_feat_headline:           "UNE APP.\nCHAQUE *AVANTAGE.*",
         .funnel_feat1_title:             "Un pick IA par jour",
-        .funnel_feat1_body:              "Le seul choix au meilleur avantage sur NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis et cricket.",
+        .funnel_feat1_body:              "Le seul choix au meilleur avantage sur NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis, cricket et golf.",
         .funnel_feat2_title:             "Confiance calibrée",
         .funnel_feat2_body:              "Quand elle affiche 73 %, ça passe ≈73 % du temps. Une prévision mesurée — jamais un « coup sûr garanti ».",
         .funnel_feat3_title:             "Registre public des résultats",
@@ -273,7 +273,7 @@ enum FrenchStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "La solution Pick1 · 1 sur 3",
         .funnel_green1_headline:         "LES DONNÉES,\nPAS *L'ÉMOTION.*",
-        .funnel_green1_lead:             "Un pick calculé par l'IA chaque jour — le seul choix au meilleur avantage sur 9 sports.",
+        .funnel_green1_lead:             "Un pick calculé par l'IA chaque jour — le seul choix au meilleur avantage sur 10 sports.",
         .funnel_green1_cta:              "SUIVANT →",
         .funnel_green2_kicker:           "La solution Pick1 · 2 sur 3",
         .funnel_green2_headline:         "VOYEZ LE\n*RAISONNEMENT.*",
@@ -359,7 +359,7 @@ enum FrenchStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passez Pro",
         .funnel_paywall_headline:        "DÉBLOQUEZ\nCHAQUE *PICK.*",
-        .funnel_paywall_feat1:           "Pick IA quotidien sur 9 sports",
+        .funnel_paywall_feat1:           "Pick IA quotidien sur 10 sports",
         .funnel_paywall_feat2:           "Confiance calibrée + raisonnement",
         .funnel_paywall_feat3:           "Registre public, suivi en direct & ROI",
         .funnel_paywall_feat4:           "Meilleure cote parmi 6 bookmakers",
@@ -635,5 +635,7 @@ enum FrenchStrings {
         .tk_returns: "100 $ rapportent",
         .tk_no_market_short: "Pas de cote marché",
         .tk_logged: "Enregistré",
+        .settings_rate_app: "Noter Pick1",
+        .settings_rate_app_sub: "Laisser un avis sur l'App Store",
     ]
 }

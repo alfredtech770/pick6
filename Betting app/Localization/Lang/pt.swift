@@ -182,7 +182,7 @@ enum PortugueseStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GANHA\nCOM CABEÇA.\n*NÃO À FORÇA.*",
-        .funnel_welcome_lead:            "A IA que escolhe um jogo por dia em 9 desportos — e regista cada resultado em público.",
+        .funnel_welcome_lead:            "A IA que escolhe um jogo por dia em 10 desportos — e regista cada resultado em público.",
         .funnel_welcome_cta:             "COMEÇAR →",
         .funnel_welcome_member:          "Já és membro? ",
         .funnel_welcome_signin:          "Iniciar sessão",
@@ -273,7 +273,7 @@ enum PortugueseStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "A solução Pick1 · 1 de 3",
         .funnel_green1_headline:         "DADOS, NÃO\n*EMOÇÃO.*",
-        .funnel_green1_lead:             "Um pick calculado por IA por dia — a única aposta com maior vantagem em 9 desportos.",
+        .funnel_green1_lead:             "Um pick calculado por IA por dia — a única aposta com maior vantagem em 10 desportos.",
         .funnel_green1_cta:              "SEGUINTE →",
         .funnel_green2_kicker:           "A solução Pick1 · 2 de 3",
         .funnel_green2_headline:         "VÊ O\n*RACIOCÍNIO.*",
@@ -312,7 +312,7 @@ enum PortugueseStrings {
         .funnel_compare_row3:            "Registado antes do apito",
         .funnel_compare_row4:            "Buscador da melhor odd",
         .funnel_compare_row5:            "Sem «acertos garantidos»",
-        .funnel_compare_row6:            "9 desportos, uma aposta",
+        .funnel_compare_row6:            "10 desportos, uma aposta",
         // Goals
         .funnel_goals_kicker:            "Define o teu objetivo",
         .funnel_goals_headline:          "QUAL É O TEU\n*OBJETIVO?*",
@@ -359,7 +359,7 @@ enum PortugueseStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passa a Pro",
         .funnel_paywall_headline:        "DESBLOQUEIA\nCADA *PICK.*",
-        .funnel_paywall_feat1:           "Pick de IA diário em 9 desportos",
+        .funnel_paywall_feat1:           "Pick de IA diário em 10 desportos",
         .funnel_paywall_feat2:           "Confiança calibrada + raciocínio",
         .funnel_paywall_feat3:           "Registo público, acompanhamento ao vivo e ROI",
         .funnel_paywall_feat4:           "Melhor odd entre 6 casas de apostas",
@@ -635,5 +635,7 @@ enum PortugueseStrings {
         .tk_returns: "100 $ rendem",
         .tk_no_market_short: "Sem cota de mercado",
         .tk_logged: "Registado",
+        .settings_rate_app: "Avaliar o Pick1",
+        .settings_rate_app_sub: "Deixa uma avaliação na App Store",
     ]
 }

@@ -637,5 +637,7 @@ enum ArabicStrings {
         .tk_returns: "100 $ تعيد",
         .tk_no_market_short: "لا توجد أسعار سوق",
         .tk_logged: "مُسجَّل",
+        .settings_rate_app: "قيّم Pick1",
+        .settings_rate_app_sub: "اترك تقييمًا على App Store",
     ]
 }

@@ -688,6 +688,10 @@ enum L10nKey: String, CaseIterable {
     case tk_returns
     case tk_no_market_short
     case tk_logged
+
+    // User-initiated App Store review.
+    case settings_rate_app
+    case settings_rate_app_sub
 }
 
 // MARK: - Manager
