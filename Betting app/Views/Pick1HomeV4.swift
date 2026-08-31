@@ -101,31 +101,34 @@ struct P1V4TopBar: View {
     var onProfile: () -> Void = {}
 
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
+            // The canonical wordmark, the same component the splash draws,
+            // rather than a second lockup invented for this bar. It sits
+            // hard against the leading edge: a 34pt clear spacer used to
+            // precede it, left over from when the mark was centred and that
+            // spacer balanced the avatar opposite. Once the mark moved left
+            // the spacer had nothing to balance and just indented the brand.
+            Pick1Wordmark(size: 28)
+
+            Spacer(minLength: 8)
+
+            // The coin pill, when it returns, belongs beside the profile
+            // rather than in front of the brand.
             if let coins {
                 Button(action: onCoinTap) {
                     HStack(spacing: 6) {
-                        Text("🪙").font(.system(size: 10))
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .font(.system(size: 10, weight: .bold))
                         Text(coins.formatted())
                             .font(.mono(11, weight: .bold))
-                            .foregroundStyle(V4.gold)
                     }
+                    .foregroundStyle(V4.gold)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Capsule().fill(V4.gold.opacity(0.08)))
                     .overlay(Capsule().strokeBorder(V4.gold.opacity(0.35), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-            } else {
-                Color.clear.frame(width: 34, height: 1)
             }
-
-            // The canonical wordmark, the same component the splash draws,
-            // rather than a second lockup invented for this bar. The bolt
-            // disc that used to sit beside it was a third mark competing
-            // with the tile for the same job.
-            Pick1Wordmark(size: 28)
-
-            Spacer(minLength: 8)
 
             Button(action: onProfile) {
                 Image(systemName: "person.fill")
@@ -143,7 +146,8 @@ struct P1V4TopBar: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Profile")
         }
-        .padding(.horizontal, 22)
+        .padding(.leading, 18)
+        .padding(.trailing, 22)
         .padding(.top, 8)
     }
 }
