@@ -262,18 +262,28 @@ struct Pick: Identifiable, Codable {
         // otherwise fall through to `.upcoming` and render a bare
         // "VS" badge for a game that kicked off hours ago. There's no
         // start_time on the Pick itself, so we use a conservative
-        // wall-clock heuristic: by ~11pm ET essentially every
-        // same-day fixture across every league we cover has finished.
-        // Past that hour, a still-ungraded today pick is "awaiting",
-        // not "upcoming". This is deliberately late so a genuine
-        // primetime game (8pm ET kickoff) still reads as upcoming
-        // until it's realistically over.
+        // wall-clock heuristic: by ~11pm ET essentially every same-day
+        // fixture across every league we cover has finished. Past that
+        // hour, a still-ungraded today pick is "awaiting", not
+        // "upcoming". Deliberately late, so a genuine primetime game
+        // (8pm ET kickoff) still reads as upcoming until it is
+        // realistically over.
+        //
+        // The window used to be "hourET >= 23 || hourET < 2", and the
+        // second half was wrong every single night. `dayStart` is the
+        // CURRENT ET day, so after midnight "same day as dayStart"
+        // means a game happening later TODAY, not one that finished
+        // last night. Between 00:00 and 01:59 ET the guard therefore
+        // stamped FINAL on every pick of the day ahead: at 00:52 on
+        // 31 Aug, a 3pm kickoff fifteen hours away was displayed as a
+        // finished match. Last night's games never needed this clause
+        // anyway; they are already caught by the `gd < dayStart` check
+        // above, which fires the moment the ET day rolls over.
         if liveScore == nil,
            let gd = gameDateValue,
            etCal.isDate(gd, inSameDayAs: dayStart) {
             let hourET = etCal.component(.hour, from: now)
-            // 23:00–01:59 ET → the slate is done; ungraded == awaiting.
-            if hourET >= 23 || hourET < 2 {
+            if hourET >= 23 {
                 return .awaitingResult
             }
         }
