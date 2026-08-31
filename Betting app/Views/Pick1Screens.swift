@@ -1957,10 +1957,20 @@ struct MatchDetailView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        // No material behind it. The bar is an opaque pill floating over the
-        // content, the same treatment the home's nav uses; the frosted slab
-        // it used to sit on read as a second surface the button was stuck to.
+        // Extra room above the pill so the fade has somewhere to happen.
+        .padding(.top, 24)
+        .padding(.bottom, 10)
+        // A dissolve, not a slab. `.ultraThinMaterial` drew a frosted panel
+        // with its own edges, so the button read as stuck to a second
+        // surface. This is the page's own ink fading up from nothing: content
+        // scrolling underneath disappears into the ground instead of sliding
+        // behind a plate, and there is no boundary to notice.
+        .background(
+            LinearGradient(colors: [V4.ink.opacity(0), V4.ink.opacity(0.88), V4.ink],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
+        )
         .animation(.spring(response: 0.42, dampingFraction: 0.72), value: isTracking)
         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: trackPulse)
         .onChange(of: isTracking) { _, now in
