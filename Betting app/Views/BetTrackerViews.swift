@@ -147,8 +147,14 @@ struct TrackBetSheet: View {
                 }
                 .foregroundColor(Color(hex: "#171717"))
                 .frame(maxWidth: .infinity).padding(.vertical, 15)
-                .background(RoundedRectangle(cornerRadius: 14).fill(accent))
-                .scaleEffect(confirming ? 0.97 : 1)
+                .background(RoundedRectangle(cornerRadius: confirming ? 27 : 14).fill(accent))
+                // Rounds toward a capsule, swells, and throws a brighter
+                // glow as it confirms. The shape change is what sells it:
+                // a button that only changes its label reads as a label
+                // change, one that changes shape reads as a state change.
+                .scaleEffect(confirming ? 1.04 : 1)
+                .shadow(color: accent.opacity(confirming ? 0.55 : 0.25),
+                        radius: confirming ? 22 : 10, y: 4)
             }
             .buttonStyle(.plain)
             .disabled(confirming)

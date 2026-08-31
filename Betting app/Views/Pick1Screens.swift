@@ -1927,10 +1927,16 @@ struct MatchDetailView: View {
     }
 
     private var unifiedTrackBar: some View {
-        Button { showTrackSheet = true } label: {
+        Button {
+            Haptics.tap()
+            showTrackSheet = true
+        } label: {
             HStack(spacing: 9) {
                 Image(systemName: isTracking ? "checkmark.circle.fill" : "plus.circle.fill")
                     .font(.system(size: 16, weight: .bold))
+                    // The icon swaps rather than cross-fades, so the moment
+                    // the pick is tracked reads as a change of state.
+                    .contentTransition(.symbolEffect(.replace))
                 Text(isTracking ? "TRACKING · TAP TO EDIT" : t(.rd_track_your_pick))
                     .font(.archivoNarrow(13, weight: .bold)).tracking(1.5)
                 Spacer()
@@ -1943,13 +1949,28 @@ struct MatchDetailView: View {
             .background(RoundedRectangle(cornerRadius: 15)
                 .fill(isTracking ? Color(hex: "#202124") : sportAccent)
                 .overlay(RoundedRectangle(cornerRadius: 15)
-                    .strokeBorder(sportAccent.opacity(isTracking ? 0.55 : 0), lineWidth: 1)))
+                    .strokeBorder(sportAccent.opacity(isTracking ? 0.55 : 0), lineWidth: 1))
+                .shadow(color: sportAccent.opacity(isTracking ? 0 : 0.32), radius: 14, y: 5))
+            // A single pulse on the transition, so tracking a pick is
+            // acknowledged on the bar even when the sheet did the work.
+            .scaleEffect(trackPulse ? 1.035 : 1)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        // No material behind it. The bar is an opaque pill floating over the
+        // content, the same treatment the home's nav uses; the frosted slab
+        // it used to sit on read as a second surface the button was stuck to.
+        .animation(.spring(response: 0.42, dampingFraction: 0.72), value: isTracking)
+        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: trackPulse)
+        .onChange(of: isTracking) { _, now in
+            guard now else { return }
+            trackPulse = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { trackPulse = false }
+        }
     }
+
+    @State private var trackPulse = false
 
     private func startTracking(stake: Double?) {
         favorites.set(pick, on: true)
