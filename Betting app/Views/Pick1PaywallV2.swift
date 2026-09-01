@@ -425,6 +425,18 @@ struct Pick1PaywallV2: View {
                     // nil until a real, server-defined offer window exists.
                     P1PayTimerV2(deadline: nil)
 
+                    // Apple's own offer for this Apple ID, when there is
+                    // one. Above the plans because it IS a plan choice, and
+                    // the only one a returning subscriber should have to read.
+                    if let wb = subs.bestWinBack {
+                        P1WinBackBanner(product: wb.product, offer: wb.offer,
+                                        isSelected: selected?.id == wb.product.id) {
+                            Haptics.tap()
+                            selectedProductId = wb.product.id
+                        }
+                        .padding(.top, 18)
+                    }
+
                     VStack(spacing: 10) {
                         ForEach(plans, id: \.id) { product in
                             P1PlanRowV2(title: planTitle(product),
@@ -451,7 +463,15 @@ struct Pick1PaywallV2: View {
                         guard let product = selected else { return }
                         isPurchasing = true
                         Task {
-                            await subs.purchase(product)
+                            // purchaseWithWinBack is deliberately a separate
+                            // call: a win back offer is single use per
+                            // customer, so it is spent only when the selected
+                            // plan is the one Apple attached it to.
+                            if let wb = subs.bestWinBack, wb.product.id == product.id {
+                                await subs.purchaseWithWinBack(wb.product, offer: wb.offer)
+                            } else {
+                                await subs.purchase(product)
+                            }
                             isPurchasing = false
                             if subs.isPro { onClose() }
                         }
@@ -505,7 +525,12 @@ struct Pick1PaywallV2: View {
         .preferredColorScheme(.dark)
         .task {
             if subs.products.isEmpty { await subs.reloadProducts() }
-            selectedProductId = selectedProductId ?? plans.last?.id
+            // Eligibility is per Apple ID and can change between launches, so
+            // it is re-read here rather than trusted from app start.
+            await subs.refreshWinBackOffers()
+            selectedProductId = selectedProductId
+                ?? subs.bestWinBack?.product.id
+                ?? plans.last?.id
         }
     }
 
@@ -523,12 +548,27 @@ struct Pick1PaywallV2: View {
         hasFreeTrial ? "3 days free · cancel anytime" : "Cancel anytime"
     }
 
+    /// The offer, but only while the plan it belongs to is the selected one.
+    /// Switching to the other plan drops it, and everything below follows.
+    private var activeWinBack: (product: Product, offer: Product.SubscriptionOffer)? {
+        guard let wb = subs.bestWinBack, wb.product.id == selected?.id else { return nil }
+        return wb
+    }
+
     private var ctaTitle: String {
-        hasFreeTrial ? "Start 3 days free" : "Continue"
+        if activeWinBack != nil { return t(.wb_cta) }
+        return hasFreeTrial ? "Start 3 days free" : "Continue"
     }
 
     private var payNote: String {
         guard let selected else { return "Predictions for entertainment · no wagering in app" }
+        // With an offer applied the introductory-trial wording is wrong twice
+        // over: the trial is not what is being granted, and the price after
+        // it is not the price they land on.
+        if let wb = activeWinBack {
+            return P1WinBack.headline(wb.offer) + " · " + P1WinBack.afterwards(wb.product)
+                + "\nPredictions for entertainment · no wagering in app"
+        }
         let lead = hasFreeTrial
             ? "Then \(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
             : "\(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"

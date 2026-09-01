@@ -640,5 +640,12 @@ enum ArabicStrings {
         .settings_rate_app: "قيّم Pick1",
         .settings_rate_app_sub: "اترك تقييمًا على App Store",
         .tk_max_win: "أقصى ربح",
+        .wb_badge: "عرض العودة",
+        .wb_body: "سبق أن اشتركت، لذلك تحتفظ Apple بعرض لمرة واحدة على هذه الخطة. يُطبَّق عند الدفع.",
+        .wb_free: "%@ مجانًا",
+        .wb_for: "%@ لمدة %@",
+        .wb_each_for: "%@ لكل %@ لمدة %@",
+        .wb_then: "ثم %@ · يمكنك الإلغاء في أي وقت من الإعدادات",
+        .wb_cta: "احصل على العرض",
     ]
 }

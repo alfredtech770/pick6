@@ -638,5 +638,12 @@ enum GermanStrings {
         .settings_rate_app: "Pick1 bewerten",
         .settings_rate_app_sub: "Bewertung im App Store abgeben",
         .tk_max_win: "Max. Gewinn",
+        .wb_badge: "Rückkehrangebot",
+        .wb_body: "Du warst schon einmal Abonnent, deshalb liegt bei Apple ein einmaliges Angebot für diesen Plan bereit. Es wird beim Bezahlen angewendet.",
+        .wb_free: "%@ gratis",
+        .wb_for: "%@ für %@",
+        .wb_each_for: "%@ pro %@ für %@",
+        .wb_then: "Danach %@ · jederzeit in den Einstellungen kündbar",
+        .wb_cta: "Angebot sichern",
     ]
 }

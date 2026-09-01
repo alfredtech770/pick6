@@ -638,5 +638,12 @@ enum FrenchStrings {
         .settings_rate_app: "Noter Pick1",
         .settings_rate_app_sub: "Laisser un avis sur l'App Store",
         .tk_max_win: "Gain max",
+        .wb_badge: "Offre de retour",
+        .wb_body: "Tu as déjà été abonné, donc Apple garde une offre unique sur ce plan. Elle s'applique au paiement.",
+        .wb_free: "%@ offert",
+        .wb_for: "%@ pendant %@",
+        .wb_each_for: "%@ par %@ pendant %@",
+        .wb_then: "Puis %@ · résiliable à tout moment dans Réglages",
+        .wb_cta: "Activer l'offre",
     ]
 }

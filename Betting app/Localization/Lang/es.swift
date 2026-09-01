@@ -638,5 +638,12 @@ enum SpanishStrings {
         .settings_rate_app: "Valorar Pick1",
         .settings_rate_app_sub: "Deja una reseña en la App Store",
         .tk_max_win: "Ganancia máx.",
+        .wb_badge: "Oferta de regreso",
+        .wb_body: "Ya estuviste suscrito, así que Apple guarda una oferta única en este plan. Se aplica al pagar.",
+        .wb_free: "%@ gratis",
+        .wb_for: "%@ durante %@",
+        .wb_each_for: "%@ por %@ durante %@",
+        .wb_then: "Después %@ · cancela cuando quieras en Ajustes",
+        .wb_cta: "Activar oferta",
     ]
 }
