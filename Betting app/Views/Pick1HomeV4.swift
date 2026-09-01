@@ -1097,7 +1097,11 @@ struct Pick1HomeV4: View {
     /// whole board pays about the same, in which case crowning one card
     /// would be noise dressed as a signal.
     private var biggestWinId: UUID? {
-        let board = visibleRest
+        // MUST read `openBoard`, never `visibleRest`. `visibleRest` pins this
+        // pick to the front, so reading it back here is a cycle: the property
+        // asks for the ordering that is asking for it, and SwiftUI recurses
+        // until the stack dies. It crashed on launch the first time.
+        let board = openBoard
         #if DEBUG
         // The badge needs a board of at least two to mean anything, and a
         // thin slate often has one. Review hook, like the others here.
@@ -1111,7 +1115,27 @@ struct Pick1HomeV4: View {
         return top.id
     }
 
-    private var visibleRest: [Pick] { shownRest.filter { !locked($0) } }
+    /// The unlocked board in its natural order, best call first. The single
+    /// source both the badge and the pinned ordering read.
+    private var openBoard: [Pick] { shownRest.filter { !locked($0) } }
+
+    /// The unlocked board, with the biggest payout pinned first.
+    ///
+    /// Pinned, not re-sorted. Sorting the whole list by return would put the
+    /// least likely calls at the top and the safest at the bottom, which is
+    /// the opposite of how the model ranks them and reads as advice we do not
+    /// give. Lifting the one card to the front makes the money findable
+    /// without inverting the board into a risk-first list; the win
+    /// probability travels with it, as it does everywhere else.
+    private var visibleRest: [Pick] {
+        let open = openBoard
+        guard let topId = biggestWinId,
+              let i = open.firstIndex(where: { $0.id == topId }), i > 0
+        else { return open }
+        var reordered = open
+        reordered.insert(reordered.remove(at: i), at: 0)
+        return reordered
+    }
     private var hiddenRest: [Pick] { shownRest.filter { locked($0) } }
 
     private var liveNow: [(pick: Pick, score: LiveScore)] {
