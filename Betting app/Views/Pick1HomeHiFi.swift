@@ -408,6 +408,10 @@ struct Pick1HomeHiFi: View {
             }
         }
         .task { await updateChecker.check() }
+        // Apple queues win-back messages rather than interrupting. Claiming
+        // the stream is what lets the offer appear at all, and lets the app
+        // choose when.
+        .task { await subs.startWinBackMessageListener() }
         // Renewal state drives both recovery banners and the save sheet, and
         // nothing else was refreshing it — `refreshRenewalState` existed and
         // had exactly one caller, a sheet that was never wired up. Read it

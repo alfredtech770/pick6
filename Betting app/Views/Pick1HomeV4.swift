@@ -80,6 +80,7 @@ let P1_SPORTS: [String] = [
 
 /// Display names, also Ethan's: "Fight" not MMA, "Race" not Racing or F1.
 func v4Name(_ sport: String) -> String {
+    if sport == Pick1HomeV4.allSports { return "All" }
     switch sport {
     case "basketball": return "Basketball"; case "baseball": return "Baseball"
     case "hockey": return "Hockey";         case "football": return "Football"
@@ -213,7 +214,18 @@ struct P1V4Orb: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 0) {
-                P1SportMark(sport: sport, size: 23, glowing: isOn, active: isOn)
+                Group {
+                    if sport == Pick1HomeV4.allSports {
+                        // Not a sport, so not a sport mark. A grid reads as
+                        // "everything at once" without implying a discipline.
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.system(size: 21, weight: .semibold))
+                            .foregroundStyle(isOn ? Color.p1Lime : V4.ink2)
+                            .shadow(color: isOn ? Color.p1Lime.opacity(0.55) : .clear, radius: 8)
+                    } else {
+                        P1SportMark(sport: sport, size: 23, glowing: isOn, active: isOn)
+                    }
+                }
                     .frame(width: 56, height: 56)
                     .background(
                         Circle().fill(
@@ -1002,22 +1014,38 @@ struct Pick1HomeV4: View {
             .map(\.sport)
     }
 
-    /// The rail: all ten, always.
+    /// Sentinel for the "everything" orb. Not a sport, and deliberately not a
+    /// value that could ever collide with one from the pipeline.
+    static let allSports = "__all__"
+
+    /// The rail: ALL first, then all ten, always.
     ///
     /// It used to list only the sports with picks, so on a normal day three
     /// or four of the ten simply did not exist in the UI. A user told the app
     /// covers ten sports counted five and concluded they were missing. Quiet
     /// sports now appear, drained and unglowing, and say why when tapped —
     /// which also stops the rail's length changing every morning.
+    ///
+    /// ALL leads it because the per-sport filter was mandatory: there was no
+    /// way to see the day whole, and the default landed on whichever sport
+    /// happened to hold the highest-confidence call, which for golf is a
+    /// board of one.
     private var sports: [String] {
         let stocked = stockedSports
-        return stocked + P1_SPORTS.filter { !stocked.contains($0) }
+        return [Self.allSports] + stocked + P1_SPORTS.filter { !stocked.contains($0) }
     }
 
-    private func hasPicks(_ sport: String) -> Bool { stockedSports.contains(sport) }
-    private var activeSport: String? { selectedSport.flatMap { sports.contains($0) ? $0 : nil } ?? sports.first }
+    private func hasPicks(_ sport: String) -> Bool {
+        sport == Self.allSports ? !coveredToday.isEmpty : stockedSports.contains(sport)
+    }
+    private var activeSport: String? {
+        selectedSport.flatMap { sports.contains($0) ? $0 : nil } ?? Self.allSports
+    }
     private var sportPicks: [Pick] {
         guard let s = activeSport else { return [] }
+        if s == Self.allSports {
+            return coveredToday.sorted { $0.probability > $1.probability }
+        }
         return vm.todayPicks.filter { $0.sport == s }.sorted { $0.probability > $1.probability }
     }
 

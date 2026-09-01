@@ -30,6 +30,7 @@ import Foundation
 import Combine
 import Supabase
 import StoreKit
+import UIKit
 import SwiftUI
 
 /// Single source of truth for the user's subscription state.
@@ -272,13 +273,20 @@ final class SubscriptionManager: ObservableObject {
             return
         }
         self.introOfferEligible = await sub.isEligibleForIntroOffer
+        await refreshWinBackOffers()
     }
 
     // MARK: - Purchase
 
     /// Initiates a purchase for the given product. The native Apple sheet
     /// is presented automatically.
-    func purchase(_ product: Product) async {
+    /// `extra` carries offer options, currently only `.winBackOffer`. It is a
+    /// parameter rather than something this method decides, so a win-back can
+    /// never be attached to an ordinary paywall tap: the offer is single-use
+    /// per customer and spending it on somebody who would have paid full price
+    /// is a loss, not a save.
+    func purchase(_ product: Product,
+                  options extra: Set<Product.PurchaseOption> = []) async {
         purchasing = true
         defer { purchasing = false }
         lastError = nil
@@ -288,7 +296,7 @@ final class SubscriptionManager: ObservableObject {
             // this back as `appAccountToken` in every App Store Server
             // Notification, which is how the `apple-notifications` webhook maps
             // a subscription to a row in `public.subscriptions`.
-            var options: Set<Product.PurchaseOption> = []
+            var options: Set<Product.PurchaseOption> = extra
             if let uid = SupabaseManager.client.auth.currentSession?.user.id {
                 options.insert(.appAccountToken(uid))
             }
@@ -456,6 +464,87 @@ final class SubscriptionManager: ObservableObject {
     }
 
     @Published private(set) var renewal = RenewalState()
+
+    // MARK: - Win-back offers
+    //
+    // The only channel that reaches a lapsed subscriber who deleted the app.
+    //
+    // On 2026-08-31 there were 601 lapsed people. 600 were reachable by email,
+    // 230 by push, and 44 had opened the app in thirty days. Every in-app
+    // win-back surface therefore addresses 7% of the problem. Apple's win-back
+    // offers are the exception: the App Store shows them on the product page
+    // and in the customer's own subscription settings, so they work without
+    // the app being opened at all, and they survive a deletion.
+    //
+    // Nothing here creates the offer. It is configured in App Store Connect
+    // against the "Pick1 Pro" group, and StoreKit only ever returns the ones
+    // this specific Apple ID is eligible for — eligibility is Apple's call,
+    // computed from that customer's own lapse history, and cannot be faked
+    // from the client.
+
+    /// Win-back offers this Apple ID is eligible for, best value first.
+    ///
+    /// `winBackOffers` is already filtered to the caller by StoreKit, so an
+    /// empty result means "not eligible", never "none configured".
+    @Published private(set) var winBackOffers: [String: Product.SubscriptionOffer] = [:]
+
+    /// True when Apple has an offer waiting for this customer.
+    var hasWinBackOffer: Bool { !winBackOffers.isEmpty }
+
+    /// The offer worth surfacing: the one whose discounted price is the
+    /// smallest share of its product's normal price, so a 50%-off annual
+    /// beats a one-week freebie on weekly.
+    var bestWinBack: (product: Product, offer: Product.SubscriptionOffer)? {
+        var best: (Product, Product.SubscriptionOffer, Decimal)? = nil
+        for (id, offer) in winBackOffers {
+            guard let p = products.first(where: { $0.id == id }), p.price > 0 else { continue }
+            let ratio = offer.price / p.price
+            if best == nil || ratio < best!.2 { best = (p, offer, ratio) }
+        }
+        return best.map { ($0.0, $0.1) }
+    }
+
+    /// Lets Apple present its own win-back sheet inside the app.
+    ///
+    /// StoreKit queues these instead of interrupting: without a consumer they
+    /// are shown at an arbitrary moment, so the app claims them and picks the
+    /// time. Only `.winBackOffer` is taken here — `.billingIssue` and
+    /// `.priceIncreaseConsent` are left to the system default, and the app
+    /// already has its own billing-retry banner for the first.
+    @MainActor
+    func startWinBackMessageListener() async {
+        for await message in StoreKit.Message.messages where message.reason == .winBackOffer {
+            guard let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+            else { continue }
+            try? message.display(in: scene)
+            Analytics.track("winback_message_shown")
+        }
+    }
+
+    func refreshWinBackOffers() async {
+        var found: [String: Product.SubscriptionOffer] = [:]
+        for product in products {
+            guard let offer = product.subscription?.winBackOffers.first else { continue }
+            found[product.id] = offer
+        }
+        winBackOffers = found
+        if !found.isEmpty {
+            Analytics.track("winback_offer_available",
+                            ["products": found.keys.sorted().joined(separator: ",")])
+        }
+    }
+
+    /// Buy a product using its win-back offer. Separate from `purchase` so the
+    /// offer is never applied by accident to a normal paywall tap: a win-back
+    /// offer is single-use per customer and spending it on someone who would
+    /// have paid full price is a loss, not a save.
+    func purchaseWithWinBack(_ product: Product, offer: Product.SubscriptionOffer) async {
+        guard offer.type == .winBack else { return }
+        await purchase(product, options: [.winBackOffer(offer)])
+        Analytics.track("winback_offer_purchased",
+                        ["product": product.id, "offer": offer.id ?? "unnamed"])
+    }
 
     /// Reads `Product.SubscriptionInfo.Status` for our subscription group.
     /// Safe to call often; it is a local StoreKit read, not a network round
