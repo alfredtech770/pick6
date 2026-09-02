@@ -557,6 +557,26 @@ Deno.serve(async (req: Request) => {
     lang: langFor(r.raw?.transaction?.storefront ?? null),
   });
 
+  /// Everyone among the lapsed who ever held a NON trial subscription.
+  ///
+  /// This is the gate on T3, and it is not a nicety. Apple's win back offers
+  /// have a Minimum Paid Duration whose floor is one month, so a customer who
+  /// started the three day trial and cancelled before it converted cannot
+  /// redeem one. Measured 2026-09-02: of 563 lapsed people, 85 ever paid and
+  /// 478 are trial only. Sending the offer email to the 478 would send 85% of
+  /// the audience to a redemption link that does nothing for them, which is
+  /// worse than sending them nothing. Their sequence ends at T2.
+  ///
+  /// If the offer is ever replaced with an Offer Code, which has no paid
+  /// duration requirement, this gate is the one thing to remove.
+  async function everPaidUsers(): Promise<Set<string>> {
+    const { data, error } = await db.from("subscriptions")
+      .select("user_id").eq("environment", "Production").eq("is_trial", false)
+      .not("user_id", "is", null).limit(20000);
+    if (error) throw new Error(`subscriptions read failed: ${error.message}`);
+    return new Set((data ?? []).map((r: any) => r.user_id as string));
+  }
+
   /// Everyone who has a DELIVERED email of `afterType` older than `days`, and
   /// no row at all for `thisType`. The join is done in code because email_log
   /// is small and this keeps the eligibility rule readable in one place.
@@ -590,8 +610,12 @@ Deno.serve(async (req: Request) => {
     // TOUCH 3 first, then 2, then 1: finish sequences before starting new ones.
     if (want("t3")) {
       const due = await dueForFollowUp(["winback_t2"], "winback_t3", T3_AFTER_DAYS);
-      const people = all.filter((r) => due.has(r.user_id)).map(toPerson).slice(0, limit);
-      report.t3 = await deliver("t3", null, people);
+      const paid = await everPaidUsers();
+      const eligible = all.filter((r) => due.has(r.user_id) && paid.has(r.user_id));
+      const trialOnlySkipped = all.filter((r) => due.has(r.user_id) && !paid.has(r.user_id)).length;
+      report.t3TrialOnlySkipped = trialOnlySkipped;
+      report.everPaid = all.filter((r) => paid.has(r.user_id)).length;
+      report.t3 = await deliver("t3", null, eligible.map(toPerson).slice(0, limit));
     }
 
     if (want("t2")) {
