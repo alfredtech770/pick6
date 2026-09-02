@@ -17,6 +17,7 @@ import Foundation
 import UIKit
 import UserNotifications
 import PostHog
+import Supabase
 import FBSDKCoreKit
 import AppTrackingTransparency
 
@@ -229,5 +230,25 @@ enum Analytics {
         if let campaign { props["campaign"] = campaign }
         if let variant { props["variant"] = variant }
         track("notification_opened", props)
+
+        // Also record it in Postgres, next to the send.
+        //
+        // PostHog knows this already, but the SENDER cannot read PostHog, so
+        // for a year push_log recorded that a notification left and nothing
+        // about whether it landed. Measured on 2026-09-02, Pick1 was sending
+        // 93,099 pushes a month with no way to say which key was worth
+        // sending. `mark_push_opened` closes that: it matches the most recent
+        // unopened send of this campaign to this user within a day, runs as
+        // the caller's own session so nobody can mark someone else's, and is
+        // the only thing that will ever fill push_log.opened_at.
+        //
+        // Fire and forget. A failed analytics write must never surface to
+        // someone who just tapped a notification.
+        guard let campaign, !campaign.isEmpty else { return }
+        Task.detached(priority: .utility) {
+            _ = try? await SupabaseManager.client
+                .rpc("mark_push_opened", params: ["p_key": campaign])
+                .execute()
+        }
     }
 }
