@@ -504,22 +504,42 @@ final class SubscriptionManager: ObservableObject {
         return best.map { ($0.0, $0.1) }
     }
 
-    /// Lets Apple present its own win-back sheet inside the app.
+    /// Apple's own win-back sheet, claimed but not yet shown.
     ///
-    /// StoreKit queues these instead of interrupting: without a consumer they
-    /// are shown at an arbitrary moment, so the app claims them and picks the
-    /// time. Only `.winBackOffer` is taken here — `.billingIssue` and
-    /// `.priceIncreaseConsent` are left to the system default, and the app
-    /// already has its own billing-retry banner for the first.
+    /// StoreKit queues these instead of interrupting, and without a consumer
+    /// they appear at an arbitrary moment. Claiming the stream is what lets
+    /// the app choose the time — and, now that Pick1 has its own win-back
+    /// sheet, choose whether Apple's is the right surface at all. Ours
+    /// carries the settled record next to the terms, which is the actual
+    /// argument; Apple's carries the terms alone. Showing both is the same
+    /// offer twice.
+    @Published private(set) var pendingWinBackMessage: StoreKit.Message?
+
+    /// Claims win-back messages. Only `.winBackOffer` is taken here —
+    /// `.billingIssue` and `.priceIncreaseConsent` are left to the system
+    /// default, and the app already has its own billing-retry banner for the
+    /// first.
     @MainActor
     func startWinBackMessageListener() async {
         for await message in StoreKit.Message.messages where message.reason == .winBackOffer {
-            guard let scene = UIApplication.shared.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
-            else { continue }
-            try? message.display(in: scene)
-            Analytics.track("winback_message_shown")
+            pendingWinBackMessage = message
+            Analytics.track("winback_message_queued")
         }
+    }
+
+    /// Hands the queued message back to StoreKit. The fallback for when the
+    /// app's own sheet cannot render the offer — `winBackOffers` empty
+    /// because products have not loaded, say — so a claimed message is never
+    /// simply swallowed.
+    @MainActor
+    func displayPendingWinBackMessage() {
+        guard let message = pendingWinBackMessage,
+              let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+        else { return }
+        pendingWinBackMessage = nil
+        try? message.display(in: scene)
+        Analytics.track("winback_message_shown")
     }
 
     func refreshWinBackOffers() async {

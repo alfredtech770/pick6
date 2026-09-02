@@ -85,10 +85,47 @@ struct Pick1HomeHiFi: View {
     /// never twice for the same one.
     @State private var trialSaveGate = TrialSaveGate()
     @State private var showTrialSave = false
+    /// The Apple win-back offer sheet. Keyed by offer id rather than a bool:
+    /// dismissing it must be final for THAT offer, while a different offer
+    /// configured later is a different proposition and gets one showing of
+    /// its own.
+    @AppStorage("pick1.winbackSheetShownFor") private var winbackShownFor: String = ""
+    @State private var showWinBack = false
     /// The billing-retry banner is dismissible, but only for the current
     /// expiry: a NEW failed renewal brings it back rather than staying
     /// silenced forever on a stale tap.
     @AppStorage("pick1.billingBannerDismissedFor") private var billingDismissedFor: Double = 0
+
+    /// Shows the win-back sheet at most once per offer, and never over the
+    /// splash, a paywall, or an open detail. If StoreKit gave us a message but
+    /// no renderable offer, Apple's own sheet is handed back rather than
+    /// swallowed.
+    /// Wording for the `-showWinBack` review host, built outside the view
+    /// body: composing it inline defeated the type checker.
+    @MainActor
+    static var previewTerms: (headline: String, afterwards: String) {
+        let month = P1WinBack.unitText(.month)
+        let three = P1WinBack.periodText(unit: .month, value: 1, times: 3)
+        let headline = String(format: t(.wb_each_for), "$19.99", month, three)
+        let afterwards = String(format: t(.wb_then), "$39.99 / " + month)
+        return (headline, afterwards)
+    }
+
+    private func presentWinBackIfDue() {
+        guard splashDone, !subs.isPro, !showPaywall, !showTrialSave, detailPick == nil else { return }
+        #if DEBUG
+        // Reviewing the screen itself, with no App Store round trip.
+        if CommandLine.arguments.contains("-showWinBack") { showWinBack = true; return }
+        #endif
+        guard let wb = subs.bestWinBack else {
+            if subs.pendingWinBackMessage != nil { subs.displayPendingWinBackMessage() }
+            return
+        }
+        let key = "\(wb.product.id)|\(wb.offer.id ?? "unnamed")"
+        guard winbackShownFor != key else { return }
+        winbackShownFor = key
+        showWinBack = true
+    }
 
     private var billingRetryVisible: Bool {
         #if DEBUG
@@ -353,6 +390,23 @@ struct Pick1HomeHiFi: View {
         .sheet(isPresented: $showTrialSave) {
             Pick1TrialSaveSheet(vm: vm, onClose: { showTrialSave = false })
         }
+        .sheet(isPresented: $showWinBack) {
+            if let wb = subs.bestWinBack {
+                Pick1WinBackSheet(vm: vm, product: wb.product, offer: wb.offer, subs: subs,
+                                  onClose: { showWinBack = false },
+                                  onClaimed: { showWinBack = false })
+            } else {
+                // `-showWinBack` review host. No App Store product exists in a
+                // plain simulator run, and the offer does not exist in App
+                // Store Connect yet, so the wording is passed in fixed. It
+                // matches what a "50% off for 3 months" offer on the $39.99
+                // monthly plan resolves to through P1WinBack.headline.
+                Pick1WinBackSheet(vm: vm,
+                                  headline: Self.previewTerms.headline,
+                                  afterwards: Self.previewTerms.afterwards,
+                                  onClose: { showWinBack = false })
+            }
+        }
         .onChange(of: subs.renewal) { _, r in
             if trialSaveGate.shouldPresent(r) {
                 trialSaveGate.markPresented(r)
@@ -423,8 +477,16 @@ struct Pick1HomeHiFi: View {
             await subs.refreshRenewalState()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await subs.refreshRenewalState() } }
+            if phase == .active {
+                Task {
+                    await subs.refreshRenewalState()
+                    await subs.refreshWinBackOffers()
+                    presentWinBackIfDue()
+                }
+            }
         }
+        .onChange(of: subs.winBackOffers.count) { _, _ in presentWinBackIfDue() }
+        .onChange(of: splashDone) { _, done in if done { presentWinBackIfDue() } }
         // Drive Live Activities off the live-score feed: start/update/end
         // a Lock-Screen + Dynamic Island card for each favorited game that's
         // in play (Apple Sports style).

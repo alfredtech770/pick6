@@ -645,5 +645,12 @@ enum ItalianStrings {
         .wb_each_for: "%@ al %@ per %@",
         .wb_then: "Poi %@ · disdici quando vuoi in Impostazioni",
         .wb_cta: "Attiva l'offerta",
+        .wb_sheet_body: "Tutto quello che il modello ha indicato mentre non c'eri è ancora registrato, vittorie e sconfitte nello stesso numero. Ecco a che punto è.",
+        .wb_record_label: "Bilancio reale",
+        .wb_not_now: "Non ora",
+        .wb_unit_day: "giorno",
+        .wb_unit_week: "settimana",
+        .wb_unit_month: "mese",
+        .wb_unit_year: "anno",
     ]
 }

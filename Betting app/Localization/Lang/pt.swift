@@ -645,5 +645,12 @@ enum PortugueseStrings {
         .wb_each_for: "%@ por %@ durante %@",
         .wb_then: "Depois %@ · cancela quando quiseres nas Definições",
         .wb_cta: "Activar oferta",
+        .wb_sheet_body: "Tudo o que o modelo indicou enquanto estiveste fora continua registado, vitórias e derrotas no mesmo número. Eis como está.",
+        .wb_record_label: "Registo real",
+        .wb_not_now: "Agora não",
+        .wb_unit_day: "dia",
+        .wb_unit_week: "semana",
+        .wb_unit_month: "mês",
+        .wb_unit_year: "ano",
     ]
 }

@@ -212,34 +212,36 @@ const T2C: Record<string, Copy> = {
     cta: "Ver o quadro de hoje", panelLabel: "COBERTOS NOS &Uacute;LTIMOS 14 DIAS", unsub: "Cancelar subscrição" },
 };
 
-// T3. {offer} is replaced with WINBACK_OFFER_LABEL. Nothing here describes the
-// offer's shape, so changing the offer in App Store Connect changes the label
-// and the email follows, with no copy edit and no risk of a stale promise.
+// T3. {offer} is replaced with WINBACK_OFFER_LABEL, and the prose around it
+// is deliberately shape neutral: it says an offer is waiting and names it,
+// never "free" or "at no charge". A discount and a free month therefore read
+// correctly through the same copy, and changing the offer in App Store Connect
+// changes only the label, with no copy edit and no risk of a stale promise.
 const T3C: Record<string, Copy> = {
-  en: { greet: "Hi", subject: "{offer} of Pick1 Pro, on us",
+  en: { greet: "Hi", subject: "{offer} on Pick1 Pro",
     preheader: "Long enough to actually read the model.",
     badge: "WIN BACK OFFER &middot; APPLE ID", h1: "ENOUGH TIME", h2: "TO JUDGE IT.",
-    p1: "Two emails, two honest numbers, and this is the last one. If the record was worth a second look, here is {offer} of Pick1 Pro at no charge, redeemed through your Apple ID.",
-    p2: "Long enough to watch a real run of calls settle, the good ones and the bad ones, instead of the three you saw the first time. Nothing is charged while it runs and cancelling takes one tap in your Apple settings.",
-    cta: "Claim {offer}", panelLabel: "SETTLED RECORD, LAST 30 DAYS", unsub: "Unsubscribe" },
-  fr: { greet: "Salut", subject: "{offer} de Pick1 Pro, offert",
+    p1: "Two emails, two honest numbers, and this is the last one. If the record was worth a second look, there is a returning subscriber offer waiting on your Apple ID: {offer}.",
+    p2: "Long enough to watch a real run of calls settle, the good ones and the bad ones, instead of the three you saw the first time. Cancelling takes one tap in your Apple settings.",
+    cta: "Claim the offer", panelLabel: "SETTLED RECORD, LAST 30 DAYS", unsub: "Unsubscribe" },
+  fr: { greet: "Salut", subject: "{offer} sur Pick1 Pro",
     preheader: "Assez long pour vraiment lire le modèle.",
     badge: "OFFRE DE RETOUR &middot; IDENTIFIANT APPLE", h1: "LE TEMPS", h2: "DE JUGER.",
-    p1: "Deux emails, deux chiffres honnêtes, et c'est le dernier. Si le bilan méritait un second regard, voilà {offer} de Pick1 Pro offert, à activer avec ton identifiant Apple.",
-    p2: "Assez long pour voir une vraie série de pronostics se régler, les bons comme les mauvais, au lieu des trois que tu avais vus la première fois. Rien n'est facturé pendant ce temps et annuler prend un geste dans tes réglages Apple.",
-    cta: "Activer {offer}", panelLabel: "BILAN R&Eacute;EL, 30 DERNIERS JOURS", unsub: "Se désinscrire" },
-  es: { greet: "Hola", subject: "{offer} de Pick1 Pro, invita la casa",
+    p1: "Deux emails, deux chiffres honnêtes, et c'est le dernier. Si le bilan méritait un second regard, une offre de retour t'attend sur ton identifiant Apple : {offer}.",
+    p2: "Assez long pour voir une vraie série de pronostics se régler, les bons comme les mauvais, au lieu des trois que tu avais vus la première fois. Annuler prend un geste dans tes réglages Apple.",
+    cta: "Activer l'offre", panelLabel: "BILAN R&Eacute;EL, 30 DERNIERS JOURS", unsub: "Se désinscrire" },
+  es: { greet: "Hola", subject: "{offer} en Pick1 Pro",
     preheader: "Tiempo suficiente para leer el modelo de verdad.",
     badge: "OFERTA DE REGRESO &middot; ID DE APPLE", h1: "TIEMPO", h2: "PARA JUZGAR.",
-    p1: "Dos correos, dos cifras honestas, y este es el último. Si el registro merecía una segunda mirada, aquí tienes {offer} de Pick1 Pro sin cargo, con tu ID de Apple.",
-    p2: "Suficiente para ver resolverse una serie real de pronósticos, los buenos y los malos, en vez de los tres que viste la primera vez. No se cobra nada mientras corre y cancelar es un toque en tus ajustes de Apple.",
-    cta: "Activar {offer}", panelLabel: "REGISTRO REAL, &Uacute;LTIMOS 30 D&Iacute;AS", unsub: "Darse de baja" },
-  pt: { greet: "Olá", subject: "{offer} de Pick1 Pro, por nossa conta",
+    p1: "Dos correos, dos cifras honestas, y este es el último. Si el registro merecía una segunda mirada, tienes una oferta de regreso esperando en tu ID de Apple: {offer}.",
+    p2: "Suficiente para ver resolverse una serie real de pronósticos, los buenos y los malos, en vez de los tres que viste la primera vez. Cancelar es un toque en tus ajustes de Apple.",
+    cta: "Activar la oferta", panelLabel: "REGISTRO REAL, &Uacute;LTIMOS 30 D&Iacute;AS", unsub: "Darse de baja" },
+  pt: { greet: "Olá", subject: "{offer} no Pick1 Pro",
     preheader: "Tempo suficiente para ler mesmo o modelo.",
     badge: "OFERTA DE REGRESSO &middot; ID APPLE", h1: "TEMPO", h2: "PARA JULGAR.",
-    p1: "Dois emails, dois números honestos, e este é o último. Se o registo merecia um segundo olhar, aqui tens {offer} de Pick1 Pro sem custo, com o teu ID Apple.",
-    p2: "Tempo suficiente para ver resolver uma série real de palpites, os bons e os maus, em vez dos três que viste da primeira vez. Nada é cobrado enquanto corre e cancelar é um toque nas tuas definições Apple.",
-    cta: "Activar {offer}", panelLabel: "REGISTO REAL, &Uacute;LTIMOS 30 DIAS", unsub: "Cancelar subscrição" },
+    p1: "Dois emails, dois números honestos, e este é o último. Se o registo merecia um segundo olhar, tens uma oferta de regresso à espera no teu ID Apple: {offer}.",
+    p2: "Tempo suficiente para ver resolver uma série real de palpites, os bons e os maus, em vez dos três que viste da primeira vez. Cancelar é um toque nas tuas definições Apple.",
+    cta: "Activar a oferta", panelLabel: "REGISTO REAL, &Uacute;LTIMOS 30 DIAS", unsub: "Cancelar subscrição" },
 };
 
 // The offer label is the only phrase in T3 that describes the offer's shape,

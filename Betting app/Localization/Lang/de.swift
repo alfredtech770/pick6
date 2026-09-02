@@ -645,5 +645,12 @@ enum GermanStrings {
         .wb_each_for: "%@ pro %@ für %@",
         .wb_then: "Danach %@ · jederzeit in den Einstellungen kündbar",
         .wb_cta: "Angebot sichern",
+        .wb_sheet_body: "Alles, was das Modell während deiner Abwesenheit angesagt hat, ist weiterhin protokolliert, Siege und Niederlagen in derselben Zahl. So steht es.",
+        .wb_record_label: "Echte Bilanz",
+        .wb_not_now: "Jetzt nicht",
+        .wb_unit_day: "Tag",
+        .wb_unit_week: "Woche",
+        .wb_unit_month: "Monat",
+        .wb_unit_year: "Jahr",
     ]
 }

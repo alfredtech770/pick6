@@ -646,5 +646,12 @@ enum EnglishStrings {
         .wb_each_for: "%@ per %@ for %@",
         .wb_then: "Then %@ · cancel anytime in Settings",
         .wb_cta: "Claim offer",
+        .wb_sheet_body: "Everything the model called while you were away is still logged, wins and losses in the same number. Here is where it stands.",
+        .wb_record_label: "Settled record",
+        .wb_not_now: "Not now",
+        .wb_unit_day: "day",
+        .wb_unit_week: "week",
+        .wb_unit_month: "month",
+        .wb_unit_year: "year",
     ]
 }

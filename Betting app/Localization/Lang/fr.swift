@@ -645,5 +645,12 @@ enum FrenchStrings {
         .wb_each_for: "%@ par %@ pendant %@",
         .wb_then: "Puis %@ · résiliable à tout moment dans Réglages",
         .wb_cta: "Activer l'offre",
+        .wb_sheet_body: "Tout ce que le modèle a annoncé pendant ton absence est toujours enregistré, victoires et défaites dans le même chiffre. Voilà où ça en est.",
+        .wb_record_label: "Bilan réel",
+        .wb_not_now: "Pas maintenant",
+        .wb_unit_day: "jour",
+        .wb_unit_week: "semaine",
+        .wb_unit_month: "mois",
+        .wb_unit_year: "an",
     ]
 }

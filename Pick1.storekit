@@ -1,0 +1,110 @@
+{
+  "identifier": "F284314F-3AB2-58E4-A006-5A42D5C68923",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "pick1",
+    "_developerTeamID": "",
+    "_lastSynchronizedDate": 0
+  },
+  "subscriptionGroups": [
+    {
+      "id": "4CBD583B-DAD2-5592-AE65-068B1F1E41E8",
+      "localizations": [],
+      "name": "Pick1 Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "14.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "CB460989-B0D2-545D-A04D-9A6DEE049AE4",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Pick1 Pro Weekly",
+              "displayName": "Pick1 Pro Weekly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.pick1.app.pro.weekly",
+          "recurringSubscriptionPeriod": "P1W",
+          "referenceName": "Pick1 Pro Weekly",
+          "subscriptionGroupID": "4CBD583B-DAD2-5592-AE65-068B1F1E41E8",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "39.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "8BBE32F7-0D85-5CCF-AE6A-268DC0C6CEAE",
+          "introductoryOffer": {
+            "displayPrice": "0.00",
+            "internalID": "205AA0DA-BED0-550C-9A43-CEC50202817A",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P3D"
+          },
+          "localizations": [
+            {
+              "description": "Pick1 Pro Monthly",
+              "displayName": "Pick1 Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.pick1.app.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pick1 Pro Monthly",
+          "subscriptionGroupID": "4CBD583B-DAD2-5592-AE65-068B1F1E41E8",
+          "type": "RecurringSubscription",
+          "winBackOffers": [
+            {
+              "displayPrice": "19.99",
+              "eligibility": [
+                "P1M",
+                "P6M",
+                "P1Y"
+              ],
+              "internalID": "6F588FE8-827C-5DF2-98AE-0E067F732C2E",
+              "numberOfPeriods": 3,
+              "offerID": "winback-half-3mo",
+              "paymentMode": "payAsYouGo",
+              "referenceName": "Win back 50% for 3 months",
+              "subscriptionPeriod": "P1M"
+            }
+          ]
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "199.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "8CADA7C7-7124-5709-B14F-92D6DB517ACA",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Pick1 Pro Annual",
+              "displayName": "Pick1 Pro Annual",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.pick1.app.pro.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pick1 Pro Annual",
+          "subscriptionGroupID": "4CBD583B-DAD2-5592-AE65-068B1F1E41E8",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}
