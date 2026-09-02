@@ -1275,7 +1275,7 @@ async function savePicks(league, picks) {
       && p.game_date >= fallbackDate)
       ? p.game_date : fallbackDate;
 
-  const rows = picks.map((p) => {
+  let rows = picks.map((p) => {
     // Team-sport betting props derived from the projected score (no AI);
     // combat picks arrive with p.betting_props already set by the grounded
     // path. Either way → the betting_props column.
@@ -1423,9 +1423,23 @@ async function savePicks(league, picks) {
     const ids = [...new Set(rows.map((r) => r.game_id).filter(Boolean))];
     if (ids.length) {
       const { data: existing } = await supabase
-        .from('picks').select('game_id, game_date')
-        .eq('league', league).eq('result', 'pending').in('game_id', ids);
-      const held = new Map((existing || []).map((e) => [e.game_id, e.game_date]));
+        .from('picks').select('game_id, game_date, result')
+        .eq('league', league).in('game_id', ids);
+      // A settled event is finished, so a second pick on it is a pick on a
+      // known result. Looking only at pending rows missed exactly that: the
+      // graded row was invisible here and a fresh one was written beside it.
+      const done = new Set((existing || []).filter((e) => e.result !== 'pending')
+                                           .map((e) => e.game_id));
+      if (done.size) {
+        const before = rows.length;
+        rows = rows.filter((r) => !done.has(r.game_id));
+        if (rows.length < before) {
+          log(`Dropped ${before - rows.length} ${league} pick(s) on already-settled events.`);
+        }
+        if (!rows.length) return;
+      }
+      const held = new Map((existing || []).filter((e) => e.result === 'pending')
+                                           .map((e) => [e.game_id, e.game_date]));
       rows.forEach((r) => { if (held.has(r.game_id)) r.game_date = held.get(r.game_id); });
     }
   }
@@ -2168,9 +2182,15 @@ async function sendDailyPickDrop() {
   } catch (e) { err('sendDailyPickDrop failed:', e.message); }
 }
 
-// Daily recap push — "you went X/Y, riding them all = +Z%". Only fires
-// on net-positive days (the hook is the upside); silent on flat/down
-// days so it never reads as a downer.
+// Daily recap push — "you went X/Y, riding them all = +Z%".
+//
+// This used to fire only on profitable days. Two reasons that changed. It
+// contradicted the product's whole position, which is that Pick1 publishes
+// its losses, and a recap that only ever arrives after a good day is a
+// selectively timed truth. And a notification that appears on an
+// unpredictable subset of days cannot become a habit, which is the only
+// thing a daily recap is for. It now fires on every day with a settled
+// slate, and says plainly which kind of day it was.
 async function sendDailyRecap() {
   try {
     const y = daysAgoISO(1);
@@ -2185,9 +2205,10 @@ async function sendDailyRecap() {
     let units = 0;
     for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
     const roi = Math.round((units / games) * 100);
-    if (roi <= 0) return;   // only hype profitable days
-    await sendPush({ key: 'recap', prefKey: 'results', args: { wins, games, pct: roi } });
-    log(`Push: recap sent (${wins}/${games}, +${roi}%)`);
+    const key = roi > 0 ? 'recap' : 'recap_down';
+    await sendPush({ key, prefKey: 'results',
+      args: { wins, games, pct: roi, absPct: Math.abs(roi) } });
+    log(`Push: ${key} sent (${wins}/${games}, ${roi > 0 ? '+' : ''}${roi}%)`);
   } catch (e) { err('sendDailyRecap failed:', e.message); }
 }
 
@@ -2226,7 +2247,7 @@ async function liveTick() {
     // in-play games, ungraded finals, and tonight's event previews.
     const { data: picks, error } = await supabase
       .from('picks')
-      .select('game_id, league, sport, home_team, away_team, game_date, pick, probability, market_odds')
+      .select('id, game_id, league, sport, home_team, away_team, game_date, pick, probability, market_odds')
       .eq('result', 'pending')
       .gte('game_date', daysAgoISO(3));
     if (error || !picks?.length) return;
@@ -2328,9 +2349,19 @@ async function liveTick() {
           }
 
           if (status === 'Final' && prev.status !== 'Final') {
-            // Final whistle — celebrate a win, soft re-hook on a loss.
-            // win/loss is the same for everyone (the AI's pick is global),
-            // so this is per-game, not per-user.
+            // Final whistle.
+            //
+            // This used to go to EVERY user opted into 'results', for every
+            // graded pick, because the AI's call is global. Measured over 30
+            // days that came to 19 "you won" and 17 "you lost" per person per
+            // month, about games most of them had never looked at, and it was
+            // the single largest source of the 93,099 pushes Pick1 sent in a
+            // month to an audience of which 9% had opened the app.
+            //
+            // A result is only news to someone who had a stake in it. So it
+            // now goes to the people who tracked this pick or favourited this
+            // game, and to nobody else. Everyone else gets the one daily
+            // recap, which is a better habit than 36 interruptions.
             const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
             const awayWon = (awayScore ?? 0) > (homeScore ?? 0);
             const pl = (p.pick || '').toLowerCase();
@@ -2340,9 +2371,11 @@ async function liveTick() {
             else if (p.away_team && pl.includes(p.away_team.toLowerCase())) pickWon = awayWon;
             if (pickWon === true) {
               pushEvents.push({ key: 'result_win', prefKey: 'results',
+                interestedOnly: true, gameId: p.game_id, pickId: p.id,
                 args: { team: p.pick, score: scoreShort, pct: payoutPct(p) } });
             } else if (pickWon === false) {
               pushEvents.push({ key: 'result_loss', prefKey: 'results',
+                interestedOnly: true, gameId: p.game_id, pickId: p.id,
                 args: { score: scoreShort } });
             }
             // pickWon === null (couldn't map the pick to a side) → no push.
@@ -2375,19 +2408,45 @@ async function liveTick() {
     if (laEvents.length) log(`Live Activity: ${laEvents.length} update(s) pushed`);
 
     // Deliver any per-game pushes collected above (goals + finals).
+    //
+    // Both shapes below resolve an audience from what the user actually did.
+    // If nobody did anything, the notification is not sent at all rather than
+    // broadcast — silence is the correct output for an event nobody chose.
+    let delivered = 0;
     for (const ev of pushEvents) {
       if (ev.favOnly) {
         // Goal alerts go ONLY to users who favorited this game.
         const { data: favs } = await supabase
           .from('user_favorites').select('user_id').eq('game_id', ev.gameId);
-        const userIds = (favs || []).map((f) => f.user_id);
+        const userIds = [...new Set((favs || []).map((f) => f.user_id))];
         if (!userIds.length) continue;   // nobody favorited it → skip
         await sendPush({ key: ev.key, args: ev.args, prefKey: ev.prefKey, userIds });
+        delivered++;
+      } else if (ev.interestedOnly) {
+        // A final goes to whoever had a stake in it: tracked the pick, or
+        // favourited the game. Two reads, unioned.
+        const ids = new Set();
+        if (ev.pickId) {
+          const { data: bets } = await supabase
+            .from('user_bets').select('user_id').eq('pick_id', ev.pickId);
+          for (const b of bets || []) if (b.user_id) ids.add(b.user_id);
+        }
+        if (ev.gameId) {
+          const { data: favs } = await supabase
+            .from('user_favorites').select('user_id').eq('game_id', ev.gameId);
+          for (const f of favs || []) if (f.user_id) ids.add(f.user_id);
+        }
+        if (!ids.size) continue;   // nobody had a stake → no notification
+        await sendPush({ key: ev.key, args: ev.args, prefKey: ev.prefKey, userIds: [...ids] });
+        delivered++;
       } else {
         await sendPush(ev);
+        delivered++;
       }
     }
-    if (pushEvents.length) log(`Push: ${pushEvents.length} game event(s) sent`);
+    if (pushEvents.length) {
+      log(`Push: ${delivered}/${pushEvents.length} game event(s) had an audience`);
+    }
     // Write captured crest URLs onto the pick rows (one update each;
     // only the logo columns, so scores/results are untouched).
     for (const u of logoUpdates) {

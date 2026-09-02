@@ -37,6 +37,11 @@ async function fetchTournaments() {
       position: c.order != null ? Number(c.order) : null,
       score: c.score != null ? String(c.score) : null,
     })).filter((p) => p.name);
+    // A finished tournament must not be picked again. ESPN keeps the last
+    // event on the scoreboard after it ends, so without this the pipeline
+    // re-picked the TOUR Championship two days after Scheffler had won it,
+    // and the app led its card with a winner that was already known.
+    if (state === 'post') continue;
     out.push({ id: e.id, name: e.name, date: e.date, end_date: e.endDate, state, players });
   }
   return out;
