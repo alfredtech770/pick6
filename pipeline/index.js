@@ -2641,13 +2641,29 @@ cron.schedule('0 5 * * *', async () => {
 // Daily performance snapshot at midnight ET (after final games grade).
 cron.schedule('0 0 * * *', savePerformanceSnapshot, { timezone: TZ });
 
-// SELF-HEAL — if the 5am run died mid-flight (container crash/OOM/restart),
-// today's slate stays empty and nothing notices. Check at 5:25 + 6:25 +
-// 12:25 ET: no picks dated today → re-run the pipeline. Idempotent — the
+// SELF-HEAL — if the 5am run died mid-flight (container crash/OOM/restart,
+// or the host being suspended), today's slate stays empty and nothing
+// notices. Check at 5:25 + 6:25 + 12:25 ET and re-run. Idempotent — the
 // excludeMatchups guard prevents duplicates when picks DO exist.
+//
+// THE CHECK IS ON created_at, NOT game_date, and that distinction is the
+// whole point. Several sports are generated ahead of event day: F1, golf and
+// some soccer fixtures land with a game_date days into the future. So on any
+// morning where one of those happens to fall today, `game_date = today`
+// returns a row, the guard concludes the run succeeded, and self-heal stays
+// silent through a completely failed day. Observed on 2026-09-02: the board
+// held exactly one pick, a cricket match written the previous morning, and
+// nothing would have re-run.
+//
+// What actually needs asking is "did the pipeline produce anything TODAY",
+// which is a question about when the row was written.
 cron.schedule('25 5,6,12 * * *', async () => {
   try {
-    const { data } = await supabase.from('picks').select('id').eq('game_date', todayISO()).limit(1);
+    // Midnight ET, as an instant, so the window matches the run's own day.
+    const since = new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
+    since.setHours(0, 0, 0, 0);
+    const { data } = await supabase.from('picks').select('id')
+      .gte('created_at', since.toISOString()).limit(1);
     if (!data || !data.length) {
       // Only re-run if a re-run could actually change the outcome. When the
       // day's budget is already spent, every league short-circuits to a skip
@@ -2657,7 +2673,7 @@ cron.schedule('25 5,6,12 * * *', async () => {
         log('🩹 Self-heal skipped: daily budget already spent — a re-run cannot produce picks.');
         return;
       }
-      log('🩹 Self-heal: zero picks for today — re-running pipeline.');
+      log('🩹 Self-heal: nothing produced today — re-running pipeline.');
       await runPipeline();
     }
   } catch (e) { err('Self-heal check failed:', e.message); }
