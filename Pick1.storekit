@@ -71,7 +71,7 @@
               ],
               "internalID": "6F588FE8-827C-5DF2-98AE-0E067F732C2E",
               "numberOfPeriods": 3,
-              "offerID": "winback-half-3mo",
+              "offerID": "winback_half_3mo",
               "paymentMode": "payAsYouGo",
               "referenceName": "Win back 50% for 3 months",
               "subscriptionPeriod": "P1M"
