@@ -54,85 +54,105 @@ const FCM_SA_RAW = Deno.env.get("FCM_SERVICE_ACCOUNT");
 
 type Copy = { t: string; b: string };
 type Locales = Record<string, Copy>;
+// Copy. Deliberately short: iOS truncates a lock-screen title around 35
+// characters and a body around 110, so anything past that is written for
+// nobody. Every number below is computed from the graded record before the
+// send, never asserted.
+//
+// THERE IS NO LOSING-DAY RECAP. That is a decision, not an oversight. The
+// obligation Pick1 takes on is to PUBLISH its losses, and it does, in the
+// app, on every settled pick, permanently. Pushing them is a different
+// thing: nobody opens "yesterday was down 8%", and a notification is not
+// where an audit trail belongs. So on a bad day the product says nothing at
+// all, which is the only version of "stay positive" that does not require
+// lying.
 const LOC: Record<string, Locales> = {
   result_win: {
-    en: { t: "💰 CALLED IT.", b: "{team} {score} — your pick cashed at +{pct}% 📈" },
-    fr: { t: "💰 DANS LE MILLE.", b: "{team} {score} — ton pari passe à +{pct}% 📈" },
-    es: { t: "💰 LO CLAVASTE.", b: "{team} {score} — tu pick ganó a +{pct}% 📈" },
-    de: { t: "💰 GENAU SO.", b: "{team} {score} — dein Tipp bringt +{pct}% 📈" },
-    it: { t: "💰 AZZECCATO.", b: "{team} {score} — il tuo pronostico paga +{pct}% 📈" },
-    pt: { t: "💰 ACERTASTE EM CHEIO.", b: "{team} {score} — o teu palpite pagou +{pct}% 📈" },
-    ar: { t: "💰 توقّع صحيح!", b: "{team} {score} — تذكرتك ربحت +{pct}٪ 📈" },
+    en: { t: "💰 CALLED IT", b: "{team} {score} · +{pct}%" },
+    fr: { t: "💰 DANS LE MILLE", b: "{team} {score} · +{pct}%" },
+    es: { t: "💰 LO CLAVASTE", b: "{team} {score} · +{pct}%" },
+    de: { t: "💰 GENAU SO", b: "{team} {score} · +{pct}%" },
+    it: { t: "💰 AZZECCATO", b: "{team} {score} · +{pct}%" },
+    pt: { t: "💰 EM CHEIO", b: "{team} {score} · +{pct}%" },
+    ar: { t: "💰 توقّع صحيح", b: "{team} {score} · +{pct}٪" },
   },
   result_loss: {
-    en: { t: "{score} — final", b: "That one got away. Tomorrow's board is already loading 👀" },
-    fr: { t: "{score} — terminé", b: "Celui-là s'est échappé. Le programme de demain charge déjà 👀" },
-    es: { t: "{score} — final", b: "Ese se escapó. El cartel de mañana ya se está cargando 👀" },
-    de: { t: "{score} — Schluss", b: "Der ist weg. Das Board für morgen lädt schon 👀" },
-    it: { t: "{score} — finale", b: "Quello è sfuggito. Il programma di domani è già in arrivo 👀" },
-    pt: { t: "{score} — final", b: "Esse fugiu. O quadro de amanhã já está a carregar 👀" },
-    ar: { t: "{score} — انتهت", b: "هذه فاتت. لوحة الغد قيد التحميل بالفعل 👀" },
+    en: { t: "{score} — final", b: "Not this one. Tomorrow's board is up." },
+    fr: { t: "{score} — terminé", b: "Pas celui-là. Le tableau de demain arrive." },
+    es: { t: "{score} — final", b: "Este no. El cartel de mañana ya viene." },
+    de: { t: "{score} — Schluss", b: "Nicht dieser. Das Board für morgen kommt." },
+    it: { t: "{score} — finale", b: "Non questo. Il programma di domani arriva." },
+    pt: { t: "{score} — final", b: "Este não. O quadro de amanhã já vem." },
+    ar: { t: "{score} — انتهت", b: "ليس هذه. لوحة الغد قادمة." },
   },
   goal_fav: {
-    en: { t: "⚡ {score}!", b: "{team} strikes in your game. Your pick's looking 🔥" },
-    fr: { t: "⚡ {score} !", b: "{team} marque dans ton match. Ton pari est en feu 🔥" },
-    es: { t: "⚡ ¡{score}!", b: "{team} marca en tu partido. Tu pick va 🔥" },
-    de: { t: "⚡ {score}!", b: "{team} trifft in deinem Spiel. Dein Tipp läuft 🔥" },
-    it: { t: "⚡ {score}!", b: "{team} segna nella tua partita. Il tuo pronostico vola 🔥" },
-    pt: { t: "⚡ {score}!", b: "{team} marca no teu jogo. O teu palpite está 🔥" },
-    ar: { t: "⚡ {score}!", b: "{team} يسجّل في مباراتك. توقّعك مشتعل 🔥" },
+    en: { t: "⚡ {score}", b: "{team} scores in your game." },
+    fr: { t: "⚡ {score}", b: "{team} marque dans ton match." },
+    es: { t: "⚡ {score}", b: "{team} marca en tu partido." },
+    de: { t: "⚡ {score}", b: "{team} trifft in deinem Spiel." },
+    it: { t: "⚡ {score}", b: "{team} segna nella tua partita." },
+    pt: { t: "⚡ {score}", b: "{team} marca no teu jogo." },
+    ar: { t: "⚡ {score}", b: "{team} يسجّل في مباراتك." },
   },
   pick_drop: {
-    en: { t: "🎯 Today's #1 lock is in", b: "{team} at {conf}% confidence. Tap to see your pick." },
-    fr: { t: "🎯 Le top pari du jour est là", b: "{team} à {conf}% de confiance. Touche pour voir ton pari." },
-    es: { t: "🎯 El pick #1 de hoy ya está", b: "{team} con {conf}% de confianza. Toca para verlo." },
-    de: { t: "🎯 Der Top-Tipp des Tages ist da", b: "{team} mit {conf}% Konfidenz. Tippen zum Ansehen." },
-    it: { t: "🎯 Il pronostico n.1 di oggi è qui", b: "{team} al {conf}% di fiducia. Tocca per vederlo." },
-    pt: { t: "🎯 O palpite n.º 1 de hoje chegou", b: "{team} com {conf}% de confiança. Toca para ver." },
-    ar: { t: "🎯 أقوى توقّع لليوم وصل", b: "{team} بثقة {conf}٪. اضغط لرؤيته." },
+    en: { t: "🎯 Today's #1: {team}", b: "Called at {conf}%." },
+    fr: { t: "🎯 Le n°1 du jour : {team}", b: "Annoncé à {conf}%." },
+    es: { t: "🎯 El n.º1 de hoy: {team}", b: "Anunciado al {conf}%." },
+    de: { t: "🎯 Nr. 1 heute: {team}", b: "Mit {conf}% angesagt." },
+    it: { t: "🎯 Il n.1 di oggi: {team}", b: "Dato al {conf}%." },
+    pt: { t: "🎯 O n.º1 de hoje: {team}", b: "Indicado a {conf}%." },
+    ar: { t: "🎯 رقم 1 اليوم: {team}", b: "بثقة {conf}٪." },
+  },
+  // NEW. Only when the board really carries a pick paying +100% or better,
+  // which measured out at about one day in three. Rare enough to be news.
+  big_odds: {
+    en: { t: "🚀 +{pct}% on the board today", b: "{team}, called at {conf}%." },
+    fr: { t: "🚀 +{pct}% au tableau aujourd'hui", b: "{team}, annoncé à {conf}%." },
+    es: { t: "🚀 +{pct}% en el cartel de hoy", b: "{team}, anunciado al {conf}%." },
+    de: { t: "🚀 +{pct}% heute auf dem Board", b: "{team}, mit {conf}% angesagt." },
+    it: { t: "🚀 +{pct}% sul programma di oggi", b: "{team}, dato al {conf}%." },
+    pt: { t: "🚀 +{pct}% no quadro de hoje", b: "{team}, indicado a {conf}%." },
+    ar: { t: "🚀 +{pct}٪ على لوحة اليوم", b: "{team}، بثقة {conf}٪." },
   },
   recap: {
-    en: { t: "📊 Yesterday: {wins}/{games} hit", b: "Riding them all = +{pct}%. Today's picks are live 👀" },
-    fr: { t: "📊 Hier : {wins}/{games} réussis", b: "Tout miser = +{pct}%. Les paris du jour sont là 👀" },
-    es: { t: "📊 Ayer: {wins}/{games} acertados", b: "Apostarlos todos = +{pct}%. Los picks de hoy ya están 👀" },
-    de: { t: "📊 Gestern: {wins}/{games} getroffen", b: "Alle tippen = +{pct}%. Die heutigen Tipps sind live 👀" },
-    it: { t: "📊 Ieri: {wins}/{games} indovinati", b: "Puntarli tutti = +{pct}%. I pronostici di oggi sono live 👀" },
-    pt: { t: "📊 Ontem: {wins}/{games} certos", b: "Apostar em todos = +{pct}%. Os palpites de hoje estão live 👀" },
-    ar: { t: "📊 أمس: {wins}/{games} صحيحة", b: "لو راهنت على الكل = +{pct}٪. توقّعات اليوم جاهزة 👀" },
+    en: { t: "💰 $100 a pick = +${net}", b: "{wins}/{games} yesterday." },
+    fr: { t: "💰 100 $ par pari = +{net} $", b: "{wins}/{games} hier." },
+    es: { t: "💰 $100 por pick = +${net}", b: "{wins}/{games} ayer." },
+    de: { t: "💰 100 $ pro Tipp = +{net} $", b: "{wins}/{games} gestern." },
+    it: { t: "💰 100 $ a pronostico = +{net} $", b: "{wins}/{games} ieri." },
+    pt: { t: "💰 $100 por palpite = +${net}", b: "{wins}/{games} ontem." },
+    ar: { t: "💰 100$ لكل توقّع = +{net}$", b: "{wins}/{games} أمس." },
   },
-  // The losing-day twin of `recap`. Pick1's whole position is that it
-  // publishes its losses, so the daily recap cannot only exist on the days
-  // that flatter it. Same shape, no apology, and the call to action is the
-  // record itself rather than a promise about tomorrow.
-  recap_down: {
-    en: { t: "📊 Yesterday: {wins}/{games}", b: "A down day, {absPct}% off. It is all in the record. Today's board is live 👀" },
-    fr: { t: "📊 Hier : {wins}/{games}", b: "Journée dans le rouge, {absPct}% en moins. Tout est dans le bilan. Le tableau du jour est là 👀" },
-    es: { t: "📊 Ayer: {wins}/{games}", b: "Día en rojo, {absPct}% menos. Todo está en el registro. El tablero de hoy está listo 👀" },
-    de: { t: "📊 Gestern: {wins}/{games}", b: "Ein Minustag, {absPct}% runter. Steht alles in der Bilanz. Das heutige Board ist live 👀" },
-    it: { t: "📊 Ieri: {wins}/{games}", b: "Giornata in rosso, {absPct}% in meno. È tutto nel bilancio. Il programma di oggi è live 👀" },
-    pt: { t: "📊 Ontem: {wins}/{games}", b: "Dia negativo, {absPct}% abaixo. Está tudo no registo. O quadro de hoje está live 👀" },
-    ar: { t: "📊 أمس: {wins}/{games}", b: "يوم خاسر، {absPct}٪ أقل. كله مسجّل. لوحة اليوم جاهزة 👀" },
+  // NEW. Consecutive profitable days from the graded record. When the run
+  // breaks the notification simply stops; the streak is never rounded up.
+  hot_streak: {
+    en: { t: "🔥 {days} winning days in a row", b: "{wins}/{games} yesterday. Today is up." },
+    fr: { t: "🔥 {days} jours gagnants d'affilée", b: "{wins}/{games} hier. Le jour est lancé." },
+    es: { t: "🔥 {days} días ganadores seguidos", b: "{wins}/{games} ayer. Hoy ya está." },
+    de: { t: "🔥 {days} Gewinntage in Folge", b: "{wins}/{games} gestern. Heute ist offen." },
+    it: { t: "🔥 {days} giorni vincenti di fila", b: "{wins}/{games} ieri. Oggi è aperto." },
+    pt: { t: "🔥 {days} dias a ganhar seguidos", b: "{wins}/{games} ontem. Hoje já está." },
+    ar: { t: "🔥 {days} أيام رابحة تواليًا", b: "{wins}/{games} أمس. اليوم مفتوح." },
   },
   free_recap: {
-    en: { t: "🔒 You missed {ret} yesterday", b: "Members went {w}-{l}. Don't miss today →" },
-    fr: { t: "🔒 Tu as raté {ret} hier", b: "Les membres : {w}-{l}. Ne rate pas aujourd'hui →" },
-    es: { t: "🔒 Te perdiste {ret} ayer", b: "Los miembros: {w}-{l}. No te pierdas hoy →" },
-    de: { t: "🔒 Du hast gestern {ret} verpasst", b: "Mitglieder: {w}-{l}. Verpass heute nicht →" },
-    it: { t: "🔒 Ti sei perso {ret} ieri", b: "I membri: {w}-{l}. Non perderti oggi →" },
-    pt: { t: "🔒 Perdeste {ret} ontem", b: "Membros: {w}-{l}. Não percas hoje →" },
-    ar: { t: "🔒 فاتك {ret} أمس", b: "الأعضاء: {w}-{l}. لا تفوّت اليوم ←" },
+    en: { t: "🔒 You missed +${net} yesterday", b: "Members went {w}-{l}." },
+    fr: { t: "🔒 Tu as raté +{net} $ hier", b: "Les membres : {w}-{l}." },
+    es: { t: "🔒 Te perdiste +${net} ayer", b: "Los miembros: {w}-{l}." },
+    de: { t: "🔒 Du hast +{net} $ verpasst", b: "Mitglieder: {w}-{l}." },
+    it: { t: "🔒 Ti sei perso +{net} $ ieri", b: "I membri: {w}-{l}." },
+    pt: { t: "🔒 Perdeste +${net} ontem", b: "Membros: {w}-{l}." },
+    ar: { t: "🔒 فاتك +{net}$ أمس", b: "الأعضاء: {w}-{l}." },
   },
   free_recap_b: {
-    en: { t: "📈 Members crushed it: {w}-{l}", b: "$100 a pick = {ret} yesterday. Get today's board →" },
-    fr: { t: "📈 Les membres ont cartonné : {w}-{l}", b: "100 $ par pick = {ret} hier. Prends le programme du jour →" },
-    es: { t: "📈 Los miembros arrasaron: {w}-{l}", b: "$100 por pick = {ret} ayer. Consigue el cartel de hoy →" },
-    de: { t: "📈 Mitglieder räumten ab: {w}-{l}", b: "100 $ pro Pick = {ret} gestern. Hol dir das heutige Board →" },
-    it: { t: "📈 I membri hanno dominato: {w}-{l}", b: "100 $ a pick = {ret} ieri. Prendi il programma di oggi →" },
-    pt: { t: "📈 Os membros arrasaram: {w}-{l}", b: "$100 por pick = {ret} ontem. Recebe o cartaz de hoje →" },
-    ar: { t: "📈 الأعضاء تألقوا: {w}-{l}", b: "100$ لكل اختيار = {ret} أمس. احصل على قائمة اليوم ←" },
+    en: { t: "📈 Members: {w}-{l} yesterday", b: "$100 a pick = +${net}." },
+    fr: { t: "📈 Les membres : {w}-{l} hier", b: "100 $ par pari = +{net} $." },
+    es: { t: "📈 Miembros: {w}-{l} ayer", b: "$100 por pick = +${net}." },
+    de: { t: "📈 Mitglieder: {w}-{l} gestern", b: "100 $ pro Tipp = +{net} $." },
+    it: { t: "📈 Membri: {w}-{l} ieri", b: "100 $ a pronostico = +{net} $." },
+    pt: { t: "📈 Membros: {w}-{l} ontem", b: "$100 por palpite = +${net}." },
+    ar: { t: "📈 الأعضاء: {w}-{l} أمس", b: "100$ لكل توقّع = +{net}$." },
   },
 };
-
 const AB_VARIANTS: Record<string, string[]> = { free_recap: ["free_recap", "free_recap_b"] };
 const LABELS = ["A", "B", "C", "D"];
 function pickVariant(userId: string | null, base: string): { locKey: string; label: string | null } {
@@ -172,7 +192,8 @@ const TIER: Record<string, Tier> = {
 
   pick_drop: "daily",
   recap: "daily",
-  recap_down: "daily",
+  hot_streak: "daily",
+  big_odds: "daily",
   free_recap: "daily",
   free_recap_b: "daily",
   day1_return: "daily",
@@ -189,7 +210,7 @@ const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number } {
   if (!lastSeenAt) return { perDay: 0, perWeek: 0 };
   const days = (Date.now() - Date.parse(lastSeenAt)) / 86400e3;
-  if (days <= 14) return { perDay: 1, perWeek: 7 };
+  if (days <= 14) return { perDay: 2, perWeek: 10 };
   if (days <= 45) return { perDay: 1, perWeek: 2 };
   return { perDay: 0, perWeek: 0 };
 }
@@ -220,14 +241,23 @@ const inSendWindow = (locale: string | null, at: Date = new Date()) => {
 /// woken up; the alternative of refusing to send would have removed them from
 /// the product. Parking the send until morning is the only option that keeps
 /// both the user and the notification.
-function nextSendWindow(locale: string | null): Date {
-  const now = new Date();
+function nextSendWindow(locale: string | null, from: Date = new Date()): Date {
   for (let h = 0; h <= 24; h++) {
-    const t = new Date(now.getTime() + h * 3600e3);
+    const t = new Date(from.getTime() + h * 3600e3);
     if (inSendWindow(locale, t)) return t;
   }
-  return now;
+  return from;
 }
+
+/// Minimum spacing between two non-critical notifications to one person.
+///
+/// The daily allowance alone does not give this. pick_drop and big_odds both
+/// fire from the same pipeline run, seconds apart; an allowance of two a day
+/// would happily deliver both at once, which reads as a malfunction and
+/// undoes the point of capping at all. Whichever loses the race is parked
+/// four hours out instead of dropped, so the second thing still arrives, in
+/// the afternoon, where it has the day to itself.
+const MIN_GAP_HOURS = 4;
 
 function fill(tpl: string, args: Record<string, unknown>): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => (args[k] !== undefined ? String(args[k]) : `{${k}}`));
@@ -543,7 +573,7 @@ Deno.serve(async (req: Request) => {
   const skipped = { dormant: 0, capped: 0, queued: 0 };
 
   // Recent history for everyone in range, read once. `critical` never asks.
-  const counts = new Map<string, { day: number; week: number }>();
+  const counts = new Map<string, { day: number; week: number; last: string | null }>();
   if (tier !== "critical") {
     const ids = [...new Set(tokens.map((t: any) => t.user_id).filter(Boolean))];
     const weekAgo = new Date(Date.now() - 7 * 86400e3).toISOString();
@@ -552,9 +582,10 @@ Deno.serve(async (req: Request) => {
       const { data: hist } = await supabase.from("push_log")
         .select("user_id, sent_at").in("user_id", ids.slice(i, i + 500)).gte("sent_at", weekAgo);
       for (const h of hist ?? []) {
-        const c = counts.get(h.user_id) ?? { day: 0, week: 0 };
+        const c = counts.get(h.user_id) ?? { day: 0, week: 0, last: null };
         c.week++;
         if (h.sent_at >= dayAgo) c.day++;
+        if (!c.last || h.sent_at > c.last) c.last = h.sent_at;
         counts.set(h.user_id, c);
       }
     }
@@ -562,14 +593,23 @@ Deno.serve(async (req: Request) => {
 
   const now: any[] = [];
   const later: any[] = [];
+  const nowTs = new Date();
   for (const t of tokens as any[]) {
+    // The earliest instant this device may be interrupted. Starts at "now"
+    // and is pushed out by whichever gate is furthest away.
+    let earliest = nowTs;
     if (tier !== "critical") {
       const a = allowance(t.last_seen_at ?? null);
       if (a.perDay === 0) { skipped.dormant++; continue; }
-      const c = counts.get(t.user_id) ?? { day: 0, week: 0 };
+      const c = counts.get(t.user_id) ?? { day: 0, week: 0, last: null };
       if (c.day >= a.perDay || c.week >= a.perWeek) { skipped.capped++; continue; }
+      if (c.last) {
+        const gap = new Date(Date.parse(c.last) + MIN_GAP_HOURS * 3600e3);
+        if (gap > earliest) earliest = gap;
+      }
     }
-    (inSendWindow(t.locale) ? now : later).push(t);
+    if (earliest <= nowTs && inSendWindow(t.locale)) now.push(t);
+    else later.push({ ...t, _after: earliest });
   }
 
   // Park what would land at night, one row per person.
@@ -583,7 +623,7 @@ Deno.serve(async (req: Request) => {
       queueRows.push({
         user_id: t.user_id, base_key: key, args: args ?? {}, pref_key: prefKey ?? null,
         free_only: !!freeOnly, data: data ?? {},
-        send_after: nextSendWindow(t.locale).toISOString(),
+        send_after: nextSendWindow(t.locale, t._after ?? new Date()).toISOString(),
         expires_at: new Date(Date.now() + ttl * 3600e3).toISOString(),
       });
     }

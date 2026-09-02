@@ -2182,15 +2182,24 @@ async function sendDailyPickDrop() {
   } catch (e) { err('sendDailyPickDrop failed:', e.message); }
 }
 
-// Daily recap push — "you went X/Y, riding them all = +Z%".
+// Daily recap push, and the streak alert that replaces it on a run.
 //
-// This used to fire only on profitable days. Two reasons that changed. It
-// contradicted the product's whole position, which is that Pick1 publishes
-// its losses, and a recap that only ever arrives after a good day is a
-// selectively timed truth. And a notification that appears on an
-// unpredictable subset of days cannot become a habit, which is the only
-// thing a daily recap is for. It now fires on every day with a settled
-// slate, and says plainly which kind of day it was.
+// Leads with money rather than a percentage: "$100 a pick = +$740" is a
+// statement about what the PUBLISHED record did yesterday, on the same flat
+// basis free_recap has always used, and it is the number people actually
+// read. It is never a claim about what the reader will make.
+//
+// Fires only on profitable days. The obligation Pick1 carries is to PUBLISH
+// its losses, and it does, permanently, on every settled pick in the app.
+// Pushing them is a separate question and the answer is no: nobody opens
+// "yesterday was down 8%", and a notification is not where an audit trail
+// belongs. On a bad day this sends nothing at all, which is the only version
+// of staying positive that does not require lying.
+//
+// When the good days run consecutively the recap is upgraded to hot_streak,
+// because "4 winning days in a row" is a stronger reason to open the app
+// than yesterday alone. The streak is counted, never rounded up, and it
+// breaks the moment a day does not settle positive.
 async function sendDailyRecap() {
   try {
     const y = daysAgoISO(1);
@@ -2205,11 +2214,73 @@ async function sendDailyRecap() {
     let units = 0;
     for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
     const roi = Math.round((units / games) * 100);
-    const key = roi > 0 ? 'recap' : 'recap_down';
-    await sendPush({ key, prefKey: 'results',
-      args: { wins, games, pct: roi, absPct: Math.abs(roi) } });
-    log(`Push: ${key} sent (${wins}/${games}, ${roi > 0 ? '+' : ''}${roi}%)`);
+    const net = Math.round(units * 100);   // flat $100 a pick, in dollars
+    if (roi <= 0) { log(`Push: recap skipped (${wins}/${games}, ${roi}%) — down day`); return; }
+
+    const days = await winningStreakDays();
+    if (days >= 3) {
+      await sendPush({ key: 'hot_streak', prefKey: 'results', args: { days, wins, games, net } });
+      log(`Push: hot_streak sent (${days} days, ${wins}/${games}, +$${net})`);
+    } else {
+      await sendPush({ key: 'recap', prefKey: 'results', args: { wins, games, pct: roi, net } });
+      log(`Push: recap sent (${wins}/${games}, +$${net})`);
+    }
   } catch (e) { err('sendDailyRecap failed:', e.message); }
+}
+
+/// How many consecutive days, ending yesterday, settled net positive on a
+/// flat $100 a pick. Walks back from yesterday and stops at the first day
+/// that did not, so the number is always the real run and never a best case.
+/// Capped at a fortnight's lookback: past that the claim stops being about
+/// current form.
+async function winningStreakDays() {
+  try {
+    let days = 0;
+    for (let back = 1; back <= 14; back++) {
+      const d = daysAgoISO(back);
+      const { data: picks } = await supabase
+        .from('picks').select('result, probability, market_odds')
+        .eq('game_date', d).in('result', ['win', 'loss']);
+      if (!picks || !picks.length) break;   // no settled slate → run ends
+      let units = 0;
+      for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
+      if (units <= 0) break;
+      days++;
+    }
+    return days;
+  } catch (e) { err('winningStreakDays failed:', e.message); return 0; }
+}
+
+/// Big-odds alert, fired right after the morning run.
+///
+/// Measured over the 30 days to 2026-09-02: the median pick on the board
+/// pays about +54%, and only 13 picks across 9 of 27 days paid +100% or
+/// better. So a +100% threshold surfaces roughly one day in three, which is
+/// the point. A "big odds" alert that fires daily is not an alert, it is
+/// wallpaper, and the number stops meaning anything.
+///
+/// Reads the real posted price. Picks with no market line are skipped rather
+/// than having a payout inferred for them, because an inferred number has no
+/// business in a notification that exists to say "this one is unusual".
+const BIG_ODDS_MIN_DECIMAL = 2.0;   // +100% and up
+async function sendBigOdds() {
+  try {
+    const today = daysAgoISO(0);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('pick, probability, market_odds')
+      .eq('game_date', today)
+      .not('market_odds', 'is', null)
+      .gte('market_odds', BIG_ODDS_MIN_DECIMAL)
+      .order('market_odds', { ascending: false })
+      .limit(1);
+    if (!picks || !picks.length) return;   // ordinary board → say nothing
+    const top = picks[0];
+    await sendPush({ key: 'big_odds', prefKey: 'picks',
+      args: { pct: Math.round((top.market_odds - 1) * 100),
+              team: top.pick, conf: Math.round(top.probability || 0) } });
+    log(`Push: big_odds sent (${top.pick}, +${Math.round((top.market_odds - 1) * 100)}%)`);
+  } catch (e) { err('sendBigOdds failed:', e.message); }
 }
 
 // Free-tier upsell recap at 10am ET — yesterday's full-slate record,
@@ -2234,7 +2305,7 @@ async function sendFreeRecap() {
     const net = Math.round(units * 100);
     if (wins <= losses || net <= 0) return;
     await sendPush({ key: 'free_recap', prefKey: 'picks', freeOnly: true,
-      args: { w: wins, l: losses, ret: `+$${net}` } });
+      args: { w: wins, l: losses, net, ret: `+$${net}` } });
     log(`Push: free_recap sent (${wins}-${losses}, +$${net})`);
   } catch (e) { err('sendFreeRecap failed:', e.message); }
 }
@@ -2559,8 +2630,12 @@ cron.schedule('0 5 * * *', async () => {
   // Backfill crest URLs immediately so morning cards aren't logoless
   // until the first in-window live tick.
   try { await liveTick(); } catch (e) { err('post-run logo enrich failed:', e.message); }
-  // Today's #1 pick is now in the DB — push it out.
+  // Today's #1 pick is now in the DB — push it out, then flag the board if
+  // it happens to carry an unusually large price. Both are gated downstream
+  // by send-push, so on a day where they both fire the second one is simply
+  // parked or dropped rather than doubling up.
   await sendDailyPickDrop();
+  await sendBigOdds();
 }, { timezone: TZ });
 
 // Daily performance snapshot at midnight ET (after final games grade).
