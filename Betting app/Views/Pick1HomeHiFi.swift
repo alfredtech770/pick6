@@ -2550,9 +2550,17 @@ struct PremiumUpsellCard: View {
                         .background(RoundedRectangle(cornerRadius: 14)
                             .fill(LinearGradient(colors: [Color(hex: "#F2D468"), gold],
                                                  startPoint: .top, endPoint: .bottom)))
-                    Text(subs.introOfferEligible
-                         ? "then $14.99/wk · day passes from $2.99 · cancel anytime"
-                         : "plans from $2.99 · cancel anytime")
+                    // Never promises a specific "then" price: the trial sits
+                    // on one plan and the buyer chooses another on the
+                    // paywall, so naming one number here is wrong as often
+                    // as it is right. "from" is the only honest shape.
+                    Text(subs.cheapestPlanText.map { price in
+                        subs.introOfferEligible
+                            ? "3 days free · then from \(price) · cancel anytime"
+                            : "plans from \(price) · cancel anytime"
+                    } ?? (subs.introOfferEligible
+                          ? "3 days free · cancel anytime"
+                          : "cancel anytime"))
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#8A8D94"))
                 }

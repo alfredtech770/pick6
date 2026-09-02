@@ -155,6 +155,33 @@ final class SubscriptionManager: ObservableObject {
         annualProductId,
     ]
 
+    /// The cheapest plan ACTUALLY ON SALE, priced in the viewer's own
+    /// storefront currency.
+    ///
+    /// Two free-tier upsell cards used to read "day passes from $2.99".
+    /// The Day Pass was retired from sale on 2026-08-25, so that line
+    /// advertised a product nobody could buy, printed directly under a
+    /// purchase button. It was also dollars for every user on earth,
+    /// including the French and Mexican storefronts that are this app's
+    /// second and third markets.
+    ///
+    /// Reading it from StoreKit fixes both at once, and means a price change
+    /// in App Store Connect never leaves a stale number in the UI again.
+    /// Returns nil until products load; callers must have a copy that works
+    /// without a price rather than showing a placeholder.
+    var cheapestPlanText: String? {
+        let onSale = products.filter { Self.productIds.contains($0.id) }
+        guard let p = onSale.min(by: { $0.price < $1.price }) else { return nil }
+        let unit: String
+        switch p.subscription?.subscriptionPeriod.unit {
+        case .week:  unit = "/wk"
+        case .month: unit = "/mo"
+        case .year:  unit = "/yr"
+        default:     unit = ""
+        }
+        return p.displayPrice + unit
+    }
+
     /// Product ids the ENTITLEMENT check accepts — includes retired
     /// products (Lifetime) that existing owners must keep.
     static let entitledProductIds: [String] = productIds + [lifetimeProductId]

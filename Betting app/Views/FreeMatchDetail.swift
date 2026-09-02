@@ -312,9 +312,13 @@ struct FreeMatchDetailView: View {
                     .pressableScale(0.985)
             }
             .buttonStyle(.plain)
-            Text(subs.introOfferEligible
-                 ? "then $14.99/wk · cancel anytime"
-                 : "plans from $2.99 · cancel anytime")
+            Text(subs.cheapestPlanText.map { price in
+                subs.introOfferEligible
+                    ? "3 days free · then from \(price) · cancel anytime"
+                    : "plans from \(price) · cancel anytime"
+            } ?? (subs.introOfferEligible
+                  ? "3 days free · cancel anytime"
+                  : "cancel anytime"))
                 .font(.mono(10, weight: .medium))
                 .foregroundColor(Color(hex: "#8A8D94"))
         }
