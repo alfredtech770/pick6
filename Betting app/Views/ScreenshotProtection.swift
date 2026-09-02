@@ -100,6 +100,24 @@ struct ScreenshotProtected<Content: View>: UIViewRepresentable {
         var field: UITextField?
         let host: UIHostingController<AnyView>
 
+        /// WORKAROUND, Swift 6.3.3 (swiftlang-6.3.3.1.3).
+        ///
+        /// Release builds crash the compiler in SILFunctionTransform
+        /// "EarlyPerfInliner" on this class's SYNTHESIZED deinit, which makes
+        /// the app impossible to archive and therefore impossible to submit.
+        /// Debug builds are unaffected because the pass does not run.
+        ///
+        /// Writing the deinit explicitly gives the optimizer a body it can
+        /// handle instead of the one it synthesizes. Releasing `field` by hand
+        /// is not the point and changes no behaviour, ARC would do it anyway;
+        /// the point is that the deinit exists in source.
+        ///
+        /// Revisit when the toolchain moves: delete this and try a Release
+        /// build. If it succeeds, the workaround has outlived its bug.
+        deinit {
+            field = nil
+        }
+
         init(rootView: AnyView) {
             self.host = UIHostingController(rootView: rootView)
             // Let the SwiftUI content size itself — autolayout drives
