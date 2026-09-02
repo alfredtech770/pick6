@@ -682,6 +682,24 @@ enum L10nKey: String, CaseIterable {
     case paywall_unit_yr
     case paywall_sub_annual
 
+    // Apple win back offer, surfaced on the paywall to a lapsed subscriber.
+    // The wording keys carry %@ placeholders that are filled from the offer
+    // itself, so the app can never describe terms the App Store will not grant.
+    case wb_badge
+    case wb_body
+    case wb_free
+    case wb_for
+    case wb_each_for
+    case wb_then
+    case wb_cta
+    case wb_unit_day
+    case wb_unit_week
+    case wb_unit_month
+    case wb_unit_year
+    case wb_sheet_body
+    case wb_record_label
+    case wb_not_now
+
     // Pick ticket header on the match detail page.
     case tk_confidence
     case tk_to_win
