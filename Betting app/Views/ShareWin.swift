@@ -196,20 +196,9 @@ struct ShareWinCard: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack {
-                Spacer()
-                // No wordmark here any more — the ticket's own stub carries
-                // it now, and printing PICK1 twice on one image is noise.
-                HStack(spacing: 4) {
-                    Image(systemName: won ? "checkmark" : "xmark")
-                        .font(.system(size: 9, weight: .heavy))
-                    Text(won ? t(.rd_won) : t(.rd_lost))
-                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                }
-                .foregroundColor(Color(hex: "#171717"))
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Capsule().fill(accent))
-            }
+            // No header row at all. The wordmark moved into the ticket's
+            // stub, and the WON/LOST pill said the same thing as the WIN
+            // stamp already printed on the ticket, larger and better.
 
             P1PickTicket(pick: pick,
                          homeScore: pick.homeScore,
