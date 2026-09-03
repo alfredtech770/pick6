@@ -184,7 +184,7 @@ enum ArabicStrings {
         // In RTL the "forward" arrow points left (←), matching reading flow.
         // Welcome
         .funnel_welcome_headline:        "اربح\nبذكاء.\n*لا بمشقّة.*",
-        .funnel_welcome_lead:            "الذكاء الاصطناعي الذي يختار مباراة واحدة يوميًا عبر 9 رياضات — ويسجّل كل نتيجة علنًا.",
+        .funnel_welcome_lead:            "الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 10 رياضات، ويسجّل كل نتيجة علنًا.",
         .funnel_welcome_cta:             "← لنبدأ",
         .funnel_welcome_member:          "عضو بالفعل؟ ",
         .funnel_welcome_signin:          "تسجيل الدخول",

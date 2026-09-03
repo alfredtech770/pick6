@@ -182,7 +182,7 @@ enum GermanStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*",
-        .funnel_welcome_lead:            "Die KI, die täglich ein Spiel in 10 Sportarten tippt — und jedes Ergebnis öffentlich protokolliert.",
+        .funnel_welcome_lead:            "Die KI, die jedes Spiel des Tages in 10 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.",
         .funnel_welcome_cta:             "LOSLEGEN →",
         .funnel_welcome_member:          "Schon dabei? ",
         .funnel_welcome_signin:          "Anmelden",

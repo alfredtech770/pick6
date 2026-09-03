@@ -182,7 +182,7 @@ enum ItalianStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "VINCI\nCON TESTA.\n*NON DI FORZA.*",
-        .funnel_welcome_lead:            "L'IA che sceglie una partita al giorno su 10 sport — e registra ogni risultato in pubblico.",
+        .funnel_welcome_lead:            "L'IA che si pronuncia su ogni partita del giorno in 10 sport, e registra ogni risultato in pubblico.",
         .funnel_welcome_cta:             "INIZIA →",
         .funnel_welcome_member:          "Già iscritto? ",
         .funnel_welcome_signin:          "Accedi",

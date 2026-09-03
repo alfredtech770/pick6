@@ -182,7 +182,7 @@ enum SpanishStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GANA\nCON CABEZA.\n*NO A LO BRUTO.*",
-        .funnel_welcome_lead:            "La IA que elige un partido al día en 10 deportes — y registra cada resultado en público.",
+        .funnel_welcome_lead:            "La IA que se pronuncia sobre todos los partidos del día en 10 deportes, y registra cada resultado en público.",
         .funnel_welcome_cta:             "EMPEZAR →",
         .funnel_welcome_member:          "¿Ya eres miembro? ",
         .funnel_welcome_signin:          "Iniciar sesión",

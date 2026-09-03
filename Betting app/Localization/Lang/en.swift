@@ -183,7 +183,7 @@ enum EnglishStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "WIN\nSMARTER.\n*NOT HARDER.*",
-        .funnel_welcome_lead:            "The AI that calls one game a day across 10 sports — and logs every result in public.",
+        .funnel_welcome_lead:            "The AI that calls every game on today's board across 10 sports, and logs every result in public.",
         .funnel_welcome_cta:             "GET STARTED →",
         .funnel_welcome_member:          "Already a member? ",
         .funnel_welcome_signin:          "Sign in",

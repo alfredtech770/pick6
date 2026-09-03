@@ -2037,6 +2037,13 @@ const ESPN_PATHS = {
   LIGAMX: 'soccer/mex.1',
   WNBA: 'basketball/wnba',
   NCAAB: 'basketball/mens-college-basketball',
+  // Added 2026-09-02. Both verified against the live endpoint before being
+  // added, rather than guessed: college-football returned 25 events and ufl
+  // returned 1. A wrong path here fails silently and the league simply never
+  // appears on the LIVE tab, which is how NCAAF went missing while it was
+  // producing 11 picks a day.
+  NCAAF: 'football/college-football',
+  UFL: 'football/ufl',
   NASCAR: 'racing/nascar-premier',
   UFC: 'mma/ufc',
   F1:  'racing/f1',

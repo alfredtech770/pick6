@@ -182,7 +182,7 @@ enum PortugueseStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GANHA\nCOM CABEÇA.\n*NÃO À FORÇA.*",
-        .funnel_welcome_lead:            "A IA que escolhe um jogo por dia em 10 desportos — e regista cada resultado em público.",
+        .funnel_welcome_lead:            "A IA que se pronuncia sobre todos os jogos do dia em 10 desportos, e regista cada resultado em público.",
         .funnel_welcome_cta:             "COMEÇAR →",
         .funnel_welcome_member:          "Já és membro? ",
         .funnel_welcome_signin:          "Iniciar sessão",

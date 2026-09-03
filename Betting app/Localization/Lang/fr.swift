@@ -182,7 +182,7 @@ enum FrenchStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GAGNEZ\nPLUS MALIN.\n*PAS PLUS DUR.*",
-        .funnel_welcome_lead:            "L'IA qui désigne un match par jour sur 10 sports — et note chaque résultat en public.",
+        .funnel_welcome_lead:            "L'IA qui se prononce sur tous les matchs du jour, sur 10 sports, et note chaque résultat en public.",
         .funnel_welcome_cta:             "COMMENCER →",
         .funnel_welcome_member:          "Déjà membre ? ",
         .funnel_welcome_signin:          "Se connecter",

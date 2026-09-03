@@ -712,6 +712,9 @@ struct P1V4LiveCard: View {
     let pick: Pick
     let score: LiveScore
     var tint: Color
+    /// A free user sees the game and the live score; what is withheld is the
+    /// AI's call on it, which is the thing being sold.
+    var isLocked: Bool = false
 
     private var calledIsHome: Bool {
         pick.pick.caseInsensitiveCompare(pick.homeTeam) == .orderedSame
@@ -720,7 +723,9 @@ struct P1V4LiveCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("\(pick.league.uppercased()) · YOUR PICK: \(pick.shortDisplayPick.uppercased()) · \(Int(pick.probability.rounded()))%")
+                Text(isLocked
+                     ? "\(pick.league.uppercased()) · PICK LOCKED"
+                     : "\(pick.league.uppercased()) · YOUR PICK: \(pick.shortDisplayPick.uppercased()) · \(Int(pick.probability.rounded()))%")
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
                 if let q = score.quarter ?? score.status {
@@ -774,7 +779,7 @@ struct P1V4LiveCard: View {
                 .foregroundStyle(isPick ? Color.p1Lime : .white)
                 .shadow(color: isPick ? Color.p1Lime.opacity(0.5) : .clear, radius: 9)
                 .lineLimit(1).minimumScaleFactor(0.5)
-            Text((isPick ? "▸ " : "") + name.uppercased())
+            Text((isPick && !isLocked ? "▸ " : "") + name.uppercased())
                 .font(.archivoNarrow(9, weight: .bold))
                 .tracking(0.9)
                 .foregroundStyle(V4.mute)
@@ -1212,10 +1217,30 @@ struct Pick1HomeV4: View {
     }
     private var hiddenRest: [Pick] { shownRest.filter { locked($0) } }
 
+    /// EVERY game in play, locked or not.
+    ///
+    /// This used to drop locked picks outright, which meant a free user's
+    /// LIVE tab was empty while games were being played, and the counter
+    /// above it read "0 PICKS LIVE NOW" during a full slate. Cutting the free
+    /// tier to a single call made that near-total. A live score is not the
+    /// paid product — the CALL is — so the game and the scoreline are shown
+    /// to everyone and only the pick itself stays behind the paywall.
+    /// A score is only LIVE if it was refreshed recently.
+    ///
+    /// `live_scores` currently holds 32 rows stuck at InProgress since 18
+    /// August: the pipeline stopped refreshing them mid-game and nothing ever
+    /// moved them to Final. Status alone would show those as in play forever.
+    /// The live loop ticks every couple of minutes while games are on, so
+    /// anything untouched for two hours is a stalled row, not a match.
+    private static let liveStaleAfter: TimeInterval = 2 * 3600
+
     private var liveNow: [(pick: Pick, score: LiveScore)] {
-        let live = vm.liveScores.filter(\.isLive)
+        let live = vm.liveScores.filter {
+            guard $0.isLive else { return false }
+            guard let u = $0.updatedAt else { return true }
+            return Date().timeIntervalSince(u) < Self.liveStaleAfter
+        }
         return coveredToday.compactMap { p in
-            guard !locked(p) else { return nil }
             guard let gid = p.gameId, let s = live.first(where: { $0.gameId == gid }) else { return nil }
             return (p, s)
         }
@@ -1289,7 +1314,11 @@ struct Pick1HomeV4: View {
             if !isPro && tab == .tonight && !coveredToday.isEmpty {
                 VStack {
                     Spacer()
-                    P1V4PayBar(perDay: perDay, sports: max(sports.count, 1), onTap: onUpgrade)
+                    // P1_SPORTS, not `sports`. The latter is the CHIP RAIL,
+                    // which begins with the ALL chip, so counting it
+                    // advertised "11 SPORTS" against the ten the app covers
+                    // and against its own onboarding copy.
+                    P1V4PayBar(perDay: perDay, sports: P1_SPORTS.count, onTap: onUpgrade)
                         .padding(.bottom, bottomInset)
                 }
             }
@@ -1448,7 +1477,7 @@ struct Pick1HomeV4: View {
     @ViewBuilder private var live: some View {
         HStack(spacing: 6) {
             Circle().fill(V4.hot).frame(width: 7, height: 7)
-            Text("\(liveNow.count) PICK\(liveNow.count == 1 ? "" : "S") LIVE NOW")
+            Text("\(liveNow.count) GAME\(liveNow.count == 1 ? "" : "S") LIVE NOW")
                 .font(.archivoNarrow(10, weight: .bold))
                 .tracking(1.6)
                 .foregroundStyle(V4.hotSoft)
@@ -1463,7 +1492,9 @@ struct Pick1HomeV4: View {
             emptyState("Nothing in play", "Live scores appear here once one of today's calls kicks off.")
         } else {
             ForEach(liveNow, id: \.score.id) { item in
-                P1V4LiveCard(pick: item.pick, score: item.score, tint: V4.glow(item.pick.sport))
+                P1V4LiveCard(pick: item.pick, score: item.score,
+                             tint: V4.glow(item.pick.sport),
+                             isLocked: locked(item.pick))
             }
         }
     }
