@@ -2182,14 +2182,15 @@ async function sendDailyPickDrop() {
     const today = daysAgoISO(0);
     const { data: picks } = await supabase
       .from('picks')
-      .select('pick, probability')
+      .select('pick, probability, market_odds')
       .eq('game_date', today)
       .order('probability', { ascending: false })
       .limit(1);
     if (!picks || !picks.length) return;
     const top = picks[0];
     await sendPush({ key: 'pick_drop', prefKey: 'picks',
-      args: { team: top.pick, conf: Math.round(top.probability || 0) } });
+      args: { team: top.pick, conf: Math.round(top.probability || 0),
+              payout: payoutPct(top) } });
     log(`Push: pick_drop sent (${top.pick})`);
   } catch (e) { err('sendDailyPickDrop failed:', e.message); }
 }
@@ -2289,7 +2290,7 @@ async function sendBigOdds() {
     if (!picks || !picks.length) return;   // ordinary board → say nothing
     const top = picks[0];
     await sendPush({ key: 'big_odds', prefKey: 'picks',
-      args: { pct: Math.round((top.market_odds - 1) * 100),
+      args: { payout: Math.round((top.market_odds - 1) * 100),
               team: top.pick, conf: Math.round(top.probability || 0) } });
     log(`Push: big_odds sent (${top.pick}, +${Math.round((top.market_odds - 1) * 100)}%)`);
   } catch (e) { err('sendBigOdds failed:', e.message); }
@@ -2301,6 +2302,33 @@ async function sendBigOdds() {
 // number is verifiable in the app's graded history. Fires only on
 // clearly good days (more wins than losses AND net-positive at $100
 // flat per pick) — silence beats a losing-day upsell.
+// Weekly missed-money push, free tier only.
+//
+// A single day is easy to shrug off; seven days of the same published record
+// is a bigger number and a harder one to argue with. It goes out ONLY on a
+// week that actually finished up, so it can never be the product spinning a
+// losing week as a near miss.
+async function sendWeekMissed() {
+  try {
+    const since = daysAgoISO(7);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('result, probability, market_odds')
+      .gte('game_date', since)
+      .in('result', ['win', 'loss']);
+    if (!picks || picks.length < 20) return;   // too thin a week to quote
+    const wins = picks.filter((p) => p.result === 'win').length;
+    const losses = picks.length - wins;
+    let units = 0;
+    for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
+    const net = Math.round(units * 100);       // flat $100 a pick, in dollars
+    if (net <= 0) { log(`Push: week_missed skipped (${wins}-${losses}, $${net})`); return; }
+    await sendPush({ key: 'week_missed', prefKey: 'picks', freeOnly: true,
+      args: { w: wins, l: losses, net } });
+    log(`Push: week_missed sent (${wins}-${losses}, +$${net})`);
+  } catch (e) { err('sendWeekMissed failed:', e.message); }
+}
+
 async function sendFreeRecap() {
   try {
     const y = daysAgoISO(1);
@@ -2534,14 +2562,15 @@ async function liveTick() {
             else if (p.home_team && pl.includes(p.home_team.toLowerCase())) pickWon = homeWon;
             else if (p.away_team && pl.includes(p.away_team.toLowerCase())) pickWon = awayWon;
             if (pickWon === true) {
+              // On a flat $100 a pick, the payout percentage IS the dollars.
               pushEvents.push({ key: 'result_win', prefKey: 'results',
                 interestedOnly: true, gameId: p.game_id, pickId: p.id,
-                args: { team: p.pick, score: scoreShort, pct: payoutPct(p) } });
-            } else if (pickWon === false) {
-              pushEvents.push({ key: 'result_loss', prefKey: 'results',
-                interestedOnly: true, gameId: p.game_id, pickId: p.id,
-                args: { score: scoreShort } });
+                args: { team: p.pick, score: scoreShort,
+                        pct: payoutPct(p), won: payoutPct(p) } });
             }
+            // A loss sends nothing. Every settled pick, win or lose, is still
+            // published in the app permanently, which is where the record
+            // belongs; a push is not an audit trail.
             // pickWon === null (couldn't map the pick to a side) → no push.
           } else if (status === 'InProgress' && scoreChanged && GOAL_SPORTS.has(p.sport)) {
             // A goal in a low-scoring sport — "as they score". Whichever
@@ -2778,6 +2807,10 @@ cron.schedule('0 9 * * *', sendDailyRecap, { timezone: TZ });
 
 // Free-tier upsell recap — an hour after the member recap.
 cron.schedule('0 10 * * *', sendFreeRecap, { timezone: TZ });
+
+// Weekly missed-money push — Monday 11am ET, an hour clear of the daily one
+// so the two never land together.
+cron.schedule('0 11 * * 1', sendWeekMissed, { timezone: TZ });
 
 // NOTE — we intentionally do NOT run runPipeline() on boot. Every
 // Railway redeploy used to fire a full pipeline run, which costs

@@ -59,31 +59,27 @@ type Locales = Record<string, Copy>;
 // nobody. Every number below is computed from the graded record before the
 // send, never asserted.
 //
-// THERE IS NO LOSING-DAY RECAP. That is a decision, not an oversight. The
-// obligation Pick1 takes on is to PUBLISH its losses, and it does, in the
-// app, on every settled pick, permanently. Pushing them is a different
-// thing: nobody opens "yesterday was down 8%", and a notification is not
-// where an audit trail belongs. So on a bad day the product says nothing at
-// all, which is the only version of "stay positive" that does not require
-// lying.
+// THERE IS NO LOSING NOTIFICATION OF ANY KIND. That is a decision, not an
+// oversight. The obligation Pick1 takes on is to PUBLISH its losses, and it
+// does, in the app, on every settled pick, permanently. Pushing them is a
+// different thing: nobody opens "yesterday was down 8%", and a notification
+// is not where an audit trail belongs. So on a bad day the product says
+// nothing at all, which is the only version of "stay positive" that does not
+// require lying.
 const LOC: Record<string, Locales> = {
+  // Every dollar figure below is the SAME published record the app shows,
+  // priced at a flat $100 a pick. The stake stays in the copy on purpose:
+  // "+$2,891" with no basis is a returns claim that gets an app pulled, and
+  // "+$2,891 on $100 a pick" is an arithmetic statement about a ledger
+  // anyone can open and check.
   result_win: {
-    en: { t: "💰 CALLED IT", b: "{team} {score} · +{pct}%" },
-    fr: { t: "💰 DANS LE MILLE", b: "{team} {score} · +{pct}%" },
-    es: { t: "💰 LO CLAVASTE", b: "{team} {score} · +{pct}%" },
-    de: { t: "💰 GENAU SO", b: "{team} {score} · +{pct}%" },
-    it: { t: "💰 AZZECCATO", b: "{team} {score} · +{pct}%" },
-    pt: { t: "💰 EM CHEIO", b: "{team} {score} · +{pct}%" },
-    ar: { t: "💰 توقّع صحيح", b: "{team} {score} · +{pct}٪" },
-  },
-  result_loss: {
-    en: { t: "{score} — final", b: "Not this one. Tomorrow's board is up." },
-    fr: { t: "{score} — terminé", b: "Pas celui-là. Le tableau de demain arrive." },
-    es: { t: "{score} — final", b: "Este no. El cartel de mañana ya viene." },
-    de: { t: "{score} — Schluss", b: "Nicht dieser. Das Board für morgen kommt." },
-    it: { t: "{score} — finale", b: "Non questo. Il programma di domani arriva." },
-    pt: { t: "{score} — final", b: "Este não. O quadro de amanhã já vem." },
-    ar: { t: "{score} — انتهت", b: "ليس هذه. لوحة الغد قادمة." },
+    en: { t: "🤑 +${won}, called it", b: "{team} {score}" },
+    fr: { t: "🤑 +{won} $, dans le mille", b: "{team} {score}" },
+    es: { t: "🤑 +${won}, lo clavaste", b: "{team} {score}" },
+    de: { t: "🤑 +{won} $, genau so", b: "{team} {score}" },
+    it: { t: "🤑 +{won} $, azzeccato", b: "{team} {score}" },
+    pt: { t: "🤑 +${won}, em cheio", b: "{team} {score}" },
+    ar: { t: "🤑 +{won}$، توقّع صحيح", b: "{team} {score}" },
   },
   goal_fav: {
     en: { t: "⚡ {score}", b: "{team} scores in your game." },
@@ -95,56 +91,56 @@ const LOC: Record<string, Locales> = {
     ar: { t: "⚡ {score}", b: "{team} يسجّل في مباراتك." },
   },
   pick_drop: {
-    en: { t: "🎯 Today's #1: {team}", b: "Called at {conf}%." },
-    fr: { t: "🎯 Le n°1 du jour : {team}", b: "Annoncé à {conf}%." },
-    es: { t: "🎯 El n.º1 de hoy: {team}", b: "Anunciado al {conf}%." },
-    de: { t: "🎯 Nr. 1 heute: {team}", b: "Mit {conf}% angesagt." },
-    it: { t: "🎯 Il n.1 di oggi: {team}", b: "Dato al {conf}%." },
-    pt: { t: "🎯 O n.º1 de hoje: {team}", b: "Indicado a {conf}%." },
-    ar: { t: "🎯 رقم 1 اليوم: {team}", b: "بثقة {conf}٪." },
+    en: { t: "🎯 Today's #1: {team}", b: "Called at {conf}% · +${payout} on $100." },
+    fr: { t: "🎯 Le n°1 du jour : {team}", b: "Annoncé à {conf}% · +{payout} $ sur 100 $." },
+    es: { t: "🎯 El n.º1 de hoy: {team}", b: "Anunciado al {conf}% · +${payout} sobre $100." },
+    de: { t: "🎯 Nr. 1 heute: {team}", b: "Mit {conf}% angesagt · +{payout} $ auf 100 $." },
+    it: { t: "🎯 Il n.1 di oggi: {team}", b: "Dato al {conf}% · +{payout} $ su 100 $." },
+    pt: { t: "🎯 O n.º1 de hoje: {team}", b: "Indicado a {conf}% · +${payout} sobre $100." },
+    ar: { t: "🎯 رقم 1 اليوم: {team}", b: "بثقة {conf}٪ · +{payout}$ على 100$." },
   },
-  // NEW. Only when the board really carries a pick paying +100% or better,
-  // which measured out at about one day in three. Rare enough to be news.
+  // Only when the board really carries a pick paying +100% or better, which
+  // measured out at about one day in three. Rare enough to be news.
   big_odds: {
-    en: { t: "🚀 +{pct}% on the board today", b: "{team}, called at {conf}%." },
-    fr: { t: "🚀 +{pct}% au tableau aujourd'hui", b: "{team}, annoncé à {conf}%." },
-    es: { t: "🚀 +{pct}% en el cartel de hoy", b: "{team}, anunciado al {conf}%." },
-    de: { t: "🚀 +{pct}% heute auf dem Board", b: "{team}, mit {conf}% angesagt." },
-    it: { t: "🚀 +{pct}% sul programma di oggi", b: "{team}, dato al {conf}%." },
-    pt: { t: "🚀 +{pct}% no quadro de hoje", b: "{team}, indicado a {conf}%." },
-    ar: { t: "🚀 +{pct}٪ على لوحة اليوم", b: "{team}، بثقة {conf}٪." },
+    en: { t: "💸 Up to +${payout} today", b: "{team}, called at {conf}%. On $100." },
+    fr: { t: "💸 Jusqu'à +{payout} $ aujourd'hui", b: "{team}, annoncé à {conf}%. Sur 100 $." },
+    es: { t: "💸 Hasta +${payout} hoy", b: "{team}, anunciado al {conf}%. Sobre $100." },
+    de: { t: "💸 Bis zu +{payout} $ heute", b: "{team}, mit {conf}% angesagt. Auf 100 $." },
+    it: { t: "💸 Fino a +{payout} $ oggi", b: "{team}, dato al {conf}%. Su 100 $." },
+    pt: { t: "💸 Até +${payout} hoje", b: "{team}, indicado a {conf}%. Sobre $100." },
+    ar: { t: "💸 حتى +{payout}$ اليوم", b: "{team}، بثقة {conf}٪. على 100$." },
   },
   recap: {
-    en: { t: "💰 $100 a pick = +${net}", b: "{wins}/{games} yesterday." },
-    fr: { t: "💰 100 $ par pari = +{net} $", b: "{wins}/{games} hier." },
-    es: { t: "💰 $100 por pick = +${net}", b: "{wins}/{games} ayer." },
-    de: { t: "💰 100 $ pro Tipp = +{net} $", b: "{wins}/{games} gestern." },
-    it: { t: "💰 100 $ a pronostico = +{net} $", b: "{wins}/{games} ieri." },
-    pt: { t: "💰 $100 por palpite = +${net}", b: "{wins}/{games} ontem." },
-    ar: { t: "💰 100$ لكل توقّع = +{net}$", b: "{wins}/{games} أمس." },
+    en: { t: "💰 +${net} yesterday", b: "{wins} of {games} landed. On $100 a pick." },
+    fr: { t: "💰 +{net} $ hier", b: "{wins} matchs sur {games} passés. Sur 100 $ par pari." },
+    es: { t: "💰 +${net} ayer", b: "{wins} de {games} entraron. Sobre $100 por pick." },
+    de: { t: "💰 +{net} $ gestern", b: "{wins} von {games} aufgegangen. Auf 100 $ pro Tipp." },
+    it: { t: "💰 +{net} $ ieri", b: "{wins} su {games} passati. Su 100 $ a pronostico." },
+    pt: { t: "💰 +${net} ontem", b: "{wins} de {games} entraram. Sobre $100 por palpite." },
+    ar: { t: "💰 +{net}$ أمس", b: "{wins} من {games} نجحت. على 100$ لكل توقّع." },
   },
-  // NEW. Consecutive profitable days from the graded record. When the run
-  // breaks the notification simply stops; the streak is never rounded up.
+  // Consecutive profitable days from the graded record. When the run breaks
+  // the notification simply stops; the streak is never rounded up.
   hot_streak: {
-    en: { t: "🔥 {days} winning days in a row", b: "{wins}/{games} yesterday. Today is up." },
-    fr: { t: "🔥 {days} jours gagnants d'affilée", b: "{wins}/{games} hier. Le jour est lancé." },
-    es: { t: "🔥 {days} días ganadores seguidos", b: "{wins}/{games} ayer. Hoy ya está." },
-    de: { t: "🔥 {days} Gewinntage in Folge", b: "{wins}/{games} gestern. Heute ist offen." },
-    it: { t: "🔥 {days} giorni vincenti di fila", b: "{wins}/{games} ieri. Oggi è aperto." },
-    pt: { t: "🔥 {days} dias a ganhar seguidos", b: "{wins}/{games} ontem. Hoje já está." },
-    ar: { t: "🔥 {days} أيام رابحة تواليًا", b: "{wins}/{games} أمس. اليوم مفتوح." },
+    en: { t: "🔥 {days} winning days in a row", b: "+${net} yesterday on $100 a pick. {wins} of {games} landed." },
+    fr: { t: "🔥 {days} jours gagnants d'affilée", b: "+{net} $ hier sur 100 $ par pari. {wins} sur {games} passés." },
+    es: { t: "🔥 {days} días ganadores seguidos", b: "+${net} ayer sobre $100 por pick. {wins} de {games} entraron." },
+    de: { t: "🔥 {days} Gewinntage in Folge", b: "+{net} $ gestern auf 100 $ pro Tipp. {wins} von {games}." },
+    it: { t: "🔥 {days} giorni vincenti di fila", b: "+{net} $ ieri su 100 $ a pronostico. {wins} su {games}." },
+    pt: { t: "🔥 {days} dias a ganhar seguidos", b: "+${net} ontem sobre $100 por palpite. {wins} de {games}." },
+    ar: { t: "🔥 {days} أيام رابحة تواليًا", b: "+{net}$ أمس على 100$ لكل توقّع. {wins} من {games}." },
   },
   free_recap: {
-    en: { t: "🔒 You missed +${net} yesterday", b: "Members went {w}-{l}." },
-    fr: { t: "🔒 Tu as raté +{net} $ hier", b: "Les membres : {w}-{l}." },
-    es: { t: "🔒 Te perdiste +${net} ayer", b: "Los miembros: {w}-{l}." },
-    de: { t: "🔒 Du hast +{net} $ verpasst", b: "Mitglieder: {w}-{l}." },
-    it: { t: "🔒 Ti sei perso +{net} $ ieri", b: "I membri: {w}-{l}." },
-    pt: { t: "🔒 Perdeste +${net} ontem", b: "Membros: {w}-{l}." },
-    ar: { t: "🔒 فاتك +{net}$ أمس", b: "الأعضاء: {w}-{l}." },
+    en: { t: "💰 You missed +${net} yesterday", b: "Members went {w}-{l} on $100 a pick." },
+    fr: { t: "💰 Tu as raté +{net} $ hier", b: "Les membres : {w}-{l} sur 100 $ par pari." },
+    es: { t: "💰 Te perdiste +${net} ayer", b: "Los miembros: {w}-{l} sobre $100 por pick." },
+    de: { t: "💰 Du hast +{net} $ verpasst", b: "Mitglieder: {w}-{l} auf 100 $ pro Tipp." },
+    it: { t: "💰 Ti sei perso +{net} $ ieri", b: "I membri: {w}-{l} su 100 $ a pronostico." },
+    pt: { t: "💰 Perdeste +${net} ontem", b: "Membros: {w}-{l} sobre $100 por palpite." },
+    ar: { t: "💰 فاتك +{net}$ أمس", b: "الأعضاء: {w}-{l} على 100$ لكل توقّع." },
   },
   free_recap_b: {
-    en: { t: "📈 Members: {w}-{l} yesterday", b: "$100 a pick = +${net}." },
+    en: { t: "📈 Members went {w}-{l} yesterday", b: "$100 a pick = +${net}." },
     fr: { t: "📈 Les membres : {w}-{l} hier", b: "100 $ par pari = +{net} $." },
     es: { t: "📈 Miembros: {w}-{l} ayer", b: "$100 por pick = +${net}." },
     de: { t: "📈 Mitglieder: {w}-{l} gestern", b: "100 $ pro Tipp = +{net} $." },
@@ -152,7 +148,20 @@ const LOC: Record<string, Locales> = {
     pt: { t: "📈 Membros: {w}-{l} ontem", b: "$100 por palpite = +${net}." },
     ar: { t: "📈 الأعضاء: {w}-{l} أمس", b: "100$ لكل توقّع = +{net}$." },
   },
+  // Weekly, free tier only. A week of the published record is a bigger,
+  // harder number to shrug off than a single day, and it only goes out on a
+  // week the record actually finished up.
+  week_missed: {
+    en: { t: "💵 You missed +${net} this week", b: "Members went {w}-{l} over 7 days, on $100 a pick." },
+    fr: { t: "💵 Tu as raté +{net} $ cette semaine", b: "Les membres : {w}-{l} sur 7 jours, sur 100 $ par pari." },
+    es: { t: "💵 Te perdiste +${net} esta semana", b: "Los miembros: {w}-{l} en 7 días, sobre $100 por pick." },
+    de: { t: "💵 Diese Woche: +{net} $ verpasst", b: "Mitglieder: {w}-{l} in 7 Tagen, auf 100 $ pro Tipp." },
+    it: { t: "💵 +{net} $ persi questa settimana", b: "I membri: {w}-{l} in 7 giorni, su 100 $ a pronostico." },
+    pt: { t: "💵 Perdeste +${net} esta semana", b: "Membros: {w}-{l} em 7 dias, sobre $100 por palpite." },
+    ar: { t: "💵 فاتك +{net}$ هذا الأسبوع", b: "الأعضاء: {w}-{l} في 7 أيام، على 100$ لكل توقّع." },
+  },
 };
+
 const AB_VARIANTS: Record<string, string[]> = { free_recap: ["free_recap", "free_recap_b"] };
 const LABELS = ["A", "B", "C", "D"];
 function pickVariant(userId: string | null, base: string): { locKey: string; label: string | null } {
@@ -187,7 +196,6 @@ const TIER: Record<string, Tier> = {
   billing_retry: "critical",
 
   result_win: "personal",
-  result_loss: "personal",
   goal_fav: "personal",
 
   pick_drop: "daily",
@@ -196,6 +204,7 @@ const TIER: Record<string, Tier> = {
   big_odds: "daily",
   free_recap: "daily",
   free_recap_b: "daily",
+  week_missed: "daily",
   day1_return: "daily",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
@@ -259,15 +268,52 @@ function nextSendWindow(locale: string | null, from: Date = new Date()): Date {
 /// the afternoon, where it has the day to itself.
 const MIN_GAP_HOURS = 4;
 
-function fill(tpl: string, args: Record<string, unknown>): string {
-  return tpl.replace(/\{(\w+)\}/g, (_, k) => (args[k] !== undefined ? String(args[k]) : `{${k}}`));
+// Amounts are grouped in the reader's own language: "+$2,891" in English,
+// "+2 891 $" in French. Raw "+$2891" reads like a serial number, which is
+// the opposite of what a money notification is for.
+const MONEY_ARGS = new Set(["net", "won", "payout"]);
+
+function fill(tpl: string, args: Record<string, unknown>, lang = "en"): string {
+  return tpl.replace(/\{(\w+)\}/g, (_, k) => {
+    const v = args[k];
+    if (v === undefined) return `{${k}}`;
+    if (MONEY_ARGS.has(k) && typeof v === "number" && Number.isFinite(v)) {
+      try { return v.toLocaleString(lang); } catch { return String(v); }
+    }
+    return String(v);
+  });
 }
 function render(locKey: string, locale: string, args: Record<string, unknown>): Copy | null {
   const entry = LOC[locKey];
   if (!entry) return null;
   const lang = (locale || "en").slice(0, 2).toLowerCase();
   const copy = entry[lang] ?? entry.en;
-  return { t: fill(copy.t, args), b: fill(copy.b, args) };
+  return { t: fill(copy.t, args, lang), b: fill(copy.b, args, lang) };
+}
+
+const TOKEN_COLS = "token, environment, prefs, locale, user_id, platform, last_seen_at";
+const PAGE = 1000;
+
+/// Read device_tokens in full.
+///
+/// PostgREST caps an unbounded select at 1000 rows and returns them without
+/// complaint. device_tokens held 1794, so every broadcast this product ever
+/// sent reached at most the first 1000 devices and silently skipped 44% of
+/// the install base. Nothing surfaced it: the send reported success for
+/// every token it was handed.
+async function allDeviceTokens(
+  supabase: any, userIds?: string[],
+): Promise<{ rows: any[]; error: string | null }> {
+  const out: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase.from("device_tokens").select(TOKEN_COLS).range(from, from + PAGE - 1);
+    if (Array.isArray(userIds) && userIds.length) q = q.in("user_id", userIds);
+    const { data, error } = await q;
+    if (error) return { rows: out, error: error.message };
+    out.push(...(data ?? []));
+    if (!data || data.length < PAGE) break;
+  }
+  return { rows: out, error: null };
 }
 
 function pemToDer(pem: string): Uint8Array {
@@ -423,7 +469,14 @@ Deno.serve(async (req: Request) => {
     tokens: any[], k: string | undefined, tTitleLit: string | undefined,
     tBodyLit: string | undefined, a: Record<string, unknown>, d: Record<string, unknown>,
   ) {
-    const sound = k === "result_win" ? "win.caf" : "default";
+    // Cha-ching on anything carrying a dollar figure. A distinct sound is
+    // the whole point: it has to be recognisable from a pocket, before the
+    // screen is even out. iOS only for now — an Android notification channel
+    // is immutable once created, so pick1_alerts cannot be given a new sound
+    // without shipping a new channel in the app.
+    const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds",
+                                "free_recap", "free_recap_b", "week_missed"]);
+    const sound = k && MONEY_KEYS.has(k) ? "chaching.caf" : "default";
     const androidSound = "default";
 
     function resolve(t: any): { tTitle: string; tBody: string; label: string | null } {
@@ -497,9 +550,8 @@ Deno.serve(async (req: Request) => {
   /// Every device for a set of users, so the drain can reach them again.
   async function tokensFor(ids: string[]) {
     if (!ids.length) return [];
-    const { data: rows } = await supabase.from("device_tokens")
-      .select("token, environment, prefs, locale, user_id, platform, last_seen_at").in("user_id", ids);
-    return rows ?? [];
+    const { rows } = await allDeviceTokens(supabase, ids);
+    return rows;
   }
 
   // -- Drain: notifications parked for a civil hour ----------------------
@@ -547,13 +599,10 @@ Deno.serve(async (req: Request) => {
 
   // -- Live send ---------------------------------------------------------
 
-  let query = supabase.from("device_tokens")
-    .select("token, environment, prefs, locale, user_id, platform, last_seen_at");
-  if (Array.isArray(userIds) && userIds.length) query = query.in("user_id", userIds);
-  const { data: rows, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  const { rows, error } = await allDeviceTokens(supabase, userIds);
+  if (error) return Response.json({ error }, { status: 500 });
 
-  let tokens = rows ?? [];
+  let tokens = rows;
   if (prefKey) tokens = tokens.filter((t: any) => t.prefs?.[prefKey] !== false);
 
   if (freeOnly) {
@@ -579,9 +628,15 @@ Deno.serve(async (req: Request) => {
     const weekAgo = new Date(Date.now() - 7 * 86400e3).toISOString();
     const dayAgo = new Date(Date.now() - 86400e3).toISOString();
     for (let i = 0; i < ids.length; i += 500) {
-      const { data: hist } = await supabase.from("push_log")
-        .select("user_id, sent_at").in("user_id", ids.slice(i, i + 500)).gte("sent_at", weekAgo);
-      for (const h of hist ?? []) {
+      const hist: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data: page } = await supabase.from("push_log")
+          .select("user_id, sent_at").in("user_id", ids.slice(i, i + 500))
+          .gte("sent_at", weekAgo).range(from, from + PAGE - 1);
+        hist.push(...(page ?? []));
+        if (!page || page.length < PAGE) break;
+      }
+      for (const h of hist) {
         const c = counts.get(h.user_id) ?? { day: 0, week: 0, last: null };
         c.week++;
         if (h.sent_at >= dayAgo) c.day++;
