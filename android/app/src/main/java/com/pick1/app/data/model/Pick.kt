@@ -35,6 +35,10 @@ data class Pick(
     val reasoning: String,
     @SerialName("key_factor") val keyFactor: String? = null,
     @SerialName("matchup_facts") val matchupFacts: List<MatchupFact>? = null,
+    /** WHY-breakdown factors (label + real data point + 0-100 strength).
+     *  The column has existed since the meter rows shipped on iOS; Android
+     *  simply never read it, so the hero had nothing to explain itself with. */
+    val factors: List<PickFactor>? = null,
     val result: String = "pending",              // pending | win | loss
     @SerialName("home_score") val homeScore: Int? = null,
     @SerialName("away_score") val awayScore: Int? = null,
@@ -111,6 +115,15 @@ data class Pick(
 
 @Serializable
 data class MatchupFact(val label: String, val value: String)
+
+/** One WHY-breakdown factor: a real data point plus the model's 0-100 read
+ *  on how much it drives the pick. Renders as a meter row. */
+@Serializable
+data class PickFactor(
+    val label: String,
+    val value: String,
+    val strength: Int = 0,
+)
 
 @Serializable
 data class OddsBook(

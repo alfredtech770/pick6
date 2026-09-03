@@ -66,16 +66,43 @@ class HomeViewModel : ViewModel() {
     var isPro by mutableStateOf(false); private set
     fun updateEntitlement(pro: Boolean) { isPro = pro }
 
-    /** Sports present in today's slate, in the iOS carousel order. */
-    val sports: List<String>
-        get() {
-            val order = listOf(
-                "soccer", "baseball", "golf", "f1", "combat",
-                "cricket", "basketball", "hockey", "tennis",
-            )
-            val present = todayPicks.map { it.sport }.toSet()
-            return order.filter { it in present }
-        }
+    /**
+     * The rail: ALL, then every one of the ten sports, always.
+     *
+     * The old list showed only sports present on today's board and was
+     * missing football entirely, so on a light day the app looked like it
+     * had lost half its coverage. Ten sports is the product's claim; a sport
+     * with nothing on it reads quiet instead of vanishing.
+     */
+    val sports: List<String> get() = listOf(ALL_SPORTS) + P1_SPORTS
+
+    fun hasPicks(s: String): Boolean =
+        if (s == ALL_SPORTS) todayPicks.isNotEmpty() else todayPicks.any { it.sport == s }
+
+    /**
+     * The hero.
+     *
+     * Free sees the call with the BIGGEST RETURN, not the safest one: it is
+     * the single pick they get, so it should be the one worth opening the app
+     * for. Pro sees the highest-confidence call, which is what a full board
+     * should lead with.
+     */
+    fun hero(isPro: Boolean): Pick? =
+        if (isPro) filteredToday.maxByOrNull { it.probability }
+        else filteredToday.maxByOrNull { it.decimalOdds }
+
+    /** Everything else on the board, the hero removed by id. */
+    fun rest(isPro: Boolean): List<Pick> {
+        val h = hero(isPro)
+        return filteredToday.filter { it.id != h?.id }
+    }
+
+    /** The free tier's single unlocked pick is the hero itself. */
+    fun freeIds(isPro: Boolean): Set<String> =
+        if (isPro) emptySet() else setOfNotNull(hero(false)?.id)
+
+    /** Marks the call returning the most on the reference stake. */
+    val biggestWinId: String? get() = filteredToday.maxByOrNull { it.decimalOdds }?.id
 
     fun countFor(s: String): Int =
         if (s == "all") todayPicks.size else todayPicks.count { it.sport == s }
@@ -115,6 +142,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var menuOpen by remember { mutableStateOf(false) }
     var showSummerFootball by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
+    var showProfile by remember { mutableStateOf(false) }
 
     // Live Play Billing entitlement + catalogue (falls back to placeholder
     // copy when Play is unavailable, e.g. an emulator without Play services).
@@ -139,6 +167,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 onUnlock = { selected = null; showPaywall = true },
             )
         }
+        return
+    }
+    if (showProfile) {
+        com.pick1.app.ui.profile.ProfileScreen()
         return
     }
     if (showHistory) {
@@ -187,74 +219,74 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 }
             }
 
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // ── HERO + dropdown ──────────────────────────────────
-                item {
-                    Box {
-                        Box(
-                            Modifier.clickable(enabled = vm.topPick != null) {
-                                vm.topPick?.let { selected = it }
-                            }
-                        ) {
-                            HeroCard(vm.topPick)
-                        }
-                        // Overlaid OUTSIDE the hero's click target so menu
-                        // taps never open the detail card.
-                        SportDropdown(
-                            sports = vm.sports,
-                            selected = vm.sport,
-                            countFor = vm::countFor,
-                            isOpen = menuOpen,
-                            onToggle = { menuOpen = !menuOpen },
-                            onSelect = { vm.select(it); menuOpen = false },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(end = 22.dp, top = 82.dp)
-                                .zIndex(100f),
-                        )
-                    }
-                }
+            else -> {
+                val hero = vm.hero(isPro)
+                val rest = vm.rest(isPro)
+                val freeIds = vm.freeIds(isPro)
+                val biggest = vm.biggestWinId
 
-                if (isPro) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                    item { P1V4TopBar(onProfile = { showProfile = true }) }
+
                     item {
-                        Text(
-                            stringResource(R.string.rd_todays_games),
-                            style = anton(22),
-                            color = P1.Foreground,
-                            modifier = Modifier.padding(horizontal = 20.dp),
+                        P1V4OrbRail(
+                            sports = vm.sports,
+                            active = vm.sport,
+                            hasPicks = vm::hasPicks,
+                            onSelect = { vm.select(it) },
                         )
                     }
-                    items(
-                        vm.filteredToday.filter { it.id != vm.topPick?.id },
-                        key = { it.id },
-                    ) { p ->
-                        Box(Modifier.padding(horizontal = 20.dp)) {
-                            ProSlateCard(p) { selected = p }
+
+                    if (hero != null) {
+                        item { P1V4Hero(hero) { selected = hero } }
+                    }
+
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 22.dp, end = 22.dp, top = 30.dp, bottom = 14.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.rd_todays_games),
+                                style = anton(22),
+                                color = P1.Foreground,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                "ALL CALLED BY 6 AM",
+                                style = mono(9, androidx.compose.ui.text.font.FontWeight.Bold),
+                                color = V4.mute,
+                            )
                         }
                     }
-                } else {
-                    // ── FREE TIER: proof -> tease -> close ───────────
-                    val wins = FreeFeed.latestWins(vm.history, vm.sport)
-                    val slate = FreeFeed.lockedSlate(vm.filteredToday, vm.topPick?.id, vm.sport)
-                    val net = FreeFeed.membersNet(vm.history)
-                    val yWins = vm.history.count { it.isWin }
-                    val yLoss = vm.history.count { it.isLoss }
-                    item {
-                        LatestWinsRail(
-                            results = wins,
-                            onSeeAll = { showHistory = true },
-                            membersCard = if (yWins >= 3 && yWins > yLoss && net > 0) {
-                                { MembersWonCard(yWins, yLoss, net) { showPaywall = true } }
-                            } else null,
-                        )
+
+                    items(rest, key = { it.id }) { p ->
+                        Box(Modifier.padding(horizontal = 22.dp, vertical = 6.dp)) {
+                            P1V4GameRow(
+                                pick = p,
+                                isLocked = !isPro && p.id !in freeIds,
+                                isBiggestWin = p.id == biggest,
+                                onTap = { selected = p },
+                                onTrack = { if (isPro) selected = p else showPaywall = true },
+                            )
+                        }
                     }
-                    if (vm.todayPicks.any { it.league == "WC" }) {
-                        item { SummerFootballBanner { showSummerFootball = true } }
+
+                    if (!isPro) {
+                        item {
+                            Box(Modifier.padding(top = 18.dp)) {
+                                P1V4PayBar(
+                                    perDay = "$1.33",
+                                    sports = P1_SPORTS.size,
+                                ) { showPaywall = true }
+                            }
+                        }
                     }
-                    item { FreeSlateSection(slate) { showPaywall = true } }
-                    item { PremiumUpsellCard(trialEligible = true) { showPaywall = true } }
+
+                    item { Spacer(Modifier.height(120.dp)) }
                 }
-                item { Spacer(Modifier.height(96.dp)) }
             }
         }
     }
