@@ -189,8 +189,8 @@ enum ItalianStrings {
         // Features
         .funnel_feat_kicker:             "Ecco Pick1",
         .funnel_feat_headline:           "UNA APP.\nOGNI *VANTAGGIO.*",
-        .funnel_feat1_title:             "Un pick IA al giorno",
-        .funnel_feat1_body:              "La singola scelta col vantaggio più alto su NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis e cricket.",
+        .funnel_feat1_title:             "Ogni partita del giorno",
+        .funnel_feat1_body:              "Non una selezione. Ogni partita su NBA, NFL, Premier League, MLB, UFC, NHL, F1, tennis, cricket e golf.",
         .funnel_feat2_title:             "Fiducia calibrata",
         .funnel_feat2_body:              "Quando dice 73 %, colpisce al ≈73 %. Una previsione misurata — mai un «colpo garantito».",
         .funnel_feat3_title:             "Registro pubblico dei risultati",

@@ -191,8 +191,8 @@ enum ArabicStrings {
         // Features
         .funnel_feat_kicker:             "تعرّف على Pick1",
         .funnel_feat_headline:           "تطبيق واحد.\nكل *أفضلية.*",
-        .funnel_feat1_title:             "اختيار واحد بالذكاء الاصطناعي يوميًا",
-        .funnel_feat1_body:              "الاختيار الأعلى أفضليةً عبر NBA وNFL والدوري الإنجليزي وMLB وUFC وNHL وF1 والتنس والكريكيت.",
+        .funnel_feat1_title:             "كل مباريات اليوم",
+        .funnel_feat1_body:              "ليست قائمة مختصرة. كل المباريات في NBA وNFL والدوري الإنجليزي وMLB وUFC وNHL وF1 والتنس والكريكيت والغولف.",
         .funnel_feat2_title:             "ثقة معايَرة",
         .funnel_feat2_body:              "عندما يقول 73٪، يصيب بنحو 73٪. توقّع مدروس — لا «ضمان أكيد» أبدًا.",
         .funnel_feat3_title:             "سجل نتائج علني",

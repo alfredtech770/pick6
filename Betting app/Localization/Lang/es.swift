@@ -189,8 +189,8 @@ enum SpanishStrings {
         // Features
         .funnel_feat_kicker:             "Te presentamos Pick1",
         .funnel_feat_headline:           "UNA APP.\nCADA *VENTAJA.*",
-        .funnel_feat1_title:             "Un pick de IA al día",
-        .funnel_feat1_body:              "La única apuesta con mayor ventaja en NBA, NFL, Premier League, MLB, UFC, NHL, F1, tenis y críquet.",
+        .funnel_feat1_title:             "Todos los partidos del día",
+        .funnel_feat1_body:              "No una selección. Todos los partidos en NBA, NFL, Premier League, MLB, UFC, NHL, F1, tenis, críquet y golf.",
         .funnel_feat2_title:             "Confianza calibrada",
         .funnel_feat2_body:              "Cuando marca 73 %, acierta ≈73 %. Un pronóstico medido — nunca un «acierto garantizado».",
         .funnel_feat3_title:             "Registro público de resultados",

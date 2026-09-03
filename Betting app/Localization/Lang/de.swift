@@ -189,8 +189,8 @@ enum GermanStrings {
         // Features
         .funnel_feat_kicker:             "Das ist Pick1",
         .funnel_feat_headline:           "EINE APP.\nJEDER *VORTEIL.*",
-        .funnel_feat1_title:             "Ein KI-Tipp pro Tag",
-        .funnel_feat1_body:              "Der eine Tipp mit dem größten Vorteil in NBA, NFL, Premier League, MLB, UFC, NHL, F1, Tennis & Cricket.",
+        .funnel_feat1_title:             "Jedes Spiel des Tages",
+        .funnel_feat1_body:              "Keine Auswahl. Jede Partie in NBA, NFL, Premier League, MLB, UFC, NHL, F1, Tennis, Cricket und Golf.",
         .funnel_feat2_title:             "Kalibrierte Sicherheit",
         .funnel_feat2_body:              "Wenn 73 % dransteht, trifft es zu ≈73 %. Eine gemessene Prognose — nie ein „garantierter Treffer\".",
         .funnel_feat3_title:             "Öffentliches Ergebnis-Register",

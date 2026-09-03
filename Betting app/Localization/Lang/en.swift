@@ -190,8 +190,8 @@ enum EnglishStrings {
         // Features
         .funnel_feat_kicker:             "Meet Pick1",
         .funnel_feat_headline:           "ONE APP.\nEVERY *EDGE.*",
-        .funnel_feat1_title:             "One daily AI pick",
-        .funnel_feat1_body:              "The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket and golf.",
+        .funnel_feat1_title:             "Every game on the board",
+        .funnel_feat1_body:              "Not a shortlist. Every matchup across NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket and golf.",
         .funnel_feat2_title:             "Calibrated confidence",
         .funnel_feat2_body:              "When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\"",
         .funnel_feat3_title:             "Public results ledger",
