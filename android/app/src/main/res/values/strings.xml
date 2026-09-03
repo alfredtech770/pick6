@@ -152,14 +152,14 @@
     <string name="live_empty_title">Nothing live right now.</string>
     <string name="live_empty_sub">Check back closer to kickoff.</string>
     <string name="funnel_welcome_headline">WIN\nSMARTER.\n*NOT HARDER.*</string>
-    <string name="funnel_welcome_lead">The AI that calls one game a day across 9 sports — and logs every result in public.</string>
+    <string name="funnel_welcome_lead">The AI that calls every game on today\'s board across 10 sports, and logs every result in public.</string>
     <string name="funnel_welcome_cta">GET STARTED →</string>
     <string name="funnel_welcome_member">"Already a member? "</string>
     <string name="funnel_welcome_signin">Sign in</string>
     <string name="funnel_feat_kicker">Meet Pick1</string>
     <string name="funnel_feat_headline">ONE APP.\nEVERY *EDGE.*</string>
-    <string name="funnel_feat1_title">One daily AI pick</string>
-    <string name="funnel_feat1_body">The single highest-edge call across NBA, NFL, EPL, MLB, UFC, NHL, F1, Tennis &amp; Cricket.</string>
+    <string name="funnel_feat1_title">Every game on the board</string>
+    <string name="funnel_feat1_body">Not a shortlist. Every matchup across NBA, NFL, EPL, MLB, UFC, NHL, F1, tennis, cricket and golf.</string>
     <string name="funnel_feat2_title">Calibrated confidence</string>
     <string name="funnel_feat2_body">When it says 73%, it hits ≈73%. A measured forecast — never a \"guaranteed lock.\"</string>
     <string name="funnel_feat3_title">Public results ledger</string>
@@ -237,7 +237,7 @@
     <string name="funnel_red4_cta">SHOW ME THE FIX →</string>
     <string name="funnel_green1_kicker">The Pick1 fix · 1 of 3</string>
     <string name="funnel_green1_headline">DATA, NOT\n*EMOTION.*</string>
-    <string name="funnel_green1_lead">One AI-calculated pick a day — the single highest-edge call across 9 sports.</string>
+    <string name="funnel_green1_lead">Every game on today\'s board called by the data, across 10 sports.</string>
     <string name="funnel_green1_cta">NEXT →</string>
     <string name="funnel_green2_kicker">The Pick1 fix · 2 of 3</string>
     <string name="funnel_green2_headline">SEE THE\n*REASONING.*</string>
@@ -273,7 +273,7 @@
     <string name="funnel_compare_row3">Logged before kickoff</string>
     <string name="funnel_compare_row4">Best-line finder</string>
     <string name="funnel_compare_row5">No \"guaranteed locks\"</string>
-    <string name="funnel_compare_row6">9 sports, one call</string>
+    <string name="funnel_compare_row6">10 sports, every game</string>
     <string name="funnel_goals_kicker">Set your target</string>
     <string name="funnel_goals_headline">WHAT\'S YOUR\n*GOAL?*</string>
     <string name="funnel_goals_lead">We\'ll tailor your daily picks around it.</string>
@@ -314,7 +314,7 @@
     <string name="funnel_ttw_cta">SEE MY PLAN →</string>
     <string name="funnel_paywall_kicker">Go Pro</string>
     <string name="funnel_paywall_headline">UNLOCK\nEVERY *PICK.*</string>
-    <string name="funnel_paywall_feat1">Daily AI pick across 9 sports</string>
+    <string name="funnel_paywall_feat1">Every game called, across 10 sports</string>
     <string name="funnel_paywall_feat2">Calibrated confidence + reasoning</string>
     <string name="funnel_paywall_feat3">Public ledger, live tracking &amp; ROI</string>
     <string name="funnel_paywall_feat4">Best line across 6 sportsbooks</string>

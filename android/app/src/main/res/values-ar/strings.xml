@@ -152,14 +152,14 @@
     <string name="live_empty_title">لا شيء مباشر الآن.</string>
     <string name="live_empty_sub">تحقّق مجددًا مع اقتراب موعد البداية.</string>
     <string name="funnel_welcome_headline">اربح\nبذكاء.\n*لا بمشقّة.*</string>
-    <string name="funnel_welcome_lead">الذكاء الاصطناعي الذي يختار مباراة واحدة يوميًا عبر 9 رياضات — ويسجّل كل نتيجة علنًا.</string>
+    <string name="funnel_welcome_lead">الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 10 رياضات، ويسجّل كل نتيجة علنًا.</string>
     <string name="funnel_welcome_cta">← لنبدأ</string>
     <string name="funnel_welcome_member">"عضو بالفعل؟ "</string>
     <string name="funnel_welcome_signin">تسجيل الدخول</string>
     <string name="funnel_feat_kicker">تعرّف على Pick1</string>
     <string name="funnel_feat_headline">تطبيق واحد.\nكل *أفضلية.*</string>
-    <string name="funnel_feat1_title">اختيار واحد بالذكاء الاصطناعي يوميًا</string>
-    <string name="funnel_feat1_body">الاختيار الأعلى أفضليةً عبر NBA وNFL والدوري الإنجليزي وMLB وUFC وNHL وF1 والتنس والكريكيت.</string>
+    <string name="funnel_feat1_title">كل مباريات اليوم</string>
+    <string name="funnel_feat1_body">ليست قائمة مختصرة. كل المباريات في NBA وNFL والدوري الإنجليزي وMLB وUFC وNHL وF1 والتنس والكريكيت والغولف.</string>
     <string name="funnel_feat2_title">ثقة معايَرة</string>
     <string name="funnel_feat2_body">عندما يقول 73٪، يصيب بنحو 73٪. توقّع مدروس — لا «ضمان أكيد» أبدًا.</string>
     <string name="funnel_feat3_title">سجل نتائج علني</string>
@@ -237,7 +237,7 @@
     <string name="funnel_red4_cta">← أرِني الحل</string>
     <string name="funnel_green1_kicker">حل Pick1 · 1 من 3</string>
     <string name="funnel_green1_headline">بيانات، لا\n*عاطفة.*</string>
-    <string name="funnel_green1_lead">اختيار واحد محسوب بالذكاء الاصطناعي يوميًا — الأعلى أفضليةً عبر 9 رياضات.</string>
+    <string name="funnel_green1_lead">كل مباريات اليوم تحسمها البيانات، عبر 10 رياضات.</string>
     <string name="funnel_green1_cta">← التالي</string>
     <string name="funnel_green2_kicker">حل Pick1 · 2 من 3</string>
     <string name="funnel_green2_headline">شاهد\n*التحليل.*</string>
@@ -273,7 +273,7 @@
     <string name="funnel_compare_row3">مسجّل قبل صافرة البداية</string>
     <string name="funnel_compare_row4">باحث عن أفضل خط</string>
     <string name="funnel_compare_row5">لا «ضمانات أكيدة»</string>
-    <string name="funnel_compare_row6">9 رياضات، اختيار واحد</string>
+    <string name="funnel_compare_row6">10 رياضات، كل المباريات</string>
     <string name="funnel_goals_kicker">حدّد هدفك</string>
     <string name="funnel_goals_headline">ما\n*هدفك؟*</string>
     <string name="funnel_goals_lead">سنُخصّص اختياراتك اليومية حوله.</string>
@@ -314,7 +314,7 @@
     <string name="funnel_ttw_cta">← اعرض خطتي</string>
     <string name="funnel_paywall_kicker">اشترك في Pro</string>
     <string name="funnel_paywall_headline">افتح\nكل *اختيار.*</string>
-    <string name="funnel_paywall_feat1">اختيار يومي بالذكاء الاصطناعي عبر 9 رياضات</string>
+    <string name="funnel_paywall_feat1">كل المباريات محسومة، عبر 10 رياضات</string>
     <string name="funnel_paywall_feat2">ثقة معايَرة + تحليل</string>
     <string name="funnel_paywall_feat3">سجل علني وتتبّع مباشر وعائد استثمار</string>
     <string name="funnel_paywall_feat4">أفضل خط عبر 6 مواقع مراهنة</string>

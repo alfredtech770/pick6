@@ -152,14 +152,14 @@
     <string name="live_empty_title">Nada em direto agora.</string>
     <string name="live_empty_sub">Volta mais perto do apito inicial.</string>
     <string name="funnel_welcome_headline">GANHA\nCOM CABEÇA.\n*NÃO À FORÇA.*</string>
-    <string name="funnel_welcome_lead">A IA que escolhe um jogo por dia em 9 desportos — e regista cada resultado em público.</string>
+    <string name="funnel_welcome_lead">A IA que se pronuncia sobre todos os jogos do dia em 10 desportos, e regista cada resultado em público.</string>
     <string name="funnel_welcome_cta">COMEÇAR →</string>
     <string name="funnel_welcome_member">"Já és membro? "</string>
     <string name="funnel_welcome_signin">Iniciar sessão</string>
     <string name="funnel_feat_kicker">Apresentamos o Pick1</string>
     <string name="funnel_feat_headline">UMA APP.\nCADA *VANTAGEM.*</string>
-    <string name="funnel_feat1_title">Um pick de IA por dia</string>
-    <string name="funnel_feat1_body">A única aposta com maior vantagem na NBA, NFL, Premier League, MLB, UFC, NHL, F1, ténis e críquete.</string>
+    <string name="funnel_feat1_title">Todos os jogos do dia</string>
+    <string name="funnel_feat1_body">Não uma seleção. Todos os jogos na NBA, NFL, Premier League, MLB, UFC, NHL, F1, ténis, críquete e golfe.</string>
     <string name="funnel_feat2_title">Confiança calibrada</string>
     <string name="funnel_feat2_body">Quando diz 73 %, acerta ≈73 %. Uma previsão medida — nunca um «acerto garantido».</string>
     <string name="funnel_feat3_title">Registo público de resultados</string>
@@ -237,7 +237,7 @@
     <string name="funnel_red4_cta">MOSTRA-ME A SOLUÇÃO →</string>
     <string name="funnel_green1_kicker">A solução Pick1 · 1 de 3</string>
     <string name="funnel_green1_headline">DADOS, NÃO\n*EMOÇÃO.*</string>
-    <string name="funnel_green1_lead">Um pick calculado por IA por dia — a única aposta com maior vantagem em 9 desportos.</string>
+    <string name="funnel_green1_lead">Todos os jogos do dia decididos pelos dados, em 10 desportos.</string>
     <string name="funnel_green1_cta">SEGUINTE →</string>
     <string name="funnel_green2_kicker">A solução Pick1 · 2 de 3</string>
     <string name="funnel_green2_headline">VÊ O\n*RACIOCÍNIO.*</string>
@@ -273,7 +273,7 @@
     <string name="funnel_compare_row3">Registado antes do apito</string>
     <string name="funnel_compare_row4">Buscador da melhor odd</string>
     <string name="funnel_compare_row5">Sem «acertos garantidos»</string>
-    <string name="funnel_compare_row6">9 desportos, uma aposta</string>
+    <string name="funnel_compare_row6">10 desportos, todos os jogos</string>
     <string name="funnel_goals_kicker">Define o teu objetivo</string>
     <string name="funnel_goals_headline">QUAL É O TEU\n*OBJETIVO?*</string>
     <string name="funnel_goals_lead">Vamos adaptar os teus picks diários a ele.</string>
@@ -314,7 +314,7 @@
     <string name="funnel_ttw_cta">VER O MEU PLANO →</string>
     <string name="funnel_paywall_kicker">Passa a Pro</string>
     <string name="funnel_paywall_headline">DESBLOQUEIA\nCADA *PICK.*</string>
-    <string name="funnel_paywall_feat1">Pick de IA diário em 9 desportos</string>
+    <string name="funnel_paywall_feat1">Todos os jogos decididos, em 10 desportos</string>
     <string name="funnel_paywall_feat2">Confiança calibrada + raciocínio</string>
     <string name="funnel_paywall_feat3">Registo público, acompanhamento ao vivo e ROI</string>
     <string name="funnel_paywall_feat4">Melhor odd entre 6 casas de apostas</string>

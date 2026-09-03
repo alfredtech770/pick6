@@ -152,14 +152,14 @@
     <string name="live_empty_title">Aktuell nichts live.</string>
     <string name="live_empty_sub">Schau kurz vor Spielbeginn wieder vorbei.</string>
     <string name="funnel_welcome_headline">GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*</string>
-    <string name="funnel_welcome_lead">Die KI, die täglich ein Spiel in 9 Sportarten tippt — und jedes Ergebnis öffentlich protokolliert.</string>
+    <string name="funnel_welcome_lead">Die KI, die jedes Spiel des Tages in 10 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.</string>
     <string name="funnel_welcome_cta">LOSLEGEN →</string>
     <string name="funnel_welcome_member">"Schon dabei? "</string>
     <string name="funnel_welcome_signin">Anmelden</string>
     <string name="funnel_feat_kicker">Das ist Pick1</string>
     <string name="funnel_feat_headline">EINE APP.\nJEDER *VORTEIL.*</string>
-    <string name="funnel_feat1_title">Ein KI-Tipp pro Tag</string>
-    <string name="funnel_feat1_body">Der eine Tipp mit dem größten Vorteil in NBA, NFL, Premier League, MLB, UFC, NHL, F1, Tennis &amp; Cricket.</string>
+    <string name="funnel_feat1_title">Jedes Spiel des Tages</string>
+    <string name="funnel_feat1_body">Keine Auswahl. Jede Partie in NBA, NFL, Premier League, MLB, UFC, NHL, F1, Tennis, Cricket und Golf.</string>
     <string name="funnel_feat2_title">Kalibrierte Sicherheit</string>
     <string name="funnel_feat2_body">Wenn 73 % dransteht, trifft es zu ≈73 %. Eine gemessene Prognose — nie ein „garantierter Treffer\".</string>
     <string name="funnel_feat3_title">Öffentliches Ergebnis-Register</string>
@@ -237,7 +237,7 @@
     <string name="funnel_red4_cta">ZEIG MIR DIE LÖSUNG →</string>
     <string name="funnel_green1_kicker">Die Pick1-Lösung · 1 von 3</string>
     <string name="funnel_green1_headline">DATEN, NICHT\n*EMOTION.*</string>
-    <string name="funnel_green1_lead">Ein KI-berechneter Tipp pro Tag — der eine Tipp mit dem größten Vorteil in 9 Sportarten.</string>
+    <string name="funnel_green1_lead">Jedes Spiel des Tages, von den Daten entschieden, in 10 Sportarten.</string>
     <string name="funnel_green1_cta">WEITER →</string>
     <string name="funnel_green2_kicker">Die Pick1-Lösung · 2 von 3</string>
     <string name="funnel_green2_headline">SIEH DIE\n*BEGRÜNDUNG.*</string>
@@ -273,7 +273,7 @@
     <string name="funnel_compare_row3">Vor Anpfiff protokolliert</string>
     <string name="funnel_compare_row4">Bestquoten-Finder</string>
     <string name="funnel_compare_row5">Keine „garantierten Treffer\"</string>
-    <string name="funnel_compare_row6">9 Sportarten, ein Tipp</string>
+    <string name="funnel_compare_row6">10 Sportarten, jedes Spiel</string>
     <string name="funnel_goals_kicker">Setze dein Ziel</string>
     <string name="funnel_goals_headline">WAS IST DEIN\n*ZIEL?*</string>
     <string name="funnel_goals_lead">Wir richten deine täglichen Tipps danach aus.</string>
@@ -314,7 +314,7 @@
     <string name="funnel_ttw_cta">MEINEN PLAN ANSEHEN →</string>
     <string name="funnel_paywall_kicker">Werde Pro</string>
     <string name="funnel_paywall_headline">SCHALTE JEDEN\n*TIPP FREI.*</string>
-    <string name="funnel_paywall_feat1">Täglicher KI-Tipp in 9 Sportarten</string>
+    <string name="funnel_paywall_feat1">Jedes Spiel getippt, in 10 Sportarten</string>
     <string name="funnel_paywall_feat2">Kalibrierte Sicherheit + Begründung</string>
     <string name="funnel_paywall_feat3">Öffentliches Register, Live-Tracking &amp; ROI</string>
     <string name="funnel_paywall_feat4">Beste Quote bei 6 Buchmachern</string>

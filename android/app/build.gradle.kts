@@ -26,7 +26,7 @@ android {
         minSdk = 26          // matches the iOS feature floor; covers ~95%+ of devices
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.14"   // keep in step with the iOS release train
+        versionName = "1.0.15"   // keep in step with the iOS release train
 
         // Same backend as iOS. The anon key is a publishable client credential
         // (RLS-enforced) and is designed to ship in the binary.
