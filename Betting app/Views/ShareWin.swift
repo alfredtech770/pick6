@@ -193,8 +193,9 @@ struct ShareWinCard: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                Pick1Wordmark(size: 20)
                 Spacer()
+                // No wordmark here any more — the ticket's own stub carries
+                // it now, and printing PICK1 twice on one image is noise.
                 HStack(spacing: 4) {
                     Image(systemName: won ? "checkmark" : "xmark")
                         .font(.system(size: 9, weight: .heavy))

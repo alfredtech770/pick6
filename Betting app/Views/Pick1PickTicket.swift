@@ -106,14 +106,6 @@ struct P1PickTicket: View {
 
     private var settled: Bool { pick.isWin || pick.isLoss }
 
-    /// A stable, short, human-readable id. Real tickets have numbers; this
-    /// one is derived from the pick's UUID so it never changes and never
-    /// collides in practice.
-    private var serial: String {
-        let hex = pick.id.uuidString.replacingOccurrences(of: "-", with: "")
-        return String(hex.prefix(4)).uppercased()
-    }
-
     private var opponent: String {
         let called = pick.pick.lowercased()
         let home = pick.homeTeam, away = pick.awayTeam
@@ -169,16 +161,11 @@ struct P1PickTicket: View {
 
             // ── Stub ────────────────────────────────────────────────
             HStack(alignment: .center) {
-                HStack(spacing: 6) {
-                    P1BoltMark()
-                        .fill(V4.ink)
-                        .frame(width: 8, height: 8)
-                        .frame(width: 16, height: 16)
-                        .background(Circle().fill(Color.p1Lime))
-                    Text("#\(serial)")
-                        .font(.mono(11, weight: .bold))
-                        .foregroundStyle(V4.ink2)
-                }
+                // The wordmark, not a serial number. The stub used to print
+                // four hex characters off the pick's UUID — real-ticket
+                // texture that told the reader nothing and, on a shared
+                // image, occupied the one spot where the brand should be.
+                Pick1Wordmark(size: 17)
                 Spacer(minLength: 8)
                 Text([pick.league.uppercased(), pick.localizedScheduleDisplay]
                         .compactMap { $0 }.joined(separator: " · "))
