@@ -235,18 +235,18 @@ struct ShareWinCard: View {
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(hex: "#1D1D1D"))
-                .overlay(
-                    LinearGradient(colors: [accent.opacity(0.14), .clear],
-                                   startPoint: .topLeading, endPoint: .center)
-                        .clipShape(RoundedRectangle(cornerRadius: 22))
-                )
-                .overlay(RoundedRectangle(cornerRadius: 22)
-                    .stroke(accent.opacity(0.40), lineWidth: 1.2))
-        )
+        // NO frame. The ticket already has an edge, a bite and a border of
+        // its own, so wrapping it in a second bordered card produced a box
+        // inside a box and made the ticket look like a screenshot of a
+        // screenshot. The canvas is now flat and the ticket is the object.
+        //
+        // The wordmark and the disclaimer stay. The wordmark is the entire
+        // point of a share, and the disclaimer travels with the money: an
+        // image that leaves the app showing a return without saying it is
+        // hypothetical and that Pick1 takes no bets is exactly the asset
+        // that gets an ad account and an App Store listing into trouble.
+        .padding(.horizontal, 4)
+        .padding(.vertical, 8)
     }
 }
 
