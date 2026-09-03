@@ -184,11 +184,13 @@ struct StreakShareSheet: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Capsule().fill(Color(hex: "#3A3A3A"))
-                .frame(width: 42, height: 5).padding(.top, 10)
+            // Same double bar as ShareWinSheet had: this sheet also sets
+            // presentationDragIndicator(.visible), so the hand-drawn handle
+            // stacked a second one under the system's.
 
             Text(t(.sc_share_streak))
                 .font(.anton(26)).foregroundColor(.white)
+                .padding(.top, 22)
 
             // Live preview of the exact card that gets shared.
             StreakShareCard(streak: streak, aiStats: perf.stats, personal: personal)

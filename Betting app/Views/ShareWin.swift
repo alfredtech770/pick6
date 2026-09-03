@@ -36,11 +36,15 @@ struct ShareWinSheet: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Capsule().fill(Color(hex: "#3A3A3A"))
-                .frame(width: 42, height: 5).padding(.top, 10)
+            // No hand-drawn grab handle. presentationDragIndicator(.visible)
+            // below already draws one, so this printed a second bar directly
+            // under the system's.
 
             Text(pick.isWin ? t(.sw_share_win) : t(.sw_share_result))
                 .font(.anton(26)).foregroundColor(.white)
+                // Clears the system drag indicator. The hand-drawn handle
+                // that used to sit here carried this spacing with it.
+                .padding(.top, 22)
 
             // Live-updating preview of the exact card that gets shared.
             ShareWinCard(pick: pick, amount: amount, returned: returned)
