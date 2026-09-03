@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -38,6 +39,7 @@ import com.pick1.app.ui.summerfootball.SummerFootballScreen
 import com.pick1.app.ui.theme.*
 import com.posthog.PostHog
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Home board — port of `Pick1HomeHiFi.swift`.
@@ -54,6 +56,12 @@ class HomeViewModel : ViewModel() {
 
     /** Recently graded results — feeds the Latest Wins proof rail. */
     var history by mutableStateOf<List<Pick>>(emptyList()); private set
+
+    /** In-play scores, keyed to picks by game_id. */
+    var liveScores by mutableStateOf<List<com.pick1.app.data.model.LiveScore>>(emptyList()); private set
+
+    /** The user's own tracked stakes, by pick id. */
+    var bets by mutableStateOf<Map<String, com.pick1.app.data.UserBet>>(emptyMap()); private set
 
     var loading by mutableStateOf(true); private set
     var error by mutableStateOf<String?>(null); private set
@@ -104,6 +112,40 @@ class HomeViewModel : ViewModel() {
     /** Marks the call returning the most on the reference stake. */
     val biggestWinId: String? get() = filteredToday.maxByOrNull { it.decimalOdds }?.id
 
+    /**
+     * Games in play right now.
+     *
+     * Locked picks are NOT dropped: a free user still sees the game and the
+     * score, and what is withheld is the call on it. A score is also only
+     * trusted while it is fresh — rows can sit at InProgress for weeks after
+     * a feed stops updating, and a frozen scoreboard is worse than none.
+     */
+    val liveNow: List<Pair<Pick, com.pick1.app.data.model.LiveScore>>
+        get() {
+            val live = liveScores.filter { it.isLive }
+            return filteredToday.mapNotNull { p ->
+                val gid = p.gameId ?: return@mapNotNull null
+                live.firstOrNull { it.gameId == gid }?.let { p to it }
+            }
+        }
+
+    /** Everything the user tracked or starred, newest first. */
+    val yourPicks: List<Pick>
+        get() = (todayPicks + history).distinctBy { it.id }.filter { it.id in bets.keys }
+
+    val settled: List<Pick> get() = history.filter { !it.isPending }
+
+    /** Net on a flat $100 a call over the settled window. */
+    fun net(of: List<Pick>): Int = of.sumOf {
+        if (it.isWin) (it.decimalOdds - 1) * 100 else -100.0
+    }.roundToInt()
+
+    val totalWins: Int get() = settled.count { it.isWin }
+    val winRate: Int get() = if (settled.isEmpty()) 0 else (totalWins * 100) / settled.size
+
+    /** Consecutive wins counting back from the most recent settled call. */
+    val currentStreak: Int get() = settled.takeWhile { it.isWin }.size
+
     fun countFor(s: String): Int =
         if (s == "all") todayPicks.size else todayPicks.count { it.sport == s }
 
@@ -126,9 +168,20 @@ class HomeViewModel : ViewModel() {
             runCatching {
                 val today = repo.todayPicks()
                 val hist = repo.gradedHistory(limit = 60)
-                today to hist
-            }.onSuccess { (t, h) ->
-                todayPicks = t; history = h; error = null
+                val live = runCatching { repo.liveScores() }.getOrDefault(emptyList())
+                val mine = runCatching { com.pick1.app.data.BetRepository().load() }
+                    .getOrDefault(emptyMap())
+                listOf(today, hist, live, mine)
+            }.onSuccess { parts ->
+                @Suppress("UNCHECKED_CAST")
+                todayPicks = parts[0] as List<Pick>
+                @Suppress("UNCHECKED_CAST")
+                history = parts[1] as List<Pick>
+                @Suppress("UNCHECKED_CAST")
+                liveScores = parts[2] as List<com.pick1.app.data.model.LiveScore>
+                @Suppress("UNCHECKED_CAST")
+                bets = parts[3] as Map<String, com.pick1.app.data.UserBet>
+                error = null
             }.onFailure { error = it.message }
             loading = false
         }
@@ -143,6 +196,8 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var showSummerFootball by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     var showProfile by remember { mutableStateOf(false) }
+    var tab by remember { mutableStateOf(P1V4Tab.TONIGHT) }
+    var shareResult by remember { mutableStateOf<Pick?>(null) }
 
     // Live Play Billing entitlement + catalogue (falls back to placeholder
     // copy when Play is unavailable, e.g. an emulator without Play services).
@@ -167,6 +222,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 onUnlock = { selected = null; showPaywall = true },
             )
         }
+        return
+    }
+    shareResult?.let { p ->
+        com.pick1.app.ui.share.ShareWinSheet(p, isPro) { shareResult = null }
         return
     }
     if (showProfile) {
@@ -227,60 +286,139 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                     item { P1V4TopBar(onProfile = { showProfile = true }) }
+                    item { P1V4Segment(tab) { tab = it } }
 
-                    item {
-                        P1V4OrbRail(
-                            sports = vm.sports,
-                            active = vm.sport,
-                            hasPicks = vm::hasPicks,
-                            onSelect = { vm.select(it) },
-                        )
-                    }
+                    when (tab) {
+                        P1V4Tab.TONIGHT -> {
+                            item {
+                                P1V4OrbRail(
+                                    sports = vm.sports,
+                                    active = vm.sport,
+                                    hasPicks = vm::hasPicks,
+                                    onSelect = { vm.select(it) },
+                                )
+                            }
 
-                    if (hero != null) {
-                        item { P1V4Hero(hero) { selected = hero } }
-                    }
+                            if (hero != null) {
+                                item { P1V4Hero(hero) { selected = hero } }
+                            }
 
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.Bottom,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 22.dp, end = 22.dp, top = 30.dp, bottom = 14.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.rd_todays_games),
-                                style = anton(22),
-                                color = P1.Foreground,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                "ALL CALLED BY 6 AM",
-                                style = mono(9, androidx.compose.ui.text.font.FontWeight.Bold),
-                                color = V4.mute,
-                            )
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 22.dp, end = 22.dp, top = 30.dp, bottom = 14.dp),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.rd_todays_games),
+                                        style = anton(22),
+                                        color = P1.Foreground,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        "ALL CALLED BY 6 AM",
+                                        style = mono(9, androidx.compose.ui.text.font.FontWeight.Bold),
+                                        color = V4.mute,
+                                    )
+                                }
+                            }
+
+                            items(rest, key = { it.id }) { p ->
+                                Box(Modifier.padding(horizontal = 22.dp, vertical = 6.dp)) {
+                                    P1V4GameRow(
+                                        pick = p,
+                                        isLocked = !isPro && p.id !in freeIds,
+                                        isBiggestWin = p.id == biggest,
+                                        onTap = { selected = p },
+                                        onTrack = { if (isPro) selected = p else showPaywall = true },
+                                    )
+                                }
+                            }
+
+                            if (!isPro) {
+                                item {
+                                    Box(Modifier.padding(top = 18.dp)) {
+                                        P1V4PayBar(perDay = "$1.33", sports = P1_SPORTS.size) {
+                                            showPaywall = true
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
 
-                    items(rest, key = { it.id }) { p ->
-                        Box(Modifier.padding(horizontal = 22.dp, vertical = 6.dp)) {
-                            P1V4GameRow(
-                                pick = p,
-                                isLocked = !isPro && p.id !in freeIds,
-                                isBiggestWin = p.id == biggest,
-                                onTap = { selected = p },
-                                onTrack = { if (isPro) selected = p else showPaywall = true },
-                            )
+                        P1V4Tab.LIVE -> {
+                            val live = vm.liveNow
+                            if (live.isEmpty()) {
+                                item {
+                                    P1V4EmptyState(
+                                        "Nothing in play",
+                                        "Games appear here the moment they kick off, with the score and the call side by side.",
+                                    )
+                                }
+                            } else {
+                                items(live, key = { it.first.id }) { (p, sc) ->
+                                    P1V4LiveCard(
+                                        pick = p,
+                                        score = sc,
+                                        tint = V4.glow(p.sport),
+                                        isLocked = !isPro && p.id !in freeIds,
+                                    )
+                                }
+                            }
                         }
-                    }
 
-                    if (!isPro) {
-                        item {
-                            Box(Modifier.padding(top = 18.dp)) {
-                                P1V4PayBar(
-                                    perDay = "$1.33",
-                                    sports = P1_SPORTS.size,
-                                ) { showPaywall = true }
+                        P1V4Tab.YOURS -> {
+                            val mine = vm.yourPicks
+                            if (mine.isEmpty()) {
+                                item {
+                                    P1V4EmptyState(
+                                        "You haven't tracked a call yet",
+                                        "Track one from tonight's board and it lands here, with what it stands to return.",
+                                    )
+                                }
+                            } else {
+                                items(mine, key = { it.id }) { p ->
+                                    P1V4YourRow(p, vm.bets[p.id]) { selected = p }
+                                }
+                            }
+                        }
+
+                        P1V4Tab.RESULTS -> {
+                            val settled = vm.settled
+                            item { P1V4MoneyStrip(vm.net(settled), settled.size) }
+                            item {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 22.dp)
+                                        .padding(top = 10.dp),
+                                ) {
+                                    P1V4ResultBox("${vm.totalWins}/${settled.size}", "Picks won")
+                                    P1V4ResultBox("${vm.winRate}%", "Hit rate")
+                                    P1V4ResultBox(
+                                        "${vm.currentStreak}",
+                                        "Win streak",
+                                        flame = vm.currentStreak >= 2,
+                                    )
+                                }
+                            }
+                            if (settled.isEmpty()) {
+                                item {
+                                    P1V4EmptyState(
+                                        "No settled calls yet",
+                                        "Every pick is logged before kickoff and graded here once it lands.",
+                                    )
+                                }
+                            } else {
+                                itemsIndexed(settled.take(20), key = { _, p -> p.id }) { i, p ->
+                                    P1V4ResultRow(
+                                        pick = p,
+                                        isHighlight = i == 0 && p.isWin,
+                                        onShare = { shareResult = p },
+                                    ) { selected = p }
+                                }
                             }
                         }
                     }

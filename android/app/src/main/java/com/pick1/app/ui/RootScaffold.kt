@@ -84,20 +84,10 @@ fun RootScaffold(forceSkipOnboarding: Boolean = false, debugScreen: String? = nu
         return
     }
 
+    // The four destinations are header tabs inside the board now, exactly as
+    // on iOS, so there is no second navigation on screen.
     Box(Modifier.fillMaxSize().background(P1.Ink)) {
-        when (tab) {
-            RootTab.HOME -> HomeScreen()
-            RootTab.PICKS -> WinsScreen { detail = it }
-            RootTab.LIVE -> LiveScreen { detail = it }
-            RootTab.PROFILE -> ProfileScreen()
-        }
-        BottomNav(
-            tab = tab,
-            onSelect = { tab = it },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 26.dp),
-        )
+        HomeScreen()
     }
 }
 
