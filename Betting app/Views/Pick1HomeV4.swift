@@ -822,21 +822,21 @@ struct P1V4ResultRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(pick.isWin ? "WIN" : "LOSS")
-                    .font(.anton(13))
-                    .tracking(0.52)
-                    .foregroundStyle(pick.isWin ? V4.win : V4.hotSoft)
-                    .padding(.horizontal, 13).padding(.vertical, 7)
-                    .background(Capsule().fill((pick.isWin ? V4.win : V4.hot).opacity(0.11)))
-                    .overlay(Capsule().strokeBorder((pick.isWin ? V4.win : V4.hot).opacity(0.45), lineWidth: 1))
-
-                // What $100 on this call returned. A stated reference stake,
-                // not a suggestion: the app tracks calls, it never asks
-                // anyone to place one.
+            // The MONEY is the headline and the verdict is the caption.
+            // "WIN" in a capsule with the amount whispering underneath had
+            // the hierarchy backwards: everyone already knows a green row
+            // won, what they came to read is what it was worth. A stated
+            // reference stake, not a suggestion — the app tracks calls, it
+            // never asks anyone to place one.
+            VStack(alignment: .trailing, spacing: 1) {
                 Text(returnLine)
-                    .font(.mono(9.5, weight: .bold))
-                    .foregroundStyle(pick.isWin ? V4.win : V4.mute)
+                    .font(.anton(22))
+                    .foregroundStyle(pick.isWin ? V4.win : V4.hotSoft)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                Text(pick.isWin ? "WIN" : "LOSS")
+                    .font(.archivoNarrow(8.5, weight: .bold))
+                    .tracking(1.1)
+                    .foregroundStyle(V4.mute)
             }
         }
         .padding(.horizontal, 14)
