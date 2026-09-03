@@ -91,6 +91,15 @@ struct Pick1HomeHiFi: View {
     /// its own.
     @AppStorage("pick1.winbackSheetShownFor") private var winbackShownFor: String = ""
     @State private var showWinBack = false
+    /// The offer CAPTURED at the moment the sheet was opened.
+    ///
+    /// The sheet used to re-read `subs.bestWinBack` while rendering, which is
+    /// a different question from the one the gate answered. `winBackOffers`
+    /// is refreshed on every foreground and cleared while it reloads, so the
+    /// offer can go nil with the sheet already on screen — and the fallback
+    /// branch below then drew an invented price. Holding the value means the
+    /// sheet shows what it was opened for, or it does not open.
+    @State private var pendingWinBack: (product: Product, offer: Product.SubscriptionOffer)?
     /// The billing-retry banner is dismissible, but only for the current
     /// expiry: a NEW failed renewal brings it back rather than staying
     /// silenced forever on a stale tap.
@@ -124,6 +133,7 @@ struct Pick1HomeHiFi: View {
         let key = "\(wb.product.id)|\(wb.offer.id ?? "unnamed")"
         guard winbackShownFor != key else { return }
         winbackShownFor = key
+        pendingWinBack = wb
         showWinBack = true
     }
 
@@ -391,20 +401,25 @@ struct Pick1HomeHiFi: View {
             Pick1TrialSaveSheet(vm: vm, onClose: { showTrialSave = false })
         }
         .sheet(isPresented: $showWinBack) {
-            if let wb = subs.bestWinBack {
+            if let wb = pendingWinBack {
                 Pick1WinBackSheet(vm: vm, product: wb.product, offer: wb.offer, subs: subs,
                                   onClose: { showWinBack = false },
                                   onClaimed: { showWinBack = false })
             } else {
-                // `-showWinBack` review host. No App Store product exists in a
-                // plain simulator run, and the offer does not exist in App
-                // Store Connect yet, so the wording is passed in fixed. It
-                // matches what a "50% off for 3 months" offer on the $39.99
-                // monthly plan resolves to through P1WinBack.headline.
+                #if DEBUG
+                // `-showWinBack` review host, so the screen can be looked at
+                // without an App Store round trip. The numbers are invented,
+                // which is precisely why this is compiled out below.
                 Pick1WinBackSheet(vm: vm,
                                   headline: Self.previewTerms.headline,
                                   afterwards: Self.previewTerms.afterwards,
                                   onClose: { showWinBack = false })
+                #else
+                // A shipping build never invents an offer. If there is
+                // nothing captured to show, there is nothing to say: close
+                // rather than draw a price Apple would not honour.
+                Color.clear.onAppear { showWinBack = false }
+                #endif
             }
         }
         .onChange(of: subs.renewal) { _, r in

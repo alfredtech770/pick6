@@ -635,8 +635,23 @@ struct P1V4GameRow: View {
         .blur(radius: isLocked ? 6 : 0)
     }
 
-    private var metaLine: String {
+    /// A time for today's games, a DATE for anything further out.
+    ///
+    /// F1 and golf are generated days before the event and merged into the
+    /// same board as today's slate, so a Grand Prix eleven days away was
+    /// rendering as "9 AM" underneath the heading "TODAY'S GAMES". A bare
+    /// time reads as today; for a future event that is simply false, and it
+    /// is the kind of false a user notices the morning nothing happens.
+    private var whenLabel: String {
         let time = pick.startTimeDisplay.map { " · \($0)" } ?? ""
+        guard !pick.isToday, let d = pick.gameDateValue else { return time }
+        let day = d.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)
+                                .locale(LocalizationManager.shared.displayLocale))
+        return " · \(day.uppercased())"
+    }
+
+    private var metaLine: String {
+        let time = whenLabel
         if isLocked { return "\(pick.league.uppercased())\(time) · PREMIUM" }
         // "TO WIN THE BMW CHAMPIONSHIP" rather than "vs BMW Championship".
         if isFieldEvent { return "TO WIN · \(other.uppercased())\(time)" }

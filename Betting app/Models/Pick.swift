@@ -212,6 +212,19 @@ struct Pick: Identifiable, Codable {
         return Self.gameDateFormatter.date(from: gameDate)
     }
 
+    /// True when this pick's game_date is TODAY in the pipeline's timezone.
+    ///
+    /// Compared as an ET date STRING, deliberately. `game_date` is a bare
+    /// calendar day written by a pipeline that runs on America/New_York;
+    /// turning it into an instant and then asking the DEVICE calendar
+    /// whether that instant falls "today" mixes two timezones and returns
+    /// the wrong answer for every user who is not on ET. A pick dated today
+    /// was reading as a future date in Paris.
+    var isToday: Bool { gameDate == Self.todayET }
+
+    /// Now, as the same ET calendar day the pipeline stamps onto a pick.
+    static var todayET: String { gameDateFormatter.string(from: Date()) }
+
     private static let gameDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
