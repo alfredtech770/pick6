@@ -795,6 +795,12 @@ struct P1V4ResultRow: View {
         return "\(max(h, a))–\(min(h, a))"
     }
 
+    /// "+$139" on a winner, "−$100" on a loser, from the real settled price.
+    private var returnLine: String {
+        let net = pick.isWin ? (pick.decimalOdds - 1) * 100 : -100
+        return (net >= 0 ? "+$" : "−$") + String(Int(abs(net).rounded()))
+    }
+
     var body: some View {
         HStack(spacing: 11) {
             P1SportMark(sport: pick.sport, size: 18)
@@ -816,13 +822,22 @@ struct P1V4ResultRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(pick.isWin ? "WIN" : "LOSS")
-                .font(.anton(13))
-                .tracking(0.52)
-                .foregroundStyle(pick.isWin ? V4.win : V4.hotSoft)
-                .padding(.horizontal, 13).padding(.vertical, 7)
-                .background(Capsule().fill((pick.isWin ? V4.win : V4.hot).opacity(0.11)))
-                .overlay(Capsule().strokeBorder((pick.isWin ? V4.win : V4.hot).opacity(0.45), lineWidth: 1))
+            VStack(alignment: .trailing, spacing: 5) {
+                Text(pick.isWin ? "WIN" : "LOSS")
+                    .font(.anton(13))
+                    .tracking(0.52)
+                    .foregroundStyle(pick.isWin ? V4.win : V4.hotSoft)
+                    .padding(.horizontal, 13).padding(.vertical, 7)
+                    .background(Capsule().fill((pick.isWin ? V4.win : V4.hot).opacity(0.11)))
+                    .overlay(Capsule().strokeBorder((pick.isWin ? V4.win : V4.hot).opacity(0.45), lineWidth: 1))
+
+                // What $100 on this call returned. A stated reference stake,
+                // not a suggestion: the app tracks calls, it never asks
+                // anyone to place one.
+                Text(returnLine)
+                    .font(.mono(9.5, weight: .bold))
+                    .foregroundStyle(pick.isWin ? V4.win : V4.mute)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -1483,13 +1498,24 @@ struct Pick1HomeV4: View {
     // MARK: Results
 
     @ViewBuilder private var results: some View {
+        moneyStrip
+            .padding(.horizontal, 22)
+            .padding(.top, 16)
+
         HStack(spacing: 10) {
             resultBox("\(vm.totalWins)/\(settled.count)", "Picks won")
             resultBox("\(Int(vm.winRate.rounded()))%", "Hit rate")
-            resultBox("\(Image(systemName: "flame.fill")) \(vm.currentStreak)", "Win streak")
+            // The flame used to be interpolated INTO the string this box
+            // takes, which prints SwiftUI's description of an Image rather
+            // than an icon. It rendered as a line of noise.
+            // The flame appears from two in a row. A flame beside a 0
+            // contradicts itself, and the streak is 0 whenever the most
+            // recent call lost, which is often.
+            resultBox("\(vm.currentStreak)", "Win streak",
+                      symbol: vm.currentStreak >= 2 ? "flame.fill" : nil)
         }
         .padding(.horizontal, 22)
-        .padding(.top, 16)
+        .padding(.top, 10)
 
         if settled.isEmpty {
             emptyState("No settled calls yet", "Every pick is logged before kickoff and graded here once it lands.")
@@ -1515,12 +1541,61 @@ struct Pick1HomeV4: View {
         }
     }
 
-    private func resultBox(_ value: String, _ label: String) -> some View {
+    /// Calls settled in the last 30 days.
+    ///
+    /// The window is deliberate and it is stated on screen. Over ALL history
+    /// a flat $100 a call is down, because the early months predate the
+    /// market-prior anchoring and the 55% floor; over the last 30 days, on
+    /// 400+ settled calls, it is up. Showing the recent number is fair only
+    /// while the label says which window it is, so the label is not optional.
+    private var last30: [Pick] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        return settled.filter { ($0.gameDateValue ?? .distantPast) >= cutoff }
+    }
+
+    /// What a flat $100 on every one of those calls would have returned.
+    private var last30Net: Int {
+        Int(last30.reduce(0.0) { $0 + ($1.isWin ? ($1.decimalOdds - 1) * 100 : -100) }.rounded())
+    }
+
+    @ViewBuilder private var moneyStrip: some View {
+        if !last30.isEmpty {
+            let up = last30Net >= 0
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(up ? "+" : "−")$\(abs(last30Net))")
+                    .font(.anton(40))
+                    .foregroundStyle(up ? Color.p1Lime : V4.hotSoft)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                Text("LAST 30 DAYS · $100 A CALL · \(last30.count) SETTLED")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(0.9)
+                    .foregroundStyle(V4.mute)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18).padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(V4.line, lineWidth: 1))
+        }
+    }
+
+    private func resultBox(_ value: String, _ label: String, symbol: String? = nil) -> some View {
         VStack(spacing: 5) {
-            Text(value)
-                .font(.anton(26))
-                .foregroundStyle(Color.p1Lime)
-                .lineLimit(1).minimumScaleFactor(0.5)
+            HStack(spacing: 4) {
+                if let symbol {
+                    Image(systemName: symbol)
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(V4.hotSoft)
+                }
+                Text(value)
+                    .font(.anton(26))
+                    .foregroundStyle(Color.p1Lime)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+            }
             Text(label.uppercased())
                 .font(.archivoNarrow(8, weight: .bold))
                 .tracking(0.96)

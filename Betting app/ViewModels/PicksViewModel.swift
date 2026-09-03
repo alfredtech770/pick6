@@ -176,13 +176,22 @@ class PicksViewModel: ObservableObject {
     /// One pick per sport — the AI's most confident call. Used as the
     /// Free-tier feed. Uses `effectiveTodayPicks` so Free users still
     /// see picks during off-hours / pipeline outages.
+    /// What a free user gets: ONE pick, the one that pays the most.
+    ///
+    /// This used to be the highest-confidence call of every sport, so on a
+    /// five-sport day a free user saw five games and had little reason to
+    /// pay. Worse, ranking by CONFIDENCE means the free pick is systematically
+    /// the shortest price on the board: today's top call was a 97% favourite
+    /// at -10000, which returns almost nothing. A free user's single sample of
+    /// the product was the least interesting thing in it.
+    ///
+    /// One pick, chosen by return, is the better trade in both directions.
+    /// It gives away less, and what it gives away is the card that actually
+    /// makes someone want tomorrow's board.
     var freeTierTodayPicks: [Pick] {
-        let bySport = Dictionary(grouping: effectiveTodayPicks,
-                                 by: { $0.sport })
-        let topPerSport = bySport.values.compactMap {
-            $0.max(by: { $0.probability < $1.probability })
-        }
-        return topPerSport.sorted { $0.probability > $1.probability }
+        guard let best = effectiveTodayPicks.max(by: { $0.decimalOdds < $1.decimalOdds })
+        else { return [] }
+        return [best]
     }
 
     /// Free-tier list filtered by `selectedSport` chip.
