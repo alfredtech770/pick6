@@ -444,6 +444,7 @@ enum L10nKey: String, CaseIterable {
     // ─── 2026-07 redesign surfaces (home/detail/live/picks) ───────
     case rd_sport_tennis
     case sw_share_win
+    case sw_share_result
     case sw_your_amount
     case sw_would_have
     case sw_share_cta

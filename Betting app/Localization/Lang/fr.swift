@@ -652,5 +652,6 @@ enum FrenchStrings {
         .wb_unit_week: "semaine",
         .wb_unit_month: "mois",
         .wb_unit_year: "an",
+        .sw_share_result: "PARTAGEZ LE RÉSULTAT",
     ]
 }

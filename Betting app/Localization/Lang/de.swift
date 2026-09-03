@@ -652,5 +652,6 @@ enum GermanStrings {
         .wb_unit_week: "Woche",
         .wb_unit_month: "Monat",
         .wb_unit_year: "Jahr",
+        .sw_share_result: "ERGEBNIS TEILEN",
     ]
 }

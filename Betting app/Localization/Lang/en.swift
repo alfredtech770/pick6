@@ -653,5 +653,6 @@ enum EnglishStrings {
         .wb_unit_week: "week",
         .wb_unit_month: "month",
         .wb_unit_year: "year",
+        .sw_share_result: "SHARE THE RESULT",
     ]
 }

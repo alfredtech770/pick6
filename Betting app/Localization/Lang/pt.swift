@@ -652,5 +652,6 @@ enum PortugueseStrings {
         .wb_unit_week: "semana",
         .wb_unit_month: "mês",
         .wb_unit_year: "ano",
+        .sw_share_result: "PARTILHA O RESULTADO",
     ]
 }

@@ -29,14 +29,17 @@ struct ShareWinSheet: View {
     private var amount: Double {
         max(1, min(100_000, Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 100))
     }
-    private var returned: Int { Int((amount * pick.decimalOdds).rounded()) }
+    /// Nothing comes back from a losing call. The card says $0, not a
+    /// hypothetical, because a share card that quietly prices a loss as a
+    /// win is the exact thing this product exists not to do.
+    private var returned: Int { pick.isWin ? Int((amount * pick.decimalOdds).rounded()) : 0 }
 
     var body: some View {
         VStack(spacing: 18) {
             Capsule().fill(Color(hex: "#3A3A3A"))
                 .frame(width: 42, height: 5).padding(.top, 10)
 
-            Text(t(.sw_share_win))
+            Text(pick.isWin ? t(.sw_share_win) : t(.sw_share_result))
                 .font(.anton(26)).foregroundColor(.white)
 
             // Live-updating preview of the exact card that gets shared.
@@ -85,7 +88,8 @@ struct ShareWinSheet: View {
                     .foregroundColor(Color(hex: "#171717"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(lime))
+                    .background(RoundedRectangle(cornerRadius: 14)
+                        .fill(pick.isWin ? lime : Color(hex: "#FF6B57")))
             }
             .padding(.horizontal, 24)
 
@@ -151,58 +155,97 @@ struct ShareWinCard: View {
     let returned: Int
     private let lime = Color(hex: "#C6FF34")
 
+    /// The shared image is the SAME ticket the detail page shows, tilted a
+    /// few degrees so it reads as a slip someone is holding rather than a
+    /// screenshot of a row. Reusing the component instead of drawing a second
+    /// card means the thing people pass around cannot drift away from the
+    /// thing the app shows, which is the whole point of a public record.
+    ///
+    /// It is shared for LOSSES too. A record you can only pass on when it
+    /// flatters you is not a record.
+    private var won: Bool { pick.isWin }
+    private var accent: Color { won ? lime : Color(hex: "#FF6B57") }
+
+    /// Both of these mirror the detail page exactly. The ticket takes a
+    /// confidence TIER for its sub-line and prints the percentage itself, so
+    /// passing the percentage in printed "55%" twice, once large and once
+    /// small underneath. And the logged time is stamped in the pipeline's
+    /// timezone, not the reader's, or two people sharing the same call would
+    /// show different times on the same ticket.
+    private var confidenceTierText: String {
+        let raw = pick.confidence.lowercased()
+        if ["high", "medium", "low"].contains(raw) { return raw.capitalized }
+        switch pick.confidenceTier {
+        case .high:   return "High"
+        case .medium: return "Medium"
+        case .low:    return "Low"
+        }
+    }
+
+    private var loggedText: String {
+        guard let d = pick.createdAt else { return "PRE-GAME" }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        f.timeZone = TimeZone(identifier: "America/New_York")
+        return f.string(from: d)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(spacing: 14) {
             HStack {
-                Pick1Wordmark(size: 22)
+                Pick1Wordmark(size: 20)
                 Spacer()
                 HStack(spacing: 4) {
-                    Image(systemName: "checkmark").font(.system(size: 9, weight: .heavy))
-                    Text(t(.rd_won)).font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
+                    Image(systemName: won ? "checkmark" : "xmark")
+                        .font(.system(size: 9, weight: .heavy))
+                    Text(won ? t(.rd_won) : t(.rd_lost))
+                        .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
                 }
                 .foregroundColor(Color(hex: "#171717"))
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Capsule().fill(lime))
+                .background(Capsule().fill(accent))
             }
 
-            Text("\(teamShortName(pick.awayTeam, sport: pick.sport).uppercased())  VS  \(teamShortName(pick.homeTeam, sport: pick.sport).uppercased())")
-                .font(.anton(20)).foregroundColor(.white)
-                .lineLimit(1).minimumScaleFactor(0.6)
+            P1PickTicket(pick: pick,
+                         homeScore: pick.homeScore,
+                         awayScore: pick.awayScore,
+                         confidence: confidenceTierText,
+                         loggedAt: loggedText)
+                .rotationEffect(.degrees(-2.5))
+                // The tilt swings the corners out; this keeps them inside the
+                // rendered image instead of clipping them off.
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
 
-            HStack(spacing: 6) {
-                Text(t(.rd_ai_picks))
-                    .font(.archivoNarrow(10, weight: .bold)).tracking(1.6)
-                    .foregroundColor(Color(hex: "#8A8D94"))
-                Text(pick.shortDisplayPick.uppercased())
-                    .font(.archivoNarrow(12, weight: .bold)).tracking(1.2)
-                    .foregroundColor(lime)
-            }
-
+            // The stake the sharer chose, and what it came back as. $0 on a
+            // loss, never a hypothetical dressed as a return.
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("$\(Int(amount.rounded()))")
-                    .font(.anton(34)).foregroundColor(.white)
+                    .font(.anton(26)).foregroundColor(.white)
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 20, weight: .bold)).foregroundColor(lime)
+                    .font(.system(size: 15, weight: .bold)).foregroundColor(accent)
                 Text("$\(returned)")
-                    .font(.anton(44)).foregroundColor(lime)
+                    .font(.anton(34)).foregroundColor(accent)
+                Spacer()
             }
 
             Text(t(.sw_disclaimer))
                 .font(.archivo(8, weight: .medium))
                 .foregroundColor(Color(hex: "#6E6F75"))
                 .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20)
+        .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color(hex: "#1D1D1D"))
                 .overlay(
-                    LinearGradient(colors: [lime.opacity(0.16), .clear],
+                    LinearGradient(colors: [accent.opacity(0.14), .clear],
                                    startPoint: .topLeading, endPoint: .center)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
                 )
-                .overlay(RoundedRectangle(cornerRadius: 20)
-                    .stroke(lime.opacity(0.45), lineWidth: 1.2))
+                .overlay(RoundedRectangle(cornerRadius: 22)
+                    .stroke(accent.opacity(0.40), lineWidth: 1.2))
         )
     }
 }

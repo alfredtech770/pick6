@@ -789,6 +789,10 @@ struct P1V4LiveCard: View {
 struct P1V4ResultRow: View {
     let pick: Pick
     var isHighlight: Bool = false
+    /// Wins AND losses are shareable. A record you can only pass on when it
+    /// flatters you is not a record, and publishing the misses is the one
+    /// claim this product actually makes about itself.
+    var onShare: (() -> Void)? = nil
 
     private var scoreLine: String? {
         guard let h = pick.homeScore, let a = pick.awayScore else { return nil }
@@ -837,6 +841,22 @@ struct P1V4ResultRow: View {
                     .font(.archivoNarrow(8.5, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(V4.mute)
+            }
+
+            if let onShare {
+                Button {
+                    Haptics.tap()
+                    onShare()
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(V4.mute)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(V4.panelBot))
+                        .overlay(Circle().strokeBorder(V4.line, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(pick.isWin ? "Share this win" : "Share this loss")
             }
         }
         .padding(.horizontal, 14)
@@ -1004,6 +1024,8 @@ struct Pick1HomeV4: View {
 
     @State private var tab: P1V4Tab = .tonight
     @State private var selectedSport: String?
+    /// The settled call being shared, win or loss.
+    @State private var shareResult: Pick?
 
     /// Real entitlement, with the same DEBUG-only `-forcePro` override the
     /// production home carries so the Pro surfaces stay reviewable on the
@@ -1023,7 +1045,15 @@ struct Pick1HomeV4: View {
     /// one pick per sport, the highest-confidence call of that sport. v4
     /// previously showed free users the hero plus two more, which was more
     /// generous than production and would have handed away the paid product.
-    private var freeIds: Set<UUID> { Set(vm.freeTierTodayPicks.map(\.id)) }
+    /// The one call a free user may open: the hero of the board in front of
+    /// them, and nothing else.
+    ///
+    /// This used to read a single pick chosen across the WHOLE day, which
+    /// left every sport tab that did not happen to contain it with nothing
+    /// unlocked at all — while the hero above stayed open regardless. The
+    /// board was locked and unlocked at the same time, and tapping BASEBALL
+    /// produced a visible hero over a wall of blurred cards.
+    private var freeIds: Set<UUID> { hero.map { [$0.id] } ?? [] }
     private func locked(_ p: Pick) -> Bool { !isPro && !freeIds.contains(p.id) }
 
     /// Same discipline as v2: one switch for everything with no table behind
@@ -1082,8 +1112,22 @@ struct Pick1HomeV4: View {
     /// Today's board, restricted to the ten covered sports. Used anywhere the
     /// screen counts or scans picks rather than reading the selected sport.
     private var coveredToday: [Pick] { vm.todayPicks.filter { P1_SPORTS.contains($0.sport) } }
-    private var hero: Pick? { sportPicks.first }
-    private var rest: [Pick] { Array(sportPicks.dropFirst()) }
+    /// The headline call on whatever board is being looked at.
+    ///
+    /// For a PRO user that is the highest-confidence call, as it always was.
+    /// For a FREE user it is the biggest RETURN, because the hero is the one
+    /// call they get to see and confidence hands them the shortest price in
+    /// the app: a 97% favourite at -10000 returns almost nothing and sells
+    /// nothing. The board they are shown should be the one that makes them
+    /// want tomorrow's.
+    private var hero: Pick? {
+        guard !isPro else { return sportPicks.first }
+        return sportPicks.max(by: { $0.decimalOdds < $1.decimalOdds })
+    }
+
+    /// Everything except the hero. Matched by id rather than by dropping the
+    /// first element, because for a free user the hero is no longer first.
+    private var rest: [Pick] { sportPicks.filter { $0.id != hero?.id } }
 
     /// The whole day's board minus the hero, best first.
     private var boardRest: [Pick] {
@@ -1251,6 +1295,7 @@ struct Pick1HomeV4: View {
             }
         }
         .preferredColorScheme(.dark)
+        .sheet(item: $shareResult) { p in ShareWinSheet(pick: p) }
         .task { if subs.products.isEmpty { await subs.reloadProducts() } }
         .task { if !betTracker.loaded { await betTracker.load() } }
     }
@@ -1525,10 +1570,14 @@ struct Pick1HomeV4: View {
             // app you could not open. Every other pick surface opens its
             // detail; this one now does too.
             ForEach(Array(settled.prefix(20).enumerated()), id: \.element.id) { i, p in
-                Button { onSelectPick(p) } label: {
-                    P1V4ResultRow(pick: p, isHighlight: i == 0 && p.isWin)
-                }
-                .buttonStyle(.plain)
+                // Not a Button any more: the row now contains one, and a
+                // Button inside a Button does not reliably route taps in
+                // SwiftUI. The row opens the detail on tap, the share glyph
+                // is its own target.
+                P1V4ResultRow(pick: p, isHighlight: i == 0 && p.isWin,
+                              onShare: { shareResult = p })
+                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .onTapGesture { onSelectPick(p) }
             }
             Text("EVERY CALL LOGGED BEFORE KICKOFF · WINS AND LOSSES · FOREVER")
                 .font(.mono(8, weight: .semibold))

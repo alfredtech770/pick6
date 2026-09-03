@@ -654,5 +654,6 @@ enum ArabicStrings {
         .wb_unit_week: "أسبوع",
         .wb_unit_month: "شهر",
         .wb_unit_year: "سنة",
+        .sw_share_result: "شارك النتيجة",
     ]
 }

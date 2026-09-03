@@ -652,5 +652,6 @@ enum SpanishStrings {
         .wb_unit_week: "semana",
         .wb_unit_month: "mes",
         .wb_unit_year: "año",
+        .sw_share_result: "COMPARTE EL RESULTADO",
     ]
 }

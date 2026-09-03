@@ -652,5 +652,6 @@ enum ItalianStrings {
         .wb_unit_week: "settimana",
         .wb_unit_month: "mese",
         .wb_unit_year: "anno",
+        .sw_share_result: "CONDIVIDI IL RISULTATO",
     ]
 }

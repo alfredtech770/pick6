@@ -173,10 +173,10 @@ class PicksViewModel: ObservableObject {
     // other than "all", we still surface only that single best pick for
     // the chosen sport.
 
-    /// One pick per sport — the AI's most confident call. Used as the
-    /// Free-tier feed. Uses `effectiveTodayPicks` so Free users still
-    /// see picks during off-hours / pipeline outages.
     /// What a free user gets: ONE pick, the one that pays the most.
+    ///
+    /// Uses `effectiveTodayPicks` so free users still see a call during
+    /// off-hours and pipeline outages.
     ///
     /// This used to be the highest-confidence call of every sport, so on a
     /// five-sport day a free user saw five games and had little reason to
@@ -195,9 +195,14 @@ class PicksViewModel: ObservableObject {
     }
 
     /// Free-tier list filtered by `selectedSport` chip.
+    /// Chosen from the FILTERED board, not by filtering the day's single
+    /// free pick. Doing it the other way round emptied every sport tab that
+    /// did not contain that one pick, so a free user tapping a sport saw a
+    /// fully locked board.
     var freeTierFilteredPicks: [Pick] {
-        if selectedSport == "all" { return freeTierTodayPicks }
-        return freeTierTodayPicks.filter { $0.sport == selectedSport }
+        guard let best = filteredTodayPicks.max(by: { $0.decimalOdds < $1.decimalOdds })
+        else { return [] }
+        return [best]
     }
 
     /// Returns the picks the user is allowed to see. Pro users get
