@@ -1231,7 +1231,7 @@ struct Pick1HomeV4: View {
                 VStack {
                     Spacer()
                     P1V4PayBar(perDay: perDay, sports: max(sports.count, 1), onTap: onUpgrade)
-                        .padding(.bottom, 12 + bottomInset)
+                        .padding(.bottom, bottomInset)
                 }
             }
         }
