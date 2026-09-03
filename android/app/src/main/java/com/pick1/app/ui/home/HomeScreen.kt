@@ -301,6 +301,16 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
 
                             if (hero != null) {
                                 item { P1V4Hero(hero) { selected = hero } }
+                            } else if (vm.sport != ALL_SPORTS && vm.todayPicks.isNotEmpty()) {
+                                // Selected a sport with nothing on it. Say so
+                                // plainly rather than dropping the user onto a
+                                // blank screen that reads as a broken app.
+                                item {
+                                    P1V4EmptyState(
+                                        "No ${v4Name(vm.sport).lowercase()} calls today",
+                                        "The board carries every game the AI could call. This sport has none on today's slate.",
+                                    )
+                                }
                             }
 
                             item {

@@ -58,6 +58,19 @@ fun MatchDetailScreen(pick: Pick, onClose: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
+            // The ticket leads the page, as on iOS: one call, logged before
+            // kickoff, with its terms printed on it. The matchup header stays
+            // underneath as context rather than as the subject.
+            Spacer(Modifier.height(8.dp))
+            com.pick1.app.ui.components.P1PickTicket(
+                pick = pick,
+                homeScore = pick.homeScore,
+                awayScore = pick.awayScore,
+                isLive = pick.isPending && pick.homeScore != null,
+                confidence = com.pick1.app.ui.components.confidenceTierText(pick),
+                loggedAt = pick.startTime ?: "PRE-GAME",
+            )
+            Spacer(Modifier.height(20.dp))
             MatchupHeader(pick, accent)
             Spacer(Modifier.height(16.dp))
             TabBar(pick, tab, accent) { tab = it }

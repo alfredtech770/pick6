@@ -3,6 +3,9 @@ package com.pick1.app.ui.share
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import com.pick1.app.ui.components.confidenceTierText
+import com.pick1.app.ui.components.P1PickTicket
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -49,7 +52,7 @@ fun ShareWinSheet(pick: Pick, isPro: Boolean, onClose: () -> Unit) {
     val ctx = LocalContext.current
     var amountText by remember { mutableStateOf("100") }
     val amount = amountText.replace(',', '.').toDoubleOrNull() ?: 100.0
-    val returned = (amount * pick.decimalOdds).roundToInt()
+    val returned = if (pick.isLoss) 0 else (amount * pick.decimalOdds).roundToInt()
 
     LaunchedEffect(Unit) {
         PostHog.capture("share_win_opened", properties = mapOf("league" to pick.league))
@@ -66,7 +69,7 @@ fun ShareWinSheet(pick: Pick, isPro: Boolean, onClose: () -> Unit) {
         Box(Modifier.padding(top = 10.dp)) {
             Box(Modifier.width(42.dp).height(5.dp).clip(CircleShape).background(P1.Line2))
         }
-        Text(stringResource(R.string.sw_share_win), style = anton(26), color = Color.White)
+        Text(stringResource(if (pick.isWin) R.string.sw_share_win else R.string.sw_share_result), style = anton(26), color = Color.White)
 
         // Live preview of the exact card that gets shared.
         ShareWinCard(pick, amount, returned, Modifier.widthIn(max = 340.dp))
@@ -143,13 +146,11 @@ fun ShareWinSheet(pick: Pick, isPro: Boolean, onClose: () -> Unit) {
                 .padding(vertical = 16.dp),
         )
 
-        Text(
-            stringResource(R.string.sw_disclaimer),
-            style = archivo(10, FontWeight.Medium),
-            color = P1.Mute,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 30.dp),
-        )
+        // The disclaimer lives on the CARD, not the sheet. It has to travel
+        // with the money: an image that leaves the app showing a return
+        // without saying it is hypothetical and that Pick1 takes no bets is
+        // exactly the asset that gets an ad account into trouble. Printing it
+        // here as well just said it twice on one screen.
 
         Spacer(Modifier.weight(1f))
         Text(
@@ -161,58 +162,71 @@ fun ShareWinSheet(pick: Pick, isPro: Boolean, onClose: () -> Unit) {
     }
 }
 
-/** The shareable card — port of `ShareWinCard`. */
+/**
+ * The shareable card, port of `ShareWinCard`.
+ *
+ * The shared image is the SAME ticket the detail page shows, tilted a few
+ * degrees so it reads as a slip someone is holding rather than a screenshot
+ * of a row. Reusing the component instead of drawing a second card means the
+ * thing people pass around cannot drift away from the thing the app shows,
+ * which is the whole point of a public record.
+ *
+ * It is shared for LOSSES too. A record you can only pass on when it flatters
+ * you is not a record.
+ */
 @Composable
 fun ShareWinCard(pick: Pick, amount: Double, returned: Int, modifier: Modifier = Modifier) {
+    val accent = if (pick.isWin) Color(0xFFC6FF34) else Color(0xFFFF6B57)
+
+    // The logged time is stamped in the pipeline's timezone, not the reader's,
+    // or two people sharing the same call would show different times on the
+    // same ticket.
+    val loggedText = pick.createdAt?.let { raw ->
+        runCatching {
+            val inst = java.time.Instant.parse(raw)
+            java.time.format.DateTimeFormatter.ofPattern("h:mm a")
+                .withZone(java.time.ZoneId.of("America/New_York"))
+                .format(inst)
+        }.getOrDefault("PRE-GAME")
+    } ?: "PRE-GAME"
+
+    // NO frame. The ticket already has an edge, a bite and a border of its
+    // own, so wrapping it in a second bordered card produced a box inside a
+    // box and made the ticket look like a screenshot of a screenshot. The
+    // canvas is flat and the ticket is the object.
     Column(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(Color(0xFF16200A), Color(0xFF0A0B0D)),
-                    start = Offset.Zero, end = Offset.Infinite,
-                )
-            )
-            .border(1.dp, P1.Lime.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("PICK", style = anton(18), color = P1.Foreground)
-            Text("1", style = anton(18), color = P1.Lime)
-            Spacer(Modifier.weight(1f))
-            Text(
-                stringResource(R.string.rd_won),
-                style = archivoNarrow(10, FontWeight.Bold, tracking = 1.6f),
-                color = P1.Ink,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(P1.Lime)
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+        Box(
+            Modifier
+                .rotate(-2.5f)
+                // The tilt swings the corners out; this keeps them inside the
+                // rendered image instead of clipping them off.
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+        ) {
+            P1PickTicket(
+                pick = pick,
+                homeScore = pick.homeScore,
+                awayScore = pick.awayScore,
+                confidence = confidenceTierText(pick),
+                loggedAt = loggedText,
             )
         }
-        Text(
-            pick.pick.uppercase(),
-            style = anton(30),
-            color = P1.Lime,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            "${Sport.emoji(pick.sport)} ${pick.league.uppercase()} · ${pick.probability.roundToInt()}%",
-            style = archivoNarrow(11, FontWeight.Bold, tracking = 1.6f),
-            color = Color(0xFF8A8D94),
-        )
-        Box(Modifier.fillMaxWidth().height(1.dp).background(P1.Line))
+
+        // The stake the sharer chose, and what it came back as. $0 on a loss,
+        // never a hypothetical dressed as a return.
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                "$${amount.roundToInt()} →",
-                style = mono(14, FontWeight.Bold),
-                color = P1.Ink2,
-            )
-            Spacer(Modifier.width(8.dp))
-            Text("$$returned", style = anton(28), color = P1.Lime)
+            Text("$${amount.roundToInt()}", style = anton(26), color = P1.Foreground)
+            Text("  →  ", style = anton(15), color = accent)
+            Text("$$returned", style = anton(34), color = accent)
         }
+
+        Text(
+            stringResource(R.string.sw_disclaimer),
+            style = archivo(8, FontWeight.Medium),
+            color = Color(0xFF6E6F75),
+            maxLines = 2,
+        )
     }
 }
