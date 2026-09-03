@@ -274,7 +274,7 @@ enum EnglishStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "The Pick1 fix · 1 of 3",
         .funnel_green1_headline:         "DATA, NOT\n*EMOTION.*",
-        .funnel_green1_lead:             "One AI-calculated pick a day — the single highest-edge call across 10 sports.",
+        .funnel_green1_lead:             "Every game on today's board called by the data, across 10 sports.",
         .funnel_green1_cta:              "NEXT →",
         .funnel_green2_kicker:           "The Pick1 fix · 2 of 3",
         .funnel_green2_headline:         "SEE THE\n*REASONING.*",
@@ -360,7 +360,7 @@ enum EnglishStrings {
         // Paywall
         .funnel_paywall_kicker:          "Go Pro",
         .funnel_paywall_headline:        "UNLOCK\nEVERY *PICK.*",
-        .funnel_paywall_feat1:           "Daily AI pick across 10 sports",
+        .funnel_paywall_feat1:           "Every game called, across 10 sports",
         .funnel_paywall_feat2:           "Calibrated confidence + reasoning",
         .funnel_paywall_feat3:           "Public ledger, live tracking & ROI",
         .funnel_paywall_feat4:           "Best line across 6 sportsbooks",

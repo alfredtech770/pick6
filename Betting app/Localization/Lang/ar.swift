@@ -275,7 +275,7 @@ enum ArabicStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "حل Pick1 · 1 من 3",
         .funnel_green1_headline:         "بيانات، لا\n*عاطفة.*",
-        .funnel_green1_lead:             "اختيار واحد محسوب بالذكاء الاصطناعي يوميًا — الأعلى أفضليةً عبر 9 رياضات.",
+        .funnel_green1_lead:             "كل مباريات اليوم تحسمها البيانات، عبر 10 رياضات.",
         .funnel_green1_cta:              "← التالي",
         .funnel_green2_kicker:           "حل Pick1 · 2 من 3",
         .funnel_green2_headline:         "شاهد\n*التحليل.*",
@@ -361,7 +361,7 @@ enum ArabicStrings {
         // Paywall
         .funnel_paywall_kicker:          "اشترك في Pro",
         .funnel_paywall_headline:        "افتح\nكل *اختيار.*",
-        .funnel_paywall_feat1:           "اختيار يومي بالذكاء الاصطناعي عبر 9 رياضات",
+        .funnel_paywall_feat1:           "كل المباريات محسومة، عبر 10 رياضات",
         .funnel_paywall_feat2:           "ثقة معايَرة + تحليل",
         .funnel_paywall_feat3:           "سجل علني وتتبّع مباشر وعائد استثمار",
         .funnel_paywall_feat4:           "أفضل خط عبر 6 مواقع مراهنة",

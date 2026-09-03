@@ -273,7 +273,7 @@ enum PortugueseStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "A solução Pick1 · 1 de 3",
         .funnel_green1_headline:         "DADOS, NÃO\n*EMOÇÃO.*",
-        .funnel_green1_lead:             "Um pick calculado por IA por dia — a única aposta com maior vantagem em 10 desportos.",
+        .funnel_green1_lead:             "Todos os jogos do dia decididos pelos dados, em 10 desportos.",
         .funnel_green1_cta:              "SEGUINTE →",
         .funnel_green2_kicker:           "A solução Pick1 · 2 de 3",
         .funnel_green2_headline:         "VÊ O\n*RACIOCÍNIO.*",
@@ -359,7 +359,7 @@ enum PortugueseStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passa a Pro",
         .funnel_paywall_headline:        "DESBLOQUEIA\nCADA *PICK.*",
-        .funnel_paywall_feat1:           "Pick de IA diário em 10 desportos",
+        .funnel_paywall_feat1:           "Todos os jogos decididos, em 10 desportos",
         .funnel_paywall_feat2:           "Confiança calibrada + raciocínio",
         .funnel_paywall_feat3:           "Registo público, acompanhamento ao vivo e ROI",
         .funnel_paywall_feat4:           "Melhor odd entre 6 casas de apostas",

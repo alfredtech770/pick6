@@ -2065,7 +2065,12 @@ function normName(n) {
 function teamsMatch(a, b) {
   const na = normName(a), nb = normName(b);
   if (!na || !nb) return false;
-  if (na.includes(nb) || nb.includes(na)) return true;
+  // Substring matching needs a floor. Without one a one-letter name matches
+  // half the field: a junk "x vs y" pick matched "Felix Auger-Aliassime"
+  // because "feli-x" contains "x", and would have overwritten a real match's
+  // live score.
+  const shorter = na.length < nb.length ? na : nb;
+  if (shorter.length >= 3 && (na.includes(nb) || nb.includes(na))) return true;
   // Last word (nickname) match: "los angeles dodgers" vs "dodgers".
   const la = na.split(' ').pop(), lb = nb.split(' ').pop();
   return la.length > 3 && la === lb;
@@ -2317,6 +2322,85 @@ async function sendFreeRecap() {
   } catch (e) { err('sendFreeRecap failed:', e.message); }
 }
 
+// ─── Tennis (ATP/WTA) ────────────────────────────────────────────────
+// Tennis does not use the flat `events[].competitions[]` shape that every
+// other ESPN sport uses. A tournament is ONE event and the matches sit
+// under events[].groupings[].competitions[], one grouping per draw. Read
+// the normal way it reports "competitions: 0", which is exactly why tennis
+// never once appeared on the LIVE tab while producing 14 picks a day.
+//
+// The draw payload is ~1.4 MB, so WTA is fetched only when a pick is still
+// unmatched after ATP: during a Grand Slam both tours return the same
+// tournament, and the ATP call already carries the women's singles draw.
+const TENNIS_LEAGUES = new Set(['ATP']);
+
+async function espnTennisTour(tour, dates) {
+  const out = [];
+  for (const d of dates) {
+    try {
+      const res = await axios.get(
+        `https://site.api.espn.com/apis/site/v2/sports/tennis/${tour}/scoreboard?dates=${String(d).replace(/-/g, '')}`,
+        { timeout: 20000 },
+      );
+      for (const ev of res.data?.events || []) {
+        for (const g of ev.groupings || []) {
+          // Singles only. A doubles competitor is a pair, so its name could
+          // never match a pick's single player.
+          if (!String(g.grouping?.slug || '').includes('singles')) continue;
+          for (const c of g.competitions || []) {
+            const cs = c.competitors || [];
+            if (cs.length !== 2) continue;
+            const home = cs.find((x) => x.homeAway === 'home') || cs[0];
+            const away = cs.find((x) => x.homeAway === 'away') || cs[1];
+            // A tennis scoreline is SETS WON. The linescores array holds
+            // games per set, which there is no column for and which nobody
+            // reads as a score anyway.
+            const setsWon = (mine, theirs) => {
+              const a = mine.linescores || [], b = theirs.linescores || [];
+              let n = 0;
+              for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                if (Number(a[i]?.value) > Number(b[i]?.value)) n++;
+              }
+              return n;
+            };
+            const st = c.status?.type || {};
+            const played = Math.max((home.linescores || []).length,
+                                    (away.linescores || []).length);
+            out.push({
+              homeName: home.athlete?.displayName || '',
+              awayName: away.athlete?.displayName || '',
+              // Country flag stands in for the crest, so the app's existing
+              // logo slots fill in without a special tennis case.
+              homeLogo: home.athlete?.flag?.href || null,
+              awayLogo: away.athlete?.flag?.href || null,
+              homeScore: setsWon(home, away),
+              awayScore: setsWon(away, home),
+              state: st.state || 'pre',
+              detail: st.shortDetail || st.description || '',
+              period: played || null,
+              startTime: c.date || c.startDate || null,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      err(`ESPN tennis ${tour} ${d} failed:`, e.message);
+    }
+  }
+  return out;
+}
+
+async function espnTennisEvents(picks) {
+  const dates = [...new Set(picks.map((p) => p.game_date).filter(Boolean))];
+  if (!dates.length) return [];
+  const matches = (list, p) => list.some((e) =>
+    (teamsMatch(e.homeName, p.home_team) && teamsMatch(e.awayName, p.away_team)) ||
+    (teamsMatch(e.homeName, p.away_team) && teamsMatch(e.awayName, p.home_team)));
+  const events = await espnTennisTour('atp', dates);
+  if (picks.every((p) => matches(events, p))) return events;
+  return events.concat(await espnTennisTour('wta', dates));
+}
+
 async function liveTick() {
   if (liveLoopRunning) return;
   liveLoopRunning = true;
@@ -2353,8 +2437,10 @@ async function liveTick() {
     const logoUpdates = [];
 
     for (const [league, leaguePicks] of Object.entries(byLeague)) {
-      if (!ESPN_PATHS[league]) continue;
-      const events = await espnScoreboard(league);
+      const isTennis = TENNIS_LEAGUES.has(league);
+      if (!isTennis && !ESPN_PATHS[league]) continue;
+      const events = isTennis ? await espnTennisEvents(leaguePicks)
+                              : await espnScoreboard(league);
       if (!events.length) continue;
 
       const rows = [];

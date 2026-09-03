@@ -221,7 +221,12 @@ struct P1V4Orb: View {
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: 21, weight: .semibold))
                             .foregroundStyle(isOn ? Color.p1Lime : V4.ink2)
-                            .shadow(color: isOn ? Color.p1Lime.opacity(0.55) : .clear, radius: 8)
+                            // Same reach as P1SportMark's (size * 0.32), so
+                            // ALL does not glow harder than the sports next
+                            // to it. The glyph is square, so an oversized
+                            // shadow on it reads as a boxy halo.
+                            .shadow(color: isOn ? Color.p1Lime.opacity(0.55) : .clear,
+                                    radius: 21 * 0.32)
                     } else {
                         P1SportMark(sport: sport, size: 23, glowing: isOn, active: isOn)
                     }
@@ -235,7 +240,11 @@ struct P1V4Orb: View {
                     )
                     .overlay(Circle().strokeBorder(isOn ? Color.p1Lime : V4.line, lineWidth: 1.5))
                     .opacity(hasPicks ? 1 : 0.45)
-                    .shadow(color: isOn ? Color.p1Lime.opacity(0.45) : .clear, radius: 13)
+                    // Radius 13 put the halo's reach at roughly 3pt (the
+                    // 1.12 scale) plus ~26pt of falloff, well past the rail's
+                    // 18pt of headroom, so the selected orb's glow was sliced
+                    // off flat along the top edge.
+                    .shadow(color: isOn ? Color.p1Lime.opacity(0.45) : .clear, radius: 9)
                     .scaleEffect(isOn ? 1.12 : 1)
 
                 Text(v4Name(sport).uppercased())
@@ -1353,8 +1362,12 @@ struct Pick1HomeV4: View {
                 }
                 .padding(.leading, 22)
                 .padding(.trailing, 8)
-                .padding(.top, 18)
-                .padding(.bottom, 6)
+                // Headroom for the selected orb's halo. The rail carries a
+                // .mask below, and a mask composites within the view's own
+                // bounds: anything the glow reaches past this padding is cut,
+                // it does not simply overflow.
+                .padding(.top, 24)
+                .padding(.bottom, 12)
             }
             // The peek does the work; this softens the cut so a half orb
             // reads as "more this way" rather than as a clipped one.

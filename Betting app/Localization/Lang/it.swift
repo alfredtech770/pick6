@@ -273,7 +273,7 @@ enum ItalianStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "La soluzione Pick1 · 1 di 3",
         .funnel_green1_headline:         "DATI, NON\n*ISTINTO.*",
-        .funnel_green1_lead:             "Un pick calcolato dall'IA al giorno — la singola scelta col vantaggio più alto su 10 sport.",
+        .funnel_green1_lead:             "Ogni partita del giorno decisa dai dati, su 10 sport.",
         .funnel_green1_cta:              "AVANTI →",
         .funnel_green2_kicker:           "La soluzione Pick1 · 2 di 3",
         .funnel_green2_headline:         "VEDI IL\n*RAGIONAMENTO.*",
@@ -359,7 +359,7 @@ enum ItalianStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passa a Pro",
         .funnel_paywall_headline:        "SBLOCCA\nOGNI *PICK.*",
-        .funnel_paywall_feat1:           "Pick IA quotidiano su 10 sport",
+        .funnel_paywall_feat1:           "Ogni partita analizzata, su 10 sport",
         .funnel_paywall_feat2:           "Fiducia calibrata + ragionamento",
         .funnel_paywall_feat3:           "Registro pubblico, tracciamento live e ROI",
         .funnel_paywall_feat4:           "Miglior quota tra 6 bookmaker",

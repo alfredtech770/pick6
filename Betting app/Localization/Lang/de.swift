@@ -273,7 +273,7 @@ enum GermanStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "Die Pick1-Lösung · 1 von 3",
         .funnel_green1_headline:         "DATEN, NICHT\n*EMOTION.*",
-        .funnel_green1_lead:             "Ein KI-berechneter Tipp pro Tag — der eine Tipp mit dem größten Vorteil in 10 Sportarten.",
+        .funnel_green1_lead:             "Jedes Spiel des Tages, von den Daten entschieden, in 10 Sportarten.",
         .funnel_green1_cta:              "WEITER →",
         .funnel_green2_kicker:           "Die Pick1-Lösung · 2 von 3",
         .funnel_green2_headline:         "SIEH DIE\n*BEGRÜNDUNG.*",
@@ -359,7 +359,7 @@ enum GermanStrings {
         // Paywall
         .funnel_paywall_kicker:          "Werde Pro",
         .funnel_paywall_headline:        "SCHALTE JEDEN\n*TIPP FREI.*",
-        .funnel_paywall_feat1:           "Täglicher KI-Tipp in 10 Sportarten",
+        .funnel_paywall_feat1:           "Jedes Spiel getippt, in 10 Sportarten",
         .funnel_paywall_feat2:           "Kalibrierte Sicherheit + Begründung",
         .funnel_paywall_feat3:           "Öffentliches Register, Live-Tracking & ROI",
         .funnel_paywall_feat4:           "Beste Quote bei 6 Buchmachern",
