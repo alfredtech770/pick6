@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.pick1.app.ui.home.V4
+import kotlin.math.roundToInt
 import androidx.compose.ui.unit.dp
 import com.pick1.app.R
 import androidx.compose.ui.platform.LocalContext
@@ -45,10 +48,16 @@ fun MatchDetailScreen(pick: Pick, onClose: () -> Unit) {
     var tab by remember { mutableStateOf(DetailTab.OUR_CALL) }
     val accent = Sport.accent(pick.sport)
     val scope = rememberCoroutineScope()
+    var showShare by remember { mutableStateOf(false) }
     var tracked by remember(pick.id) { mutableStateOf(false) }
     LaunchedEffect(pick.id) {
         tracked = runCatching { com.pick1.app.data.BetRepository().load().containsKey(pick.id) }
             .getOrDefault(false)
+    }
+
+    if (showShare) {
+        com.pick1.app.ui.share.ShareWinSheet(pick, isPro = true) { showShare = false }
+        return
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -77,9 +86,34 @@ fun MatchDetailScreen(pick: Pick, onClose: () -> Unit) {
                 confidence = com.pick1.app.ui.components.confidenceTierText(pick),
                 loggedAt = pick.startTime ?: "PRE-GAME",
             )
+            Spacer(Modifier.height(14.dp))
+
+            // What the ticket has no room for, kept as a quiet strip rather
+            // than dropped: the edge against the market, and the clock. The
+            // MatchupHeader that used to sit here is gone, as on iOS: it
+            // restated the call the ticket had just made and printed the
+            // confidence a second time.
+            DetailStatStrip(pick)
+
+            // A won call is the share loop. Free users earn 24h of Premium
+            // for a completed share.
+            if (pick.isWin) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    stringResource(R.string.sw_share_win),
+                    style = anton(15, tracking = 0.4f),
+                    color = Color(0xFF171717),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(Color(0xFFC6FF34))
+                        .clickable { showShare = true }
+                        .padding(vertical = 13.dp),
+                )
+            }
+
             Spacer(Modifier.height(20.dp))
-            MatchupHeader(pick, accent)
-            Spacer(Modifier.height(16.dp))
             TabBar(pick, tab, accent) { tab = it }
             Spacer(Modifier.height(16.dp))
             when (tab) {
@@ -462,4 +496,55 @@ private fun HDivider() {
             .height(1.dp)
             .background(P1.Line),
     )
+}
+
+/**
+ * AI EDGE / CONFIDENCE / STATUS.
+ *
+ * The edge is the model's probability priced against the market quote:
+ * positive means the AI thinks the outcome is likelier than the odds imply.
+ * With no real quote there is nothing to have an edge over, so it says so
+ * rather than pricing our own probability against itself.
+ */
+@Composable
+private fun DetailStatStrip(pick: Pick) {
+    val hasMarket = (pick.marketOdds ?: 0.0) > 1.0
+    val edge = if (hasMarket) {
+        String.format("%+.1f%%", (pick.probability / 100.0 * pick.decimalOdds - 1.0) * 100.0)
+    } else "\u2014"
+    val statusLabel: String
+    val statusValue: String
+    when {
+        pick.isWin -> { statusLabel = "RESULT"; statusValue = "WON" }
+        pick.isLoss -> { statusLabel = "RESULT"; statusValue = "LOST" }
+        else -> { statusLabel = "TIP-OFF"; statusValue = pick.startTime ?: "TBC" }
+    }
+
+    Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
+        val cols = listOf(
+            Triple("AI EDGE", edge, null as String?),
+            Triple("CONFIDENCE", pick.probability.roundToInt().toString(), "%"),
+            Triple(statusLabel, statusValue, null as String?),
+        )
+        cols.forEachIndexed { i, (label, value, suffix) ->
+            if (i > 0) Box(Modifier.width(1.dp).height(22.dp).background(V4.line))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    label,
+                    style = archivoNarrow(8, FontWeight.Bold, tracking = 1.4f),
+                    color = Color(0xFF6E6F75),
+                    maxLines = 1,
+                )
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(value, style = anton(15), color = Color(0xFFF5F3EE), maxLines = 1)
+                    suffix?.let {
+                        Text(it, style = mono(9, FontWeight.SemiBold), color = Color(0xFFB9B7B0))
+                    }
+                }
+            }
+        }
+    }
 }
