@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
@@ -166,7 +169,8 @@ fun P1BetDrawer(
                         .background(accent)
                         .rotate(openness * 180f),
                 ) {
-                    Text("^", style = archivo(13, FontWeight.Bold), color = P1.Ink)
+                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = null, tint = P1.Ink,
+                        modifier = Modifier.size(20.dp))
                 }
             }
 

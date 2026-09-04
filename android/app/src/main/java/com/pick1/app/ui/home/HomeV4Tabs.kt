@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -363,7 +364,10 @@ fun RowScope.P1V4ResultBox(value: String, label: String, flame: Boolean = false)
         Row(verticalAlignment = Alignment.CenterVertically) {
             // The flame appears from two in a row. Beside a 0 it contradicts
             // itself, and the streak is 0 whenever the most recent call lost.
-            if (flame) Text("🔥", style = archivo(15), modifier = Modifier.padding(end = 4.dp))
+            if (flame) Icon(
+                Icons.Filled.LocalFireDepartment, contentDescription = null,
+                tint = hotSoft, modifier = Modifier.size(17.dp).padding(end = 4.dp),
+            )
             Text(value, style = anton(26), color = P1.Lime, maxLines = 1)
         }
         Text(

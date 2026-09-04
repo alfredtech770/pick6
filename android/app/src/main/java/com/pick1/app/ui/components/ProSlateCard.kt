@@ -68,7 +68,7 @@ fun ProSlateCard(
         // ── League row ───────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "${Sport.emoji(pick.sport)} ${pick.league.uppercase()}",
+                pick.league.uppercase(),
                 style = archivoNarrow(10, FontWeight.Bold, tracking = 1.6f),
                 color = Color(0xFF8A8D94),
             )

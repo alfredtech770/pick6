@@ -12,6 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,10 +47,9 @@ import kotlin.math.roundToInt
  * the shape iOS actually ships now — an orb rail across all ten sports, one
  * hero, and game cards whose subject is the money rather than the verdict.
  *
- * Deliberate difference: the orbs carry the sport emoji rather than iOS's SF
- * Symbol vocabulary, because Android has no equivalent glyph set for cricket,
- * F1 or golf. The per-sport glow colour and the selected-state ring are the
- * same, so the rail reads the same at a glance.
+ * The orbs carry the same symbol vocabulary as iOS. Material Icons Extended
+ * ships a mark for all ten sports, cricket and motorsport included, so the
+ * emoji this file used to draw are gone.
  */
 
 // MARK: - v4 palette
@@ -148,7 +152,8 @@ fun P1V4TopBar(onProfile: () -> Unit) {
                 .border(1.dp, V4.line, CircleShape)
                 .clickable(onClick = onProfile),
         ) {
-            Text("👤", style = archivo(13, FontWeight.Bold), color = V4.ink2)
+            Icon(Icons.Filled.Person, contentDescription = "Profile", tint = V4.ink2,
+                modifier = Modifier.size(17.dp))
         }
     }
 }
@@ -312,7 +317,8 @@ fun P1V4Hero(pick: Pick, onTap: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                Text("⚡", style = archivo(9, FontWeight.Black), color = P1.Lime)
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = P1.Lime,
+                    modifier = Modifier.size(12.dp))
                 Text(
                     "TODAY'S #1 PICK",
                     style = archivoNarrow(10, FontWeight.Bold, tracking = 2.0f),
@@ -526,12 +532,21 @@ fun P1V4GameRow(
                         .clickable { if (isLocked) onTrack() else onTrack() }
                         .padding(horizontal = if (isLocked) 16.dp else 18.dp, vertical = 12.dp),
                 ) {
-                    Text(
-                        if (isLocked) "🔒 UNLOCK" else "TRACK THIS",
-                        style = archivoNarrow(11, FontWeight.Bold, tracking = 1.1f),
-                        color = V4.ink,
-                        maxLines = 1,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isLocked) {
+                            Icon(
+                                Icons.Filled.Lock, contentDescription = null, tint = V4.ink,
+                                modifier = Modifier.size(13.dp),
+                            )
+                            Spacer(Modifier.width(5.dp))
+                        }
+                        Text(
+                            if (isLocked) "UNLOCK" else "TRACK THIS",
+                            style = archivoNarrow(11, FontWeight.Bold, tracking = 1.1f),
+                            color = V4.ink,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }

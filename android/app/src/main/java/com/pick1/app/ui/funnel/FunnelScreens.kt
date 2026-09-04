@@ -177,11 +177,11 @@ fun QuizScreen(index: Int, selected: Int?, onPick: (Int) -> Unit) {
                         modifier = Modifier.weight(1f),
                     )
                     if (active) {
-                        Text(
-                            "✓",
-                            style = archivo(18, FontWeight.Bold),
-                            color = P1.LimeFunnel,
-                            modifier = Modifier.scale(tick),
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = P1.LimeFunnel,
+                            modifier = Modifier.size(20.dp).scale(tick),
                         )
                     }
                 }

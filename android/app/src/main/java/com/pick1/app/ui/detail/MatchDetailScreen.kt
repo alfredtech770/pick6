@@ -166,7 +166,7 @@ private fun TopBar(pick: Pick, onClose: () -> Unit) {
         )
         Spacer(Modifier.weight(1f))
         Text(
-            "${Sport.emoji(pick.sport)} ${pick.league.uppercase()}",
+            pick.league.uppercase(),
             style = archivoNarrow(10, FontWeight.Bold, tracking = 2.0f),
             color = P1.Mute,
         )
