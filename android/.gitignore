@@ -13,3 +13,8 @@ google-services.json
 keystore.properties
 *.jks
 *.keystore
+
+# Build artefacts do not belong in the repo; the AAB is rebuilt with
+# `./gradlew bundleRelease` and lands in app/build/outputs/bundle/release/.
+*.aab
+*.apk

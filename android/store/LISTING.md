@@ -1,431 +1,291 @@
-# Pick1 — Google Play Store listing (7 languages)
+# Pick1 — Google Play store listing
 
-Ported from the live App Store listing (`PICK1: AI Sports Picks`, v1.0.14).
-The App Store listing is **English-only**, so the six other languages were
-written for Play — matching the tone of the in-app 7-language L10n tables.
+Rewritten 2026-09-04 for **1.0.15**. It replaces the v1.0.14 draft, which had
+two claims that are no longer true and one that would have been a policy
+problem:
 
-Play Console limits: **title ≤ 30 chars · short description ≤ 80 · full ≤ 4000.**
-Counts below are verified. Paste into
-*Grow → Store presence → Main store listing*, one locale at a time.
+- it advertised **"Free, one pick per sport, every day"**. The free tier is
+  ONE pick a day in total, the one with the biggest return on the board.
+  Shipping the old sentence would have been a false store listing.
+- it listed nine sports and omitted golf.
+- it described the product as daily picks across a shortlist of leagues. The
+  app calls EVERY game on the board.
 
-Play locale codes: `en-US`, `fr-FR`, `es-ES`, `de-DE`, `it-IT`, `pt-PT`, `ar`.
+Play Console limits: **title <= 30 chars, short description <= 80, full <= 4000.**
+Paste into *Grow, Store presence, Main store listing*, one locale at a time.
 
-Changed vs Apple copy (deliberate):
-- "cancel anytime in iOS Settings" → "cancel anytime in Google Play"
-- Kept the adults-only + not-financial-advice disclaimer verbatim (it is what
-  keeps this compliant as a *predictions/analysis* app, not a gambling app).
-- No "#1" or "Editor's Choice" claims anywhere in the text — see IMAGES.md.
+Play locale codes: `en-US`, `fr-FR`, `es-ES`, `es-419`, `de-DE`, `it-IT`,
+`pt-BR`, `ar`.
+
+Deliberate difference from the Apple copy: "cancel anytime in iOS Settings"
+becomes "cancel anytime in Google Play".
+
+Everything Play asks for on the **Main store listing** page, ready to paste.
+Written to the same rules as the App Store copy:
+
+- **Pick1 is not a sportsbook.** It takes no bets and holds no money. Every
+  verb is *track*, never *place*. This is the positioning that keeps the app
+  runnable on Meta and clean under Play's real-money-gambling policy.
+- **No performance or returns claims.** The record is published in the app,
+  wins and losses alike; nothing here promises what anyone will make.
+- No dashes as punctuation.
+
+---
+
+## App details
+
+| Field | Value |
+|---|---|
+| App name | `Pick1: AI Sports Picks` |
+| Package | `com.pick1.app` |
+| Default language | English (United States) |
+| App or game | App |
+| Category | Sports |
+| Free or paid | Free (with subscriptions) |
+| Contains ads | No |
+| In-app purchases | Yes, subscriptions |
+| Privacy policy | https://pick1.live/privacy |
+| Terms | https://pick1.live/terms |
+| Website | https://pick1.live |
+| Target audience | 18 and over |
 
 ---
 
 ## en-US
 
-**Title** (22)
-```
-PICK1: AI Sports Picks
-```
+**Short description** (80 max)
 
-**Short description** (73)
-```
-AI picks across 9 leagues — with the reasoning, and every result tracked.
-```
+> Every game on today's board, called by AI before kickoff and logged in public.
 
 **Full description**
-```
-Get smarter calls every day.
 
-Pick1 is an AI sports prediction engine that surfaces the day's sharpest picks across nine leagues — with the reasoning behind each one, not just a number on a chip.
-
-WHY PICK1
-
-· One AI brain, every sport. Most analytics apps cover one league. Pick1 ships daily picks across NBA, NFL, EPL, MLB, NHL, UFC, F1, tennis, and IPL cricket.
-
-· Clear reasoning on every pick. Tap any card to see the factors the model weighted — recent form, head-to-head, injuries, line value, weather, pitcher matchups. No black-box "trust us" output.
-
-· Live scores + auto-grading. Watch picks resolve in real time. When a game ends the result lands on your card automatically (W / L, final score, your running streak).
-
-· A public record, wins and losses. Every graded pick stays on the board — including the ones that missed. Check our calibration: when we say 70%, we show you how often 70% actually hit.
-
-· Confidence-tier system. Every pick ships with a probability percentage and a tier — the higher the tier, the more sure the AI.
-
-· Built for the modern fan. Scoreboard-bold UI, pull-to-refresh, swipe-to-favorite, haptic feedback on every tap. Reads like a premium sports app, not a forum.
-
-HOW IT WORKS
-
-Each morning the Pick1 engine analyzes every game on the slate. It considers schedule, team form, injury reports, head-to-head history, then returns a small, focused list of high-conviction picks — usually a handful per day across every league.
-
-FREE vs PRO
-
-· Free — one pick per sport, every day. See the AI's top call in each league.
-· Pro — every pick, every sport, no caps. Plus deeper detail pages and H2H histories.
-
-Weekly, Monthly or Annual Pro — cancel anytime in Google Play.
-
-LEAGUES COVERED
-
-NBA · NFL · EPL · MLB · NHL · UFC · F1 · ATP/WTA Tennis · IPL Cricket
-
-A NOTE ON USE
-
-Pick1 surfaces AI predictions for entertainment and analysis only. AI predictions are statistical estimates with documented uncertainty — not guarantees, and not financial, investment, or other advice. Pick1 does not accept wagers and does not facilitate gambling of any kind. Use of Pick1 is intended for adults 18 years of age or older.
-
-Terms of Service: https://pick1.live/terms
-Privacy Policy: https://pick1.live/privacy
-```
+> Pick1 calls every game on today's board across ten sports, before any of them start, and logs every result in public afterwards.
+>
+> **The whole slate, not a shortlist**
+> Basketball, football, soccer, hockey, baseball, fight, racing, tennis, cricket and golf. The AI publishes a call and a win probability for each matchup, every morning, and the board says exactly when it was written.
+>
+> **A public record, wins and losses**
+> Every settled call stays in the app permanently. The results tab shows the running record on a flat stake so the number means something, and you can share any of it, including the losses.
+>
+> **Track your own slate**
+> Log the stakes you placed elsewhere and Pick1 builds your personal record beside its own. Pick1 does not take bets and never handles money.
+>
+> **Live scores while it plays**
+> Every game in progress, with the call sitting next to the score.
+>
+> **Free every day**
+> One call a day is free, and it is the one with the biggest return on the board. Premium opens the whole slate across every sport and market.
+>
+> Pick1 shows AI predictions. It is not a sportsbook, it accepts no wagers and it holds no funds. 18+.
 
 ---
 
 ## fr-FR
 
-**Title** (21)
-```
-PICK1 : Pronostics IA
-```
+**Description courte**
 
-**Short description** (72)
-```
-Pronostics IA sur 9 ligues — avec le raisonnement et tous les résultats.
-```
+> Tous les matchs du jour, tranchés par l'IA avant le coup d'envoi, notés en public.
 
-**Full description**
-```
-Des analyses plus fines, chaque jour.
+**Description complète**
 
-Pick1 est un moteur de prédiction sportive par IA qui fait ressortir les pronostics les plus tranchants du jour sur neuf ligues — avec le raisonnement derrière chacun, pas seulement un pourcentage.
-
-POURQUOI PICK1
-
-· Une seule IA, tous les sports. La plupart des applis couvrent une ligue. Pick1 livre des pronostics quotidiens sur la NBA, la NFL, la Premier League, la MLB, la NHL, l'UFC, la F1, le tennis et le cricket IPL.
-
-· Un raisonnement clair sur chaque pronostic. Touchez une carte pour voir les facteurs pondérés par le modèle : forme récente, confrontations directes, blessures, valeur de la cote, météo, duels de lanceurs. Aucune boîte noire.
-
-· Scores en direct + notation automatique. Suivez vos pronostics se résoudre en temps réel. À la fin du match, le résultat s'affiche automatiquement (gagné / perdu, score final, votre série en cours).
-
-· Un historique public, victoires ET défaites. Chaque pronostic noté reste au tableau — y compris ceux qui ont échoué. Vérifiez notre calibration : quand nous annonçons 70 %, nous montrons à quelle fréquence 70 % se réalise vraiment.
-
-· Système de niveaux de confiance. Chaque pronostic arrive avec un pourcentage de probabilité et un niveau — plus le niveau est élevé, plus l'IA est sûre.
-
-· Pensé pour le fan moderne. Interface au style tableau d'affichage, tirer pour actualiser, glisser pour mettre en favori, retour haptique à chaque appui.
-
-COMMENT ÇA MARCHE
-
-Chaque matin, le moteur Pick1 analyse tous les matchs du programme. Il prend en compte le calendrier, la forme des équipes, les rapports de blessures et l'historique des confrontations, puis renvoie une courte liste ciblée de pronostics à forte conviction.
-
-GRATUIT vs PRO
-
-· Gratuit — un pronostic par sport, chaque jour. Découvrez le meilleur choix de l'IA dans chaque ligue.
-· Pro — tous les pronostics, tous les sports, sans limite. Plus des pages de détail approfondies et les historiques de confrontations.
-
-Pro hebdomadaire, mensuel ou annuel — résiliable à tout moment dans Google Play.
-
-LIGUES COUVERTES
-
-NBA · NFL · Premier League · MLB · NHL · UFC · F1 · Tennis ATP/WTA · Cricket IPL
-
-REMARQUE IMPORTANTE
-
-Pick1 propose des prédictions par IA à des fins de divertissement et d'analyse uniquement. Les prédictions de l'IA sont des estimations statistiques assorties d'une incertitude documentée — ce ne sont ni des garanties, ni des conseils financiers, d'investissement ou autres. Pick1 n'accepte aucun pari et ne facilite aucun jeu d'argent. L'utilisation de Pick1 est réservée aux adultes de 18 ans et plus.
-
-Conditions d'utilisation : https://pick1.live/terms
-Politique de confidentialité : https://pick1.live/privacy
-```
+> Pick1 se prononce sur tous les matchs du jour, sur dix sports, avant qu'ils ne commencent, et publie ensuite chaque résultat.
+>
+> **Le tableau entier, pas une sélection**
+> Basket, football américain, foot, hockey, baseball, combat, course, tennis, cricket et golf. L'IA publie un pronostic et une probabilité pour chaque affiche, chaque matin, et le tableau indique l'heure exacte à laquelle il a été écrit.
+>
+> **Un palmarès public, victoires et défaites**
+> Chaque pronostic réglé reste dans l'app, définitivement. L'onglet résultats affiche le bilan sur une mise fixe, pour que le chiffre veuille dire quelque chose, et tout est partageable, y compris les défaites.
+>
+> **Suis ton propre tableau**
+> Note les mises que tu as placées ailleurs et Pick1 construit ton palmarès à côté du sien. Pick1 ne prend aucun pari et ne manipule jamais d'argent.
+>
+> **Les scores en direct**
+> Tous les matchs en cours, avec le pronostic à côté du score.
+>
+> **Gratuit chaque jour**
+> Un pronostic par jour est gratuit, et c'est celui au plus gros retour du tableau. Premium ouvre le tableau complet, tous sports et tous marchés.
+>
+> Pick1 affiche des prédictions d'IA. Ce n'est pas un bookmaker, l'app n'accepte aucun pari et ne détient aucun fonds. 18+.
 
 ---
 
-## es-ES
+## es-ES / es-MX
 
-**Title** (21)
-```
-PICK1: Pronósticos IA
-```
+**Descripción corta**
 
-**Short description** (74)
-```
-Pronósticos de IA en 9 ligas — con el razonamiento y todos los resultados.
-```
+> Todos los partidos del día, decididos por IA antes del inicio y registrados en público.
 
-**Full description**
-```
-Decisiones más inteligentes, cada día.
+**Descripción completa**
 
-Pick1 es un motor de predicción deportiva con IA que destaca los pronósticos más afilados del día en nueve ligas — con el razonamiento detrás de cada uno, no solo un número.
-
-POR QUÉ PICK1
-
-· Una sola IA, todos los deportes. La mayoría de las apps cubren una liga. Pick1 ofrece pronósticos diarios de NBA, NFL, Premier League, MLB, NHL, UFC, F1, tenis y críquet IPL.
-
-· Razonamiento claro en cada pronóstico. Toca cualquier tarjeta para ver los factores que pesó el modelo: forma reciente, enfrentamientos directos, lesiones, valor de la cuota, clima, duelos de lanzadores. Sin cajas negras.
-
-· Marcadores en vivo + calificación automática. Mira cómo se resuelven los pronósticos en tiempo real. Al terminar el partido, el resultado aparece solo (ganado / perdido, marcador final, tu racha).
-
-· Un historial público, victorias Y derrotas. Cada pronóstico calificado permanece en el tablero — incluidos los fallados. Comprueba nuestra calibración: cuando decimos 70 %, te mostramos con qué frecuencia ese 70 % se cumple de verdad.
-
-· Sistema de niveles de confianza. Cada pronóstico llega con un porcentaje de probabilidad y un nivel — cuanto más alto, más segura está la IA.
-
-· Diseñada para el aficionado moderno. Interfaz con estilo de marcador, desliza para actualizar, desliza para marcar favorito y respuesta háptica en cada toque.
-
-CÓMO FUNCIONA
-
-Cada mañana el motor de Pick1 analiza todos los partidos de la jornada. Considera el calendario, la forma de los equipos, los informes de lesiones y el historial de enfrentamientos, y devuelve una lista breve y enfocada de pronósticos de alta convicción.
-
-GRATIS vs PRO
-
-· Gratis — un pronóstico por deporte, cada día. Mira la mejor apuesta de la IA en cada liga.
-· Pro — todos los pronósticos, todos los deportes, sin límites. Además, páginas de detalle más profundas e historiales H2H.
-
-Pro semanal, mensual o anual — cancela cuando quieras en Google Play.
-
-LIGAS INCLUIDAS
-
-NBA · NFL · Premier League · MLB · NHL · UFC · F1 · Tenis ATP/WTA · Críquet IPL
-
-NOTA SOBRE EL USO
-
-Pick1 muestra predicciones de IA solo con fines de entretenimiento y análisis. Las predicciones de IA son estimaciones estadísticas con incertidumbre documentada: no son garantías ni asesoramiento financiero, de inversión ni de ningún otro tipo. Pick1 no acepta apuestas ni facilita juegos de azar de ningún tipo. El uso de Pick1 está destinado a adultos mayores de 18 años.
-
-Términos del servicio: https://pick1.live/terms
-Política de privacidad: https://pick1.live/privacy
-```
+> Pick1 se pronuncia sobre todos los partidos del día en diez deportes, antes de que empiecen, y publica después cada resultado.
+>
+> **El cartel completo, no una selección**
+> Baloncesto, fútbol americano, fútbol, hockey, béisbol, combate, carreras, tenis, críquet y golf. La IA publica un pronóstico y una probabilidad para cada encuentro, cada mañana, y el cartel indica la hora exacta en que se escribió.
+>
+> **Un historial público, victorias y derrotas**
+> Cada pronóstico resuelto permanece en la app para siempre. La pestaña de resultados muestra el balance sobre una apuesta fija, para que la cifra signifique algo, y todo se puede compartir, también las derrotas.
+>
+> **Sigue tu propio cartel**
+> Registra las apuestas que hiciste en otro sitio y Pick1 construye tu historial junto al suyo. Pick1 no acepta apuestas y nunca maneja dinero.
+>
+> **Marcadores en vivo**
+> Todos los partidos en juego, con el pronóstico junto al marcador.
+>
+> **Gratis cada día**
+> Un pronóstico al día es gratis, y es el de mayor retorno del cartel. Premium abre el cartel completo en todos los deportes y mercados.
+>
+> Pick1 muestra predicciones de IA. No es una casa de apuestas, no acepta apuestas y no custodia fondos. 18+.
 
 ---
 
 ## de-DE
 
-**Title** (20)
-```
-PICK1: KI-Sporttipps
-```
+**Kurzbeschreibung**
 
-**Short description** (78)
-```
-KI-Tipps für 9 Ligen — mit Begründung und lückenlos dokumentierten Ergebnissen.
-```
+> Jedes Spiel des Tages, von der KI vor Anpfiff getippt und öffentlich protokolliert.
 
-**Full description**
-```
-Jeden Tag die klügere Einschätzung.
+**Vollständige Beschreibung**
 
-Pick1 ist eine KI-Prognose-Engine für Sport, die täglich die schärfsten Tipps aus neun Ligen herausfiltert — mit der Begründung dahinter, nicht nur einer Zahl.
-
-WARUM PICK1
-
-· Eine KI, alle Sportarten. Die meisten Analyse-Apps decken eine Liga ab. Pick1 liefert tägliche Tipps für NBA, NFL, Premier League, MLB, NHL, UFC, Formel 1, Tennis und IPL-Cricket.
-
-· Klare Begründung zu jedem Tipp. Tippe auf eine Karte und sieh, welche Faktoren das Modell gewichtet hat: aktuelle Form, direkte Duelle, Verletzungen, Quotenwert, Wetter, Pitcher-Duelle. Keine Blackbox.
-
-· Live-Ergebnisse + automatische Auswertung. Verfolge in Echtzeit, wie sich Tipps auflösen. Nach Spielende erscheint das Ergebnis automatisch auf deiner Karte (Gewonnen / Verloren, Endstand, deine laufende Serie).
-
-· Eine öffentliche Bilanz — Siege UND Niederlagen. Jeder ausgewertete Tipp bleibt auf dem Board, auch die danebenlagen. Prüfe unsere Kalibrierung: Wenn wir 70 % sagen, zeigen wir dir, wie oft 70 % tatsächlich eintraf.
-
-· Konfidenzstufen-System. Jeder Tipp kommt mit einer Wahrscheinlichkeit und einer Stufe — je höher die Stufe, desto sicherer die KI.
-
-· Gemacht für den modernen Fan. Anzeigetafel-Optik, Ziehen zum Aktualisieren, Wischen für Favoriten, haptisches Feedback bei jedem Tippen.
-
-SO FUNKTIONIERT ES
-
-Jeden Morgen analysiert die Pick1-Engine alle Spiele des Tages. Sie berücksichtigt Spielplan, Teamform, Verletzungsberichte und die Historie direkter Duelle und liefert dann eine kurze, fokussierte Liste von Tipps mit hoher Überzeugung.
-
-KOSTENLOS vs PRO
-
-· Kostenlos — ein Tipp pro Sportart, jeden Tag. Sieh den Top-Tipp der KI in jeder Liga.
-· Pro — jeder Tipp, jede Sportart, ohne Limit. Dazu ausführlichere Detailseiten und H2H-Historien.
-
-Pro wöchentlich, monatlich oder jährlich — jederzeit über Google Play kündbar.
-
-ABGEDECKTE LIGEN
-
-NBA · NFL · Premier League · MLB · NHL · UFC · Formel 1 · ATP/WTA Tennis · IPL Cricket
-
-HINWEIS ZUR NUTZUNG
-
-Pick1 zeigt KI-Prognosen ausschließlich zu Unterhaltungs- und Analysezwecken. KI-Prognosen sind statistische Schätzungen mit dokumentierter Unsicherheit — keine Garantien und keine Finanz-, Anlage- oder sonstige Beratung. Pick1 nimmt keine Wetten an und ermöglicht kein Glücksspiel jeglicher Art. Die Nutzung von Pick1 ist für Erwachsene ab 18 Jahren bestimmt.
-
-Nutzungsbedingungen: https://pick1.live/terms
-Datenschutzerklärung: https://pick1.live/privacy
-```
+> Pick1 tippt jedes Spiel des Tages in zehn Sportarten, bevor eines davon beginnt, und protokolliert danach jedes Ergebnis öffentlich.
+>
+> **Das ganze Programm, keine Auswahl**
+> Basketball, Football, Fußball, Eishockey, Baseball, Kampfsport, Motorsport, Tennis, Cricket und Golf. Die KI veröffentlicht jeden Morgen einen Tipp und eine Wahrscheinlichkeit für jede Partie, und das Board nennt die genaue Uhrzeit.
+>
+> **Eine öffentliche Bilanz, Siege wie Niederlagen**
+> Jeder abgerechnete Tipp bleibt dauerhaft in der App. Der Ergebnis-Tab zeigt die Bilanz auf einen festen Einsatz, damit die Zahl etwas bedeutet, und alles lässt sich teilen, auch die Niederlagen.
+>
+> **Verfolge dein eigenes Programm**
+> Trage die Einsätze ein, die du woanders getätigt hast, und Pick1 baut deine Bilanz neben seiner eigenen auf. Pick1 nimmt keine Wetten an und bewegt niemals Geld.
+>
+> **Live-Ergebnisse**
+> Jedes laufende Spiel, mit dem Tipp direkt neben dem Spielstand.
+>
+> **Täglich kostenlos**
+> Ein Tipp pro Tag ist kostenlos, und zwar der mit dem höchsten Ertrag auf dem Board. Premium öffnet das gesamte Programm in allen Sportarten und Märkten.
+>
+> Pick1 zeigt KI-Prognosen. Es ist kein Wettanbieter, nimmt keine Wetten an und verwahrt keine Gelder. 18+.
 
 ---
 
-## it-IT
+## it
 
-**Title** (20)
-```
-PICK1: Pronostici IA
-```
+**Descrizione breve**
 
-**Short description** (75)
-```
-Pronostici IA su 9 leghe — con le motivazioni e tutti i risultati tracciati.
-```
+> Ogni partita del giorno, decisa dall'IA prima del via e registrata in pubblico.
 
-**Full description**
-```
-Valutazioni più intelligenti, ogni giorno.
+**Descrizione completa**
 
-Pick1 è un motore di previsione sportiva basato sull'IA che seleziona i pronostici più affilati della giornata su nove leghe — con il ragionamento dietro ciascuno, non solo un numero.
-
-PERCHÉ PICK1
-
-· Una sola IA, tutti gli sport. La maggior parte delle app copre una lega. Pick1 offre pronostici quotidiani su NBA, NFL, Premier League, MLB, NHL, UFC, F1, tennis e cricket IPL.
-
-· Motivazioni chiare su ogni pronostico. Tocca una scheda per vedere i fattori pesati dal modello: forma recente, scontri diretti, infortuni, valore della quota, meteo, duelli tra lanciatori. Nessuna scatola nera.
-
-· Punteggi live + valutazione automatica. Guarda i pronostici risolversi in tempo reale. A fine partita il risultato compare da solo (vinto / perso, punteggio finale, la tua striscia).
-
-· Uno storico pubblico, vittorie E sconfitte. Ogni pronostico valutato resta sul tabellone, compresi quelli sbagliati. Controlla la nostra calibrazione: quando diciamo 70%, ti mostriamo quanto spesso quel 70% si è davvero avverato.
-
-· Sistema a livelli di fiducia. Ogni pronostico arriva con una percentuale di probabilità e un livello — più alto è il livello, più l'IA è sicura.
-
-· Pensata per il tifoso moderno. Interfaccia in stile tabellone, tira per aggiornare, scorri per aggiungere ai preferiti, feedback aptico a ogni tocco.
-
-COME FUNZIONA
-
-Ogni mattina il motore Pick1 analizza tutte le partite in programma. Considera calendario, forma delle squadre, report infortuni e storico degli scontri diretti, poi restituisce un elenco breve e mirato di pronostici ad alta convinzione.
-
-GRATIS vs PRO
-
-· Gratis — un pronostico per sport, ogni giorno. Scopri la scelta migliore dell'IA in ogni lega.
-· Pro — tutti i pronostici, tutti gli sport, senza limiti. Più pagine di dettaglio approfondite e storici H2H.
-
-Pro settimanale, mensile o annuale — disdici quando vuoi da Google Play.
-
-LEGHE COPERTE
-
-NBA · NFL · Premier League · MLB · NHL · UFC · F1 · Tennis ATP/WTA · Cricket IPL
-
-NOTA SULL'USO
-
-Pick1 mostra previsioni IA solo a scopo di intrattenimento e analisi. Le previsioni dell'IA sono stime statistiche con incertezza documentata: non sono garanzie né consulenza finanziaria, di investimento o di altro tipo. Pick1 non accetta scommesse e non facilita alcun tipo di gioco d'azzardo. L'uso di Pick1 è destinato ad adulti di età pari o superiore a 18 anni.
-
-Termini di servizio: https://pick1.live/terms
-Informativa sulla privacy: https://pick1.live/privacy
-```
+> Pick1 si pronuncia su ogni partita del giorno in dieci sport, prima che inizino, e pubblica poi ogni risultato.
+>
+> **Tutto il programma, non una selezione**
+> Basket, football americano, calcio, hockey, baseball, combattimento, motori, tennis, cricket e golf. L'IA pubblica ogni mattina un pronostico e una probabilità per ogni incontro, e il programma indica l'ora esatta in cui è stato scritto.
+>
+> **Uno storico pubblico, vittorie e sconfitte**
+> Ogni pronostico chiuso resta nell'app per sempre. La scheda risultati mostra il bilancio su una posta fissa, perché il numero significhi qualcosa, e tutto è condivisibile, sconfitte comprese.
+>
+> **Segui il tuo programma**
+> Registra le poste che hai piazzato altrove e Pick1 costruisce il tuo storico accanto al proprio. Pick1 non accetta scommesse e non gestisce mai denaro.
+>
+> **Punteggi live**
+> Ogni partita in corso, con il pronostico accanto al punteggio.
+>
+> **Gratis ogni giorno**
+> Un pronostico al giorno è gratuito, ed è quello dal rendimento più alto del programma. Premium apre l'intero programma su tutti gli sport e i mercati.
+>
+> Pick1 mostra previsioni IA. Non è un bookmaker, non accetta scommesse e non detiene fondi. 18+.
 
 ---
 
-## pt-PT
+## pt-BR
 
-**Title** (21)
-```
-PICK1: Palpites de IA
-```
+**Descrição breve**
 
-**Short description** (77)
-```
-Palpites de IA em 9 ligas — com o raciocínio e todos os resultados registados.
-```
+> Todos os jogos do dia, decididos pela IA antes do apito e registrados em público.
 
-**Full description**
-```
-Decisões mais inteligentes, todos os dias.
+**Descrição completa**
 
-O Pick1 é um motor de previsão desportiva com IA que destaca os palpites mais afiados do dia em nove ligas — com o raciocínio por trás de cada um, não apenas um número.
-
-PORQUÊ O PICK1
-
-· Uma só IA, todos os desportos. A maioria das apps cobre uma liga. O Pick1 entrega palpites diários da NBA, NFL, Premier League, MLB, NHL, UFC, F1, ténis e críquete IPL.
-
-· Raciocínio claro em cada palpite. Toca em qualquer cartão para ver os fatores que o modelo ponderou: forma recente, confrontos diretos, lesões, valor da linha, meteorologia, duelos de lançadores. Sem caixas negras.
-
-· Resultados ao vivo + avaliação automática. Vê os palpites a resolverem-se em tempo real. Quando o jogo acaba, o resultado aparece sozinho (ganho / perdido, resultado final, a tua sequência).
-
-· Um registo público, vitórias E derrotas. Cada palpite avaliado permanece no quadro — incluindo os que falharam. Confere a nossa calibração: quando dizemos 70%, mostramos com que frequência esses 70% realmente aconteceram.
-
-· Sistema de níveis de confiança. Cada palpite chega com uma percentagem de probabilidade e um nível — quanto mais alto, mais segura está a IA.
-
-· Feita para o adepto moderno. Interface ao estilo de marcador, puxar para atualizar, deslizar para favoritos e resposta tátil em cada toque.
-
-COMO FUNCIONA
-
-Todas as manhãs o motor do Pick1 analisa todos os jogos do dia. Considera o calendário, a forma das equipas, os relatórios de lesões e o histórico de confrontos, devolvendo depois uma lista curta e focada de palpites de alta convicção.
-
-GRÁTIS vs PRO
-
-· Grátis — um palpite por desporto, todos os dias. Vê a melhor escolha da IA em cada liga.
-· Pro — todos os palpites, todos os desportos, sem limites. Mais páginas de detalhe aprofundadas e históricos H2H.
-
-Pro semanal, mensal ou anual — cancela quando quiseres no Google Play.
-
-LIGAS ABRANGIDAS
-
-NBA · NFL · Premier League · MLB · NHL · UFC · F1 · Ténis ATP/WTA · Críquete IPL
-
-NOTA SOBRE A UTILIZAÇÃO
-
-O Pick1 apresenta previsões de IA apenas para fins de entretenimento e análise. As previsões de IA são estimativas estatísticas com incerteza documentada — não são garantias nem aconselhamento financeiro, de investimento ou de outra natureza. O Pick1 não aceita apostas nem facilita jogos de azar de qualquer tipo. A utilização do Pick1 destina-se a adultos com 18 anos ou mais.
-
-Termos de Serviço: https://pick1.live/terms
-Política de Privacidade: https://pick1.live/privacy
-```
+> O Pick1 se pronuncia sobre todos os jogos do dia em dez esportes, antes de começarem, e publica depois cada resultado.
+>
+> **O quadro inteiro, não uma seleção**
+> Basquete, futebol americano, futebol, hóquei, beisebol, luta, automobilismo, tênis, críquete e golfe. A IA publica todas as manhãs um palpite e uma probabilidade para cada confronto, e o quadro informa a hora exata em que foi escrito.
+>
+> **Um histórico público, vitórias e derrotas**
+> Cada palpite encerrado fica no app para sempre. A aba de resultados mostra o saldo sobre uma aposta fixa, para que o número signifique algo, e tudo pode ser compartilhado, inclusive as derrotas.
+>
+> **Acompanhe o seu próprio quadro**
+> Registre as apostas que você fez em outro lugar e o Pick1 monta o seu histórico ao lado do dele. O Pick1 não aceita apostas e nunca movimenta dinheiro.
+>
+> **Placares ao vivo**
+> Todos os jogos em andamento, com o palpite ao lado do placar.
+>
+> **Grátis todos os dias**
+> Um palpite por dia é grátis, e é o de maior retorno do quadro. O Premium abre o quadro completo em todos os esportes e mercados.
+>
+> O Pick1 mostra previsões de IA. Não é uma casa de apostas, não aceita apostas e não guarda fundos. 18+.
 
 ---
 
 ## ar
 
-**Title** (20)
-```
-PICK1: توقعات رياضية
-```
+**وصف قصير**
 
-**Short description** (79)
-```
-توقعات ذكاء اصطناعي في ٩ دوريات — مع الأسباب، وكل نتيجة مسجّلة علنًا.
-```
+> كل مباريات اليوم، يحسمها الذكاء الاصطناعي قبل البداية وتُسجَّل علنًا.
 
-**Full description**
-```
-قرارات أذكى كل يوم.
+**وصف كامل**
 
-‏Pick1 هو محرك توقعات رياضية بالذكاء الاصطناعي يُبرز أقوى توقعات اليوم في تسعة دوريات — مع السبب وراء كل توقّع، وليس مجرد رقم.
-
-لماذا PICK1
-
-· ذكاء اصطناعي واحد لكل الرياضات. معظم التطبيقات تغطي دوريًا واحدًا. يقدّم Pick1 توقعات يومية في NBA وNFL والدوري الإنجليزي وMLB وNHL وUFC وF1 والتنس وكريكيت IPL.
-
-· سبب واضح لكل توقّع. اضغط على أي بطاقة لترى العوامل التي وزنها النموذج: الأداء الأخير، المواجهات المباشرة، الإصابات، قيمة الخط، الطقس، مواجهات الرماة. بلا صندوق أسود.
-
-· نتائج مباشرة وتقييم تلقائي. تابع توقعاتك وهي تُحسم لحظة بلحظة. عند انتهاء المباراة تظهر النتيجة تلقائيًا (فوز / خسارة، النتيجة النهائية، سلسلتك الحالية).
-
-· سجل علني، الانتصارات والخسائر معًا. يبقى كل توقّع مُقيَّم على اللوحة — بما في ذلك ما أخفق. تحقّق من معايرتنا: حين نقول ٧٠٪، نعرض لك كم مرة تحقق ذلك فعليًا.
-
-· نظام مستويات الثقة. يأتي كل توقّع بنسبة احتمال ومستوى — كلما ارتفع المستوى زادت ثقة الذكاء الاصطناعي.
-
-· مصمم للمشجع العصري. واجهة بأسلوب لوحة النتائج، سحب للتحديث، تمرير للمفضلة، واستجابة لمسية عند كل ضغطة.
-
-كيف يعمل
-
-كل صباح يحلل محرك Pick1 جميع مباريات اليوم. يأخذ في الاعتبار الجدول وأداء الفرق وتقارير الإصابات وتاريخ المواجهات، ثم يعيد قائمة قصيرة ومركزة من التوقعات عالية الثقة.
-
-مجاني مقابل برو
-
-· مجاني — توقّع واحد لكل رياضة، كل يوم. شاهد أفضل اختيار للذكاء الاصطناعي في كل دوري.
-· برو — كل التوقعات، كل الرياضات، بلا حدود. بالإضافة إلى صفحات تفصيلية أعمق وسجلات المواجهات.
-
-برو أسبوعي أو شهري أو سنوي — يمكن الإلغاء في أي وقت عبر Google Play.
-
-الدوريات المشمولة
-
-‏NBA · NFL · الدوري الإنجليزي · MLB · NHL · UFC · F1 · تنس ATP/WTA · كريكيت IPL
-
-ملاحظة حول الاستخدام
-
-يعرض Pick1 توقعات الذكاء الاصطناعي لأغراض الترفيه والتحليل فقط. توقعات الذكاء الاصطناعي هي تقديرات إحصائية ذات عدم يقين موثّق — وليست ضمانات ولا نصيحة مالية أو استثمارية أو غيرها. لا يقبل Pick1 أي رهانات ولا يسهّل أي شكل من أشكال المقامرة. استخدام Pick1 مخصص للبالغين ١٨ عامًا فما فوق.
-
-شروط الخدمة: https://pick1.live/terms
-سياسة الخصوصية: https://pick1.live/privacy
-```
+> يتوقّع Pick1 كل مباريات اليوم في عشر رياضات، قبل أن تبدأ أي منها، ثم يسجّل كل نتيجة علنًا.
+>
+> **اللوحة كاملة، وليست قائمة مختصرة**
+> كرة السلة، كرة القدم الأمريكية، كرة القدم، الهوكي، البيسبول، القتال، السباقات، التنس، الكريكيت والغولف. ينشر الذكاء الاصطناعي كل صباح توقّعًا واحتمالًا لكل مواجهة، وتوضح اللوحة الوقت الذي كُتب فيه.
+>
+> **سجل علني، انتصارات وهزائم**
+> يبقى كل توقّع محسوم داخل التطبيق بشكل دائم. تعرض صفحة النتائج الحصيلة على مبلغ ثابت حتى يكون للرقم معنى، ويمكن مشاركة كل شيء، بما في ذلك الخسائر.
+>
+> **تابع لوحتك الخاصة**
+> سجّل المبالغ التي راهنت بها في مكان آخر ويبني Pick1 سجلك إلى جانب سجله. لا يقبل Pick1 أي رهان ولا يتعامل مع الأموال إطلاقًا.
+>
+> **النتائج المباشرة**
+> كل مباراة جارية، مع التوقّع بجانب النتيجة.
+>
+> **مجاني كل يوم**
+> توقّع واحد يوميًا مجاني، وهو صاحب أعلى عائد على اللوحة. يفتح Premium اللوحة كاملة في كل الرياضات والأسواق.
+>
+> يعرض Pick1 توقعات الذكاء الاصطناعي. ليس شركة مراهنات، ولا يقبل رهانات، ولا يحتفظ بأي أموال. 18+.
 
 ---
 
-## Other listing fields (same for every locale)
+## Data safety answers
 
-| Field | Value |
-|---|---|
-| App category | Sports |
-| Tags | Sports, Sports News, Statistics |
-| Contact email | support@pick1.live |
-| Contact website | https://pick1.live |
-| Privacy Policy URL | https://pick1.live/privacy |
-| Content rating | Expect **Mature / 18+** — answer the questionnaire truthfully: the app *references* betting odds/gambling themes but does **not** allow real-money gambling and takes no wagers |
-| Ads | No |
-| In-app purchases | Yes — $4.99–$249.99 |
+These follow what the app actually does. Check each against the code before
+submitting; Play treats a wrong answer as a policy violation.
+
+| Question | Answer | Why |
+|---|---|---|
+| Does your app collect or share user data? | Yes | |
+| Is all data encrypted in transit? | Yes | Supabase and Firebase are HTTPS only |
+| Can users request deletion? | Yes | account deletion in Profile |
+| **Personal info → Email address** | Collected, not shared | account sign-up |
+| **Personal info → User IDs** | Collected, not shared | Supabase auth id, push token |
+| **App activity → App interactions** | Collected, not shared | PostHog product analytics |
+| **App activity → Other actions** | Collected, not shared | tracked picks, favourites |
+| **Device or other IDs** | Collected, **shared** | Meta SDK attribution, after ATT-equivalent consent |
+| Purpose for all of the above | App functionality, Analytics, Advertising or marketing | |
+
+Note the Device IDs row is the one that must say *shared*: the Facebook SDK
+is in the build for ad attribution. Declaring it as not shared would be
+false.
+
+## Content rating questionnaire
+
+Category **Reference, News, or Educational**. Answer **no** to every gambling
+question: the app simulates nothing, accepts no wagers, awards no winnings
+and holds no funds. It displays predictions and a published record. Age 18+
+is set deliberately because the subject matter is sports betting even though
+the app performs none of it.
+
+## Release track
+
+Ship to **internal testing first**, not production. Play Billing has never
+been exercised on a real device for this build, and the paywall is the one
+surface that cannot be verified on an emulator. Promote to production once a
+real purchase and restore have been seen working.
