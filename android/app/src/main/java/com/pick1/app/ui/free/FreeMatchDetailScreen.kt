@@ -64,11 +64,17 @@ fun FreeMatchDetailScreen(pick: Pick, onClose: () -> Unit, onUnlock: () -> Unit)
                     .padding(9.dp),
             )
             Spacer(Modifier.weight(1f))
-            Text(
-                "${Sport.emoji(pick.sport)} ${pick.league.uppercase()}",
-                style = archivoNarrow(10, FontWeight.Bold, tracking = 2.0f),
-                color = P1.Mute,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                com.pick1.app.ui.components.P1SportMark(pick.sport, size = 14)
+                Text(
+                    pick.league.uppercase(),
+                    style = archivoNarrow(10, FontWeight.Bold, tracking = 2.0f),
+                    color = P1.Mute,
+                )
+            }
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(38.dp))
         }
@@ -111,6 +117,13 @@ fun FreeMatchDetailScreen(pick: Pick, onClose: () -> Unit, onUnlock: () -> Unit)
             }
 
             // ── PICK1'S CALL (locked) ────────────────────────────────
+            // RECENT FORM is the one thing a free user actually GETS on this
+            // screen, which is why iOS gives it a FREE chip. Without it the
+            // page is a wall with nothing behind it, and a wall with nothing
+            // behind it does not sell a subscription.
+            RecentFormSection(pick)
+            Spacer(Modifier.height(22.dp))
+
             SectionHead("PICK1'S CALL")
             Column(
                 Modifier
@@ -244,4 +257,60 @@ private fun BlurBlob(width: Int) {
             .clip(CircleShape)
             .background(Gold.copy(alpha = 0.5f)),
     )
+}
+
+/**
+ * RECENT FORM, ported from `RecentFormSection`.
+ *
+ * The grounded matchup facts the pipeline already wrote against this game.
+ * Free sees them; what stays behind the wall is the call itself.
+ */
+@Composable
+private fun RecentFormSection(pick: Pick) {
+    val facts = pick.matchupFacts.orEmpty().take(3)
+    if (facts.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.rd_recent_form),
+                style = anton(19),
+                color = P1.Foreground,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "FREE",
+                style = archivoNarrow(10, FontWeight.Bold, tracking = 1.6f),
+                color = Color(0xFF171717),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0xFFC6FF34))
+                    .padding(horizontal = 11.dp, vertical = 6.dp),
+            )
+        }
+        facts.forEach { f ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1E1E1E))
+                    .border(1.dp, Color(0xFF292929), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 13.dp),
+            ) {
+                Text(
+                    f.label.uppercase(),
+                    style = archivoNarrow(11, FontWeight.Bold, tracking = 0.8f),
+                    color = Color(0xFF9A9B9F),
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    f.value,
+                    style = archivo(13, FontWeight.Bold),
+                    color = P1.Foreground,
+                    textAlign = TextAlign.End,
+                )
+            }
+        }
+    }
 }

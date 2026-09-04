@@ -350,7 +350,13 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                                         isLocked = !isPro && p.id !in freeIds,
                                         isBiggestWin = p.id == biggest,
                                         onTap = { selected = p },
-                                        onTrack = { if (isPro) trackTarget = p else showPaywall = true },
+                                        // A locked card opens the TEASE, not the
+                                        // paywall. iOS routes it to the free
+                                        // detail, which shows real recent form
+                                        // and puts the wall under it. Jumping
+                                        // straight to a price asks for money
+                                        // before showing anything.
+                                        onTrack = { if (isPro) trackTarget = p else selected = p },
                                     )
                                 }
                             }

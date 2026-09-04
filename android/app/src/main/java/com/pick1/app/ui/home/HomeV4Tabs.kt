@@ -180,7 +180,7 @@ fun P1V4ResultRow(
             .clickable(onClick = onTap)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Text(Sport.emoji(pick.sport), style = archivo(16))
+        com.pick1.app.ui.components.P1SportMark(pick.sport, size = 18)
 
         Column(Modifier.weight(1f).padding(start = 11.dp)) {
             Text(
@@ -273,7 +273,7 @@ fun P1V4YourRow(pick: Pick, bet: UserBet?, onTap: () -> Unit) {
             .clickable(onClick = onTap)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Text(Sport.emoji(pick.sport), style = archivo(16))
+        com.pick1.app.ui.components.P1SportMark(pick.sport, size = 18)
 
         Column(Modifier.weight(1f).padding(start = 11.dp)) {
             Text(

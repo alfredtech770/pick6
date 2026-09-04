@@ -98,7 +98,15 @@ val P1_SPORTS: List<String> = listOf(
     "combat", "f1", "tennis", "cricket", "golf",
 )
 
-const val ALL_SPORTS = "__all__"
+/**
+ * The sentinel for "no sport filter".
+ *
+ * MUST match what the ViewModel's filter compares against. It was "__all__"
+ * here and "all" there, so tapping the ALL orb set a value no pick could ever
+ * carry and emptied the whole board. It only looked fine on launch because
+ * the ViewModel's own default was already "all".
+ */
+const val ALL_SPORTS = "all"
 
 /** Display names, Ethan's: "Fight" not MMA, "Race" not Racing or F1. */
 fun v4Name(sport: String): String = when (sport) {
@@ -223,10 +231,13 @@ fun P1V4Orb(
                 .border(1.5.dp, if (isOn) P1.Lime else V4.line, CircleShape)
                 .alpha(if (hasPicks) 1f else 0.45f),
         ) {
-            Text(
-                if (sport == ALL_SPORTS) "▦" else Sport.emoji(sport),
-                style = archivo(if (sport == ALL_SPORTS) 21 else 20, FontWeight.Bold),
-                color = if (isOn) tint else V4.ink2,
+            // A tinted vector, not an emoji. iOS moved to a symbol
+            // vocabulary on Aug 31 and Material Icons Extended, already a
+            // dependency here, carries a mark for all ten sports.
+            com.pick1.app.ui.components.P1SportMark(
+                sport = sport,
+                size = 23,
+                active = isOn,
             )
         }
         Text(
