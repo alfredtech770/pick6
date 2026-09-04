@@ -409,7 +409,7 @@ async function fcmAccessToken(sa: FcmSA): Promise<string> {
 }
 
 async function sendFcm(projectId: string, accessToken: string, token: string, msg: {
-  title: string; body: string; sound: string; data: Record<string, string>;
+  title: string; body: string; sound: string; channel: string; data: Record<string, string>;
 }) {
   const r = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: "POST",
@@ -421,7 +421,7 @@ async function sendFcm(projectId: string, accessToken: string, token: string, ms
         data: msg.data,
         android: {
           priority: "high",
-          notification: { sound: msg.sound, channel_id: "pick1_alerts", default_sound: msg.sound === "default" },
+          notification: { sound: msg.sound, channel_id: msg.channel, default_sound: msg.sound === "default" },
         },
       },
     }),
@@ -471,13 +471,20 @@ Deno.serve(async (req: Request) => {
   ) {
     // Cha-ching on anything carrying a dollar figure. A distinct sound is
     // the whole point: it has to be recognisable from a pocket, before the
-    // screen is even out. iOS only for now — an Android notification channel
-    // is immutable once created, so pick1_alerts cannot be given a new sound
-    // without shipping a new channel in the app.
+    // screen is even out. Both platforms now: APNs takes a file name, Android
+    // takes a channel whose sound was fixed when the channel was created.
     const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds",
                                 "free_recap", "free_recap_b", "week_missed"]);
-    const sound = k && MONEY_KEYS.has(k) ? "chaching.caf" : "default";
-    const androidSound = "default";
+    const money = !!k && MONEY_KEYS.has(k);
+    const sound = money ? "chaching.caf" : "default";
+    // Android names a raw resource, not a file, and the sound is a property
+    // of the CHANNEL rather than the message. A channel is immutable once
+    // created, so the cha-ching needed its own; pick1_money ships in the app
+    // and nothing points at it until a build carrying it is on phones.
+    // Safe to switch on now: device_tokens holds zero android rows because
+    // the app has never been published.
+    const androidSound = money ? "chaching" : "default";
+    const androidChannel = money ? "pick1_money" : "pick1_alerts";
 
     function resolve(t: any): { tTitle: string; tBody: string; label: string | null } {
       if (!k) return { tTitle: tTitleLit ?? "", tBody: tBodyLit ?? "", label: null };
@@ -527,7 +534,8 @@ Deno.serve(async (req: Request) => {
           for (const [kk, vv] of Object.entries(d)) stamp[kk] = String(vv);
           if (k) { stamp.campaign = k; if (label) stamp.variant = label; }
           const res = await sendFcm(sa.project_id, accessToken, t.token, {
-            title: tTitle, body: tBody, sound: androidSound, data: stamp,
+            title: tTitle, body: tBody, sound: androidSound,
+            channel: androidChannel, data: stamp,
           });
           if (res.ok) { sent++; logIfKeyed(t, label); }
           else {
