@@ -48,6 +48,8 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_sub">Live games · picks · results</string>
     <string name="settings_language">Language</string>
+    <string name="settings_rate">Rate Pick1</string>
+    <string name="settings_rate_sub">Tell people what the record looks like</string>
     <string name="settings_language_sub_default">System default</string>
     <string name="settings_subscription">Subscription</string>
     <string name="settings_subscription_free">FREE</string>

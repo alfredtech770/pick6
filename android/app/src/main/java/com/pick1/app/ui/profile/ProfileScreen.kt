@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Text
@@ -140,6 +141,32 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
                 sub = stringResource(R.string.settings_language_sub_default),
                 trailing = LanguageManager.displayName(LanguageManager.current),
             ) { showLanguages = true }
+            SettingsDivider()
+            // Rate Pick1. Opens the Play listing by intent rather than the
+            // in-app review API, which Google may silently ignore and which
+            // shows nothing at all in a sideloaded build. Wired to a button
+            // that would look broken.
+            SettingsRow(
+                Icons.Default.StarRate,
+                stringResource(R.string.settings_rate),
+                sub = stringResource(R.string.settings_rate_sub),
+            ) {
+                runCatching {
+                    ctx.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("market://details?id=com.pick1.app"),
+                        ),
+                    )
+                }.onFailure {
+                    ctx.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://play.google.com/store/apps/details?id=com.pick1.app"),
+                        ),
+                    )
+                }
+            }
             SettingsDivider()
             SettingsRow(
                 Icons.Default.WorkspacePremium,

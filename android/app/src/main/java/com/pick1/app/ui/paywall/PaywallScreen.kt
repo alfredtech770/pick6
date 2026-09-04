@@ -45,7 +45,16 @@ fun PaywallScreen(
     onRestore: () -> Unit,
     onContinueFree: () -> Unit,
 ) {
-    var selected by remember(plans) { mutableStateOf(plans.firstOrNull()?.productId) }
+    // Annual arrives selected, as on iOS. Defaulting to `first` selected the
+    // WEEKLY plan, so the card carrying BEST VALUE could never be the one
+    // chosen on arrival and the most expensive per-week option was the
+    // default. The best-value flag decides, not list order.
+    var selected by remember(plans) {
+        mutableStateOf(
+            (plans.firstOrNull { it.isBestValue } ?: plans.lastOrNull() ?: plans.firstOrNull())
+                ?.productId,
+        )
+    }
     var skipUnlocked by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(5_000)          // same reveal delay as iOS (skipDelay = 5.0)

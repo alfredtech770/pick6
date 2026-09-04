@@ -48,6 +48,8 @@
     <string name="settings_notifications">Notificações</string>
     <string name="settings_notifications_sub">Jogos em direto · prognósticos · resultados</string>
     <string name="settings_language">Idioma</string>
+    <string name="settings_rate">Avaliar o Pick1</string>
+    <string name="settings_rate_sub">Diz às pessoas como é o histórico</string>
     <string name="settings_language_sub_default">Predefinição do sistema</string>
     <string name="settings_subscription">Subscrição</string>
     <string name="settings_subscription_free">GRÁTIS</string>

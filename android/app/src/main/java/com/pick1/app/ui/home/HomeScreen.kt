@@ -162,6 +162,14 @@ class HomeViewModel : ViewModel() {
 
     init { refresh() }
 
+    /** Log a stake against a pick, then reload so YOUR PICKS updates at once. */
+    fun track(pick: Pick, stake: Double?) {
+        viewModelScope.launch {
+            com.pick1.app.data.BetRepository().track(pick, stake)
+            bets = runCatching { com.pick1.app.data.BetRepository().load() }.getOrDefault(bets)
+        }
+    }
+
     fun refresh() {
         viewModelScope.launch {
             loading = true
@@ -198,6 +206,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     var showProfile by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf(P1V4Tab.TONIGHT) }
     var shareResult by remember { mutableStateOf<Pick?>(null) }
+    var trackTarget by remember { mutableStateOf<Pick?>(null) }
 
     // Live Play Billing entitlement + catalogue (falls back to placeholder
     // copy when Play is unavailable, e.g. an emulator without Play services).
@@ -341,7 +350,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                                         isLocked = !isPro && p.id !in freeIds,
                                         isBiggestWin = p.id == biggest,
                                         onTap = { selected = p },
-                                        onTrack = { if (isPro) selected = p else showPaywall = true },
+                                        onTrack = { if (isPro) trackTarget = p else showPaywall = true },
                                     )
                                 }
                             }
@@ -436,6 +445,16 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     item { Spacer(Modifier.height(120.dp)) }
                 }
             }
+        }
+
+        trackTarget?.let { p ->
+            com.pick1.app.ui.tracker.P1BetDrawer(
+                pick = p,
+                startExpanded = true,
+                isTracked = vm.bets.containsKey(p.id),
+                onTrack = { stake -> vm.track(p, stake) },
+                onDismiss = { trackTarget = null },
+            )
         }
     }
 }

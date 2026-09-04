@@ -44,7 +44,14 @@ private enum class DetailTab { OUR_CALL, ANALYSIS, STATS }
 fun MatchDetailScreen(pick: Pick, onClose: () -> Unit) {
     var tab by remember { mutableStateOf(DetailTab.OUR_CALL) }
     val accent = Sport.accent(pick.sport)
+    val scope = rememberCoroutineScope()
+    var tracked by remember(pick.id) { mutableStateOf(false) }
+    LaunchedEffect(pick.id) {
+        tracked = runCatching { com.pick1.app.data.BetRepository().load().containsKey(pick.id) }
+            .getOrDefault(false)
+    }
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
@@ -80,7 +87,26 @@ fun MatchDetailScreen(pick: Pick, onClose: () -> Unit) {
                 DetailTab.ANALYSIS -> AnalysisPanel(pick)
                 DetailTab.STATS -> StatsPanel(pick)
             }
-            Spacer(Modifier.height(32.dp))
+            // Clearance for the collapsed drawer pinned below.
+            Spacer(Modifier.height(120.dp))
+        }
+    }
+
+        // Tracking lives here, as on iOS: the collapsed bar is always
+        // present on a pick you can act on, and drags up into stake entry.
+        if (pick.isPending) {
+            com.pick1.app.ui.tracker.P1BetDrawer(
+                pick = pick,
+                accent = accent,
+                isTracked = tracked,
+                onTrack = { stake ->
+                    scope.launch {
+                        com.pick1.app.data.BetRepository().track(pick, stake)
+                        tracked = true
+                    }
+                },
+                onDismiss = {},
+            )
         }
     }
 }

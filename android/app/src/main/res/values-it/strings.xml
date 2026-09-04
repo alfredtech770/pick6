@@ -48,6 +48,8 @@
     <string name="settings_notifications">Notifiche</string>
     <string name="settings_notifications_sub">Partite live · pronostici · risultati</string>
     <string name="settings_language">Lingua</string>
+    <string name="settings_rate">Valuta Pick1</string>
+    <string name="settings_rate_sub">Racconta com\'è lo storico</string>
     <string name="settings_language_sub_default">Predefinita di sistema</string>
     <string name="settings_subscription">Abbonamento</string>
     <string name="settings_subscription_free">GRATIS</string>

@@ -48,6 +48,8 @@
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="settings_notifications_sub">Live-Spiele · Tipps · Ergebnisse</string>
     <string name="settings_language">Sprache</string>
+    <string name="settings_rate">Pick1 bewerten</string>
+    <string name="settings_rate_sub">Sag anderen, wie die Bilanz aussieht</string>
     <string name="settings_language_sub_default">Systemstandard</string>
     <string name="settings_subscription">Abo</string>
     <string name="settings_subscription_free">GRATIS</string>

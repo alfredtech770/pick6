@@ -48,6 +48,8 @@
     <string name="settings_notifications">Notificaciones</string>
     <string name="settings_notifications_sub">Partidos en vivo · picks · resultados</string>
     <string name="settings_language">Idioma</string>
+    <string name="settings_rate">Valorar Pick1</string>
+    <string name="settings_rate_sub">Cuenta cómo es el historial</string>
     <string name="settings_language_sub_default">Predeterminado del sistema</string>
     <string name="settings_subscription">Suscripción</string>
     <string name="settings_subscription_free">GRATIS</string>

@@ -48,6 +48,8 @@
     <string name="settings_notifications">الإشعارات</string>
     <string name="settings_notifications_sub">المباريات المباشرة · التوقعات · النتائج</string>
     <string name="settings_language">اللغة</string>
+    <string name="settings_rate">قيّم Pick1</string>
+    <string name="settings_rate_sub">أخبر الآخرين كيف يبدو السجل</string>
     <string name="settings_language_sub_default">إعداد النظام الافتراضي</string>
     <string name="settings_subscription">الاشتراك</string>
     <string name="settings_subscription_free">مجاني</string>

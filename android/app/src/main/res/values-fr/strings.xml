@@ -48,6 +48,8 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_sub">Matchs en direct · picks · résultats</string>
     <string name="settings_language">Langue</string>
+    <string name="settings_rate">Noter Pick1</string>
+    <string name="settings_rate_sub">Dis aux autres ce que vaut le palmarès</string>
     <string name="settings_language_sub_default">Par défaut</string>
     <string name="settings_subscription">Abonnement</string>
     <string name="settings_subscription_free">GRATUIT</string>
