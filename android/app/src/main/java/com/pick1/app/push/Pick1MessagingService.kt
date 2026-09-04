@@ -1,6 +1,9 @@
 package com.pick1.app.push
 
 import android.app.NotificationManager
+import com.pick1.app.MainActivity
+import android.content.Intent
+import android.app.PendingIntent
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -41,10 +44,36 @@ class Pick1MessagingService : FirebaseMessagingService() {
         val title = message.notification?.title ?: return
         val body = message.notification?.body.orEmpty()
 
-        val notification = NotificationCompat.Builder(this, "pick1_alerts")
+        // Anything carrying a dollar figure rings the cha-ching, which lives
+        // on its own channel because an Android channel is IMMUTABLE once
+        // created and pick1_alerts can never be given a new sound.
+        val moneyKeys = setOf(
+            "result_win", "recap", "hot_streak", "big_odds",
+            "free_recap", "free_recap_b", "week_missed",
+        )
+        val channel = if (campaign in moneyKeys) "pick1_money" else "pick1_alerts"
+
+        // Tapping it has to OPEN something. Without a content intent the
+        // notification was inert: it appeared, it was tapped, and nothing
+        // happened. The campaign rides along so the app can record the open.
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            campaign?.let { putExtra("campaign", it) }
+            variant?.let { putExtra("variant", it) }
+        }
+        val pending = PendingIntent.getActivity(
+            this,
+            campaign?.hashCode() ?: 0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = NotificationCompat.Builder(this, channel)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pending)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
