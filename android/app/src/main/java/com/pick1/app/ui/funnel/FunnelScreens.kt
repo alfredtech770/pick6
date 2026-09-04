@@ -3,6 +3,11 @@ package com.pick1.app.ui.funnel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.draw.scale
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -136,11 +141,19 @@ fun QuizScreen(index: Int, selected: Int?, onPick: (Int) -> Unit) {
         )
         Spacer(Modifier.height(26.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            val haptics = LocalHapticFeedback.current
             q.opts.forEachIndexed { i, (emoji, label) ->
                 val active = selected == i
+                // Movement on the thing you touched is what makes a tap feel
+                // answered. The chosen row lifts, its tick pops in from 40%,
+                // and the phone confirms it. Before this the only feedback
+                // was a border colour, which reads as nothing on a fast tap.
+                val lift by animateFloatAsState(if (active) 1.02f else 1f, spring(), label = "lift")
+                val tick by animateFloatAsState(if (active) 1f else 0.4f, spring(), label = "tick")
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .scale(lift)
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (active) P1.LimeFunnel.copy(alpha = 0.10f) else P1.Panel)
                         .border(
@@ -148,13 +161,29 @@ fun QuizScreen(index: Int, selected: Int?, onPick: (Int) -> Unit) {
                             if (active) P1.LimeFunnel else P1.Line,
                             RoundedCornerShape(16.dp),
                         )
-                        .clickable { onPick(i) }
+                        .clickable {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onPick(i)
+                        }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Text(emoji, style = archivo(24))
-                    Text(stringResource(label), style = archivo(16, FontWeight.Bold), color = P1.Foreground)
+                    Text(
+                        stringResource(label),
+                        style = archivo(16, FontWeight.Bold),
+                        color = P1.Foreground,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (active) {
+                        Text(
+                            "✓",
+                            style = archivo(18, FontWeight.Bold),
+                            color = P1.LimeFunnel,
+                            modifier = Modifier.scale(tick),
+                        )
+                    }
                 }
             }
         }

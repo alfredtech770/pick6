@@ -1,5 +1,12 @@
 package com.pick1.app.ui.funnel
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -59,6 +66,23 @@ fun FunnelHost(onFinished: () -> Unit) {
     }
 
     Box(Modifier.fillMaxSize().background(P1.Ink)) {
+        // Apple-style push. The funnel moved both screens the same distance,
+        // which reads as two slides passing each other. The incoming screen
+        // now travels the full width while the outgoing one drifts a third of
+        // the way out and fades. That mismatch is what every push does and it
+        // is the whole reason a push reads as depth.
+        AnimatedContent(
+            targetState = step,
+            transitionSpec = {
+                val forward = steps.indexOf(targetState) >= steps.indexOf(initialState)
+                val enter = slideInHorizontally(tween(440)) { w -> if (forward) w else -w }
+                val exit = slideOutHorizontally(tween(440)) { w ->
+                    if (forward) -w / 3 else w / 3
+                } + fadeOut(tween(440))
+                (enter togetherWith exit).using(SizeTransform(clip = false))
+            },
+            label = "funnel",
+        ) { step ->
         when (step) {
             FunnelStep.Welcome -> WelcomeScreen(onNext = ::advance, onSignIn = ::advance)
             FunnelStep.Features -> FeaturesScreen(onNext = ::advance)
@@ -124,6 +148,7 @@ fun FunnelHost(onFinished: () -> Unit) {
             )
 
             FunnelStep.Success -> SuccessScreen(onDone = onFinished)
+        }
         }
 
         // ── Chrome: progress bar + back ──────────────────────────────

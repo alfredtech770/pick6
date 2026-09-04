@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -136,6 +137,13 @@ fun FnlLockup(modifier: Modifier = Modifier) {
 /** Thin progress bar shown on every step that has chrome. */
 @Composable
 fun FnlProgress(progress: Float, modifier: Modifier = Modifier) {
+    // Springs to its new width instead of snapping. A bar that jumps reads
+    // as a redraw; one that travels reads as progress.
+    val width by androidx.compose.animation.core.animateFloatAsState(
+        progress.coerceIn(0f, 1f),
+        androidx.compose.animation.core.spring(dampingRatio = 0.8f),
+        label = "progress",
+    )
     Box(
         modifier
             .fillMaxWidth()
@@ -145,7 +153,7 @@ fun FnlProgress(progress: Float, modifier: Modifier = Modifier) {
     ) {
         Box(
             Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .fillMaxWidth(width)
                 .height(3.dp)
                 .clip(RoundedCornerShape(2.dp))
                 .background(P1.LimeFunnel),
