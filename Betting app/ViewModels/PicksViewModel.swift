@@ -21,8 +21,9 @@ class PicksViewModel: ObservableObject {
     /// the "Yesterday's Results" card so users see W/L from the prior day.
     @Published var yesterdayPicks: [Pick] = []
 
-    /// Rolling 30-day pick history used for win-rate, streaks, and stats.
-    /// Includes today + yesterday picks (deduped on `id`).
+    /// Complete prediction archive, newest first. Loaded page-by-page so the
+    /// public Results ledger can search every call Pick1 has published rather
+    /// than silently stopping at the newest 30 days / PostgREST row limit.
     @Published var historyPicks: [Pick] = []
 
     /// Realtime in-play scores keyed by `game_id` (joins to picks).
@@ -509,8 +510,9 @@ class PicksViewModel: ObservableObject {
 
     // MARK: - Fetchers
 
-    /// Pulls today's picks, yesterday's picks, and a rolling 30-day window
-    /// in parallel. Cheap on Supabase (`game_date` is indexed).
+    /// Pulls today's picks, yesterday's picks, and the complete prediction
+    /// archive in parallel. Archive requests are paginated because Supabase
+    /// projects commonly cap one response at 1,000 rows.
     func loadAll() async {
         isLoading = true
         errorMessage = nil
@@ -529,7 +531,7 @@ class PicksViewModel: ObservableObject {
         async let today    = fetchPicks(from: Self.dateString(daysAgo: 0),
                                         to: Self.dateString(daysAgo: -14))
         async let yest     = fetchPicks(forDate: Self.dateString(daysAgo: 1))
-        async let history  = fetchPicks(sinceDaysAgo: 30)
+        async let history  = fetchAllPicks()
         async let scores   = fetchLiveScoresInner()
         let (t, y, h, s)   = await (today, yest, history, scores)
         self.todayPicks      = t
@@ -558,13 +560,17 @@ class PicksViewModel: ObservableObject {
         #endif
         isLoading = false
         // Warm the logo cache for EVERYTHING the user can reach — the
-        // today slate, yesterday's results, the 30-day history, and
+        // today slate, yesterday's results, the full history, and
         // future-dated event picks (next UFC card / Grand Prix /
         // tournament fixtures) — so crests and headshots are already
         // cached while the splash loader is still on screen and no
         // card ever flashes a placeholder.
         TeamLogoStore.register(picks: t + y + h)
-        LogoPrefetch.warm(picks: t + y + h)
+        // Register the full archive so searched rows resolve correctly, but
+        // only prefetch its newest slice. Warming thousands of old logos at
+        // launch would waste bandwidth; TeamLogo loads an older result lazily
+        // when search brings it on screen.
+        LogoPrefetch.warm(picks: t + y + Array(h.prefix(100)))
     }
 
     private func fetchPicks(from startDate: String, to endDate: String) async -> [Pick] {
@@ -614,6 +620,36 @@ class PicksViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             return []
+        }
+    }
+
+    /// Fetch every prediction without relying on the server's single-response
+    /// row cap. Stable secondary ordering prevents rows with the same game day
+    /// from moving between pages while the archive is loaded.
+    private func fetchAllPicks() async -> [Pick] {
+        let pageSize = 1_000
+        var offset = 0
+        var archive: [Pick] = []
+
+        do {
+            while true {
+                let page: [Pick] = try await supabase
+                    .from("picks")
+                    .select()
+                    .order("game_date", ascending: false)
+                    .order("created_at", ascending: false)
+                    .range(from: offset, to: offset + pageSize - 1)
+                    .execute()
+                    .value
+
+                archive.append(contentsOf: page)
+                guard page.count == pageSize else { break }
+                offset += pageSize
+            }
+            return archive
+        } catch {
+            errorMessage = error.localizedDescription
+            return archive
         }
     }
 

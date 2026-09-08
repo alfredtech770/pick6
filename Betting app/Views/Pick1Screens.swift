@@ -4044,7 +4044,7 @@ struct ProfileView: View {
                 // Price anchor + friction-killer. Leads with the trial when
                 // this Apple ID is still eligible for it.
                 HStack(spacing: 8) {
-                    Text(subs.introOfferEligible ? "3 DAYS FREE · THEN $14.99/WK" : "FROM $14.99/WK")
+                    Text(profileOfferLabel)
                         .font(.archivoNarrow(11, weight: .bold))
                         .tracking(1.6)
                         .foregroundColor(Color(hex: "#C6FF34"))
@@ -4062,6 +4062,14 @@ struct ProfileView: View {
                     radius: 14, x: 0, y: 12)
         }
         .buttonStyle(.plain)
+    }
+
+    private var profileOfferLabel: String {
+        if let intro = subs.cheapestPaidIntroText {
+            return "START FOR \(intro) · THEN FROM \(subs.cheapestPlanText ?? "$14.99")"
+        }
+        if subs.hasEligibleFreeTrial { return "3 DAYS FREE · THEN FROM \(subs.cheapestPlanText ?? "$14.99/WK")" }
+        return "FROM \(subs.cheapestPlanText ?? "$14.99/WK")"
     }
 
     // MARK: Settings rows

@@ -116,7 +116,7 @@ struct Pick1HomeHiFi: View {
         let month = P1WinBack.unitText(.month)
         let three = P1WinBack.periodText(unit: .month, value: 1, times: 3)
         let headline = String(format: t(.wb_each_for), "$19.99", month, three)
-        let afterwards = String(format: t(.wb_then), "$39.99 / " + month)
+        let afterwards = String(format: t(.wb_then), "$14.99 / " + month)
         return (headline, afterwards)
     }
 
@@ -2527,6 +2527,24 @@ struct PremiumUpsellCard: View {
     @EnvironmentObject private var subs: SubscriptionManager
     private let gold = Color(hex: "#E8C64A")
 
+    private var introCTA: String {
+        if let price = subs.cheapestPaidIntroText { return "START FOR \(price) →" }
+        return subs.hasEligibleFreeTrial ? t(.rd_prem_cta_trial) : t(.rd_prem_cta)
+    }
+
+    private var introDetail: String {
+        if let price = subs.cheapestPaidIntroText {
+            return subs.cheapestPlanText.map { "\(price) intro · then from \($0) · cancel anytime" }
+                ?? "\(price) introductory price · cancel anytime"
+        }
+        if subs.hasEligibleFreeTrial {
+            return subs.cheapestPlanText.map { "3 days free · then from \($0) · cancel anytime" }
+                ?? "3 days free · cancel anytime"
+        }
+        return subs.cheapestPlanText.map { "plans from \($0) · cancel anytime" }
+            ?? "cancel anytime"
+    }
+
     var body: some View {
         Button {
             Haptics.tap()
@@ -2557,7 +2575,7 @@ struct PremiumUpsellCard: View {
                 .padding(.top, 2)
 
                 VStack(spacing: 9) {
-                    Text(subs.introOfferEligible ? t(.rd_prem_cta_trial) : t(.rd_prem_cta))
+                    Text(introCTA)
                         .font(.anton(17)).kerning(0.4)
                         .foregroundColor(Color(hex: "#14110A"))
                         .frame(maxWidth: .infinity)
@@ -2569,13 +2587,7 @@ struct PremiumUpsellCard: View {
                     // on one plan and the buyer chooses another on the
                     // paywall, so naming one number here is wrong as often
                     // as it is right. "from" is the only honest shape.
-                    Text(subs.cheapestPlanText.map { price in
-                        subs.introOfferEligible
-                            ? "3 days free · then from \(price) · cancel anytime"
-                            : "plans from \(price) · cancel anytime"
-                    } ?? (subs.introOfferEligible
-                          ? "3 days free · cancel anytime"
-                          : "cancel anytime"))
+                    Text(introDetail)
                         .font(.mono(10, weight: .medium))
                         .foregroundColor(Color(hex: "#8A8D94"))
                 }
@@ -4007,6 +4019,11 @@ struct ProUnlockCard: View {
     /// upgrade copy — never a "free trial" Apple won't honor at checkout.
     @EnvironmentObject private var subs: SubscriptionManager
 
+    private var offerLabel: String {
+        if let price = subs.cheapestPaidIntroText { return "START FOR \(price)" }
+        return subs.hasEligibleFreeTrial ? t(.rd_trial_badge) : t(.rd_go_pro_from)
+    }
+
     var body: some View {
         Button(action: onUnlock) {
             VStack(alignment: .leading, spacing: 10) {
@@ -4024,7 +4041,7 @@ struct ProUnlockCard: View {
                     .foregroundColor(Color(hex: "#171717"))
 
                 HStack(spacing: 6) {
-                    Text(subs.introOfferEligible ? t(.rd_trial_badge) : t(.rd_go_pro_from))
+                    Text(offerLabel)
                         .font(.archivo(12, weight: .bold))
                         .foregroundColor(Color(hex: "#171717").opacity(0.85))
                     Image(systemName: "arrow.right")

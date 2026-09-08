@@ -536,16 +536,23 @@ struct Pick1PaywallV2: View {
 
     // MARK: Copy
 
-    /// The mockup's "3 days free" is only true of the monthly product, which
-    /// is the one carrying an introductory offer — the weekly product has
-    /// none. Saying it while weekly is selected would be a false claim on a
-    /// purchase screen.
+    private var selectedIntro: Product.SubscriptionOffer? {
+        guard let selected else { return nil }
+        return subs.eligibleIntroductoryOffer(for: selected)
+    }
+
     private var hasFreeTrial: Bool {
-        selected?.subscription?.introductoryOffer?.paymentMode == .freeTrial
+        selectedIntro?.paymentMode == .freeTrial
+    }
+
+    private var paidIntro: Product.SubscriptionOffer? {
+        guard let offer = selectedIntro, offer.paymentMode != .freeTrial else { return nil }
+        return offer
     }
 
     private var subheadline: String {
-        hasFreeTrial ? "3 days free · cancel anytime" : "Cancel anytime"
+        if let offer = paidIntro { return "Start for \(offer.displayPrice) · cancel anytime" }
+        return hasFreeTrial ? "3 days free · cancel anytime" : "Cancel anytime"
     }
 
     /// The offer, but only while the plan it belongs to is the selected one.
@@ -557,6 +564,7 @@ struct Pick1PaywallV2: View {
 
     private var ctaTitle: String {
         if activeWinBack != nil { return t(.wb_cta) }
+        if let offer = paidIntro { return "Start for \(offer.displayPrice)" }
         return hasFreeTrial ? "Start 3 days free" : "Continue"
     }
 
@@ -569,9 +577,14 @@ struct Pick1PaywallV2: View {
             return P1WinBack.headline(wb.offer) + " · " + P1WinBack.afterwards(wb.product)
                 + "\nPredictions for entertainment · no wagering in app"
         }
-        let lead = hasFreeTrial
-            ? "Then \(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
-            : "\(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
+        let lead: String
+        if let offer = paidIntro {
+            lead = "\(offer.displayPrice) introductory period · then \(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
+        } else if hasFreeTrial {
+            lead = "Then \(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
+        } else {
+            lead = "\(selected.displayPrice)\(planUnit(selected)) · cancel anytime in Settings"
+        }
         return lead + "\nPredictions for entertainment · no wagering in app"
     }
 
@@ -591,12 +604,18 @@ struct Pick1PaywallV2: View {
     /// through the product's own price style so it carries the storefront's
     /// currency — a bare "2.14/day" is meaningless outside the US.
     private func planSubtitle(_ p: Product) -> String {
+        if let offer = subs.eligibleIntroductoryOffer(for: p), offer.paymentMode != .freeTrial {
+            return "\(offer.displayPrice) intro · then \(p.displayPrice)\(planUnit(p))"
+        }
         let days: Decimal = p.id.hasSuffix("weekly") ? 7 : 30
         let perDay = p.price / days
         return "\(perDay.formatted(p.priceFormatStyle))/day · cancel anytime"
     }
 
     private func badge(for p: Product) -> String? {
+        if let offer = subs.eligibleIntroductoryOffer(for: p), offer.paymentMode != .freeTrial {
+            return "Intro \(offer.displayPrice)"
+        }
         guard p.id.hasSuffix("monthly"), let pct = savePercent else { return nil }
         return "Save \(pct)%"
     }

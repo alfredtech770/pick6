@@ -339,6 +339,9 @@ struct P1V4Hero: View {
     let pick: Pick
     var showUnbacked: Bool
     var backers: Int
+    /// Required when the ALL board is selected: without the selected sport orb
+    /// as context, the card must name its own sport.
+    var showSport: Bool = false
     var onTap: () -> Void = {}
 
     var body: some View {
@@ -347,7 +350,9 @@ struct P1V4Hero: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 9, weight: .black))
-                    Text("TODAY'S #1 PICK")
+                    Text(showSport
+                         ? "TODAY'S #1 PICK · \(v4Name(pick.sport).uppercased())"
+                         : "TODAY'S #1 PICK")
                         .font(.archivoNarrow(10, weight: .bold))
                         .tracking(2.0)
                 }
@@ -453,6 +458,10 @@ struct P1V4Hero: View {
 struct P1V4GameRow: View {
     let pick: Pick
     var isLocked: Bool = false
+    /// Show the discipline on mixed-sport boards. League alone is not enough:
+    /// casual users should not have to know that ATP means tennis or MLS means
+    /// soccer to understand the card.
+    var showSport: Bool = false
     /// Marks the call on today's board that would return the most on the
     /// reference stake. It is deliberately NOT presented as the best pick:
     /// the biggest return is by definition the least likely call, which is
@@ -661,10 +670,11 @@ struct P1V4GameRow: View {
 
     private var metaLine: String {
         let time = whenLabel
-        if isLocked { return "\(pick.league.uppercased())\(time) · PREMIUM" }
+        let sport = showSport ? "\(v4Name(pick.sport).uppercased()) · " : ""
+        if isLocked { return "\(sport)\(pick.league.uppercased())\(time) · PREMIUM" }
         // "TO WIN THE BMW CHAMPIONSHIP" rather than "vs BMW Championship".
-        if isFieldEvent { return "TO WIN · \(other.uppercased())\(time)" }
-        return "vs \(teamShortName(other, sport: pick.sport)) · \(pick.league.uppercased())\(time)"
+        if isFieldEvent { return "\(sport)TO WIN · \(other.uppercased())\(time)" }
+        return "\(sport)vs \(teamShortName(other, sport: pick.sport)) · \(pick.league.uppercased())\(time)"
     }
 }
 
@@ -815,8 +825,14 @@ struct P1V4ResultRow: View {
 
     /// "+$139" on a winner, "−$100" on a loser, from the real settled price.
     private var returnLine: String {
+        guard !pick.isPending else { return "—" }
         let net = pick.isWin ? (pick.decimalOdds - 1) * 100 : -100
         return (net >= 0 ? "+$" : "−$") + String(Int(abs(net).rounded()))
+    }
+
+    private var verdict: (label: String, color: Color) {
+        if pick.isPending { return ("AWAITING", V4.gold) }
+        return pick.isWin ? ("WIN", V4.win) : ("LOSS", V4.hotSoft)
     }
 
     var body: some View {
@@ -849,9 +865,9 @@ struct P1V4ResultRow: View {
             VStack(alignment: .trailing, spacing: 1) {
                 Text(returnLine)
                     .font(.anton(22))
-                    .foregroundStyle(pick.isWin ? V4.win : V4.hotSoft)
+                    .foregroundStyle(verdict.color)
                     .lineLimit(1).minimumScaleFactor(0.6)
-                Text(pick.isWin ? "WIN" : "LOSS")
+                Text(verdict.label)
                     .font(.archivoNarrow(8.5, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(V4.mute)
@@ -1038,6 +1054,7 @@ struct Pick1HomeV4: View {
 
     @State private var tab: P1V4Tab = .tonight
     @State private var selectedSport: String?
+    @State private var resultSearch = ""
     /// The settled call being shared, win or loss.
     @State private var shareResult: Pick?
 
@@ -1260,6 +1277,32 @@ struct Pick1HomeV4: View {
             .sorted { ($0.gameDateValue ?? .distantPast) > ($1.gameDateValue ?? .distantPast) }
     }
 
+    /// Every prediction whose game is in the past, plus any current-day call
+    /// that has already settled. This intentionally includes ungraded past
+    /// games so the public ledger never makes a published call disappear.
+    private var pastPredictions: [Pick] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return vm.historyPicks
+            .filter { pick in
+                if !pick.isPending { return true }
+                return (pick.gameDateValue ?? .distantFuture) < today
+            }
+            .sorted {
+                ($0.gameDate, $0.createdAt ?? .distantPast)
+                    > ($1.gameDate, $1.createdAt ?? .distantPast)
+            }
+    }
+
+    private var searchedPastPredictions: [Pick] {
+        let needle = resultSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return pastPredictions }
+        return pastPredictions.filter { pick in
+            [pick.homeTeam, pick.awayTeam, pick.pick, pick.displayPick,
+             pick.league, pick.sport, v4Name(pick.sport), pick.gameDate]
+                .contains { $0.localizedCaseInsensitiveContains(needle) }
+        }
+    }
+
     /// Wins in the last 7 days the user could not have seen.
     ///
     /// Counting every win was wrong and produced "you missed 55 winning picks
@@ -1283,7 +1326,7 @@ struct Pick1HomeV4: View {
     }
 
     private var perDay: String {
-        guard let m = subs.products.first(where: { $0.id.hasSuffix("monthly") }) else { return "$1.33" }
+        guard let m = subs.products.first(where: { $0.id.hasSuffix("monthly") }) else { return "$0.50" }
         return (m.price / 30).formatted(m.priceFormatStyle)
     }
 
@@ -1383,7 +1426,8 @@ struct Pick1HomeV4: View {
         if let hero {
             P1V4Hero(pick: hero,
                      showUnbacked: Self.showUnbacked,
-                     backers: 312) { onSelectPick(hero) }
+                     backers: 312,
+                     showSport: activeSport == Self.allSports) { onSelectPick(hero) }
         } else if let s = activeSport, !coveredToday.isEmpty {
             // Selected a sport with nothing on it. Say so plainly rather than
             // dropping the user onto a board that silently belongs to other
@@ -1434,6 +1478,7 @@ struct Pick1HomeV4: View {
             VStack(spacing: 12) {
                 ForEach(visibleRest) { p in
                     P1V4GameRow(pick: p,
+                                showSport: activeSport == Self.allSports || restIsWholeBoard,
                                 isBiggestWin: p.id == biggestWinId,
                                 onTap: { onSelectPick(p) },
                                 onTrack: { onTrackPick(p) })
@@ -1441,7 +1486,9 @@ struct Pick1HomeV4: View {
                 // The first two locked calls stay on screen, blurred, so the
                 // free user can see there is more rather than being told.
                 ForEach(hiddenRest.prefix(2)) { p in
-                    P1V4GameRow(pick: p, isLocked: true, onTap: onUpgrade)
+                    P1V4GameRow(pick: p, isLocked: true,
+                                showSport: activeSport == Self.allSports || restIsWholeBoard,
+                                onTap: onUpgrade)
                 }
                 if hiddenRest.count > 2 {
                     P1V4LockMore(hidden: Array(hiddenRest.dropFirst(2)), onTap: onUpgrade)
@@ -1606,14 +1653,31 @@ struct Pick1HomeV4: View {
         .padding(.horizontal, 22)
         .padding(.top, 10)
 
-        if settled.isEmpty {
+        resultSearchField
+            .padding(.horizontal, 22)
+            .padding(.top, 16)
+
+        if pastPredictions.isEmpty {
             emptyState("No settled calls yet", "Every pick is logged before kickoff and graded here once it lands.")
+        } else if searchedPastPredictions.isEmpty {
+            emptyState("No matching games", "Try a team, player, league, sport, or date.")
         } else {
             // Tappable. These were static rows, so the public record — the
             // thing the whole product is sold on — was the one list in the
             // app you could not open. Every other pick surface opens its
             // detail; this one now does too.
-            ForEach(Array(settled.prefix(20).enumerated()), id: \.element.id) { i, p in
+            HStack {
+                Text(resultSearch.isEmpty ? "ALL PAST PREDICTIONS" : "SEARCH RESULTS")
+                Spacer()
+                Text("\(searchedPastPredictions.count) OF \(pastPredictions.count)")
+            }
+            .font(.mono(8.5, weight: .bold))
+            .tracking(0.65)
+            .foregroundStyle(V4.mute)
+            .padding(.horizontal, 22)
+            .padding(.top, 14)
+
+            ForEach(Array(searchedPastPredictions.enumerated()), id: \.element.id) { i, p in
                 // Not a Button any more: the row now contains one, and a
                 // Button inside a Button does not reliably route taps in
                 // SwiftUI. The row opens the detail on tap, the share glyph
@@ -1632,6 +1696,36 @@ struct Pick1HomeV4: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 16)
         }
+    }
+
+    private var resultSearchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(V4.mute)
+
+            TextField("Search team, player, league or sport", text: $resultSearch)
+                .font(.archivo(13, weight: .medium))
+                .foregroundStyle(.white)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !resultSearch.isEmpty {
+                Button {
+                    resultSearch = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(V4.mute)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .background(RoundedRectangle(cornerRadius: 15).fill(V4.rowTop))
+        .overlay(RoundedRectangle(cornerRadius: 15).strokeBorder(V4.line, lineWidth: 1))
     }
 
     /// Calls settled in the last 30 days.

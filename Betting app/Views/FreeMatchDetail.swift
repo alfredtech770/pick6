@@ -298,10 +298,28 @@ struct FreeMatchDetailView: View {
     }
 
     // ── CTA ──────────────────────────────────────────────────────────
+    private var offerCTA: String {
+        if let intro = subs.cheapestPaidIntroText { return "UNLOCK THIS PICK — START FOR \(intro) →" }
+        return subs.hasEligibleFreeTrial ? t(.rd_unlock_pick_trial) : t(.rd_unlock_pick)
+    }
+
+    private var offerDetail: String {
+        if let intro = subs.cheapestPaidIntroText {
+            return subs.cheapestPlanText.map { "\(intro) intro · then from \($0) · cancel anytime" }
+                ?? "\(intro) introductory price · cancel anytime"
+        }
+        if subs.hasEligibleFreeTrial {
+            return subs.cheapestPlanText.map { "3 days free · then from \($0) · cancel anytime" }
+                ?? "3 days free · cancel anytime"
+        }
+        return subs.cheapestPlanText.map { "plans from \($0) · cancel anytime" }
+            ?? "cancel anytime"
+    }
+
     private var unlockCTA: some View {
         VStack(spacing: 9) {
             Button { Haptics.tap(); onUnlock() } label: {
-                Text(subs.introOfferEligible ? t(.rd_unlock_pick_trial) : t(.rd_unlock_pick))
+                Text(offerCTA)
                     .font(.anton(17)).kerning(0.3)
                     .foregroundColor(Color(hex: "#14110A"))
                     .frame(maxWidth: .infinity)
@@ -312,13 +330,7 @@ struct FreeMatchDetailView: View {
                     .pressableScale(0.985)
             }
             .buttonStyle(.plain)
-            Text(subs.cheapestPlanText.map { price in
-                subs.introOfferEligible
-                    ? "3 days free · then from \(price) · cancel anytime"
-                    : "plans from \(price) · cancel anytime"
-            } ?? (subs.introOfferEligible
-                  ? "3 days free · cancel anytime"
-                  : "cancel anytime"))
+            Text(offerDetail)
                 .font(.mono(10, weight: .medium))
                 .foregroundColor(Color(hex: "#8A8D94"))
         }

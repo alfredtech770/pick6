@@ -1404,11 +1404,10 @@ struct PaywallScreen: View {
             .padding(.top, 18)
         } bottom: {
             VStack(spacing: 0) {
-                FnlCTA(title: busy ? "…" : (subs.isPro ? t(.funnel_paywall_cta_continue)
-                    : (selectedTrialAvailable ? t(.funnel_paywall_cta_trial) : t(.funnel_paywall_cta_unlock)))) {
+                FnlCTA(title: busy ? "…" : paywallCTA) {
                     Task { await act() }
                 }
-                Text(t(subs.products.contains(where: trialAvailable) ? .funnel_paywall_fineprint_trial : .funnel_paywall_fineprint))
+                Text(paywallFineprint)
                     .font(.mono(11, weight: .bold)).foregroundColor(Fnl.mute).padding(.top, 12)
                     .multilineTextAlignment(.center)
                 // App Review 3.1.2 requirements: restore + legal links. The
@@ -1469,14 +1468,44 @@ struct PaywallScreen: View {
             ?? subs.products.first!.id
     }
 
-    /// True when this product carries a StoreKit free-trial intro offer AND
-    /// this Apple ID hasn't burned its one-per-group trial yet. Gates every
-    /// piece of trial copy so we never advertise a trial Apple won't honor.
+    /// The offer Apple will actually honor for this user. This now supports
+    /// paid introductory pricing as well as legacy free trials.
+    private func introOffer(_ p: Product) -> Product.SubscriptionOffer? {
+        subs.eligibleIntroductoryOffer(for: p)
+    }
+
     private func trialAvailable(_ p: Product) -> Bool {
-        p.subscription?.introductoryOffer?.paymentMode == .freeTrial && subs.introOfferEligible
+        introOffer(p)?.paymentMode == .freeTrial
+    }
+    private func paidIntroOffer(_ p: Product) -> Product.SubscriptionOffer? {
+        guard let offer = introOffer(p), offer.paymentMode != .freeTrial else { return nil }
+        return offer
     }
     private var selectedTrialAvailable: Bool {
         subs.products.first(where: { $0.id == selected }).map(trialAvailable) ?? false
+    }
+    private var selectedPaidIntro: Product.SubscriptionOffer? {
+        subs.products.first(where: { $0.id == selected }).flatMap(paidIntroOffer)
+    }
+
+    private var paywallCTA: String {
+        if subs.isPro { return t(.funnel_paywall_cta_continue) }
+        if let offer = selectedPaidIntro {
+            return String(format: t(.funnel_paywall_cta_intro), offer.displayPrice)
+        }
+        return selectedTrialAvailable ? t(.funnel_paywall_cta_trial) : t(.funnel_paywall_cta_unlock)
+    }
+
+    private var paywallFineprint: String {
+        guard let product = subs.products.first(where: { $0.id == selected }) else {
+            return t(.funnel_paywall_fineprint)
+        }
+        if let offer = selectedPaidIntro {
+            return String(format: t(.funnel_paywall_fineprint_intro),
+                          offer.displayPrice,
+                          product.displayPrice + planUnit(product))
+        }
+        return t(selectedTrialAvailable ? .funnel_paywall_fineprint_trial : .funnel_paywall_fineprint)
     }
 
     @ViewBuilder private func planCard(_ p: Product) -> some View {
@@ -1517,6 +1546,10 @@ struct PaywallScreen: View {
                     Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
+                } else if let offer = paidIntroOffer(p) {
+                    Text(String(format: t(.funnel_paywall_intro_badge), offer.displayPrice)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(Fnl.win)).offset(x: -12, y: -8)
                 } else if trialAvailable(p) {
                     Text(t(.funnel_paywall_trial_badge)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
@@ -1544,6 +1577,9 @@ struct PaywallScreen: View {
     private func planSub(_ p: Product) -> String {
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_sub_lifetime) }
         if p.id.hasSuffix("annual") { return t(.paywall_sub_annual) }
+        if let offer = paidIntroOffer(p) {
+            return "\(offer.displayPrice) intro · then \(p.displayPrice)\(planUnit(p))"
+        }
         return p.id.hasSuffix("weekly") ? t(.funnel_paywall_sub_weekly) : t(.funnel_paywall_sub_monthly)
     }
 

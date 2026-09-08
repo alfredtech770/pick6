@@ -11,10 +11,11 @@
 //
 //   Product ID                  Type                   Price
 //   com.pick1.app.pro.weekly    Auto-Renewable Weekly  $14.99
-//   com.pick1.app.pro.monthly   Auto-Renewable Monthly $39.99
+//   com.pick1.app.pro.monthly   Auto-Renewable Monthly $14.99
 //
-// A 3-day free trial is configured as an "Introductory Offer" on the
-// MONTHLY product only (the weekly product has no introductory offer).
+// Both plans use a $0.99 introductory first billing period, followed by the
+// normal $14.99 recurring price. StoreKit remains the source of truth for
+// localized prices and offer eligibility.
 //
 // The Xcode target's bundle identifier is com.pick1.app (matches the IDs).
 //
@@ -180,6 +181,31 @@ final class SubscriptionManager: ObservableObject {
         default:     unit = ""
         }
         return p.displayPrice + unit
+    }
+
+    /// The introductory offer Apple will actually honor for this Apple ID.
+    /// Eligibility is group-wide, so a past intro on either plan removes the
+    /// offer from every paywall surface.
+    func eligibleIntroductoryOffer(for product: Product) -> Product.SubscriptionOffer? {
+        guard introOfferEligible else { return nil }
+        return product.subscription?.introductoryOffer
+    }
+
+    var hasEligibleFreeTrial: Bool {
+        products.contains {
+            eligibleIntroductoryOffer(for: $0)?.paymentMode == .freeTrial
+        }
+    }
+
+    /// Cheapest paid intro price in the viewer's storefront (for compact
+    /// upgrade cards that do not yet know which plan the user will choose).
+    var cheapestPaidIntroText: String? {
+        products.compactMap { product -> (Decimal, String)? in
+            guard let offer = eligibleIntroductoryOffer(for: product),
+                  offer.paymentMode != .freeTrial else { return nil }
+            return (offer.price, offer.displayPrice)
+        }
+        .min { $0.0 < $1.0 }?.1
     }
 
     /// Product ids the ENTITLEMENT check accepts — includes retired
@@ -770,7 +796,8 @@ extension Product {
     /// The paywall used to quote each plan in whatever unit flattered it:
     /// "$2.14/day" under Weekly, "$9.99/week" under Monthly. Both are true,
     /// and together they make the more expensive plan look cheaper, because
-    /// $14.99 a week is $64.96 a month against Monthly's $39.99. On
+    /// Before the September 2026 repricing, $14.99 a week was $64.96 a
+    /// month against Monthly's $39.99. On
     /// 2026-08-24, 658 of 684 subscriptions were weekly, and weekly reaches
     /// a paid period 17% of the time against monthly's 77%. Quoting every
     /// plan in the same unit is both the honest comparison and the unit

@@ -1,6 +1,6 @@
 // Pick1Paywall.swift
 // Pro · All-Access paywall — implements the design from
-// `Pick6 Account Pages.html` (Paywall · Weekly $14.99 / Monthly $39.99).
+// `Pick6 Account Pages.html` (Paywall · Weekly $14.99 / Monthly $14.99).
 //
 // Shown at the end of the onboarding flow, after the Success step. The
 // CTA starts a 3-day free trial; the back button skips into the app.
@@ -30,8 +30,8 @@ private struct PlanCopy {
 private let planCopy: [PaywallPlan: PlanCopy] = [
     .weekly:  PlanCopy(price: "14.99", per: "/wk",
                        billed: "Billed weekly · Cancel anytime", equiv: "$2.14/day"),
-    .monthly: PlanCopy(price: "39.99", per: "/mo",
-                       billed: "Billed monthly · Best value",    equiv: "$9.99/week"),
+    .monthly: PlanCopy(price: "14.99", per: "/mo",
+                       billed: "Billed monthly · Best value",    equiv: "$3.75/week"),
 ]
 
 struct OBPaywallScreen: View {

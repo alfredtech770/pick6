@@ -415,6 +415,9 @@ enum L10nKey: String, CaseIterable {
     case funnel_paywall_fineprint_trial   // "3-DAY FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT"
     case funnel_paywall_trial_badge       // "3 DAYS FREE" (weekly plan card badge)
     case funnel_paywall_cta_trial         // "START 3-DAY FREE TRIAL →"
+    case funnel_paywall_intro_badge       // "INTRO $0.99"
+    case funnel_paywall_cta_intro         // "START FOR $0.99 →"
+    case funnel_paywall_fineprint_intro   // "INTRO PRICE $0.99 · THEN $14.99/WEEK …"
     case funnel_paywall_restore           // "Restore"
     case funnel_paywall_terms             // "Terms"
     case funnel_paywall_privacy           // "Privacy"

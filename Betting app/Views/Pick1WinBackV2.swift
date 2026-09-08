@@ -161,7 +161,7 @@ struct Pick1WinBackV2: View {
     /// rewrite. Until then this sheet must not be shown to a real user.
     @ViewBuilder
     private var winBackOffer: some View {
-        let full = monthly?.displayPrice ?? "$39.99"
+        let full = monthly?.displayPrice ?? "$14.99"
         let half = monthly.map { m -> String in
             (m.price / 2).formatted(m.priceFormatStyle)
         } ?? "$19.99"
