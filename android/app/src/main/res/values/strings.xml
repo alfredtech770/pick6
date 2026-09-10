@@ -340,8 +340,8 @@
     <string name="funnel_paywall_unit_wk">/wk</string>
     <string name="funnel_paywall_unit_mo">/mo</string>
     <string name="funnel_paywall_best_value">BEST VALUE</string>
-    <string name="funnel_paywall_intro_badge">%1$s TO START</string>
-    <string name="funnel_paywall_fineprint_intro">%1$s FIRST PERIOD · CANCEL ANYTIME · SECURE CHECKOUT</string>
+    <string name="funnel_paywall_intro_badge">INTRO %1$s</string>
+    <string name="funnel_paywall_fineprint_intro">INTRO PRICE %1$s · THEN %2$s · CANCEL ANYTIME · SECURE CHECKOUT</string>
     <string name="funnel_paywall_cta_intro">START FOR %1$s →</string>
     <string name="funnel_paywall_sub_lifetime">One-time · yours forever</string>
     <string name="funnel_paywall_sub_weekly">Billed weekly · cancel anytime</string>
@@ -470,6 +470,7 @@
     <string name="rd_ai_pick">AI PICK</string>
     <string name="rd_track">TRACK</string>
     <string name="rd_record">" RECORD."</string>
+    <string name="rd_history_search">Search the record</string>
     <string name="rd_on_graded">ON GRADED PICKS</string>
     <string name="rd_all_filter">ALL</string>
     <string name="rd_no_graded_title">No graded picks yet</string>

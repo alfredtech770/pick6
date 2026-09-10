@@ -141,10 +141,18 @@ fun PaywallScreen(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                stringResource(
-                    if (introPrice != null) R.string.funnel_paywall_fineprint_intro
-                    else R.string.funnel_paywall_fineprint
-                ),
+                // Two placeholders on the intro line, as on iOS: the price
+                // they pay now and the price it becomes. Stating only the
+                // first would be the half of the sentence that sells.
+                if (introPrice != null) {
+                    stringResource(
+                        R.string.funnel_paywall_fineprint_intro,
+                        introPrice,
+                        (chosen?.displayPrice ?: "") + (chosen?.unit ?: ""),
+                    )
+                } else {
+                    stringResource(R.string.funnel_paywall_fineprint)
+                },
                 style = mono(11, FontWeight.Bold),
                 color = P1.Mute,
                 textAlign = TextAlign.Center,

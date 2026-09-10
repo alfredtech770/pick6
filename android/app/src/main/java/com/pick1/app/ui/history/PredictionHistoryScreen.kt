@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,7 +48,10 @@ class HistoryViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            runCatching { repo.gradedHistory(limit = 120) }
+            // The WHOLE archive, not the last 120. Search over a page of
+            // history is not search, and iOS started paging the full set on
+            // 2026-09-08.
+            runCatching { repo.allGradedPicks() }
                 .onSuccess { picks = it.filter { p -> !p.isPending } }
             loading = false
         }
@@ -61,10 +65,21 @@ fun PredictionHistoryScreen(
     onTapPick: (Pick) -> Unit,
 ) {
     var filter by remember { mutableStateOf(HistoryFilter.ALL) }
-    val shown = when (filter) {
+    var query by remember { mutableStateOf("") }
+    val byResult = when (filter) {
         HistoryFilter.ALL -> vm.picks
         HistoryFilter.WON -> vm.picks.filter { it.isWin }
         HistoryFilter.LOST -> vm.picks.filter { it.isLoss }
+    }
+    // Team, call, league or sport. A record nobody can search is an archive,
+    // not a ledger.
+    val shown = if (query.isBlank()) byResult else byResult.filter { p ->
+        val q = query.trim().lowercase()
+        p.pick.lowercase().contains(q) ||
+            p.homeTeam.lowercase().contains(q) ||
+            p.awayTeam.lowercase().contains(q) ||
+            p.league.lowercase().contains(q) ||
+            p.sport.lowercase().contains(q)
     }
     val wins = vm.picks.count { it.isWin }
     val losses = vm.picks.count { it.isLoss }
@@ -88,6 +103,31 @@ fun PredictionHistoryScreen(
                 )
                 Text("$wins–$losses", style = anton(26), color = P1.Foreground)
             }
+            Spacer(Modifier.weight(1f))
+            androidx.compose.material3.TextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = {
+                    Text(
+                        stringResource(R.string.rd_history_search),
+                        style = archivo(13),
+                        color = P1.Mute,
+                    )
+                },
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontSize = 13.sp, color = P1.Foreground,
+                ),
+                colors = androidx.compose.material3.TextFieldDefaults.colors(
+                    focusedContainerColor = P1.Panel2,
+                    unfocusedContainerColor = P1.Panel2,
+                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                    cursorColor = P1.Lime,
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.width(190.dp),
+            )
             Spacer(Modifier.weight(1f))
             Text(
                 stringResource(R.string.action_done),

@@ -40,6 +40,9 @@ object Supabase {
 class PicksRepository {
 
     /** Today's slate (plus anything still pending), newest first. */
+    /** PostgREST's silent row cap. Every unbounded read has to page. */
+    private val PAGE = 1000L
+
     suspend fun todayPicks(): List<Pick> =
         Supabase.client.from("picks")
             .select {
@@ -57,16 +60,58 @@ class PicksRepository {
             }
             .decodeList<Pick>()
 
-    /** Everything in a date window — used by the sport hubs and tracker. */
-    suspend fun picksBetween(fromDate: String, toDate: String): List<Pick> =
-        Supabase.client.from("picks")
-            .select {
-                filter {
-                    gte("game_date", fromDate)
-                    lte("game_date", toDate)
+    /**
+     * Everything in a date window — used by the sport hubs and tracker.
+     *
+     * PAGED. PostgREST caps an unbounded select at 1000 rows and returns them
+     * without an error, so a wide window silently lost everything past the
+     * thousandth pick. The same cap hid 44% of the push audience until it was
+     * found in send-push.
+     */
+    suspend fun picksBetween(fromDate: String, toDate: String): List<Pick> {
+        val out = mutableListOf<Pick>()
+        var from = 0L
+        while (true) {
+            val page = Supabase.client.from("picks")
+                .select {
+                    filter {
+                        gte("game_date", fromDate)
+                        lte("game_date", toDate)
+                    }
+                    range(from, from + PAGE - 1)
                 }
-            }
-            .decodeList<Pick>()
+                .decodeList<Pick>()
+            out += page
+            if (page.size < PAGE) break
+            from += PAGE
+        }
+        return out
+    }
+
+    /**
+     * The whole graded archive, newest first, for history search.
+     *
+     * iOS gained this on 2026-09-08 so the history screen can search every
+     * call ever made rather than the last page of them.
+     */
+    suspend fun allGradedPicks(): List<Pick> {
+        val out = mutableListOf<Pick>()
+        var from = 0L
+        while (true) {
+            val page = Supabase.client.from("picks")
+                .select {
+                    filter { isIn("result", listOf("win", "loss")) }
+                    order("game_date", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                    order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                    range(from, from + PAGE - 1)
+                }
+                .decodeList<Pick>()
+            out += page
+            if (page.size < PAGE) break
+            from += PAGE
+        }
+        return out
+    }
 
     /**
      * Graded history — wins AND losses, newest first.
@@ -84,9 +129,21 @@ class PicksRepository {
             }
             .decodeList<Pick>()
 
-    /** Live scores for today's games — powers the LIVE NOW tab. */
-    suspend fun liveScores(): List<com.pick1.app.data.model.LiveScore> =
-        Supabase.client.from("live_scores").select().decodeList()
+    /** Live scores for today's games — powers the LIVE NOW tab. Paged for the
+     *  same reason as the rest: the table grows and the cap is silent. */
+    suspend fun liveScores(): List<com.pick1.app.data.model.LiveScore> {
+        val out = mutableListOf<com.pick1.app.data.model.LiveScore>()
+        var from = 0L
+        while (true) {
+            val page = Supabase.client.from("live_scores")
+                .select { range(from, from + PAGE - 1) }
+                .decodeList<com.pick1.app.data.model.LiveScore>()
+            out += page
+            if (page.size < PAGE) break
+            from += PAGE
+        }
+        return out
+    }
 
     private fun today(): String {
         val fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
