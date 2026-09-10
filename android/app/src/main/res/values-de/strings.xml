@@ -323,7 +323,7 @@
     <string name="funnel_paywall_loading">Angebote werden geladen…</string>
     <string name="funnel_paywall_cta_continue">WEITER →</string>
     <string name="funnel_paywall_cta_unlock">PICK1 PRO FREISCHALTEN →</string>
-    <string name="funnel_paywall_fineprint">KEINE GRATIS-TESTPHASE · JEDERZEIT KÜNDBAR · SICHERE ZAHLUNG</string>
+    <string name="funnel_paywall_fineprint">JEDERZEIT KÜNDBAR · SICHERE ZAHLUNG</string>
     <string name="funnel_paywall_fineprint_trial">3 TAGE GRATIS TESTEN · JEDERZEIT KÜNDBAR · SICHERE ZAHLUNG</string>
     <string name="funnel_paywall_trial_badge">3 TAGE GRATIS</string>
     <string name="funnel_paywall_cta_trial">GRATIS-TEST STARTEN →</string>
@@ -340,6 +340,9 @@
     <string name="funnel_paywall_unit_wk">/Wo.</string>
     <string name="funnel_paywall_unit_mo">/Mon.</string>
     <string name="funnel_paywall_best_value">BESTES ANGEBOT</string>
+    <string name="funnel_paywall_intro_badge">%1$s ZUM START</string>
+    <string name="funnel_paywall_fineprint_intro">%1$s IM ERSTEN ZEITRAUM · JEDERZEIT KÜNDBAR · SICHERE ZAHLUNG</string>
+    <string name="funnel_paywall_cta_intro">FÜR %1$s STARTEN →</string>
     <string name="funnel_paywall_sub_lifetime">Einmalzahlung · für immer dein</string>
     <string name="funnel_paywall_sub_weekly">Wöchentlich abgerechnet · jederzeit kündbar</string>
     <string name="funnel_paywall_sub_monthly">Monatlich abgerechnet · jederzeit kündbar</string>

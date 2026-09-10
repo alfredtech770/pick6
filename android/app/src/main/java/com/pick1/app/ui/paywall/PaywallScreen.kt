@@ -39,7 +39,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun PaywallScreen(
     plans: List<PlanOffer>,
-    trialEligible: Boolean,
+    introEligible: Boolean,
     busy: Boolean = false,
     onBuy: (PlanOffer) -> Unit,
     onRestore: () -> Unit,
@@ -119,10 +119,14 @@ fun PaywallScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val chosen = plans.firstOrNull { it.productId == selected }
+            // The CTA and the fine print quote the intro of the plan the user
+            // is actually about to buy, not a global flag: eligibility is
+            // per-product and quoting the wrong one is a pricing claim.
+            val introPrice = chosen?.introPrice
             Text(
                 when {
                     busy -> "…"
-                    trialEligible -> stringResource(R.string.funnel_paywall_cta_trial)
+                    introPrice != null -> stringResource(R.string.funnel_paywall_cta_intro, introPrice)
                     else -> stringResource(R.string.funnel_paywall_cta_unlock)
                 },
                 style = anton(19),
@@ -138,7 +142,7 @@ fun PaywallScreen(
             Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(
-                    if (trialEligible) R.string.funnel_paywall_fineprint_trial
+                    if (introPrice != null) R.string.funnel_paywall_fineprint_intro
                     else R.string.funnel_paywall_fineprint
                 ),
                 style = mono(11, FontWeight.Bold),
@@ -214,10 +218,13 @@ private fun PlanCard(plan: PlanOffer, selected: Boolean, onSelect: () -> Unit) {
                 Text(plan.unit, style = archivo(12), color = P1.Ink2)
             }
         }
-        // BEST VALUE sits on monthly (best per-week rate), trial badge otherwise.
+        // BEST VALUE sits on monthly; the other plan advertises the intro
+        // price instead. Both are the same $14.99 recurring, so monthly is
+        // the better deal on access rather than on price.
         val badge = when {
             plan.isBestValue -> stringResource(R.string.funnel_paywall_best_value) to P1.LimeFunnel
-            plan.hasTrial -> stringResource(R.string.funnel_paywall_trial_badge) to P1.Win
+            plan.introPrice != null ->
+                stringResource(R.string.funnel_paywall_intro_badge, plan.introPrice) to P1.Win
             else -> null
         }
         badge?.let { (label, bg) ->

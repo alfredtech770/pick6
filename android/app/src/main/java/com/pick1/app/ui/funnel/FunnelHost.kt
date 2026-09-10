@@ -53,7 +53,7 @@ fun FunnelHost(onFinished: () -> Unit) {
     val ctx = LocalContext.current
     val activity = ctx as? Activity
     val offers by Billing.offers.collectAsState()
-    val trialEligible by Billing.trialEligible.collectAsState()
+    val introEligible by Billing.introEligible.collectAsState()
     val isPro by Billing.isPro.collectAsState()
 
     LaunchedEffect(stepIndex) {
@@ -140,8 +140,8 @@ fun FunnelHost(onFinished: () -> Unit) {
             )
 
             FunnelStep.Paywall -> PaywallScreen(
-                plans = offers.ifEmpty { PlaceholderCatalogue.plans(trialEligible) },
-                trialEligible = trialEligible,
+                plans = offers.ifEmpty { PlaceholderCatalogue.plans(introEligible) },
+                introEligible = introEligible,
                 onBuy = { plan -> activity?.let { Billing.purchase(it, plan.productId) } },
                 onRestore = { Billing.restore() },
                 onContinueFree = { advance() },

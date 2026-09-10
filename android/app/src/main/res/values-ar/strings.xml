@@ -323,7 +323,7 @@
     <string name="funnel_paywall_loading">جارٍ تحميل الخطط…</string>
     <string name="funnel_paywall_cta_continue">← متابعة</string>
     <string name="funnel_paywall_cta_unlock">← افتح PICK1 PRO</string>
-    <string name="funnel_paywall_fineprint">لا تجربة مجانية · إلغاء في أي وقت · دفع آمن</string>
+    <string name="funnel_paywall_fineprint">إلغاء في أي وقت · دفع آمن</string>
     <string name="funnel_paywall_fineprint_trial">تجربة مجانية ٣ أيام · إلغاء في أي وقت · دفع آمن</string>
     <string name="funnel_paywall_trial_badge">٣ أيام مجانًا</string>
     <string name="funnel_paywall_cta_trial">← ابدأ التجربة المجانية</string>
@@ -340,6 +340,9 @@
     <string name="funnel_paywall_unit_wk">/أسبوع</string>
     <string name="funnel_paywall_unit_mo">/شهر</string>
     <string name="funnel_paywall_best_value">أفضل قيمة</string>
+    <string name="funnel_paywall_intro_badge">%1$s للبداية</string>
+    <string name="funnel_paywall_fineprint_intro">%1$s للفترة الأولى · إلغاء في أي وقت · دفع آمن</string>
+    <string name="funnel_paywall_cta_intro">ابدأ بـ %1$s ←</string>
     <string name="funnel_paywall_sub_lifetime">دفعة واحدة · ملكك للأبد</string>
     <string name="funnel_paywall_sub_weekly">يُحصَّل أسبوعيًا · إلغاء في أي وقت</string>
     <string name="funnel_paywall_sub_monthly">يُحصَّل شهريًا · إلغاء في أي وقت</string>

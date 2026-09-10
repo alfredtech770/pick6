@@ -323,7 +323,7 @@
     <string name="funnel_paywall_loading">Cargando planes…</string>
     <string name="funnel_paywall_cta_continue">CONTINUAR →</string>
     <string name="funnel_paywall_cta_unlock">DESBLOQUEAR PICK1 PRO →</string>
-    <string name="funnel_paywall_fineprint">SIN PRUEBA GRATIS · CANCELA CUANDO QUIERAS · PAGO SEGURO</string>
+    <string name="funnel_paywall_fineprint">CANCELA CUANDO QUIERAS · PAGO SEGURO</string>
     <string name="funnel_paywall_fineprint_trial">PRUEBA GRATIS DE 3 DÍAS · CANCELA CUANDO QUIERAS · PAGO SEGURO</string>
     <string name="funnel_paywall_trial_badge">3 DÍAS GRATIS</string>
     <string name="funnel_paywall_cta_trial">EMPEZAR PRUEBA GRATIS →</string>
@@ -340,6 +340,9 @@
     <string name="funnel_paywall_unit_wk">/sem</string>
     <string name="funnel_paywall_unit_mo">/mes</string>
     <string name="funnel_paywall_best_value">MEJOR OFERTA</string>
+    <string name="funnel_paywall_intro_badge">%1$s PARA EMPEZAR</string>
+    <string name="funnel_paywall_fineprint_intro">%1$s EL PRIMER PERIODO · CANCELA CUANDO QUIERAS · PAGO SEGURO</string>
+    <string name="funnel_paywall_cta_intro">EMPEZAR POR %1$s →</string>
     <string name="funnel_paywall_sub_lifetime">Pago único · tuyo para siempre</string>
     <string name="funnel_paywall_sub_weekly">Facturado semanalmente · cancela cuando quieras</string>
     <string name="funnel_paywall_sub_monthly">Facturado mensualmente · cancela cuando quieras</string>

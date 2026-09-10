@@ -323,7 +323,7 @@
     <string name="funnel_paywall_loading">Loading plans…</string>
     <string name="funnel_paywall_cta_continue">CONTINUE →</string>
     <string name="funnel_paywall_cta_unlock">UNLOCK PICK1 PRO →</string>
-    <string name="funnel_paywall_fineprint">NO FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT</string>
+    <string name="funnel_paywall_fineprint">CANCEL ANYTIME · SECURE CHECKOUT</string>
     <string name="funnel_paywall_fineprint_trial">3-DAY FREE TRIAL · CANCEL ANYTIME · SECURE CHECKOUT</string>
     <string name="funnel_paywall_trial_badge">3 DAYS FREE</string>
     <string name="funnel_paywall_cta_trial">START 3-DAY FREE TRIAL →</string>
@@ -340,6 +340,9 @@
     <string name="funnel_paywall_unit_wk">/wk</string>
     <string name="funnel_paywall_unit_mo">/mo</string>
     <string name="funnel_paywall_best_value">BEST VALUE</string>
+    <string name="funnel_paywall_intro_badge">%1$s TO START</string>
+    <string name="funnel_paywall_fineprint_intro">%1$s FIRST PERIOD · CANCEL ANYTIME · SECURE CHECKOUT</string>
+    <string name="funnel_paywall_cta_intro">START FOR %1$s →</string>
     <string name="funnel_paywall_sub_lifetime">One-time · yours forever</string>
     <string name="funnel_paywall_sub_weekly">Billed weekly · cancel anytime</string>
     <string name="funnel_paywall_sub_monthly">Billed monthly · cancel anytime</string>

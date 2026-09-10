@@ -214,7 +214,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     val activity = ctx as? Activity
     val isPro by Billing.isPro.collectAsState()
     val offers by Billing.offers.collectAsState()
-    val trialEligible by Billing.trialEligible.collectAsState()
+    val introEligible by Billing.introEligible.collectAsState()
 
     // A completed purchase flips entitlement — drop the paywall automatically.
     LaunchedEffect(isPro) { if (isPro) showPaywall = false }
@@ -258,10 +258,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         return
     }
     if (showPaywall) {
-        val plans = offers.ifEmpty { PlaceholderCatalogue.plans(trialEligible) }
+        val plans = offers.ifEmpty { PlaceholderCatalogue.plans(introEligible) }
         PaywallScreen(
             plans = plans,
-            trialEligible = trialEligible,
+            introEligible = introEligible,
             onBuy = { plan -> activity?.let { Billing.purchase(it, plan.productId) } },
             onRestore = { Billing.restore() },
             onContinueFree = { showPaywall = false },

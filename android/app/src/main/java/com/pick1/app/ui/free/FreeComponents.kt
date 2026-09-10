@@ -275,7 +275,7 @@ private fun LockedSlateCard(pick: Pick, onUnlock: () -> Unit) {
  * gradient CTA and the price fine print.
  */
 @Composable
-fun PremiumUpsellCard(trialEligible: Boolean, onUnlock: () -> Unit) {
+fun PremiumUpsellCard(introPrice: String?, onUnlock: () -> Unit) {
     Column(
         Modifier
             .padding(horizontal = 20.dp)
@@ -331,7 +331,7 @@ fun PremiumUpsellCard(trialEligible: Boolean, onUnlock: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(
                 stringResource(
-                    if (trialEligible) R.string.rd_prem_cta_trial else R.string.rd_prem_cta
+                    if (introPrice != null) R.string.funnel_paywall_cta_intro else R.string.rd_prem_cta
                 ),
                 style = anton(17, tracking = 0.4f),
                 color = Color(0xFF14110A),

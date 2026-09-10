@@ -50,32 +50,42 @@ data class PlanOffer(
     val subtitle: String,
     val displayPrice: String,
     val unit: String,
-    val hasTrial: Boolean = false,
+    /** Formatted price of the introductory first billing period, e.g. "$0.99",
+     *  or null when this storefront/account gets no intro. It is a PAID intro,
+     *  not a free trial: iOS sells $0.99 for the first period then $14.99, and
+     *  Android has to say the same thing. */
+    val introPrice: String? = null,
     val isBestValue: Boolean = false,
 )
 
 object Products {
     const val WEEKLY = "com.pick1.app.pro.weekly"
     const val MONTHLY = "com.pick1.app.pro.monthly"
-    const val ANNUAL = "com.pick1.app.pro.annual"
     const val DAY_PASS = "com.pick1.app.daypass"
 
-    /** Subscription SKUs, in paywall display order. */
-    val SUBS = listOf(WEEKLY, MONTHLY, ANNUAL)
+    /**
+     * Subscription SKUs, in paywall display order.
+     *
+     * TWO products, matching iOS exactly: weekly and monthly, both $14.99
+     * recurring after a $0.99 first period. The annual was removed on
+     * 2026-09-10 because iOS no longer sells one; Android was still
+     * advertising it at $249.99, a product that does not exist, and the
+     * best-value preselect was pointing straight at it.
+     */
+    val SUBS = listOf(WEEKLY, MONTHLY)
 
     fun name(id: String) = when (id) {
-        WEEKLY -> "Weekly"; MONTHLY -> "Monthly"; ANNUAL -> "Annual"; DAY_PASS -> "Day Pass"
+        WEEKLY -> "Weekly"; MONTHLY -> "Monthly"; DAY_PASS -> "Day Pass"
         else -> id
     }
     fun subtitle(id: String) = when (id) {
         WEEKLY -> "Full access, billed weekly"
-        MONTHLY -> "Best per-week rate"
-        ANNUAL -> "Best value — billed yearly"
+        MONTHLY -> "Same price, four times the access"
         DAY_PASS -> "24-hour full access"
         else -> ""
     }
     fun fallbackUnit(id: String) = when (id) {
-        WEEKLY -> "/wk"; MONTHLY -> "/mo"; ANNUAL -> "/yr"; else -> ""
+        WEEKLY -> "/wk"; MONTHLY -> "/mo"; else -> ""
     }
 }
 
@@ -87,10 +97,20 @@ object Products {
  * moment the catalogue loads.
  */
 object PlaceholderCatalogue {
-    fun plans(trialEligible: Boolean): List<PlanOffer> = listOf(
-        PlanOffer(Products.WEEKLY, "Weekly", "Full access, billed weekly", "$14.99", "/wk", hasTrial = trialEligible),
-        PlanOffer(Products.MONTHLY, "Monthly", "Best per-week rate", "$39.99", "/mo"),
-        PlanOffer(Products.ANNUAL, "Annual", "Best value — billed yearly", "$249.99", "/yr", isBestValue = true),
+    fun plans(introEligible: Boolean): List<PlanOffer> = listOf(
+        PlanOffer(
+            Products.WEEKLY, "Weekly", "Full access, billed weekly",
+            "$14.99", "/wk",
+            introPrice = if (introEligible) "$0.99" else null,
+        ),
+        // Monthly is the better value now that both plans cost the same
+        // recurring price: same $14.99, four times the access.
+        PlanOffer(
+            Products.MONTHLY, "Monthly", "Same price, four times the access",
+            "$14.99", "/mo",
+            introPrice = if (introEligible) "$0.99" else null,
+            isBestValue = true,
+        ),
     )
 }
 
@@ -121,8 +141,9 @@ object Billing {
     /** Real Play offers; empty until the catalogue loads (UI falls back). */
     val offers: StateFlow<List<PlanOffer>> = _offers.asStateFlow()
 
-    private val _trialEligible = MutableStateFlow(false)
-    val trialEligible: StateFlow<Boolean> = _trialEligible.asStateFlow()
+    private val _introEligible = MutableStateFlow(false)
+    /** True when Play is offering the $0.99 first period on this account. */
+    val introEligible: StateFlow<Boolean> = _introEligible.asStateFlow()
 
     private var appContext: Context? = null
     private var client: BillingClient? = null
@@ -193,31 +214,36 @@ object Billing {
     }
 
     private fun rebuildOffers() {
-        var anyTrial = false
+        var anyIntro = false
         val list = Products.SUBS.mapNotNull { id ->
             val d = detailsById[id] ?: return@mapNotNull null
             val offer = bestOffer(d) ?: return@mapNotNull null
-            val paidPhase = offer.pricingPhases.pricingPhaseList.lastOrNull()
-            val hasTrial = offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
-            if (hasTrial) anyTrial = true
+            val phases = offer.pricingPhases.pricingPhaseList
+            val paidPhase = phases.lastOrNull()
+            // The recurring price is the LAST phase; anything before it is the
+            // introductory period. Detecting it by "price is zero" only ever
+            // found a FREE trial, and this offer is a paid $0.99 intro, so the
+            // old check reported no offer at all.
+            val introPhase = phases.dropLast(1).firstOrNull()
+            if (introPhase != null) anyIntro = true
             PlanOffer(
                 productId = id,
                 name = Products.name(id),
                 subtitle = Products.subtitle(id),
                 displayPrice = paidPhase?.formattedPrice ?: "",
                 unit = unitFor(paidPhase?.billingPeriod) ?: Products.fallbackUnit(id),
-                hasTrial = hasTrial,
-                isBestValue = id == Products.ANNUAL,
+                introPrice = introPhase?.formattedPrice,
+                isBestValue = id == Products.MONTHLY,
             )
         }
         _offers.value = list
-        _trialEligible.value = anyTrial
+        _introEligible.value = anyIntro
     }
 
-    /** The base subscription offer (prefer one that carries a free trial). */
+    /** The base subscription offer, preferring one that carries an intro phase. */
     private fun bestOffer(d: ProductDetails): ProductDetails.SubscriptionOfferDetails? {
         val offers = d.subscriptionOfferDetails ?: return null
-        return offers.firstOrNull { o -> o.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L } }
+        return offers.firstOrNull { it.pricingPhases.pricingPhaseList.size > 1 }
             ?: offers.lastOrNull()
     }
 
