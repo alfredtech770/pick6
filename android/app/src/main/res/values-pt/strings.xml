@@ -154,7 +154,7 @@
     <string name="live_empty_title">Nada em direto agora.</string>
     <string name="live_empty_sub">Volta mais perto do apito inicial.</string>
     <string name="funnel_welcome_headline">GANHA\nCOM CABEÇA.\n*NÃO À FORÇA.*</string>
-    <string name="funnel_welcome_lead">A IA que se pronuncia sobre todos os jogos do dia em 10 desportos, e regista cada resultado em público.</string>
+    <string name="funnel_welcome_lead">A IA que se pronuncia sobre todos os jogos do dia em 11 desportos, e regista cada resultado em público.</string>
     <string name="funnel_welcome_cta">COMEÇAR →</string>
     <string name="funnel_welcome_member">"Já és membro? "</string>
     <string name="funnel_welcome_signin">Iniciar sessão</string>
@@ -239,7 +239,7 @@
     <string name="funnel_red4_cta">MOSTRA-ME A SOLUÇÃO →</string>
     <string name="funnel_green1_kicker">A solução Pick1 · 1 de 3</string>
     <string name="funnel_green1_headline">DADOS, NÃO\n*EMOÇÃO.*</string>
-    <string name="funnel_green1_lead">Todos os jogos do dia decididos pelos dados, em 10 desportos.</string>
+    <string name="funnel_green1_lead">Todos os jogos do dia decididos pelos dados, em 11 desportos.</string>
     <string name="funnel_green1_cta">SEGUINTE →</string>
     <string name="funnel_green2_kicker">A solução Pick1 · 2 de 3</string>
     <string name="funnel_green2_headline">VÊ O\n*RACIOCÍNIO.*</string>
@@ -275,7 +275,7 @@
     <string name="funnel_compare_row3">Registado antes do apito</string>
     <string name="funnel_compare_row4">Buscador da melhor odd</string>
     <string name="funnel_compare_row5">Sem «acertos garantidos»</string>
-    <string name="funnel_compare_row6">10 desportos, todos os jogos</string>
+    <string name="funnel_compare_row6">11 desportos, todos os jogos</string>
     <string name="funnel_goals_kicker">Define o teu objetivo</string>
     <string name="funnel_goals_headline">QUAL É O TEU\n*OBJETIVO?*</string>
     <string name="funnel_goals_lead">Vamos adaptar os teus picks diários a ele.</string>
@@ -316,7 +316,7 @@
     <string name="funnel_ttw_cta">VER O MEU PLANO →</string>
     <string name="funnel_paywall_kicker">Passa a Pro</string>
     <string name="funnel_paywall_headline">DESBLOQUEIA\nCADA *PICK.*</string>
-    <string name="funnel_paywall_feat1">Todos os jogos decididos, em 10 desportos</string>
+    <string name="funnel_paywall_feat1">Todos os jogos decididos, em 11 desportos</string>
     <string name="funnel_paywall_feat2">Confiança calibrada + raciocínio</string>
     <string name="funnel_paywall_feat3">Registo público, acompanhamento ao vivo e ROI</string>
     <string name="funnel_paywall_feat4">Melhor odd entre 6 casas de apostas</string>

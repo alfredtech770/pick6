@@ -78,6 +78,8 @@ object V4 {
         "f1" -> Color(0xFF8FA3BF)
         "golf" -> Color(0xFF48E0A0)
         "cricket" -> Color(0xFF22C9B7)
+        // Australian football takes the AFL's own yellow-green.
+        "afl" -> Color(0xFFD6E04A)
         else -> P1.Lime
     }
 
@@ -99,7 +101,7 @@ object V4 {
  */
 val P1_SPORTS: List<String> = listOf(
     "basketball", "football", "soccer", "hockey", "baseball",
-    "combat", "f1", "tennis", "cricket", "golf",
+    "combat", "f1", "tennis", "cricket", "golf", "afl",
 )
 
 /**
@@ -125,6 +127,7 @@ fun v4Name(sport: String): String = when (sport) {
     "golf" -> "Golf"
     "cricket" -> "Cricket"
     "tennis" -> "Tennis"
+    "afl" -> "Aussie"
     else -> sport.replaceFirstChar { it.uppercase() }
 }
 
@@ -461,13 +464,20 @@ fun P1V4GameRow(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.blur(blur),
                     )
-                    Text(
-                        metaLine,
-                        style = mono(9, FontWeight.Bold, tracking = 0.54f),
-                        color = V4.mute,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    // On the ALL board a card gave no clue what sport it
+                    // was: the crests are team logos and the league code is
+                    // jargon. Same mark as the orb rail, tinted the same.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        com.pick1.app.ui.components.P1SportMark(pick.sport, size = 11)
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            metaLine,
+                            style = mono(9, FontWeight.Bold, tracking = 0.54f),
+                            color = V4.mute,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
 
                 Column(horizontalAlignment = Alignment.End) {

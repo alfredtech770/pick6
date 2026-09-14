@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.SportsGolf
 import androidx.compose.material.icons.filled.SportsHockey
 import androidx.compose.material.icons.filled.SportsMma
 import androidx.compose.material.icons.filled.SportsMotorsports
+import androidx.compose.material.icons.filled.SportsRugby
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material3.Icon
@@ -46,6 +47,8 @@ fun sportIcon(sport: String): ImageVector = when (sport) {
     "tennis" -> Icons.Filled.SportsTennis
     "cricket" -> Icons.Filled.SportsCricket
     "golf" -> Icons.Filled.SportsGolf
+    // Aussie rules: an oval ball, so the rugby mark is the honest match.
+    "afl" -> Icons.Filled.SportsRugby
     else -> Icons.Filled.GridView
 }
 
