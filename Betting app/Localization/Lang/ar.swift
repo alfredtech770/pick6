@@ -184,7 +184,7 @@ enum ArabicStrings {
         // In RTL the "forward" arrow points left (←), matching reading flow.
         // Welcome
         .funnel_welcome_headline:        "اربح\nبذكاء.\n*لا بمشقّة.*",
-        .funnel_welcome_lead:            "الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 10 رياضات، ويسجّل كل نتيجة علنًا.",
+        .funnel_welcome_lead:            "الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 11 رياضة، ويسجّل كل نتيجة علنًا.",
         .funnel_welcome_cta:             "← لنبدأ",
         .funnel_welcome_member:          "عضو بالفعل؟ ",
         .funnel_welcome_signin:          "تسجيل الدخول",
@@ -275,7 +275,7 @@ enum ArabicStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "حل Pick1 · 1 من 3",
         .funnel_green1_headline:         "بيانات، لا\n*عاطفة.*",
-        .funnel_green1_lead:             "كل مباريات اليوم تحسمها البيانات، عبر 10 رياضات.",
+        .funnel_green1_lead:             "كل مباريات اليوم تحسمها البيانات، عبر 11 رياضة.",
         .funnel_green1_cta:              "← التالي",
         .funnel_green2_kicker:           "حل Pick1 · 2 من 3",
         .funnel_green2_headline:         "شاهد\n*التحليل.*",
@@ -361,7 +361,7 @@ enum ArabicStrings {
         // Paywall
         .funnel_paywall_kicker:          "اشترك في Pro",
         .funnel_paywall_headline:        "افتح\nكل *اختيار.*",
-        .funnel_paywall_feat1:           "كل المباريات محسومة، عبر 10 رياضات",
+        .funnel_paywall_feat1:           "كل المباريات محسومة، عبر 11 رياضة",
         .funnel_paywall_feat2:           "ثقة معايَرة + تحليل",
         .funnel_paywall_feat3:           "سجل علني وتتبّع مباشر وعائد استثمار",
         .funnel_paywall_feat4:           "أفضل خط عبر 6 مواقع مراهنة",

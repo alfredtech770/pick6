@@ -57,6 +57,7 @@ enum V4 {
         case "f1":         return Color(hex: "#8FA3BF")
         case "golf":       return Color(hex: "#48E0A0")
         case "cricket":    return Color(hex: "#22C9B7")
+        case "afl":        return Color(hex: "#D6E04A")
         default:           return Color.p1Lime
         }
     }
@@ -75,7 +76,7 @@ enum V4 {
 /// happens to have generated.
 let P1_SPORTS: [String] = [
     "basketball", "football", "soccer", "hockey", "baseball",
-    "combat", "f1", "tennis", "cricket", "golf",
+    "combat", "f1", "tennis", "cricket", "golf", "afl",
 ]
 
 /// Display names, also Ethan's: "Fight" not MMA, "Race" not Racing or F1.
@@ -87,6 +88,7 @@ func v4Name(_ sport: String) -> String {
     case "soccer": return "Soccer";         case "combat": return "Fight"
     case "f1": return "Race";               case "golf": return "Golf"
     case "cricket": return "Cricket";       case "tennis": return "Tennis"
+    case "afl": return "Aussie"
     default: return sport.capitalized
     }
 }
@@ -520,12 +522,15 @@ struct P1V4GameRow: View {
                         .minimumScaleFactor(0.55)
                         .blur(radius: isLocked ? 8 : 0)
 
-                    Text(metaLine)
-                        .font(.mono(9, weight: .bold))
-                        .tracking(0.54)
-                        .foregroundStyle(V4.mute)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.65)
+                    HStack(spacing: 5) {
+                        P1SportMark(sport: pick.sport, size: 10)
+                        Text(metaLine)
+                            .font(.mono(9, weight: .bold))
+                            .tracking(0.54)
+                            .foregroundStyle(V4.mute)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 

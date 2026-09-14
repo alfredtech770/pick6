@@ -182,7 +182,7 @@ enum ItalianStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "VINCI\nCON TESTA.\n*NON DI FORZA.*",
-        .funnel_welcome_lead:            "L'IA che si pronuncia su ogni partita del giorno in 10 sport, e registra ogni risultato in pubblico.",
+        .funnel_welcome_lead:            "L'IA che si pronuncia su ogni partita del giorno in 11 sport, e registra ogni risultato in pubblico.",
         .funnel_welcome_cta:             "INIZIA →",
         .funnel_welcome_member:          "Già iscritto? ",
         .funnel_welcome_signin:          "Accedi",
@@ -273,7 +273,7 @@ enum ItalianStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "La soluzione Pick1 · 1 di 3",
         .funnel_green1_headline:         "DATI, NON\n*ISTINTO.*",
-        .funnel_green1_lead:             "Ogni partita del giorno decisa dai dati, su 10 sport.",
+        .funnel_green1_lead:             "Ogni partita del giorno decisa dai dati, su 11 sport.",
         .funnel_green1_cta:              "AVANTI →",
         .funnel_green2_kicker:           "La soluzione Pick1 · 2 di 3",
         .funnel_green2_headline:         "VEDI IL\n*RAGIONAMENTO.*",
@@ -312,7 +312,7 @@ enum ItalianStrings {
         .funnel_compare_row3:            "Registrato prima del fischio",
         .funnel_compare_row4:            "Ricerca miglior quota",
         .funnel_compare_row5:            "Niente «colpi garantiti»",
-        .funnel_compare_row6:            "10 sport, una scelta",
+        .funnel_compare_row6:            "11 sport, una scelta",
         // Goals
         .funnel_goals_kicker:            "Imposta il tuo obiettivo",
         .funnel_goals_headline:          "QUAL È IL TUO\n*OBIETTIVO?*",
@@ -359,7 +359,7 @@ enum ItalianStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passa a Pro",
         .funnel_paywall_headline:        "SBLOCCA\nOGNI *PICK.*",
-        .funnel_paywall_feat1:           "Ogni partita analizzata, su 10 sport",
+        .funnel_paywall_feat1:           "Ogni partita analizzata, su 11 sport",
         .funnel_paywall_feat2:           "Fiducia calibrata + ragionamento",
         .funnel_paywall_feat3:           "Registro pubblico, tracciamento live e ROI",
         .funnel_paywall_feat4:           "Miglior quota tra 6 bookmaker",
