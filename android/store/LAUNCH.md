@@ -37,7 +37,30 @@ Government apps (No), Financial features (none), Health (none). With the
 privacy policy, ads declaration and store listing that were already in
 place, the console checklist stands at **6 of 11**.
 
-### Blocked on you, one field
+### Verified against Publishing overview
+
+Not from the checklist, from the queue itself, which is what Google
+actually acts on.
+
+**Queued, ready to send for review:** the store listing in 8 locales, the
+privacy policy URL, the ads declaration, the Health apps declaration, and
+the app category (Sports).
+
+**Recorded, taken into account at review:** the Government apps and
+Financial features declarations.
+
+**Published immediately:** the store listing contact details,
+support@pick1.live and https://pick1.live. This one does not queue, Play
+publishes contact details straight away.
+
+**Data safety is absent from the queue.** It was filled once, every data
+type reported Completed, the page confirmed the save at each step, and none
+of it survived. It does not appear anywhere in Publishing overview, so the
+work is genuinely gone rather than pending. Treat the questionnaire as
+hostile: do it in one sitting, never leave it part-done, and confirm
+afterwards that it shows up in Publishing overview before trusting it.
+
+### Blocked on you, two things
 
 **Sign in details** cannot save without the reviewer password, and entering
 a password is the one thing I do not do. Everything else in that form is
@@ -63,26 +86,15 @@ ready to retype in under a minute:
 **Target audience** is gated behind Sign in details and cannot be opened
 until it is saved.
 
-### Data safety, steps 1 to 3 are saved
+**Content rating** needs one tick: "I agree to the Terms of Use as outlined
+by the International Age Rating Coalition". That is a legal agreement in
+PICK1's name, so it is yours to accept, not mine. The two fields above it
+are answered: email `support@pick1.live`, category **All Other App Types**.
+Not "Game", whose description covers "a game or betting app ... or daily
+fantasy sports": Pick1 takes no bets and runs no contests, so that bucket
+would be a false declaration.
 
-Answered and persisted:
-
-- Collects required data types: **Yes**
-- All data encrypted in transit: **Yes**
-- Account creation: **Username and other authentication** only. Not
-  username+password, not OAuth: Android signs in with an email OTP, and the
-  Google button was dead and has been removed.
-- Delete account URL: `https://pick1.live/delete-account` (written and
-  deployed this session)
-- Partial data deletion without deleting the account: **No**
-- Data types: Email address, User IDs, Purchase history, Diagnostics, App
-  interactions, Device or other IDs. Nothing else.
-
-**Step 4 does not survive leaving the questionnaire.** Each type showed
-"Completed" and the page confirmed "your changes have been saved", but
-re-entering the flow reset every one of them to "Not started". Do step 4 in
-one sitting and finish on the Preview step without navigating away. Every
-type takes the same three answers, then its own purposes:
+### Data safety, the answers to re-enter
 
 | | Collected | Shared | Ephemeral | Required | Purposes |
 |---|---|---|---|---|---|
@@ -92,6 +104,11 @@ type takes the same three answers, then its own purposes:
 | Diagnostics | yes | no | no | required | Analytics |
 | App interactions | yes | no | no | required | Analytics |
 | Device or other IDs | yes | no | no | required | App functionality, Developer communications |
+
+Plus, on the earlier steps: collects required data types **Yes**, encrypted
+in transit **Yes**, account creation **Username and other authentication**
+only, delete account URL `https://pick1.live/delete-account`, partial
+deletion without account deletion **No**.
 
 One quirk that will waste your time otherwise: each pop-up swallows the
 first click after it opens. Click the first checkbox twice.
