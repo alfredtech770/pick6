@@ -30,94 +30,70 @@ done; the earlier version of this file assumed none of it was.
 accounts created after 13 November 2023. This account is an organisation, so
 that rule does not apply and there is no two week wait.
 
-## What is actually left
+## Where it stands, 2026-09-15 end of session
 
-Worked through on 2026-09-15. Three declarations are **done and saved**:
-Government apps (No), Financial features (none), Health (none). With the
-privacy policy, ads declaration and store listing that were already in
-place, the console checklist stands at **6 of 11**.
+**App setup is complete: 11 of 11.** The "Set up your app" checklist is gone
+from the dashboard and the padlocks are off "Create and publish a release".
 
-### The whole thing hangs off one password field
+Done in the console:
 
-Found by walking Data safety to its last step. The Preview page says:
+| | |
+|---|---|
+| Store listing | 8 locales, updated for 12 sports |
+| Privacy policy | https://pick1.live/privacy |
+| Ads declaration | done |
+| Government apps / Financial features / Health | all declared none |
+| App category | **Sports** |
+| Contact details | support@pick1.live, https://pick1.live (published) |
+| Content rating | questionnaire complete, **All Other App Types** |
+| Sign in details | reviewer account, full-access box ticked |
+| Target audience | **18 and over**, plus Google's optional minor-blocking |
+| Data safety | all 5 steps, all 6 data types, **submitted** |
+| Internal testers | list "Pick1 internal" with admin@pick1.live, saved |
 
-> To submit your Data safety questionnaire, you must let us know the target
-> age group of your app, and other information about its contents.
+### The last step, and why it is yours
 
-and its Save button is disabled. So the dependency chain is:
+The release page is open at Internal testing, Create release, with the drop
+zone waiting. I cannot put the bundle in it: the browser upload bridge caps
+at **10 MB** and `app-release.aab` is **20.2 MB**. Drag the file onto the
+drop zone, then Next, then roll out.
 
-**Password → Sign in details → Target audience → Data safety submit.**
+The permanent fix is step 7 below, a Play Developer service account. With
+that JSON I upload bundles through the API and the size cap stops mattering,
+along with every future release.
 
-That also explains the earlier "lost" work. Nothing was eaten by a bug:
-Data safety simply cannot be submitted while Target audience is unanswered,
-and Target audience cannot be opened while Sign in details is unsaved. The
-per-type answers were being held in an unsubmittable draft, and re-entering
-the questionnaire reset whatever had not been committed.
+### Judgement calls I made, worth knowing
 
-Everything is now saved as a draft that survives, confirmed by the console's
-own "Change saved. Send for review in Publishing overview."
-
-### Done and queued
-
-- Store listing, 8 locales
-- Privacy policy URL
-- Ads declaration
-- Health apps, Government apps, Financial features declarations
-- App category: **Sports**
-- Contact details: support@pick1.live, https://pick1.live (published
-  immediately, these do not queue)
-- **Content rating**: questionnaire completed and saved. Category **All
-  Other App Types**, not "Game", whose own description covers "a game or
-  betting app ... or daily fantasy sports". Online content **Yes** (the
-  picks are AI-generated and served, not bundled). Violence, sexuality,
-  language, controlled substances, user-to-user sharing: all **No**.
-  Age-restricted promotion or sale including gambling: **No**, verified by
-  reading every outbound link in the app, which are only pick1.live's own
-  support, terms and privacy pages, no bookmaker and no affiliate. Digital
-  goods **Yes**, chance-based purchases **No**. Ratings came back at 14+ in
-  Brazil with an In-App Purchases descriptor.
-- **Data safety**: all five steps answered, all six data types completed,
-  saved as a draft. It submits itself the moment Target audience exists.
-
-### The one field
-
-**Sign in details**, the Password box. Everything else in that form is
-already typed and waiting in Chrome:
-
-- Name: `Reviewer account`
-- Username: `review@pick1.live`
-- Password: **`070770`**
-- Instructions: written, 472 of 500 characters
-- "provides full access ... including premium or paid content": ticked, made
-  true by the comp grant below
-
-**`070770`, NOT `p1ReviewDemo!2026#OTP`.** `AuthManager` holds both: the
-static code a human types into the six-digit OTP box, and an internal
-password the app then uses for a Supabase password grant. A reviewer only
-ever sees the OTP box.
+- **Content rating category: All Other App Types, not Game.** Google's Game
+  bucket description explicitly covers "a game or betting app ... or daily
+  fantasy sports". Pick1 takes no bets and runs no contests.
+- **Age-restricted promotion or sale, including gambling: No.** Verified by
+  reading every outbound link in the app. They are only pick1.live's own
+  support, terms and privacy pages. No bookmaker, no affiliate.
+- **Online content: Yes.** The picks are AI-generated and served, not
+  bundled, which is exactly the example Google gives.
+- **Minor-blocking: on.** Optional, and one click to undo. The app's own
+  funnel already gates at 21+, so it costs no real reach and it matches
+  every other declaration.
+- **Target age 18+**, which skipped the child-safety sub-sections entirely.
 
 ### The reviewer account had no Pro
 
 `review@pick1.live` existed since 10 June with zero `pro_grants` rows and no
 subscription, so it only ever saw the free tier. Google states on the Sign
-in details page itself that reviewers cannot purchase and cannot use free
-trials, so there was no path for them to see the paid product.
+in details page that reviewers cannot purchase and cannot use free trials,
+so there was no path for them to see the paid product.
 
 Fixed with a non-expiring comp grant, `granted_by` =
 `claude/play-launch-2026-09-15`. Delete that row to revoke. Apple's reviewer
 has the same need, so leave it.
 
-### Still untouched
+### The credential, for the record
 
-- **Content rating.** Category Reference / News. No user-generated content,
-  no gambling, no real-money wagering. This is the declaration Google
-  scrutinises hardest for an app that shows odds, and it is the one worth
-  reading twice before submitting.
-- **Select an app category and provide contact details.**
-- **Select testers** on the internal testing track, its last open step.
-
-Then send everything from **Publishing overview**; nothing above is live
-until you do.
+`AuthManager` holds two values and only one is ever typed by a human:
+`REVIEWER_STATIC_CODE` **070770** goes in the six-digit OTP box, and
+`REVIEWER_PASSWORD` is used internally by the app for a Supabase password
+grant. The Play form's Password field takes **070770**.
 
 ## Order of operations
 
