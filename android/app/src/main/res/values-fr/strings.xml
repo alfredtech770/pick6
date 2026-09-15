@@ -154,7 +154,7 @@
     <string name="live_empty_title">Rien en direct pour le moment.</string>
     <string name="live_empty_sub">Revenez à l\'approche du coup d\'envoi.</string>
     <string name="funnel_welcome_headline">GAGNEZ\nPLUS MALIN.\n*PAS PLUS DUR.*</string>
-    <string name="funnel_welcome_lead">L\'IA qui se prononce sur tous les matchs du jour, sur 11 sports, et note chaque résultat en public.</string>
+    <string name="funnel_welcome_lead">L\'IA qui se prononce sur tous les matchs du jour, sur 12 sports, et note chaque résultat en public.</string>
     <string name="funnel_welcome_cta">COMMENCER →</string>
     <string name="funnel_welcome_member">"Déjà membre ? "</string>
     <string name="funnel_welcome_signin">Se connecter</string>
@@ -239,7 +239,7 @@
     <string name="funnel_red4_cta">MONTREZ-MOI LA SOLUTION →</string>
     <string name="funnel_green1_kicker">La solution Pick1 · 1 sur 3</string>
     <string name="funnel_green1_headline">LES DONNÉES,\nPAS *L\'ÉMOTION.*</string>
-    <string name="funnel_green1_lead">Tous les matchs du jour tranchés par les données, sur 11 sports.</string>
+    <string name="funnel_green1_lead">Tous les matchs du jour tranchés par les données, sur 12 sports.</string>
     <string name="funnel_green1_cta">SUIVANT →</string>
     <string name="funnel_green2_kicker">La solution Pick1 · 2 sur 3</string>
     <string name="funnel_green2_headline">VOYEZ LE\n*RAISONNEMENT.*</string>
@@ -275,7 +275,7 @@
     <string name="funnel_compare_row3">Noté avant le coup d\'envoi</string>
     <string name="funnel_compare_row4">Comparateur de meilleures cotes</string>
     <string name="funnel_compare_row5">Pas de « coups sûrs garantis »</string>
-    <string name="funnel_compare_row6">11 sports, tous les matchs</string>
+    <string name="funnel_compare_row6">12 sports, tous les matchs</string>
     <string name="funnel_goals_kicker">Fixez votre objectif</string>
     <string name="funnel_goals_headline">QUEL EST\nVOTRE *OBJECTIF ?*</string>
     <string name="funnel_goals_lead">Nous adapterons vos picks quotidiens en conséquence.</string>
@@ -316,7 +316,7 @@
     <string name="funnel_ttw_cta">VOIR MON PLAN →</string>
     <string name="funnel_paywall_kicker">Passez Pro</string>
     <string name="funnel_paywall_headline">DÉBLOQUEZ\nCHAQUE *PICK.*</string>
-    <string name="funnel_paywall_feat1">Tous les matchs tranchés, sur 11 sports</string>
+    <string name="funnel_paywall_feat1">Tous les matchs tranchés, sur 12 sports</string>
     <string name="funnel_paywall_feat2">Confiance calibrée + raisonnement</string>
     <string name="funnel_paywall_feat3">Registre public, suivi en direct &amp; ROI</string>
     <string name="funnel_paywall_feat4">Meilleure cote parmi 6 bookmakers</string>

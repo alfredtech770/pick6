@@ -154,7 +154,7 @@
     <string name="live_empty_title">Aktuell nichts live.</string>
     <string name="live_empty_sub">Schau kurz vor Spielbeginn wieder vorbei.</string>
     <string name="funnel_welcome_headline">GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*</string>
-    <string name="funnel_welcome_lead">Die KI, die jedes Spiel des Tages in 11 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.</string>
+    <string name="funnel_welcome_lead">Die KI, die jedes Spiel des Tages in 12 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.</string>
     <string name="funnel_welcome_cta">LOSLEGEN →</string>
     <string name="funnel_welcome_member">"Schon dabei? "</string>
     <string name="funnel_welcome_signin">Anmelden</string>
@@ -239,7 +239,7 @@
     <string name="funnel_red4_cta">ZEIG MIR DIE LÖSUNG →</string>
     <string name="funnel_green1_kicker">Die Pick1-Lösung · 1 von 3</string>
     <string name="funnel_green1_headline">DATEN, NICHT\n*EMOTION.*</string>
-    <string name="funnel_green1_lead">Jedes Spiel des Tages, von den Daten entschieden, in 11 Sportarten.</string>
+    <string name="funnel_green1_lead">Jedes Spiel des Tages, von den Daten entschieden, in 12 Sportarten.</string>
     <string name="funnel_green1_cta">WEITER →</string>
     <string name="funnel_green2_kicker">Die Pick1-Lösung · 2 von 3</string>
     <string name="funnel_green2_headline">SIEH DIE\n*BEGRÜNDUNG.*</string>
@@ -275,7 +275,7 @@
     <string name="funnel_compare_row3">Vor Anpfiff protokolliert</string>
     <string name="funnel_compare_row4">Bestquoten-Finder</string>
     <string name="funnel_compare_row5">Keine „garantierten Treffer\"</string>
-    <string name="funnel_compare_row6">11 Sportarten, jedes Spiel</string>
+    <string name="funnel_compare_row6">12 Sportarten, jedes Spiel</string>
     <string name="funnel_goals_kicker">Setze dein Ziel</string>
     <string name="funnel_goals_headline">WAS IST DEIN\n*ZIEL?*</string>
     <string name="funnel_goals_lead">Wir richten deine täglichen Tipps danach aus.</string>
@@ -316,7 +316,7 @@
     <string name="funnel_ttw_cta">MEINEN PLAN ANSEHEN →</string>
     <string name="funnel_paywall_kicker">Werde Pro</string>
     <string name="funnel_paywall_headline">SCHALTE JEDEN\n*TIPP FREI.*</string>
-    <string name="funnel_paywall_feat1">Jedes Spiel getippt, in 11 Sportarten</string>
+    <string name="funnel_paywall_feat1">Jedes Spiel getippt, in 12 Sportarten</string>
     <string name="funnel_paywall_feat2">Kalibrierte Sicherheit + Begründung</string>
     <string name="funnel_paywall_feat3">Öffentliches Register, Live-Tracking &amp; ROI</string>
     <string name="funnel_paywall_feat4">Beste Quote bei 6 Buchmachern</string>

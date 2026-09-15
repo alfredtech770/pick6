@@ -79,7 +79,11 @@ fun PredictionHistoryScreen(
             p.homeTeam.lowercase().contains(q) ||
             p.awayTeam.lowercase().contains(q) ||
             p.league.lowercase().contains(q) ||
-            p.sport.lowercase().contains(q)
+            p.sport.lowercase().contains(q) ||
+            com.pick1.app.ui.home.v4Name(p.sport).lowercase().contains(q) ||
+            // "afl" is the stored key and "Aus Football" the shown label, so
+            // the words people actually type for this sport match neither.
+            (p.sport == "afl" && ("australian football".contains(q) || "aussie rules".contains(q)))
     }
     val wins = vm.picks.count { it.isWin }
     val losses = vm.picks.count { it.isLoss }

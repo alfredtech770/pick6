@@ -182,7 +182,7 @@ enum GermanStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*",
-        .funnel_welcome_lead:            "Die KI, die jedes Spiel des Tages in 11 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.",
+        .funnel_welcome_lead:            "Die KI, die jedes Spiel des Tages in 12 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.",
         .funnel_welcome_cta:             "LOSLEGEN →",
         .funnel_welcome_member:          "Schon dabei? ",
         .funnel_welcome_signin:          "Anmelden",
@@ -273,7 +273,7 @@ enum GermanStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "Die Pick1-Lösung · 1 von 3",
         .funnel_green1_headline:         "DATEN, NICHT\n*EMOTION.*",
-        .funnel_green1_lead:             "Jedes Spiel des Tages, von den Daten entschieden, in 11 Sportarten.",
+        .funnel_green1_lead:             "Jedes Spiel des Tages, von den Daten entschieden, in 12 Sportarten.",
         .funnel_green1_cta:              "WEITER →",
         .funnel_green2_kicker:           "Die Pick1-Lösung · 2 von 3",
         .funnel_green2_headline:         "SIEH DIE\n*BEGRÜNDUNG.*",
@@ -312,7 +312,7 @@ enum GermanStrings {
         .funnel_compare_row3:            "Vor Anpfiff protokolliert",
         .funnel_compare_row4:            "Bestquoten-Finder",
         .funnel_compare_row5:            "Keine „garantierten Treffer\"",
-        .funnel_compare_row6:            "11 Sportarten, ein Tipp",
+        .funnel_compare_row6:            "12 Sportarten, ein Tipp",
         // Goals
         .funnel_goals_kicker:            "Setze dein Ziel",
         .funnel_goals_headline:          "WAS IST DEIN\n*ZIEL?*",
@@ -359,7 +359,7 @@ enum GermanStrings {
         // Paywall
         .funnel_paywall_kicker:          "Werde Pro",
         .funnel_paywall_headline:        "SCHALTE JEDEN\n*TIPP FREI.*",
-        .funnel_paywall_feat1:           "Jedes Spiel getippt, in 11 Sportarten",
+        .funnel_paywall_feat1:           "Jedes Spiel getippt, in 12 Sportarten",
         .funnel_paywall_feat2:           "Kalibrierte Sicherheit + Begründung",
         .funnel_paywall_feat3:           "Öffentliches Register, Live-Tracking & ROI",
         .funnel_paywall_feat4:           "Beste Quote bei 6 Buchmachern",

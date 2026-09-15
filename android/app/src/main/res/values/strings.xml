@@ -154,7 +154,7 @@
     <string name="live_empty_title">Nothing live right now.</string>
     <string name="live_empty_sub">Check back closer to kickoff.</string>
     <string name="funnel_welcome_headline">WIN\nSMARTER.\n*NOT HARDER.*</string>
-    <string name="funnel_welcome_lead">The AI that calls every game on today\'s board across 11 sports, and logs every result in public.</string>
+    <string name="funnel_welcome_lead">The AI that calls every game on today\'s board across 12 sports, and logs every result in public.</string>
     <string name="funnel_welcome_cta">GET STARTED →</string>
     <string name="funnel_welcome_member">"Already a member? "</string>
     <string name="funnel_welcome_signin">Sign in</string>
@@ -239,7 +239,7 @@
     <string name="funnel_red4_cta">SHOW ME THE FIX →</string>
     <string name="funnel_green1_kicker">The Pick1 fix · 1 of 3</string>
     <string name="funnel_green1_headline">DATA, NOT\n*EMOTION.*</string>
-    <string name="funnel_green1_lead">Every game on today\'s board called by the data, across 11 sports.</string>
+    <string name="funnel_green1_lead">Every game on today\'s board called by the data, across 12 sports.</string>
     <string name="funnel_green1_cta">NEXT →</string>
     <string name="funnel_green2_kicker">The Pick1 fix · 2 of 3</string>
     <string name="funnel_green2_headline">SEE THE\n*REASONING.*</string>
@@ -275,7 +275,7 @@
     <string name="funnel_compare_row3">Logged before kickoff</string>
     <string name="funnel_compare_row4">Best-line finder</string>
     <string name="funnel_compare_row5">No \"guaranteed locks\"</string>
-    <string name="funnel_compare_row6">11 sports, every game</string>
+    <string name="funnel_compare_row6">12 sports, every game</string>
     <string name="funnel_goals_kicker">Set your target</string>
     <string name="funnel_goals_headline">WHAT\'S YOUR\n*GOAL?*</string>
     <string name="funnel_goals_lead">We\'ll tailor your daily picks around it.</string>
@@ -316,7 +316,7 @@
     <string name="funnel_ttw_cta">SEE MY PLAN →</string>
     <string name="funnel_paywall_kicker">Go Pro</string>
     <string name="funnel_paywall_headline">UNLOCK\nEVERY *PICK.*</string>
-    <string name="funnel_paywall_feat1">Every game called, across 11 sports</string>
+    <string name="funnel_paywall_feat1">Every game called, across 12 sports</string>
     <string name="funnel_paywall_feat2">Calibrated confidence + reasoning</string>
     <string name="funnel_paywall_feat3">Public ledger, live tracking &amp; ROI</string>
     <string name="funnel_paywall_feat4">Best line across 6 sportsbooks</string>

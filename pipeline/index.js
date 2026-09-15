@@ -351,13 +351,21 @@ function inSeason(league) {
   return months.includes(Number(todayISO().slice(5, 7)));
 }
 
-// The ten sports the app actually shows (Pick1HomeV4.swift `P1_SPORTS`).
-// Rugby and AFL are still generated — the model calls them fine — but no
-// screen renders them, so they run after everything a user can see rather
-// than competing with it for the daily budget.
+// The sports the app actually shows (Pick1HomeV4.swift `P1_SPORTS`).
+// Everything outside this set runs after everything a user can see, so it
+// only spends what the visible sports left on the table.
+//
+// Rugby and AFL used to sit outside it, on the reasoning that no screen
+// rendered them. That reasoning inverted itself into a trap: the budget
+// normally trips inside the visible round-robin, so the hidden bucket was
+// never reached, and rugby produced ZERO picks in the life of the product
+// while AFL managed 12. They were not "still generated" as the old comment
+// claimed, they were starved. Now that both have chips on the board, a
+// permanently empty chip is worse than no chip, so they run in the main
+// rotation and take their turn like every other sport.
 const APP_SPORTS = new Set([
   'basketball', 'football', 'soccer', 'hockey', 'baseball',
-  'combat', 'f1', 'tennis', 'cricket', 'golf',
+  'combat', 'f1', 'tennis', 'cricket', 'golf', 'afl', 'rugby',
 ]);
 
 /// Leagues to run today, ordered so every SPORT gets a turn before any
@@ -2228,7 +2236,16 @@ async function sendDailyRecap() {
     for (const p of picks) units += p.result === 'win' ? payoutPct(p) / 100 : -1;
     const roi = Math.round((units / games) * 100);
     const net = Math.round(units * 100);   // flat $100 a pick, in dollars
-    if (roi <= 0) { log(`Push: recap skipped (${wins}/${games}, ${roi}%) — down day`); return; }
+    // A down day used to end here in silence, and down days are most days:
+    // `recap` reached the phone on 3 of the last 7. Saying nothing is not the
+    // only honest option, though. Naming one pick that DID come in is true,
+    // and it is the bullish half of a mixed day rather than an invented
+    // version of the whole one. The copy claims nothing about the day.
+    if (roi <= 0) {
+      log(`Push: recap skipped (${wins}/${games}, ${roi}%) — down day`);
+      await sendTopWin(y);
+      return;
+    }
 
     const days = await winningStreakDays();
     if (days >= 3) {
@@ -2239,6 +2256,35 @@ async function sendDailyRecap() {
       log(`Push: recap sent (${wins}/${games}, +$${net})`);
     }
   } catch (e) { err('sendDailyRecap failed:', e.message); }
+}
+
+/// The single best winning pick of a given day, for the days the recap is
+/// suppressed. Requires a real posted price: without one the payout would be
+/// inferred from our own confidence, and an inferred number has no place in
+/// a notification whose entire content is a dollar figure.
+///
+/// Silent when the day has no priced winner at all, which is the correct
+/// outcome. This exists to fill days that had something to show, not to
+/// guarantee a daily send.
+async function sendTopWin(dateISO) {
+  try {
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('pick, market_odds')
+      .eq('game_date', dateISO)
+      .eq('result', 'win')
+      .not('market_odds', 'is', null)
+      .gt('market_odds', 1)
+      .order('market_odds', { ascending: false })
+      .limit(1);
+    if (!picks || !picks.length) { log('Push: top_win skipped — no priced winner'); return; }
+    const top = picks[0];
+    const payout = Math.round((top.market_odds - 1) * 100);
+    if (payout <= 0) return;
+    await sendPush({ key: 'top_win', prefKey: 'results',
+      args: { team: top.pick, payout } });
+    log(`Push: top_win sent (${top.pick}, +$${payout})`);
+  } catch (e) { err('sendTopWin failed:', e.message); }
 }
 
 /// How many consecutive days, ending yesterday, settled net positive on a

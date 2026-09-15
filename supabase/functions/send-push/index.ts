@@ -148,6 +148,23 @@ const LOC: Record<string, Locales> = {
     pt: { t: "📈 Membros: {w}-{l} ontem", b: "$100 por palpite = +${net}." },
     ar: { t: "📈 الأعضاء: {w}-{l} أمس", b: "100$ لكل توقّع = +{net}$." },
   },
+  // The down-day filler.
+  //
+  // `recap` is suppressed whenever the day finished net negative, which is
+  // most of the time, and the product then said nothing at all on four days
+  // in seven. This names ONE pick that actually won, with its own price and
+  // stake basis, and makes no claim about the day it came from. That is the
+  // whole line: a true statement about a single result, never a performance
+  // figure dressed up as one.
+  top_win: {
+    en: { t: "🏆 {team} came in yesterday", b: "+${payout} on $100 tracked." },
+    fr: { t: "🏆 {team} est passé hier", b: "+{payout} $ sur 100 $ suivis." },
+    es: { t: "🏆 {team} entró ayer", b: "+${payout} sobre $100 seguidos." },
+    de: { t: "🏆 {team} ist gestern aufgegangen", b: "+{payout} $ auf 100 $ verfolgt." },
+    it: { t: "🏆 {team} è passato ieri", b: "+{payout} $ su 100 $ seguiti." },
+    pt: { t: "🏆 {team} entrou ontem", b: "+${payout} sobre $100 seguidos." },
+    ar: { t: "🏆 {team} نجح أمس", b: "+{payout}$ على 100$ متابَعة." },
+  },
   // Weekly, free tier only. A week of the published record is a bigger,
   // harder number to shrug off than a single day, and it only goes out on a
   // week the record actually finished up.
@@ -205,6 +222,7 @@ const TIER: Record<string, Tier> = {
   free_recap: "daily",
   free_recap_b: "daily",
   week_missed: "daily",
+  top_win: "daily",
   day1_return: "daily",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
@@ -219,7 +237,17 @@ const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number } {
   if (!lastSeenAt) return { perDay: 0, perWeek: 0 };
   const days = (Date.now() - Date.parse(lastSeenAt)) / 86400e3;
-  if (days <= 14) return { perDay: 2, perWeek: 10 };
+  // Raised from 2/day, 10/week on 2026-09-15. The measured week was 8,394
+  // sends over 2,454 devices, and the binding constraint was never this cap
+  // but the SUPPLY of things worth sending, so the active tier was rarely
+  // reaching even the old ceiling. Three a day with four hours between them
+  // is still at most one per waking third of the day.
+  //
+  // The dormant tiers are deliberately untouched. 1,598 of those 2,454
+  // devices have been dark for six weeks, and pushing them is precisely what
+  // got the sender demoted before. Volume comes from the people who are
+  // still here, never from waking the ones who left.
+  if (days <= 14) return { perDay: 3, perWeek: 14 };
   if (days <= 45) return { perDay: 1, perWeek: 2 };
   return { perDay: 0, perWeek: 0 };
 }
@@ -474,7 +502,8 @@ Deno.serve(async (req: Request) => {
     // screen is even out. Both platforms now: APNs takes a file name, Android
     // takes a channel whose sound was fixed when the channel was created.
     const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds",
-                                "free_recap", "free_recap_b", "week_missed"]);
+                                "free_recap", "free_recap_b", "week_missed",
+                                "top_win"]);
     const money = !!k && MONEY_KEYS.has(k);
     const sound = money ? "chaching.caf" : "default";
     // Android names a raw resource, not a file, and the sound is a property

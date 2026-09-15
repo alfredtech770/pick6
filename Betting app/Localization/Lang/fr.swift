@@ -182,7 +182,7 @@ enum FrenchStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GAGNEZ\nPLUS MALIN.\n*PAS PLUS DUR.*",
-        .funnel_welcome_lead:            "L'IA qui se prononce sur tous les matchs du jour, sur 11 sports, et note chaque résultat en public.",
+        .funnel_welcome_lead:            "L'IA qui se prononce sur tous les matchs du jour, sur 12 sports, et note chaque résultat en public.",
         .funnel_welcome_cta:             "COMMENCER →",
         .funnel_welcome_member:          "Déjà membre ? ",
         .funnel_welcome_signin:          "Se connecter",
@@ -273,7 +273,7 @@ enum FrenchStrings {
         // Green "the fix"
         .funnel_green1_kicker:           "La solution Pick1 · 1 sur 3",
         .funnel_green1_headline:         "LES DONNÉES,\nPAS *L'ÉMOTION.*",
-        .funnel_green1_lead:             "Tous les matchs du jour tranchés par les données, sur 11 sports.",
+        .funnel_green1_lead:             "Tous les matchs du jour tranchés par les données, sur 12 sports.",
         .funnel_green1_cta:              "SUIVANT →",
         .funnel_green2_kicker:           "La solution Pick1 · 2 sur 3",
         .funnel_green2_headline:         "VOYEZ LE\n*RAISONNEMENT.*",
@@ -359,7 +359,7 @@ enum FrenchStrings {
         // Paywall
         .funnel_paywall_kicker:          "Passez Pro",
         .funnel_paywall_headline:        "DÉBLOQUEZ\nCHAQUE *PICK.*",
-        .funnel_paywall_feat1:           "Tous les matchs tranchés, sur 11 sports",
+        .funnel_paywall_feat1:           "Tous les matchs tranchés, sur 12 sports",
         .funnel_paywall_feat2:           "Confiance calibrée + raisonnement",
         .funnel_paywall_feat3:           "Registre public, suivi en direct & ROI",
         .funnel_paywall_feat4:           "Meilleure cote parmi 6 bookmakers",

@@ -58,6 +58,7 @@ enum V4 {
         case "golf":       return Color(hex: "#48E0A0")
         case "cricket":    return Color(hex: "#22C9B7")
         case "afl":        return Color(hex: "#D6E04A")
+        case "rugby":      return Color(hex: "#5BC8FF")
         default:           return Color.p1Lime
         }
     }
@@ -71,12 +72,17 @@ enum V4 {
 }
 
 
-/// The ten sports Pick1 covers, in the order Ethan set them. This is the
+/// The twelve sports Pick1 covers, in the order Ethan set them. This is the
 /// authority: a sport not on this list is not shown, whatever the pipeline
 /// happens to have generated.
+///
+/// Adding a sport here is only half the job. The pipeline keeps its own
+/// `APP_SPORTS` set, and anything missing from THAT one is run last, after
+/// the daily budget has already been spent on the visible sports. Rugby sat
+/// in that gap and produced zero picks in the life of the product.
 let P1_SPORTS: [String] = [
     "basketball", "football", "soccer", "hockey", "baseball",
-    "combat", "f1", "tennis", "cricket", "golf", "afl",
+    "combat", "f1", "tennis", "cricket", "golf", "afl", "rugby",
 ]
 
 /// Display names, also Ethan's: "Fight" not MMA, "Race" not Racing or F1.
@@ -88,7 +94,11 @@ func v4Name(_ sport: String) -> String {
     case "soccer": return "Soccer";         case "combat": return "Fight"
     case "f1": return "Race";               case "golf": return "Golf"
     case "cricket": return "Cricket";       case "tennis": return "Tennis"
-    case "afl": return "Aussie"
+    case "rugby": return "Rugby"
+    // "Aussie" alone named the nationality, not the sport. The orb label is
+    // one line inside 62pt, so the full "Australian Football" cannot be set
+    // here; this is the longest form that still reads at the rail's 8.5pt.
+    case "afl": return "Aus Football"
     default: return sport.capitalized
     }
 }
@@ -1302,8 +1312,12 @@ struct Pick1HomeV4: View {
         let needle = resultSearch.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return pastPredictions }
         return pastPredictions.filter { pick in
-            [pick.homeTeam, pick.awayTeam, pick.pick, pick.displayPick,
-             pick.league, pick.sport, v4Name(pick.sport), pick.gameDate]
+            // `sport` carries the raw key ("afl") and v4Name the shown label
+            // ("Aus Football"), so the words a user actually types for this
+            // sport, "australian" and "aussie", match neither. Alias them.
+            ([pick.homeTeam, pick.awayTeam, pick.pick, pick.displayPick,
+              pick.league, pick.sport, v4Name(pick.sport), pick.gameDate]
+             + (pick.sport == "afl" ? ["australian football", "aussie rules"] : []))
                 .contains { $0.localizedCaseInsensitiveContains(needle) }
         }
     }

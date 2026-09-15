@@ -80,6 +80,7 @@ object V4 {
         "cricket" -> Color(0xFF22C9B7)
         // Australian football takes the AFL's own yellow-green.
         "afl" -> Color(0xFFD6E04A)
+        "rugby" -> Color(0xFF5BC8FF)
         else -> P1.Lime
     }
 
@@ -92,7 +93,7 @@ object V4 {
 }
 
 /**
- * The ten sports, always all of them, in iOS order.
+ * The twelve sports, always all of them, in iOS order.
  *
  * This is the product's coverage claim, so the rail shows every one whether
  * or not today's board happens to carry it. A sport with nothing on it reads
@@ -101,7 +102,7 @@ object V4 {
  */
 val P1_SPORTS: List<String> = listOf(
     "basketball", "football", "soccer", "hockey", "baseball",
-    "combat", "f1", "tennis", "cricket", "golf", "afl",
+    "combat", "f1", "tennis", "cricket", "golf", "afl", "rugby",
 )
 
 /**
@@ -127,7 +128,11 @@ fun v4Name(sport: String): String = when (sport) {
     "golf" -> "Golf"
     "cricket" -> "Cricket"
     "tennis" -> "Tennis"
-    "afl" -> "Aussie"
+    "rugby" -> "Rugby"
+    // "Aussie" alone named the nationality, not the sport. The orb label is
+    // one line inside 62dp, so the full "Australian Football" cannot be set
+    // here; this is the longest form that still reads at the rail's 8.5sp.
+    "afl" -> "Aus Football"
     else -> sport.replaceFirstChar { it.uppercase() }
 }
 
