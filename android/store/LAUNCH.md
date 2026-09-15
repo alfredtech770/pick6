@@ -60,31 +60,28 @@ work is genuinely gone rather than pending. Treat the questionnaire as
 hostile: do it in one sitting, never leave it part-done, and confirm
 afterwards that it shows up in Publishing overview before trusting it.
 
-### Blocked on you, two things
+### Blocked on you, one field
 
-**Sign in details** cannot save without the reviewer password, and entering
-a password is the one thing I do not do. Everything else in that form is
-ready to retype in under a minute:
+**Sign in details** is filled in except the Password box, and the form will
+not save without it. Entering a password is the one thing I do not do. The
+dialog is open in Chrome with everything else already typed:
 
 - Name: `Reviewer account`
 - Username: `review@pick1.live`
-- Password: `p1ReviewDemo!2026#OTP` — the reviewer bypass constant in
-  `AuthManager.kt`, the same one App Store Connect already holds
-- Instructions (488 of the 500 characters allowed):
+- Password: **`070770`**
+- Instructions: written, 472 of the 500 characters allowed
+- "provides full access ... including premium or paid content": ticked, and
+  true as of today, see the comp grant below
 
-> Sign in with the email and password above at the "Join a community of
-> winners" step. No 2-step verification, no PIN, no biometrics; credentials
-> do not expire and work in any region.
->
-> The free tier unlocks one pick a day. Blurred cards marked UNLOCK open the
-> subscription screen; both plans bill through Google Play.
->
-> Pick1 publishes AI sports predictions and their public record. It is not a
-> sportsbook: no wagers, no funds held, no payouts. "Track" means logging a
-> pick placed elsewhere.
+**The value is `070770`, NOT `p1ReviewDemo!2026#OTP`.** An earlier version
+of this file said the opposite and would have caused a rejection.
+`AuthManager` holds both: the static code a human types into the six-digit
+OTP box, and an internal password the app then uses for a Supabase password
+grant. The reviewer only ever sees the six-digit box, so the internal
+password in that field would simply fail to log them in.
 
 **Target audience** is gated behind Sign in details and cannot be opened
-until it is saved.
+until it saves.
 
 **Content rating** needs one tick: "I agree to the Terms of Use as outlined
 by the International Age Rating Coalition". That is a legal agreement in
@@ -93,6 +90,17 @@ are answered: email `support@pick1.live`, category **All Other App Types**.
 Not "Game", whose description covers "a game or betting app ... or daily
 fantasy sports": Pick1 takes no bets and runs no contests, so that bucket
 would be a false declaration.
+
+### The reviewer account had no Pro
+
+`review@pick1.live` existed since 10 June with zero `pro_grants` rows and no
+subscription, so it only ever saw the free tier. Google's reviewers cannot
+purchase and cannot start a trial, which is stated on the Sign in details
+page itself, so they would have had no way to see the paid product at all.
+
+Fixed with a non-expiring comp grant on 2026-09-15, `granted_by` =
+`claude/play-launch-2026-09-15`. To revoke it, delete that row from
+`pro_grants`. Apple's reviewer has the same need, so leave it in place.
 
 ### Data safety, the answers to re-enter
 
