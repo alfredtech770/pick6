@@ -32,20 +32,81 @@ that rule does not apply and there is no two week wait.
 
 ## What is actually left
 
-The console's own checklist says **3 of 11 complete**. Done: privacy policy,
-ads declaration, store listing. Remaining, in the console's words:
+Worked through on 2026-09-15. Three declarations are **done and saved**:
+Government apps (No), Financial features (none), Health (none). With the
+privacy policy, ads declaration and store listing that were already in
+place, the console checklist stands at **6 of 11**.
 
-1. Sign in details
-2. Content rating
-3. Target audience
-4. Data safety
-5. Government apps
-6. Financial features
-7. Health
-8. Select an app category and provide contact details
+### Blocked on you, one field
 
-Plus, on the internal testing track, *Select testers*, which is the only
-step of that track still open (2 of 3 complete).
+**Sign in details** cannot save without the reviewer password, and entering
+a password is the one thing I do not do. Everything else in that form is
+ready to retype in under a minute:
+
+- Name: `Reviewer account`
+- Username: `review@pick1.live`
+- Password: `p1ReviewDemo!2026#OTP` — the reviewer bypass constant in
+  `AuthManager.kt`, the same one App Store Connect already holds
+- Instructions (488 of the 500 characters allowed):
+
+> Sign in with the email and password above at the "Join a community of
+> winners" step. No 2-step verification, no PIN, no biometrics; credentials
+> do not expire and work in any region.
+>
+> The free tier unlocks one pick a day. Blurred cards marked UNLOCK open the
+> subscription screen; both plans bill through Google Play.
+>
+> Pick1 publishes AI sports predictions and their public record. It is not a
+> sportsbook: no wagers, no funds held, no payouts. "Track" means logging a
+> pick placed elsewhere.
+
+**Target audience** is gated behind Sign in details and cannot be opened
+until it is saved.
+
+### Data safety, steps 1 to 3 are saved
+
+Answered and persisted:
+
+- Collects required data types: **Yes**
+- All data encrypted in transit: **Yes**
+- Account creation: **Username and other authentication** only. Not
+  username+password, not OAuth: Android signs in with an email OTP, and the
+  Google button was dead and has been removed.
+- Delete account URL: `https://pick1.live/delete-account` (written and
+  deployed this session)
+- Partial data deletion without deleting the account: **No**
+- Data types: Email address, User IDs, Purchase history, Diagnostics, App
+  interactions, Device or other IDs. Nothing else.
+
+**Step 4 does not survive leaving the questionnaire.** Each type showed
+"Completed" and the page confirmed "your changes have been saved", but
+re-entering the flow reset every one of them to "Not started". Do step 4 in
+one sitting and finish on the Preview step without navigating away. Every
+type takes the same three answers, then its own purposes:
+
+| | Collected | Shared | Ephemeral | Required | Purposes |
+|---|---|---|---|---|---|
+| Email address | yes | no | no | required | App functionality, Developer communications, Account management |
+| User IDs | yes | no | no | required | App functionality, Analytics, Developer communications, Account management |
+| Purchase history | yes | no | no | required | App functionality, Account management |
+| Diagnostics | yes | no | no | required | Analytics |
+| App interactions | yes | no | no | required | Analytics |
+| Device or other IDs | yes | no | no | required | App functionality, Developer communications |
+
+One quirk that will waste your time otherwise: each pop-up swallows the
+first click after it opens. Click the first checkbox twice.
+
+### Still untouched
+
+- **Content rating.** Category Reference / News. No user-generated content,
+  no gambling, no real-money wagering. This is the declaration Google
+  scrutinises hardest for an app that shows odds, and it is the one worth
+  reading twice before submitting.
+- **Select an app category and provide contact details.**
+- **Select testers** on the internal testing track, its last open step.
+
+Then send everything from **Publishing overview**; nothing above is live
+until you do.
 
 ## Order of operations
 
