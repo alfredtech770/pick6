@@ -93,7 +93,13 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
             email = AuthManager.userEmail,
             onClose = { showEditProfile = false },
             onSave = { _, _, _, _ -> },
-            onDeleteAccount = { showEditProfile = false },
+            // Was `{ showEditProfile = false }`, which closed the sheet and
+            // left the account intact while telling the user it was deleted.
+            onDeleteAccount = {
+                scope.launch {
+                    if (AuthManager.deleteAccount()) showEditProfile = false
+                }
+            },
         )
         return
     }

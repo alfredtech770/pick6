@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.OTP
@@ -117,6 +118,36 @@ object AuthManager {
     suspend fun signOut() {
         runCatching { Supabase.client.auth.signOut() }
         isAuthenticated = false
+    }
+
+    /**
+     * Deletes the signed-in account, the Android half of iOS
+     * `AuthManager.deleteAccount()`.
+     *
+     * Android shipped a Delete Account button whose callback was
+     * `{ showEditProfile = false }`: it closed the sheet and nothing else, so
+     * the account survived and the user was told it was gone. Google Play
+     * requires in-app deletion for any app that lets you create an account,
+     * and a control that pretends to delete is worse than none at all.
+     *
+     * Calls the same `delete_current_user()` Postgres function as iOS, which
+     * removes the auth user and cascades to every user-owned row. The remote
+     * signOut afterwards may 401 because the user is already gone, which is
+     * why it is not allowed to fail the operation; the local session has to
+     * be cleared either way.
+     */
+    suspend fun deleteAccount(): Boolean {
+        busy = true
+        error = null
+        val ok = runCatching {
+            Supabase.client.postgrest.rpc("delete_current_user")
+        }.onFailure { error = friendly(it) }.isSuccess
+        if (ok) {
+            runCatching { Supabase.client.auth.signOut() }
+            isAuthenticated = false
+        }
+        busy = false
+        return ok
     }
 
     fun clearError() { error = null }
