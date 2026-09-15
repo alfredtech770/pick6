@@ -9,13 +9,24 @@
 // subscription group (e.g. "Pick1 Pro"). The IDs MUST match `productIds`
 // below EXACTLY or the paywall shows no products:
 //
-//   Product ID                  Type                   Price
+//   Product ID                  Type                   US price
 //   com.pick1.app.pro.weekly    Auto-Renewable Weekly  $14.99
-//   com.pick1.app.pro.monthly   Auto-Renewable Monthly $14.99
+//   com.pick1.app.pro.monthly   Auto-Renewable Monthly $39.99
 //
-// Both plans use a $0.99 introductory first billing period, followed by the
-// normal $14.99 recurring price. StoreKit remains the source of truth for
-// localized prices and offer eligibility.
+// Read from App Store Connect on 2026-09-15. This block previously said the
+// monthly was $14.99 too, which it has never been; the intended repricing
+// was applied to the weekly only. StoreKit is the source of truth and the
+// paywall has always shown the real $39.99, so the comment was wrong, not
+// the product.
+//
+// Both plans carry a $0.99 introductory first billing period:
+//
+//   weekly   ONE_WEEK  / PAY_AS_YOU_GO   $0.99 buys the first week
+//   monthly  ONE_MONTH / PAY_UP_FRONT    $0.99 buys the first MONTH
+//
+// Those are different products, not a formatting difference. Eligibility is
+// group-wide and enforced by Apple, so one intro per Apple ID (and per
+// Family Sharing group) across both plans, for the life of the account.
 //
 // The Xcode target's bundle identifier is com.pick1.app (matches the IDs).
 //
