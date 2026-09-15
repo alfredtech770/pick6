@@ -37,89 +37,75 @@ Government apps (No), Financial features (none), Health (none). With the
 privacy policy, ads declaration and store listing that were already in
 place, the console checklist stands at **6 of 11**.
 
-### Verified against Publishing overview
+### The whole thing hangs off one password field
 
-Not from the checklist, from the queue itself, which is what Google
-actually acts on.
+Found by walking Data safety to its last step. The Preview page says:
 
-**Queued, ready to send for review:** the store listing in 8 locales, the
-privacy policy URL, the ads declaration, the Health apps declaration, and
-the app category (Sports).
+> To submit your Data safety questionnaire, you must let us know the target
+> age group of your app, and other information about its contents.
 
-**Recorded, taken into account at review:** the Government apps and
-Financial features declarations.
+and its Save button is disabled. So the dependency chain is:
 
-**Published immediately:** the store listing contact details,
-support@pick1.live and https://pick1.live. This one does not queue, Play
-publishes contact details straight away.
+**Password → Sign in details → Target audience → Data safety submit.**
 
-**Data safety is absent from the queue.** It was filled once, every data
-type reported Completed, the page confirmed the save at each step, and none
-of it survived. It does not appear anywhere in Publishing overview, so the
-work is genuinely gone rather than pending. Treat the questionnaire as
-hostile: do it in one sitting, never leave it part-done, and confirm
-afterwards that it shows up in Publishing overview before trusting it.
+That also explains the earlier "lost" work. Nothing was eaten by a bug:
+Data safety simply cannot be submitted while Target audience is unanswered,
+and Target audience cannot be opened while Sign in details is unsaved. The
+per-type answers were being held in an unsubmittable draft, and re-entering
+the questionnaire reset whatever had not been committed.
 
-### Blocked on you, one field
+Everything is now saved as a draft that survives, confirmed by the console's
+own "Change saved. Send for review in Publishing overview."
 
-**Sign in details** is filled in except the Password box, and the form will
-not save without it. Entering a password is the one thing I do not do. The
-dialog is open in Chrome with everything else already typed:
+### Done and queued
+
+- Store listing, 8 locales
+- Privacy policy URL
+- Ads declaration
+- Health apps, Government apps, Financial features declarations
+- App category: **Sports**
+- Contact details: support@pick1.live, https://pick1.live (published
+  immediately, these do not queue)
+- **Content rating**: questionnaire completed and saved. Category **All
+  Other App Types**, not "Game", whose own description covers "a game or
+  betting app ... or daily fantasy sports". Online content **Yes** (the
+  picks are AI-generated and served, not bundled). Violence, sexuality,
+  language, controlled substances, user-to-user sharing: all **No**.
+  Age-restricted promotion or sale including gambling: **No**, verified by
+  reading every outbound link in the app, which are only pick1.live's own
+  support, terms and privacy pages, no bookmaker and no affiliate. Digital
+  goods **Yes**, chance-based purchases **No**. Ratings came back at 14+ in
+  Brazil with an In-App Purchases descriptor.
+- **Data safety**: all five steps answered, all six data types completed,
+  saved as a draft. It submits itself the moment Target audience exists.
+
+### The one field
+
+**Sign in details**, the Password box. Everything else in that form is
+already typed and waiting in Chrome:
 
 - Name: `Reviewer account`
 - Username: `review@pick1.live`
 - Password: **`070770`**
-- Instructions: written, 472 of the 500 characters allowed
-- "provides full access ... including premium or paid content": ticked, and
-  true as of today, see the comp grant below
+- Instructions: written, 472 of 500 characters
+- "provides full access ... including premium or paid content": ticked, made
+  true by the comp grant below
 
-**The value is `070770`, NOT `p1ReviewDemo!2026#OTP`.** An earlier version
-of this file said the opposite and would have caused a rejection.
-`AuthManager` holds both: the static code a human types into the six-digit
-OTP box, and an internal password the app then uses for a Supabase password
-grant. The reviewer only ever sees the six-digit box, so the internal
-password in that field would simply fail to log them in.
-
-**Target audience** is gated behind Sign in details and cannot be opened
-until it saves.
-
-**Content rating** needs one tick: "I agree to the Terms of Use as outlined
-by the International Age Rating Coalition". That is a legal agreement in
-PICK1's name, so it is yours to accept, not mine. The two fields above it
-are answered: email `support@pick1.live`, category **All Other App Types**.
-Not "Game", whose description covers "a game or betting app ... or daily
-fantasy sports": Pick1 takes no bets and runs no contests, so that bucket
-would be a false declaration.
+**`070770`, NOT `p1ReviewDemo!2026#OTP`.** `AuthManager` holds both: the
+static code a human types into the six-digit OTP box, and an internal
+password the app then uses for a Supabase password grant. A reviewer only
+ever sees the OTP box.
 
 ### The reviewer account had no Pro
 
 `review@pick1.live` existed since 10 June with zero `pro_grants` rows and no
-subscription, so it only ever saw the free tier. Google's reviewers cannot
-purchase and cannot start a trial, which is stated on the Sign in details
-page itself, so they would have had no way to see the paid product at all.
+subscription, so it only ever saw the free tier. Google states on the Sign
+in details page itself that reviewers cannot purchase and cannot use free
+trials, so there was no path for them to see the paid product.
 
-Fixed with a non-expiring comp grant on 2026-09-15, `granted_by` =
-`claude/play-launch-2026-09-15`. To revoke it, delete that row from
-`pro_grants`. Apple's reviewer has the same need, so leave it in place.
-
-### Data safety, the answers to re-enter
-
-| | Collected | Shared | Ephemeral | Required | Purposes |
-|---|---|---|---|---|---|
-| Email address | yes | no | no | required | App functionality, Developer communications, Account management |
-| User IDs | yes | no | no | required | App functionality, Analytics, Developer communications, Account management |
-| Purchase history | yes | no | no | required | App functionality, Account management |
-| Diagnostics | yes | no | no | required | Analytics |
-| App interactions | yes | no | no | required | Analytics |
-| Device or other IDs | yes | no | no | required | App functionality, Developer communications |
-
-Plus, on the earlier steps: collects required data types **Yes**, encrypted
-in transit **Yes**, account creation **Username and other authentication**
-only, delete account URL `https://pick1.live/delete-account`, partial
-deletion without account deletion **No**.
-
-One quirk that will waste your time otherwise: each pop-up swallows the
-first click after it opens. Click the first checkbox twice.
+Fixed with a non-expiring comp grant, `granted_by` =
+`claude/play-launch-2026-09-15`. Delete that row to revoke. Apple's reviewer
+has the same need, so leave it.
 
 ### Still untouched
 
