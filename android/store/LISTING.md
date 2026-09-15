@@ -62,7 +62,7 @@ Written to the same rules as the App Store copy:
 > Pick1 calls every game on today's board across ten sports, before any of them start, and logs every result in public afterwards.
 >
 > **The whole slate, not a shortlist**
-> Basketball, football, soccer, hockey, baseball, fight, racing, tennis, cricket and golf. The AI publishes a call and a win probability for each matchup, every morning, and the board says exactly when it was written.
+> Basketball, football, soccer, hockey, baseball, fight, racing, tennis, cricket, golf, Australian football and rugby. The AI publishes a call and a win probability for each matchup, every morning, and the board says exactly when it was written.
 >
 > **A public record, wins and losses**
 > Every settled call stays in the app permanently. The results tab shows the running record on a flat stake so the number means something, and you can share any of it, including the losses.
@@ -91,7 +91,7 @@ Written to the same rules as the App Store copy:
 > Pick1 se prononce sur tous les matchs du jour, sur dix sports, avant qu'ils ne commencent, et publie ensuite chaque résultat.
 >
 > **Le tableau entier, pas une sélection**
-> Basket, football américain, foot, hockey, baseball, combat, course, tennis, cricket et golf. L'IA publie un pronostic et une probabilité pour chaque affiche, chaque matin, et le tableau indique l'heure exacte à laquelle il a été écrit.
+> Basket, football américain, foot, hockey, baseball, combat, course, tennis, cricket, golf, football australien et rugby. L'IA publie un pronostic et une probabilité pour chaque affiche, chaque matin, et le tableau indique l'heure exacte à laquelle il a été écrit.
 >
 > **Un palmarès public, victoires et défaites**
 > Chaque pronostic réglé reste dans l'app, définitivement. L'onglet résultats affiche le bilan sur une mise fixe, pour que le chiffre veuille dire quelque chose, et tout est partageable, y compris les défaites.
@@ -120,7 +120,7 @@ Written to the same rules as the App Store copy:
 > Pick1 se pronuncia sobre todos los partidos del día en diez deportes, antes de que empiecen, y publica después cada resultado.
 >
 > **El cartel completo, no una selección**
-> Baloncesto, fútbol americano, fútbol, hockey, béisbol, combate, carreras, tenis, críquet y golf. La IA publica un pronóstico y una probabilidad para cada encuentro, cada mañana, y el cartel indica la hora exacta en que se escribió.
+> Baloncesto, fútbol americano, fútbol, hockey, béisbol, combate, carreras, tenis, críquet, golf, fútbol australiano y rugby. La IA publica un pronóstico y una probabilidad para cada encuentro, cada mañana, y el cartel indica la hora exacta en que se escribió.
 >
 > **Un historial público, victorias y derrotas**
 > Cada pronóstico resuelto permanece en la app para siempre. La pestaña de resultados muestra el balance sobre una apuesta fija, para que la cifra signifique algo, y todo se puede compartir, también las derrotas.
@@ -149,7 +149,7 @@ Written to the same rules as the App Store copy:
 > Pick1 tippt jedes Spiel des Tages in zehn Sportarten, bevor eines davon beginnt, und protokolliert danach jedes Ergebnis öffentlich.
 >
 > **Das ganze Programm, keine Auswahl**
-> Basketball, Football, Fußball, Eishockey, Baseball, Kampfsport, Motorsport, Tennis, Cricket und Golf. Die KI veröffentlicht jeden Morgen einen Tipp und eine Wahrscheinlichkeit für jede Partie, und das Board nennt die genaue Uhrzeit.
+> Basketball, Football, Fußball, Eishockey, Baseball, Kampfsport, Motorsport, Tennis, Cricket, Golf, Australian Football und Rugby. Die KI veröffentlicht jeden Morgen einen Tipp und eine Wahrscheinlichkeit für jede Partie, und das Board nennt die genaue Uhrzeit.
 >
 > **Eine öffentliche Bilanz, Siege wie Niederlagen**
 > Jeder abgerechnete Tipp bleibt dauerhaft in der App. Der Ergebnis-Tab zeigt die Bilanz auf einen festen Einsatz, damit die Zahl etwas bedeutet, und alles lässt sich teilen, auch die Niederlagen.
@@ -178,7 +178,7 @@ Written to the same rules as the App Store copy:
 > Pick1 si pronuncia su ogni partita del giorno in dieci sport, prima che inizino, e pubblica poi ogni risultato.
 >
 > **Tutto il programma, non una selezione**
-> Basket, football americano, calcio, hockey, baseball, combattimento, motori, tennis, cricket e golf. L'IA pubblica ogni mattina un pronostico e una probabilità per ogni incontro, e il programma indica l'ora esatta in cui è stato scritto.
+> Basket, football americano, calcio, hockey, baseball, combattimento, motori, tennis, cricket, golf, football australiano e rugby. L'IA pubblica ogni mattina un pronostico e una probabilità per ogni incontro, e il programma indica l'ora esatta in cui è stato scritto.
 >
 > **Uno storico pubblico, vittorie e sconfitte**
 > Ogni pronostico chiuso resta nell'app per sempre. La scheda risultati mostra il bilancio su una posta fissa, perché il numero significhi qualcosa, e tutto è condivisibile, sconfitte comprese.
@@ -207,7 +207,7 @@ Written to the same rules as the App Store copy:
 > O Pick1 se pronuncia sobre todos os jogos do dia em dez esportes, antes de começarem, e publica depois cada resultado.
 >
 > **O quadro inteiro, não uma seleção**
-> Basquete, futebol americano, futebol, hóquei, beisebol, luta, automobilismo, tênis, críquete e golfe. A IA publica todas as manhãs um palpite e uma probabilidade para cada confronto, e o quadro informa a hora exata em que foi escrito.
+> Basquete, futebol americano, futebol, hóquei, beisebol, luta, automobilismo, tênis, críquete, golfe, futebol australiano e râguebi. A IA publica todas as manhãs um palpite e uma probabilidade para cada confronto, e o quadro informa a hora exata em que foi escrito.
 >
 > **Um histórico público, vitórias e derrotas**
 > Cada palpite encerrado fica no app para sempre. A aba de resultados mostra o saldo sobre uma aposta fixa, para que o número signifique algo, e tudo pode ser compartilhado, inclusive as derrotas.
@@ -236,7 +236,7 @@ Written to the same rules as the App Store copy:
 > يتوقّع Pick1 كل مباريات اليوم في عشر رياضات، قبل أن تبدأ أي منها، ثم يسجّل كل نتيجة علنًا.
 >
 > **اللوحة كاملة، وليست قائمة مختصرة**
-> كرة السلة، كرة القدم الأمريكية، كرة القدم، الهوكي، البيسبول، القتال، السباقات، التنس، الكريكيت والغولف. ينشر الذكاء الاصطناعي كل صباح توقّعًا واحتمالًا لكل مواجهة، وتوضح اللوحة الوقت الذي كُتب فيه.
+> كرة السلة، كرة القدم الأمريكية، كرة القدم، الهوكي، البيسبول، القتال، السباقات، التنس، الكريكيت، الغولف، كرة القدم الأسترالية والرغبي. ينشر الذكاء الاصطناعي كل صباح توقّعًا واحتمالًا لكل مواجهة، وتوضح اللوحة الوقت الذي كُتب فيه.
 >
 > **سجل علني، انتصارات وهزائم**
 > يبقى كل توقّع محسوم داخل التطبيق بشكل دائم. تعرض صفحة النتائج الحصيلة على مبلغ ثابت حتى يكون للرقم معنى، ويمكن مشاركة كل شيء، بما في ذلك الخسائر.

@@ -80,7 +80,12 @@ object Products {
     }
     fun subtitle(id: String) = when (id) {
         WEEKLY -> "Full access, billed weekly"
-        MONTHLY -> "Same price, four times the access"
+        // Was "Same price, four times the access", written while both plans
+        // were $14.99. App Store Connect has the monthly at $39.99 against
+        // $14.99 a week, so the prices are NOT the same and that sentence had
+        // become a false pricing claim. It is still the cheaper month, which
+        // is what `isBestValue` says, so the subtitle just states the terms.
+        MONTHLY -> "Full access, billed monthly"
         DAY_PASS -> "24-hour full access"
         else -> ""
     }
@@ -103,11 +108,11 @@ object PlaceholderCatalogue {
             "$14.99", "/wk",
             introPrice = if (introEligible) "$0.99" else null,
         ),
-        // Monthly is the better value now that both plans cost the same
-        // recurring price: same $14.99, four times the access.
+        // Monthly carries BEST VALUE on arithmetic, not on a slogan: $39.99 a
+        // month against $14.99 a week, which is $64.96 over the same 30 days.
         PlanOffer(
-            Products.MONTHLY, "Monthly", "Same price, four times the access",
-            "$14.99", "/mo",
+            Products.MONTHLY, "Monthly", "Full access, billed monthly",
+            "$39.99", "/mo",
             introPrice = if (introEligible) "$0.99" else null,
             isBestValue = true,
         ),
