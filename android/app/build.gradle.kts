@@ -25,7 +25,10 @@ android {
         applicationId = "com.pick1.app"
         minSdk = 26          // matches the iOS feature floor; covers ~95%+ of devices
         targetSdk = 35
-        versionCode = 1
+        // 1 is taken: a 1.0.14 bundle was uploaded to the internal testing
+        // track on 2026-08-04 and Play never lets a versionCode be reused,
+        // even for a build nobody installed.
+        versionCode = 2
         versionName = "1.0.18"   // keep in step with the iOS release train
 
         // Same backend as iOS. The anon key is a publishable client credential

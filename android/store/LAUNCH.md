@@ -7,24 +7,45 @@ exists.
 
 ## State of play
 
+Read directly from Play Console on 2026-09-15. Much of this was already
+done; the earlier version of this file assumed none of it was.
+
 | | |
 |---|---|
-| App on Play | **does not exist**, `play.google.com/store/apps/details?id=com.pick1.app` returns 404 |
-| Signed release bundle | ready, `app/build/outputs/bundle/release/app-release.aab` |
-| versionCode / versionName | 1 / 1.0.18 |
+| Developer account | **PICK1**, **Organisation** account, ID 7878940870871307495 |
+| Owner | **admin@pick1.live** (Chrome profile index u/2) |
+| App entry | **exists already**: `PICK1: AI Sports Picks`, `com.pick1.app`, created 4 Aug 2026 |
+| App status | **Draft**, internal testing track, 0 installs |
+| Existing release | 1.0.14, versionCode 1, uploaded 4 Aug, never reviewed |
+| Public listing | 404, because a Draft app is not published |
+| Our bundle | ready, `app/build/outputs/bundle/release/app-release.aab`, versionCode **2**, versionName 1.0.18 |
 | Upload keystore | `android/pick1-upload.jks`, passwords in the gitignored `keystore.properties` |
-| Firebase (push) | project `pick1-7684d`, `com.pick1.app` registered, `google-services.json` in place |
+| Firebase (push) | project `pick1-7684d`, `com.pick1.app` registered |
 | Store listing copy | `LISTING.md`, 8 locales, updated for 12 sports |
-| Graphics | icon 512, feature graphic 1024x500, 5 phone screenshots in `store/` |
-| Privacy policy | https://pick1.live/privacy, returns 200 |
+| Privacy policy | https://pick1.live/privacy, returns 200, already set in the console |
 | Android device tokens in Supabase | **0**, because nobody has ever installed it |
 
-## The one thing I cannot do
+**The organisation account is the important part.** Google's rule requiring
+12 testers opted in continuously for 14 days applies only to *personal*
+accounts created after 13 November 2023. This account is an organisation, so
+that rule does not apply and there is no two week wait.
 
-Sign in to Google. Entering your password and second factor is the single
-step I do not perform on your behalf, on any account. Everything below is
-the shortest path through the console; after step 7 I can take over
-permanently.
+## What is actually left
+
+The console's own checklist says **3 of 11 complete**. Done: privacy policy,
+ads declaration, store listing. Remaining, in the console's words:
+
+1. Sign in details
+2. Content rating
+3. Target audience
+4. Data safety
+5. Government apps
+6. Financial features
+7. Health
+8. Select an app category and provide contact details
+
+Plus, on the internal testing track, *Select testers*, which is the only
+step of that track still open (2 of 3 complete).
 
 ## Order of operations
 
