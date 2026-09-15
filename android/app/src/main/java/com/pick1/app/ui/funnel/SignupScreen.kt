@@ -100,25 +100,20 @@ fun SignupScreen(onNext: () -> Unit) {
 
         if (!otpSent) {
             Spacer(Modifier.height(26.dp))
-            // Google Sign-In replaces Sign in with Apple on Android. The
-            // credential flow needs a Firebase/Google client ID, which
-            // arrives with the google-services.json setup.
-            FnlCTA(stringResource(R.string.auth_google_button), style = CtaStyle.DARK) {
-                AuthManager.clearError()
-            }
-            Row(
-                Modifier.padding(vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(Modifier.weight(1f).height(1.dp).background(P1.Line))
-                Text(
-                    stringResource(R.string.funnel_signup_or),
-                    style = archivoNarrow(10, FontWeight.Bold, tracking = 2f),
-                    color = P1.Mute,
-                )
-                Box(Modifier.weight(1f).height(1.dp).background(P1.Line))
-            }
+            // The "Continue with Google" button used to sit here, above an OR
+            // divider. It was never wired to anything: its onClick called
+            // AuthManager.clearError() and returned, `signInWithGoogle` was
+            // never called from any screen, and `oauth_client` in
+            // google-services.json is an empty array, so the flow could not
+            // have worked even if it had been wired.
+            //
+            // A dead control on the one screen that gates the entire app is a
+            // straightforward broken-functionality rejection, and it is the
+            // first thing a Play reviewer touches. Email OTP is the real and
+            // only sign-in path on Android, so that is what the screen offers.
+            // Put the button back when there is a Google OAuth client and
+            // `signInWithGoogle` is actually called; `auth_google_button`
+            // stays in strings.xml for that day.
             FnlField(
                 label = stringResource(R.string.funnel_signup_email_label),
                 value = email,
