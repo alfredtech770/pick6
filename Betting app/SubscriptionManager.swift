@@ -161,11 +161,50 @@ final class SubscriptionManager: ObservableObject {
     /// past purchase would still redeem, exactly as Lifetime does. Remove it
     /// from sale in App Store Connect too, or it stays purchasable by promo
     /// link while no screen offers it.
+    /// Auto-renewable three-month plan. Quarterly, never annual, is the
+    /// rule (Ethan, 2026-09-17): a quarter is long enough to move the
+    /// per-month price and short enough that the decision does not feel like
+    /// a year of commitment. NOT yet created in App Store Connect; StoreKit
+    /// omits it until it exists, and `annualProductId` is kept only so any
+    /// past annual purchaser stays entitled.
+    static let quarterlyProductId = "com.pick1.app.pro.quarterly"
+
     static let productIds: [String] = [
         "com.pick1.app.pro.weekly",
         "com.pick1.app.pro.monthly",
-        annualProductId,
+        quarterlyProductId,
     ]
+
+    // MARK: - Price A/B
+
+    /// Prices are tested, not guessed. Every install is assigned a cohort
+    /// once, at random, and keeps it for life (so a person never sees two
+    /// prices for the same thing). Cohort B is served the same three plans
+    /// under ids suffixed ".b", which are separate products in App Store
+    /// Connect carrying the test price. Until those products exist StoreKit
+    /// returns nothing for them and cohort B silently falls back to A, so
+    /// this ships ahead of the products and the test starts the day they
+    /// are approved. `priceCohortEffective` records what was actually shown,
+    /// and every paywall event carries it, so the comparison is between
+    /// what people saw, not what they were assigned.
+    enum PriceCohort: String { case a, b }
+    private static let priceCohortKey = "priceCohort"
+    static var priceCohort: PriceCohort {
+        if let raw = UserDefaults.standard.string(forKey: priceCohortKey),
+           let c = PriceCohort(rawValue: raw) { return c }
+        let c: PriceCohort = Bool.random() ? .a : .b
+        UserDefaults.standard.set(c.rawValue, forKey: priceCohortKey)
+        return c
+    }
+    static let productIdsB: [String] = productIds.map { $0 + ".b" }
+    @Published private(set) var priceCohortEffective: PriceCohort = .a
+
+    /// Offer code shown to a subscriber who is about to cancel (rule:
+    /// present a cancellation offer). Create it in App Store Connect under
+    /// Pick1 Pro → Offer Codes (suggested: 50% off the next period, one
+    /// redemption per customer) and paste the code here. Empty means the
+    /// sheet still opens, without the discount button.
+    static let cancellationOfferCode = ""
 
     /// The cheapest plan ACTUALLY ON SALE, priced in the viewer's own
     /// storefront currency.
@@ -221,7 +260,7 @@ final class SubscriptionManager: ObservableObject {
 
     /// Product ids the ENTITLEMENT check accepts — includes retired
     /// products (Lifetime) that existing owners must keep.
-    static let entitledProductIds: [String] = productIds + [lifetimeProductId]
+    static let entitledProductIds: [String] = productIds + productIdsB + [lifetimeProductId, annualProductId]
 
     // MARK: - Lifecycle
 
@@ -289,18 +328,21 @@ final class SubscriptionManager: ObservableObject {
         lastLoadError = nil
 
         do {
-            let fetched = try await Product.products(for: Self.productIds)
-            // Longest billing period FIRST: annual, then monthly, then
-            // weekly. Was weekly → monthly until 2026-09-16.
-            //
-            // The order matters more than it looks. Monthly is preselected
-            // and carries BEST VALUE, but it was rendering SECOND, so the
-            // first price a reader's eye met was "$14.99/wk" — the smallest
-            // sticker on the screen, attached to the plan that reaches a paid
-            // period 16.8% of the time against monthly's 33.8%, and that has
-            // a median life of three days against thirty. Leading with the
-            // plan the product actually wants to sell costs nothing and stops
-            // anchoring everyone on the cheapest-looking number.
+            // Cohort B first, then A if B's products are not on sale yet.
+            var fetched = try await Product.products(
+                for: Self.priceCohort == .b ? Self.productIdsB : Self.productIds)
+            var effective = Self.priceCohort
+            if fetched.isEmpty && Self.priceCohort == .b {
+                fetched = try await Product.products(for: Self.productIds)
+                effective = .a
+            }
+            self.priceCohortEffective = effective
+            Analytics.track("price_cohort", ["assigned": Self.priceCohort.rawValue,
+                                             "effective": effective.rawValue])
+            // SHORTEST billing period FIRST: weekly, then monthly, then the
+            // quarter. Weekly over monthly is the rule (Ethan, 2026-09-17),
+            // and it matches the ledger: 658 of 684 subscriptions were
+            // weekly. The monthly-first order of 2026-09-16 is reversed.
             //
             // Ties fall back to the declared order in `productIds`, so this
             // stays stable if two plans ever share a period.
@@ -314,13 +356,14 @@ final class SubscriptionManager: ObservableObject {
                 case .year: days = period.value * 365
                 @unknown default: days = 0
                 }
-                return -days
+                return days
             }
             self.products = fetched.sorted { lhs, rhs in
                 let (a, b) = (rank(lhs), rank(rhs))
                 if a != b { return a < b }
-                return (Self.productIds.firstIndex(of: lhs.id) ?? 0)
-                     < (Self.productIds.firstIndex(of: rhs.id) ?? 0)
+                // Cohort B ids carry a ".b" suffix, so match on prefix.
+                return (Self.productIds.firstIndex(where: { lhs.id.hasPrefix($0) }) ?? 0)
+                     < (Self.productIds.firstIndex(where: { rhs.id.hasPrefix($0) }) ?? 0)
             }
 
             // Apple returns an empty array (not an error) when the IDs

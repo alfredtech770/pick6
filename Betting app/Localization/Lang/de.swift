@@ -182,7 +182,7 @@ enum GermanStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*",
-        .funnel_welcome_lead:            "Die KI, die jedes Spiel des Tages in 12 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.",
+        .funnel_welcome_lead:            "Jedes Spiel des Tages, vor dem Anpfiff getippt und öffentlich bewertet. Verpasst du einen Tag, läuft das Register ohne dich weiter.",
         .funnel_welcome_cta:             "LOSLEGEN →",
         .funnel_welcome_member:          "Schon dabei? ",
         .funnel_welcome_signin:          "Anmelden",
@@ -357,8 +357,8 @@ enum GermanStrings {
         .funnel_ttw_lead:                "Dein persönlicher Tagestipp ist bereit. Nur einen Tap entfernt.",
         .funnel_ttw_cta:                 "MEINEN PLAN ANSEHEN →",
         // Paywall
-        .funnel_paywall_kicker:          "Werde Pro",
-        .funnel_paywall_headline:        "SCHALTE JEDEN\n*TIPP FREI.*",
+        .funnel_paywall_kicker:          "Das Board für heute Abend ist offen",
+        .funnel_paywall_headline:        "SCHAU HEUTE ABEND\nNICHT *BLIND ZU.*",
         .funnel_paywall_feat1:           "Jedes Spiel getippt, in 12 Sportarten",
         .funnel_paywall_feat2:           "Kalibrierte Sicherheit + Begründung",
         .funnel_paywall_feat3:           "Öffentliches Register, Live-Tracking & ROI",
@@ -386,6 +386,8 @@ enum GermanStrings {
         .funnel_paywall_unit_wk:         "/Wo.",
         .funnel_paywall_unit_mo:         "/Mon.",
         .funnel_paywall_best_value:      "BESTES ANGEBOT",
+        .funnel_paywall_most_popular:    "AM BELIEBTESTEN",
+        .funnel_paywall_fomo:            "Um Mitternacht wird das Board zurückgesetzt. Jeder Tipp, den du heute Abend auslässt, wird ohne dich öffentlich bewertet.",
         .funnel_paywall_sub_lifetime:    "Einmalzahlung · für immer dein",
         .funnel_paywall_sub_weekly:      "Wöchentlich abgerechnet · jederzeit kündbar",
         .funnel_paywall_sub_monthly:     "Monatlich abgerechnet · jederzeit kündbar",
@@ -633,6 +635,8 @@ enum GermanStrings {
         .paywall_saving_vs_other: "Spare %@ im Monat",
         .paywall_plan_annual: "Jährlich",
         .paywall_unit_yr: "/Jahr",
+        .paywall_plan_quarterly: "3 MONATE",
+        .paywall_unit_qtr: "/3 Mon.",
         .paywall_sub_annual: "Einmal jährlich · Bestes Angebot",
         .tk_confidence: "Konfidenz",
         .tk_to_win: "Sieger",

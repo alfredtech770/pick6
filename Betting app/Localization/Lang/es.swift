@@ -182,7 +182,7 @@ enum SpanishStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GANA\nCON CABEZA.\n*NO A LO BRUTO.*",
-        .funnel_welcome_lead:            "La IA que se pronuncia sobre todos los partidos del día en 12 deportes, y registra cada resultado en público.",
+        .funnel_welcome_lead:            "Todos los partidos del día, anunciados antes del inicio y calificados en público. Pierde un día y el registro sigue sin ti.",
         .funnel_welcome_cta:             "EMPEZAR →",
         .funnel_welcome_member:          "¿Ya eres miembro? ",
         .funnel_welcome_signin:          "Iniciar sesión",
@@ -357,8 +357,8 @@ enum SpanishStrings {
         .funnel_ttw_lead:                "Tu pick diario personalizado está listo. A un toque.",
         .funnel_ttw_cta:                 "VER MI PLAN →",
         // Paywall
-        .funnel_paywall_kicker:          "Hazte Pro",
-        .funnel_paywall_headline:        "DESBLOQUEA\nCADA *PICK.*",
+        .funnel_paywall_kicker:          "El tablero de esta noche está abierto",
+        .funnel_paywall_headline:        "NO VEAS ESTA NOCHE\n*A CIEGAS.*",
         .funnel_paywall_feat1:           "Todos los partidos decididos, en 12 deportes",
         .funnel_paywall_feat2:           "Confianza calibrada + razonamiento",
         .funnel_paywall_feat3:           "Registro público, seguimiento en vivo y ROI",
@@ -386,6 +386,8 @@ enum SpanishStrings {
         .funnel_paywall_unit_wk:         "/sem",
         .funnel_paywall_unit_mo:         "/mes",
         .funnel_paywall_best_value:      "MEJOR OFERTA",
+        .funnel_paywall_most_popular:    "EL MÁS ELEGIDO",
+        .funnel_paywall_fomo:            "El tablero se reinicia a medianoche. Cada pick que te saltes esta noche se calificará en público sin ti.",
         .funnel_paywall_sub_lifetime:    "Pago único · tuyo para siempre",
         .funnel_paywall_sub_weekly:      "Facturado semanalmente · cancela cuando quieras",
         .funnel_paywall_sub_monthly:     "Facturado mensualmente · cancela cuando quieras",
@@ -633,6 +635,8 @@ enum SpanishStrings {
         .paywall_saving_vs_other: "Ahorra %@ al mes",
         .paywall_plan_annual: "Anual",
         .paywall_unit_yr: "/año",
+        .paywall_plan_quarterly: "3 MESES",
+        .paywall_unit_qtr: "/3 meses",
         .paywall_sub_annual: "Cobro anual · La mejor oferta",
         .tk_confidence: "Confianza",
         .tk_to_win: "ganador",

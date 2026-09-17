@@ -81,6 +81,9 @@ struct Pick1ProfileSheetV2: View {
     @Environment(AuthManager.self) private var auth: AuthManager?
     var onClose: () -> Void = {}
     var onManagePremium: () -> Void = {}
+    /// Present a cancellation offer (rule, Ethan 2026-09-17): a subscriber
+    /// heading for the App Store's cancel screen sees one save offer first.
+    @State private var showCancelOffer = false
 
     private let placeholders = GamificationV2Placeholders.shared
 
@@ -188,8 +191,18 @@ struct Pick1ProfileSheetV2: View {
                         }
                         P1ProfileRowV2(emoji: "💎", title: subs.isPro ? "Manage Premium" : "Get Premium",
                                        subtitle: subs.isPro ? "Manage in the App Store" : "Every sport · every market",
-                                       value: "›", valueColor: Color.p1Mute,
-                                       onTap: onManagePremium)
+                                       value: "›", valueColor: Color.p1Mute) {
+                            if subs.isPro {
+                                Analytics.track("cancellation_offer_shown")
+                                showCancelOffer = true
+                            } else {
+                                onManagePremium()
+                            }
+                        }
+                        .sheet(isPresented: $showCancelOffer) {
+                            Pick1CancellationOfferSheet(onClose: { showCancelOffer = false })
+                                .environmentObject(subs)
+                        }
                         P1ProfileRowV2(emoji: "🎁", title: "Referral code",
                                        subtitle: "Give 3 days · get 3 days",
                                        value: placeholders.referralCode)
@@ -257,5 +270,88 @@ struct Pick1ProfileSheetV2: View {
         case "cricket": return "🏏";    case "tennis": return "🎾"
         default: return "🎯"
         }
+    }
+}
+
+
+// MARK: - Cancellation offer
+
+/// The one screen between "Manage Premium" and Apple's cancel page.
+///
+/// Apple owns the cancel flow itself, so the only place a save offer can
+/// live is before the hand-off. The argument is Pick1's own record, the same
+/// rule as the trial save sheet: what the model posted while they were
+/// subscribed, with no promise about tomorrow. The discount is an App Store
+/// offer code (`SubscriptionManager.cancellationOfferCode`), redeemed through
+/// Apple's own sheet, so the price change is Apple's and not a claim made
+/// here. With no code configured the sheet still asks, then lets them go.
+struct Pick1CancellationOfferSheet: View {
+    @EnvironmentObject private var subs: SubscriptionManager
+    @Environment(\.openURL) private var openURL
+    var onClose: () -> Void
+
+    private var offerURL: URL? {
+        let code = SubscriptionManager.cancellationOfferCode
+        guard !code.isEmpty else { return nil }
+        return URL(string: "https://apps.apple.com/redeem?ctx=offercodes&id=\(UpdateChecker.appStoreId)&code=\(code)")
+    }
+
+    var body: some View {
+        ZStack {
+            Color.p1Ink.ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 18) {
+                Text("BEFORE YOU GO")
+                    .font(.archivoNarrow(11, weight: .bold)).kerning(2.2).foregroundColor(Color.p1Lime)
+                    .padding(.top, 28)
+                Text("Tonight's board\nwon't wait.")
+                    .font(.anton(34)).foregroundColor(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Cancel now and Pro ends with this billing period. Every call after that is graded in public without you.")
+                    .font(.archivo(15)).foregroundColor(Color.p1Mute)
+                    .fixedSize(horizontal: false, vertical: true)
+                if offerURL != nil {
+                    Text("Stay, and the next period is half price. Redeemed through Apple, cancel anytime after.")
+                        .font(.archivo(15, weight: .medium)).foregroundColor(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                VStack(spacing: 10) {
+                    if let url = offerURL {
+                        Button {
+                            Analytics.track("cancellation_offer_accepted")
+                            openURL(url)
+                            onClose()
+                        } label: {
+                            Text("KEEP PRO AT HALF PRICE →")
+                                .font(.anton(17)).kerning(0.6).foregroundColor(Color.p1Ink)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Color.p1Lime))
+                        }
+                    } else {
+                        Button {
+                            Analytics.track("cancellation_offer_kept")
+                            onClose()
+                        } label: {
+                            Text("KEEP PRO →")
+                                .font(.anton(17)).kerning(0.6).foregroundColor(Color.p1Ink)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Color.p1Lime))
+                        }
+                    }
+                    Button {
+                        Analytics.track("cancellation_offer_declined")
+                        if let url = URL(string: "https://apps.apple.com/account/subscriptions") { openURL(url) }
+                        onClose()
+                    } label: {
+                        Text("Manage subscription in the App Store")
+                            .font(.archivo(13, weight: .semibold)).foregroundColor(Color.p1Mute)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    }
+                }
+                .padding(.bottom, 20)
+            }
+            .padding(.horizontal, 24)
+        }
+        .presentationDetents([.large])
     }
 }

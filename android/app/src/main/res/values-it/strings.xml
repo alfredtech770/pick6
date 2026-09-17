@@ -54,7 +54,7 @@
     <string name="settings_subscription">Abbonamento</string>
     <string name="settings_subscription_free">GRATIS</string>
     <string name="settings_subscription_pro">PRO</string>
-    <string name="settings_subscription_sub_pro">Gestisci in Impostazioni iOS</string>
+    <string name="settings_subscription_sub_pro">Gestisci in Google Play</string>
     <string name="settings_subscription_sub_free">Sblocca tutti i pronostici · passa a Pro</string>
     <string name="settings_support_section">SUPPORTO</string>
     <string name="settings_help_meta">AIUTO</string>
@@ -154,7 +154,7 @@
     <string name="live_empty_title">Nulla in diretta al momento.</string>
     <string name="live_empty_sub">Ricontrolla più vicino al fischio d\'inizio.</string>
     <string name="funnel_welcome_headline">VINCI\nCON TESTA.\n*NON DI FORZA.*</string>
-    <string name="funnel_welcome_lead">L\'IA che si pronuncia su ogni partita del giorno in 12 sport, e registra ogni risultato in pubblico.</string>
+    <string name="funnel_welcome_lead">Ogni partita del giorno, annunciata prima del fischio d\'inizio e valutata in pubblico. Salta un giorno e il registro va avanti senza di te.</string>
     <string name="funnel_welcome_cta">INIZIA →</string>
     <string name="funnel_welcome_member">"Già iscritto? "</string>
     <string name="funnel_welcome_signin">Accedi</string>
@@ -314,8 +314,8 @@
     <string name="funnel_ttw_headline">ORA È\nTEMPO DI\n*VINCERE.*</string>
     <string name="funnel_ttw_lead">Il tuo pick quotidiano personalizzato è pronto. A un tocco.</string>
     <string name="funnel_ttw_cta">VEDI IL MIO PIANO →</string>
-    <string name="funnel_paywall_kicker">Passa a Pro</string>
-    <string name="funnel_paywall_headline">SBLOCCA\nOGNI *PICK.*</string>
+    <string name="funnel_paywall_kicker">Il tabellone di stasera è aperto</string>
+    <string name="funnel_paywall_headline">NON GUARDARE\nSTASERA *ALLA CIECA.*</string>
     <string name="funnel_paywall_feat1">Ogni partita analizzata, su 12 sport</string>
     <string name="funnel_paywall_feat2">Fiducia calibrata + ragionamento</string>
     <string name="funnel_paywall_feat3">Registro pubblico, tracciamento live e ROI</string>
@@ -340,6 +340,12 @@
     <string name="funnel_paywall_unit_wk">/sett</string>
     <string name="funnel_paywall_unit_mo">/mese</string>
     <string name="funnel_paywall_best_value">MIGLIORE OFFERTA</string>
+    <string name="funnel_paywall_most_popular">IL PIÙ SCELTO</string>
+    <string name="funnel_paywall_fomo">Il tabellone si azzera a mezzanotte. Ogni pronostico che salti stasera verrà valutato in pubblico senza di te.</string>
+    <string name="cancel_offer_title">Prima di andare</string>
+    <string name="cancel_offer_body">Se annulli, Pro termina con questo periodo di fatturazione. Ogni pronostico successivo verrà valutato in pubblico senza di te.</string>
+    <string name="cancel_offer_keep">Mantieni Pro</string>
+    <string name="cancel_offer_manage">Gestisci abbonamento</string>
     <string name="paywall_per_month_suffix">/ mese</string>
     <string name="paywall_saving_vs_other">Risparmia %1$s al mese</string>
     <string name="funnel_paywall_intro_badge">OFFERTA %1$s</string>

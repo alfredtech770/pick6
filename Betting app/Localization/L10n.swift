@@ -431,6 +431,8 @@ enum L10nKey: String, CaseIterable {
     case funnel_paywall_unit_wk           // "/wk"
     case funnel_paywall_unit_mo           // "/mo"
     case funnel_paywall_best_value        // "BEST VALUE"
+    case funnel_paywall_most_popular      // "MOST POPULAR", on the weekly card
+    case funnel_paywall_fomo              // loss-framed line under the paywall headline
     case funnel_paywall_sub_lifetime      // "One-time · yours forever"
     case funnel_paywall_sub_weekly        // "Billed weekly · cancel anytime"
     case funnel_paywall_sub_monthly       // "Billed monthly · cancel anytime"
@@ -687,6 +689,8 @@ enum L10nKey: String, CaseIterable {
     case paywall_saving_vs_other
     case paywall_plan_annual
     case paywall_unit_yr
+    case paywall_plan_quarterly
+    case paywall_unit_qtr
     case paywall_sub_annual
 
     // Apple win back offer, surfaced on the paywall to a lapsed subscriber.

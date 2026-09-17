@@ -54,7 +54,7 @@
     <string name="settings_subscription">الاشتراك</string>
     <string name="settings_subscription_free">مجاني</string>
     <string name="settings_subscription_pro">PRO</string>
-    <string name="settings_subscription_sub_pro">إدارة من إعدادات iOS</string>
+    <string name="settings_subscription_sub_pro">الإدارة في Google Play</string>
     <string name="settings_subscription_sub_free">افتح جميع التوقعات · ترقّ إلى PRO</string>
     <string name="settings_support_section">الدعم</string>
     <string name="settings_help_meta">المساعدة</string>
@@ -154,7 +154,7 @@
     <string name="live_empty_title">لا شيء مباشر الآن.</string>
     <string name="live_empty_sub">تحقّق مجددًا مع اقتراب موعد البداية.</string>
     <string name="funnel_welcome_headline">اربح\nبذكاء.\n*لا بمشقّة.*</string>
-    <string name="funnel_welcome_lead">الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 12 رياضة، ويسجّل كل نتيجة علنًا.</string>
+    <string name="funnel_welcome_lead">كل مباريات اليوم، تُعلن قبل البداية وتُقيَّم علنًا. فوّت يومًا واحدًا ويمضي السجل من دونك.</string>
     <string name="funnel_welcome_cta">← لنبدأ</string>
     <string name="funnel_welcome_member">"عضو بالفعل؟ "</string>
     <string name="funnel_welcome_signin">تسجيل الدخول</string>
@@ -314,8 +314,8 @@
     <string name="funnel_ttw_headline">الآن حان\nوقت\n*الفوز.*</string>
     <string name="funnel_ttw_lead">اختيارك اليومي المخصّص جاهز. على بُعد نقرة.</string>
     <string name="funnel_ttw_cta">← اعرض خطتي</string>
-    <string name="funnel_paywall_kicker">اشترك في Pro</string>
-    <string name="funnel_paywall_headline">افتح\nكل *اختيار.*</string>
+    <string name="funnel_paywall_kicker">لوحة الليلة مفتوحة الآن</string>
+    <string name="funnel_paywall_headline">لا تشاهد الليلة\n*بلا رؤية.*</string>
     <string name="funnel_paywall_feat1">كل المباريات محسومة، عبر 12 رياضة</string>
     <string name="funnel_paywall_feat2">ثقة معايَرة + تحليل</string>
     <string name="funnel_paywall_feat3">سجل علني وتتبّع مباشر وعائد استثمار</string>
@@ -340,6 +340,12 @@
     <string name="funnel_paywall_unit_wk">/أسبوع</string>
     <string name="funnel_paywall_unit_mo">/شهر</string>
     <string name="funnel_paywall_best_value">أفضل قيمة</string>
+    <string name="funnel_paywall_most_popular">الأكثر اختيارًا</string>
+    <string name="funnel_paywall_fomo">تُعاد اللوحة عند منتصف الليل. كل توقّع تفوّته الليلة سيُقيَّم علنًا من دونك.</string>
+    <string name="cancel_offer_title">قبل أن تغادر</string>
+    <string name="cancel_offer_body">إذا ألغيت، ينتهي Pro مع فترة الفوترة الحالية. كل توقّع بعدها سيُقيَّم علنًا من دونك.</string>
+    <string name="cancel_offer_keep">الاحتفاظ بـ Pro</string>
+    <string name="cancel_offer_manage">إدارة الاشتراك</string>
     <string name="paywall_per_month_suffix">/ شهريًا</string>
     <string name="paywall_saving_vs_other">وفّر %1$s شهريًا</string>
     <string name="funnel_paywall_intro_badge">عرض %1$s</string>

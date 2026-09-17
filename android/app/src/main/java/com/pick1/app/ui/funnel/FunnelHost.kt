@@ -145,6 +145,7 @@ fun FunnelHost(onFinished: () -> Unit) {
                 onBuy = { plan -> activity?.let { Billing.purchase(it, plan.productId) } },
                 onRestore = { Billing.restore() },
                 onContinueFree = { advance() },
+                allowSkip = false,
             )
 
             FunnelStep.Success -> SuccessScreen(onDone = onFinished)

@@ -184,7 +184,7 @@ enum ArabicStrings {
         // In RTL the "forward" arrow points left (←), matching reading flow.
         // Welcome
         .funnel_welcome_headline:        "اربح\nبذكاء.\n*لا بمشقّة.*",
-        .funnel_welcome_lead:            "الذكاء الاصطناعي الذي يتوقّع كل مباريات اليوم عبر 12 رياضة، ويسجّل كل نتيجة علنًا.",
+        .funnel_welcome_lead:            "كل مباريات اليوم، تُعلن قبل البداية وتُقيَّم علنًا. فوّت يومًا واحدًا ويمضي السجل من دونك.",
         .funnel_welcome_cta:             "← لنبدأ",
         .funnel_welcome_member:          "عضو بالفعل؟ ",
         .funnel_welcome_signin:          "تسجيل الدخول",
@@ -359,8 +359,8 @@ enum ArabicStrings {
         .funnel_ttw_lead:                "اختيارك اليومي المخصّص جاهز. على بُعد نقرة.",
         .funnel_ttw_cta:                 "← اعرض خطتي",
         // Paywall
-        .funnel_paywall_kicker:          "اشترك في Pro",
-        .funnel_paywall_headline:        "افتح\nكل *اختيار.*",
+        .funnel_paywall_kicker:          "لوحة الليلة مفتوحة الآن",
+        .funnel_paywall_headline:        "لا تشاهد الليلة\n*بلا رؤية.*",
         .funnel_paywall_feat1:           "كل المباريات محسومة، عبر 12 رياضة",
         .funnel_paywall_feat2:           "ثقة معايَرة + تحليل",
         .funnel_paywall_feat3:           "سجل علني وتتبّع مباشر وعائد استثمار",
@@ -388,6 +388,8 @@ enum ArabicStrings {
         .funnel_paywall_unit_wk:         "/أسبوع",
         .funnel_paywall_unit_mo:         "/شهر",
         .funnel_paywall_best_value:      "أفضل قيمة",
+        .funnel_paywall_most_popular:    "الأكثر اختيارًا",
+        .funnel_paywall_fomo:            "تُعاد اللوحة عند منتصف الليل. كل توقّع تفوّته الليلة سيُقيَّم علنًا من دونك.",
         .funnel_paywall_sub_lifetime:    "دفعة واحدة · ملكك للأبد",
         .funnel_paywall_sub_weekly:      "يُحصَّل أسبوعيًا · إلغاء في أي وقت",
         .funnel_paywall_sub_monthly:     "يُحصَّل شهريًا · إلغاء في أي وقت",
@@ -635,6 +637,8 @@ enum ArabicStrings {
         .paywall_saving_vs_other: "وفّر %@ شهريًا",
         .paywall_plan_annual: "سنوي",
         .paywall_unit_yr: "/سنة",
+        .paywall_plan_quarterly: "3 أشهر",
+        .paywall_unit_qtr: "/3 أشهر",
         .paywall_sub_annual: "يُدفع مرة في السنة · أفضل عرض",
         .tk_confidence: "الثقة",
         .tk_to_win: "للفوز",

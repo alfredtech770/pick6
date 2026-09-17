@@ -182,7 +182,7 @@ enum FrenchStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "GAGNEZ\nPLUS MALIN.\n*PAS PLUS DUR.*",
-        .funnel_welcome_lead:            "L'IA qui se prononce sur tous les matchs du jour, sur 12 sports, et note chaque résultat en public.",
+        .funnel_welcome_lead:            "Tous les matchs du jour, annoncés avant le coup d'envoi et notés en public. Ratez une journée et le registre avance sans vous.",
         .funnel_welcome_cta:             "COMMENCER →",
         .funnel_welcome_member:          "Déjà membre ? ",
         .funnel_welcome_signin:          "Se connecter",
@@ -357,8 +357,8 @@ enum FrenchStrings {
         .funnel_ttw_lead:                "Votre pick quotidien personnalisé est prêt. À un tap.",
         .funnel_ttw_cta:                 "VOIR MON PLAN →",
         // Paywall
-        .funnel_paywall_kicker:          "Passez Pro",
-        .funnel_paywall_headline:        "DÉBLOQUEZ\nCHAQUE *PICK.*",
+        .funnel_paywall_kicker:          "Le tableau du soir est ouvert",
+        .funnel_paywall_headline:        "NE REGARDEZ PAS\nCE SOIR *À L'AVEUGLE.*",
         .funnel_paywall_feat1:           "Tous les matchs tranchés, sur 12 sports",
         .funnel_paywall_feat2:           "Confiance calibrée + raisonnement",
         .funnel_paywall_feat3:           "Registre public, suivi en direct & ROI",
@@ -386,6 +386,8 @@ enum FrenchStrings {
         .funnel_paywall_unit_wk:         "/sem",
         .funnel_paywall_unit_mo:         "/mois",
         .funnel_paywall_best_value:      "MEILLEURE OFFRE",
+        .funnel_paywall_most_popular:    "LE PLUS CHOISI",
+        .funnel_paywall_fomo:            "Le tableau se remet à zéro à minuit. Chaque pronostic que vous ratez ce soir sera noté en public, sans vous.",
         .funnel_paywall_sub_lifetime:    "Paiement unique · à vous pour toujours",
         .funnel_paywall_sub_weekly:      "Facturé chaque semaine · annulable à tout moment",
         .funnel_paywall_sub_monthly:     "Facturé chaque mois · annulable à tout moment",
@@ -633,6 +635,8 @@ enum FrenchStrings {
         .paywall_saving_vs_other: "Économise %@ par mois",
         .paywall_plan_annual: "Annuel",
         .paywall_unit_yr: "/an",
+        .paywall_plan_quarterly: "3 MOIS",
+        .paywall_unit_qtr: "/3 mois",
         .paywall_sub_annual: "Facturé une fois par an · Meilleure offre",
         .tk_confidence: "Confiance",
         .tk_to_win: "vainqueur",

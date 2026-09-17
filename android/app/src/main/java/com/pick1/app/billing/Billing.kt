@@ -68,7 +68,23 @@ data class PlanOffer(
 object Products {
     const val WEEKLY = "com.pick1.app.pro.weekly"
     const val MONTHLY = "com.pick1.app.pro.monthly"
+    /** Three months. Quarterly, never annual, is the rule (2026-09-17). Not
+     *  yet created in Play Console; Play omits it until it exists. */
+    const val QUARTERLY = "com.pick1.app.pro.quarterly"
     const val DAY_PASS = "com.pick1.app.daypass"
+
+    // ── Price A/B ──────────────────────────────────────────────────────
+    // Same scheme as iOS: one cohort per install, assigned at random in
+    // Billing.init and kept for life; cohort B is served the same plans under
+    // ".b" ids carrying the test price. Until those exist in Play Console the
+    // query returns nothing for them and B falls back to A. `effectiveCohort`
+    // is what was actually shown and is what the analytics carry.
+    var cohort: String = "a"
+    var effectiveCohort: String = "a"
+    val SUBS_B: List<String> get() = SUBS.map { "$it.b" }
+    val activeSubs: List<String> get() = if (effectiveCohort == "b") SUBS_B else SUBS
+    fun base(id: String) = id.removeSuffix(".b")
+    fun isSub(id: String?) = id != null && base(id) in SUBS
 
     /**
      * Subscription SKUs, in paywall display order.
@@ -85,13 +101,16 @@ object Products {
     // reaches a paid period 16.8% of the time against monthly's 33.8% and
     // whose median life is three days against thirty. This list IS the
     // paywall's display order (PaywallScreen renders Billing.offers in order).
-    val SUBS = listOf(MONTHLY, WEEKLY)
+    // WEEKLY FIRST again since 2026-09-17: weekly over monthly is the rule,
+    // and the ledger agrees (658 of 684 subscriptions were weekly). Monthly
+    // keeps its per-month saving line, which is arithmetic, not a badge.
+    val SUBS = listOf(WEEKLY, MONTHLY, QUARTERLY)
 
-    fun name(id: String) = when (id) {
-        WEEKLY -> "Weekly"; MONTHLY -> "Monthly"; DAY_PASS -> "Day Pass"
+    fun name(id: String) = when (base(id)) {
+        WEEKLY -> "Weekly"; MONTHLY -> "Monthly"; QUARTERLY -> "3 months"; DAY_PASS -> "Day Pass"
         else -> id
     }
-    fun subtitle(id: String) = when (id) {
+    fun subtitle(id: String) = when (base(id)) {
         WEEKLY -> "Full access, billed weekly"
         // Was "Same price, four times the access", written while both plans
         // were $14.99. App Store Connect has the monthly at $39.99 against
@@ -99,11 +118,12 @@ object Products {
         // become a false pricing claim. It is still the cheaper month, which
         // is what `isBestValue` says, so the subtitle just states the terms.
         MONTHLY -> "Full access, billed monthly"
+        QUARTERLY -> "Full access, billed every 3 months"
         DAY_PASS -> "24-hour full access"
         else -> ""
     }
-    fun fallbackUnit(id: String) = when (id) {
-        WEEKLY -> "/wk"; MONTHLY -> "/mo"; else -> ""
+    fun fallbackUnit(id: String) = when (base(id)) {
+        WEEKLY -> "/wk"; MONTHLY -> "/mo"; QUARTERLY -> "/3 mo"; else -> ""
     }
 }
 
@@ -122,18 +142,19 @@ object PlaceholderCatalogue {
         //
         // BEST VALUE is arithmetic, not a slogan: $39.99 a month against
         // $14.99 a week, which is $64.24 over the same 30 days.
-        PlanOffer(
-            Products.MONTHLY, "Monthly", "Full access, billed monthly",
-            "$39.99", "/mo",
-            introPrice = if (introEligible) "$0.99" else null,
-            isBestValue = true,
-            savingPerMonth = "$24.25",
-        ),
+        // Weekly first and MOST POPULAR (isBestValue is the badge flag).
         PlanOffer(
             Products.WEEKLY, "Weekly", "Full access, billed weekly",
             "$14.99", "/wk",
             introPrice = if (introEligible) "$0.99" else null,
+            isBestValue = true,
             perMonth = "$64.24",
+        ),
+        PlanOffer(
+            Products.MONTHLY, "Monthly", "Full access, billed monthly",
+            "$39.99", "/mo",
+            introPrice = if (introEligible) "$0.99" else null,
+            savingPerMonth = "$24.25",
         ),
     )
 }
@@ -183,6 +204,11 @@ object Billing {
     fun init(context: Context) {
         if (client != null) return
         appContext = context.applicationContext
+        // Price cohort: assigned once, kept for life (see Products.cohort).
+        val prefs = context.applicationContext.getSharedPreferences("pick1_price", Context.MODE_PRIVATE)
+        Products.cohort = prefs.getString("cohort", null) ?: (if (Math.random() < 0.5) "a" else "b").also {
+            prefs.edit().putString("cohort", it).apply()
+        }
         val c = BillingClient.newBuilder(context.applicationContext)
             .setListener(purchasesListener)
             .enablePendingPurchases(
@@ -215,18 +241,25 @@ object Billing {
     // ── Catalogue ────────────────────────────────────────────────────────
     private suspend fun queryProducts() {
         val c = client ?: return
-        val subProducts = Products.SUBS.map { id ->
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(id).setProductType(BillingClient.ProductType.SUBS).build()
-        }
+        fun subParams(ids: List<String>) = QueryProductDetailsParams.newBuilder().setProductList(
+            ids.map { id ->
+                QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(id).setProductType(BillingClient.ProductType.SUBS).build()
+            },
+        ).build()
         val inappProducts = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(Products.DAY_PASS).setProductType(BillingClient.ProductType.INAPP).build()
         )
         runCatching {
-            val subs = c.queryProductDetails(
-                QueryProductDetailsParams.newBuilder().setProductList(subProducts).build()
-            )
+            // Cohort B first, then A if B's products are not on sale yet.
+            var effective = Products.cohort
+            var subs = c.queryProductDetails(subParams(if (effective == "b") Products.SUBS_B else Products.SUBS))
+            if (effective == "b" && subs.productDetailsList.isNullOrEmpty()) {
+                effective = "a"
+                subs = c.queryProductDetails(subParams(Products.SUBS))
+            }
+            Products.effectiveCohort = effective
             val inapp = c.queryProductDetails(
                 QueryProductDetailsParams.newBuilder().setProductList(inappProducts).build()
             )
@@ -273,7 +306,7 @@ object Billing {
 
     private fun rebuildOffers() {
         var anyIntro = false
-        val list = Products.SUBS.mapNotNull { id ->
+        val list = Products.activeSubs.mapNotNull { id ->
             val d = detailsById[id] ?: return@mapNotNull null
             val offer = bestOffer(d) ?: return@mapNotNull null
             val phases = offer.pricingPhases.pricingPhaseList
@@ -291,7 +324,7 @@ object Billing {
                 displayPrice = paidPhase?.formattedPrice ?: "",
                 unit = unitFor(paidPhase?.billingPeriod) ?: Products.fallbackUnit(id),
                 introPrice = introPhase?.formattedPrice,
-                isBestValue = id == Products.MONTHLY,
+                isBestValue = Products.base(id) == Products.WEEKLY,
             )
             Priced(
                 plan = plan,
@@ -339,7 +372,7 @@ object Billing {
         }
         val userId = Supabase.client.auth.currentUserOrNull()?.id
         val paramsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(details)
-        if (productId in Products.SUBS) {
+        if (Products.isSub(productId)) {
             val token = bestOffer(details)?.offerToken ?: return
             paramsBuilder.setOfferToken(token)
         }
@@ -356,7 +389,7 @@ object Billing {
             val c = client ?: return@launch
             val productId = purchase.products.firstOrNull()
             // Report to the backend for server-side validation + record.
-            reportToServer(purchase, isSub = productId in Products.SUBS)
+            reportToServer(purchase, isSub = Products.isSub(productId))
 
             if (productId == Products.DAY_PASS) {
                 // 24h consumable: consume so it can be re-bought, and grant a

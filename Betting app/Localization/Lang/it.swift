@@ -182,7 +182,7 @@ enum ItalianStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "VINCI\nCON TESTA.\n*NON DI FORZA.*",
-        .funnel_welcome_lead:            "L'IA che si pronuncia su ogni partita del giorno in 12 sport, e registra ogni risultato in pubblico.",
+        .funnel_welcome_lead:            "Ogni partita del giorno, annunciata prima del fischio d'inizio e valutata in pubblico. Salta un giorno e il registro va avanti senza di te.",
         .funnel_welcome_cta:             "INIZIA →",
         .funnel_welcome_member:          "Già iscritto? ",
         .funnel_welcome_signin:          "Accedi",
@@ -357,8 +357,8 @@ enum ItalianStrings {
         .funnel_ttw_lead:                "Il tuo pick quotidiano personalizzato è pronto. A un tocco.",
         .funnel_ttw_cta:                 "VEDI IL MIO PIANO →",
         // Paywall
-        .funnel_paywall_kicker:          "Passa a Pro",
-        .funnel_paywall_headline:        "SBLOCCA\nOGNI *PICK.*",
+        .funnel_paywall_kicker:          "Il tabellone di stasera è aperto",
+        .funnel_paywall_headline:        "NON GUARDARE\nSTASERA *ALLA CIECA.*",
         .funnel_paywall_feat1:           "Ogni partita analizzata, su 12 sport",
         .funnel_paywall_feat2:           "Fiducia calibrata + ragionamento",
         .funnel_paywall_feat3:           "Registro pubblico, tracciamento live e ROI",
@@ -386,6 +386,8 @@ enum ItalianStrings {
         .funnel_paywall_unit_wk:         "/sett",
         .funnel_paywall_unit_mo:         "/mese",
         .funnel_paywall_best_value:      "MIGLIORE OFFERTA",
+        .funnel_paywall_most_popular:    "IL PIÙ SCELTO",
+        .funnel_paywall_fomo:            "Il tabellone si azzera a mezzanotte. Ogni pronostico che salti stasera verrà valutato in pubblico senza di te.",
         .funnel_paywall_sub_lifetime:    "Pagamento unico · tuo per sempre",
         .funnel_paywall_sub_weekly:      "Addebito settimanale · disdici quando vuoi",
         .funnel_paywall_sub_monthly:     "Addebito mensile · disdici quando vuoi",
@@ -633,6 +635,8 @@ enum ItalianStrings {
         .paywall_saving_vs_other: "Risparmia %@ al mese",
         .paywall_plan_annual: "Annuale",
         .paywall_unit_yr: "/anno",
+        .paywall_plan_quarterly: "3 MESI",
+        .paywall_unit_qtr: "/3 mesi",
         .paywall_sub_annual: "Addebito annuale · Miglior offerta",
         .tk_confidence: "Fiducia",
         .tk_to_win: "vincente",

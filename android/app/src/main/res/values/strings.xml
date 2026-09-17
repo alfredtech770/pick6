@@ -54,7 +54,7 @@
     <string name="settings_subscription">Subscription</string>
     <string name="settings_subscription_free">FREE</string>
     <string name="settings_subscription_pro">PRO</string>
-    <string name="settings_subscription_sub_pro">Manage in iOS Settings</string>
+    <string name="settings_subscription_sub_pro">Manage in Google Play</string>
     <string name="settings_subscription_sub_free">Unlock all picks · go Pro</string>
     <string name="settings_support_section">SUPPORT</string>
     <string name="settings_help_meta">HELP</string>
@@ -154,7 +154,7 @@
     <string name="live_empty_title">Nothing live right now.</string>
     <string name="live_empty_sub">Check back closer to kickoff.</string>
     <string name="funnel_welcome_headline">WIN\nSMARTER.\n*NOT HARDER.*</string>
-    <string name="funnel_welcome_lead">The AI that calls every game on today\'s board across 12 sports, and logs every result in public.</string>
+    <string name="funnel_welcome_lead">Every game on today\'s board, called before kickoff and graded in public. Miss a day and the ledger moves on without you.</string>
     <string name="funnel_welcome_cta">GET STARTED →</string>
     <string name="funnel_welcome_member">"Already a member? "</string>
     <string name="funnel_welcome_signin">Sign in</string>
@@ -314,8 +314,8 @@
     <string name="funnel_ttw_headline">NOW IT\'S\nTIME TO\n*WIN.*</string>
     <string name="funnel_ttw_lead">Your personalized daily pick is ready. One tap away.</string>
     <string name="funnel_ttw_cta">SEE MY PLAN →</string>
-    <string name="funnel_paywall_kicker">Go Pro</string>
-    <string name="funnel_paywall_headline">UNLOCK\nEVERY *PICK.*</string>
+    <string name="funnel_paywall_kicker">Tonight\'s board is live</string>
+    <string name="funnel_paywall_headline">DON\'T WATCH\nTONIGHT *BLIND.*</string>
     <string name="funnel_paywall_feat1">Every game called, across 12 sports</string>
     <string name="funnel_paywall_feat2">Calibrated confidence + reasoning</string>
     <string name="funnel_paywall_feat3">Public ledger, live tracking &amp; ROI</string>
@@ -340,6 +340,12 @@
     <string name="funnel_paywall_unit_wk">/wk</string>
     <string name="funnel_paywall_unit_mo">/mo</string>
     <string name="funnel_paywall_best_value">BEST VALUE</string>
+    <string name="funnel_paywall_most_popular">MOST POPULAR</string>
+    <string name="funnel_paywall_fomo">The board resets at midnight. Every call you skip tonight gets graded in public without you.</string>
+    <string name="cancel_offer_title">Before you go</string>
+    <string name="cancel_offer_body">Cancel now and Pro ends with this billing period. Every call after that is graded in public without you.</string>
+    <string name="cancel_offer_keep">Keep Pro</string>
+    <string name="cancel_offer_manage">Manage subscription</string>
     <string name="paywall_per_month_suffix">/ month</string>
     <string name="paywall_saving_vs_other">Save %1$s a month</string>
     <string name="funnel_paywall_intro_badge">INTRO %1$s</string>

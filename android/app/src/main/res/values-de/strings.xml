@@ -54,7 +54,7 @@
     <string name="settings_subscription">Abo</string>
     <string name="settings_subscription_free">GRATIS</string>
     <string name="settings_subscription_pro">PRO</string>
-    <string name="settings_subscription_sub_pro">In iOS-Einstellungen verwalten</string>
+    <string name="settings_subscription_sub_pro">In Google Play verwalten</string>
     <string name="settings_subscription_sub_free">Alle Tipps freischalten · Pro werden</string>
     <string name="settings_support_section">SUPPORT</string>
     <string name="settings_help_meta">HILFE</string>
@@ -154,7 +154,7 @@
     <string name="live_empty_title">Aktuell nichts live.</string>
     <string name="live_empty_sub">Schau kurz vor Spielbeginn wieder vorbei.</string>
     <string name="funnel_welcome_headline">GEWINNE\nKLÜGER.\n*NICHT HÄRTER.*</string>
-    <string name="funnel_welcome_lead">Die KI, die jedes Spiel des Tages in 12 Sportarten tippt und jedes Ergebnis öffentlich protokolliert.</string>
+    <string name="funnel_welcome_lead">Jedes Spiel des Tages, vor dem Anpfiff getippt und öffentlich bewertet. Verpasst du einen Tag, läuft das Register ohne dich weiter.</string>
     <string name="funnel_welcome_cta">LOSLEGEN →</string>
     <string name="funnel_welcome_member">"Schon dabei? "</string>
     <string name="funnel_welcome_signin">Anmelden</string>
@@ -314,8 +314,8 @@
     <string name="funnel_ttw_headline">JETZT IST\nZEIT ZU\n*GEWINNEN.*</string>
     <string name="funnel_ttw_lead">Dein persönlicher Tagestipp ist bereit. Nur einen Tap entfernt.</string>
     <string name="funnel_ttw_cta">MEINEN PLAN ANSEHEN →</string>
-    <string name="funnel_paywall_kicker">Werde Pro</string>
-    <string name="funnel_paywall_headline">SCHALTE JEDEN\n*TIPP FREI.*</string>
+    <string name="funnel_paywall_kicker">Das Board für heute Abend ist offen</string>
+    <string name="funnel_paywall_headline">SCHAU HEUTE ABEND\nNICHT *BLIND ZU.*</string>
     <string name="funnel_paywall_feat1">Jedes Spiel getippt, in 12 Sportarten</string>
     <string name="funnel_paywall_feat2">Kalibrierte Sicherheit + Begründung</string>
     <string name="funnel_paywall_feat3">Öffentliches Register, Live-Tracking &amp; ROI</string>
@@ -340,6 +340,12 @@
     <string name="funnel_paywall_unit_wk">/Wo.</string>
     <string name="funnel_paywall_unit_mo">/Mon.</string>
     <string name="funnel_paywall_best_value">BESTES ANGEBOT</string>
+    <string name="funnel_paywall_most_popular">AM BELIEBTESTEN</string>
+    <string name="funnel_paywall_fomo">Um Mitternacht wird das Board zurückgesetzt. Jeder Tipp, den du heute Abend auslässt, wird ohne dich öffentlich bewertet.</string>
+    <string name="cancel_offer_title">Bevor du gehst</string>
+    <string name="cancel_offer_body">Wenn du kündigst, endet Pro mit diesem Abrechnungszeitraum. Jeder Tipp danach wird ohne dich öffentlich bewertet.</string>
+    <string name="cancel_offer_keep">Pro behalten</string>
+    <string name="cancel_offer_manage">Abo verwalten</string>
     <string name="paywall_per_month_suffix">/ Monat</string>
     <string name="paywall_saving_vs_other">Spare %1$s im Monat</string>
     <string name="funnel_paywall_intro_badge">STARTPREIS %1$s</string>

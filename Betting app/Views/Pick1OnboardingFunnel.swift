@@ -1344,13 +1344,17 @@ struct PaywallScreen: View {
     let onDone: () -> Void
     var source: String = "in_app"
     @EnvironmentObject private var subs: SubscriptionManager
-    @State private var selected: String = "com.pick1.app.pro.monthly"
+    @State private var selected: String = "com.pick1.app.pro.weekly"
     @State private var busy = false
     @State private var showTerms = false
     @State private var showPrivacy = false
-    /// Free-tier skip reveals after the same delay as the in-app paywall.
+    /// The in-app upgrade prompt can be put away after a delay; the
+    /// onboarding paywall cannot. Hard paywall over freemium is the rule
+    /// (Ethan, 2026-09-17): a new install gets through only by subscribing,
+    /// and the reviewer account holds a comp grant so App Review gets in.
     @State private var skipUnlocked = false
     static let skipDelay: Double = 5.0
+    private var allowSkip: Bool { source != "onboarding" }
 
     private var feats: [String] {
         [t(.funnel_paywall_feat1), t(.funnel_paywall_feat2), t(.funnel_paywall_feat3), t(.funnel_paywall_feat4)]
@@ -1375,6 +1379,11 @@ struct PaywallScreen: View {
         FnlScreen(topInset: 34) {
             FnlKick(text: t(.funnel_paywall_kicker)).padding(.bottom, 14)
             FnlHeadline(text: t(.funnel_paywall_headline))
+            // Loss framing, not a feature list: what tonight costs without it.
+            Text(t(.funnel_paywall_fomo))
+                .font(.archivo(14)).foregroundColor(Fnl.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 12)
             if let echo = goalEcho {
                 Text(echo)
                     .font(.archivo(14, weight: .medium)).foregroundColor(Fnl.lime)
@@ -1418,7 +1427,7 @@ struct PaywallScreen: View {
                     Button(t(.funnel_paywall_restore)) { Task { await subs.restorePurchases() } }
                     Button(t(.funnel_paywall_terms)) { showTerms = true }
                     Button(t(.funnel_paywall_privacy)) { showPrivacy = true }
-                    if skipUnlocked && !subs.isPro {
+                    if allowSkip && skipUnlocked && !subs.isPro {
                         Button {
                             Analytics.track("funnel_paywall_skipped")
                             onDone()
@@ -1441,7 +1450,7 @@ struct PaywallScreen: View {
         .onAppear {
             Analytics.paywallViewed(source: source)
             alignSelection()
-            guard !skipUnlocked else { return }
+            guard allowSkip, !skipUnlocked else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.skipDelay) {
                 withAnimation(.easeOut(duration: 0.35)) { skipUnlocked = true }
             }
@@ -1454,17 +1463,11 @@ struct PaywallScreen: View {
     /// selection to what's actually available (prefer Lifetime when present).
     private func alignSelection() {
         guard !subs.products.isEmpty else { return }
-        // Annual outranks the stored default. The old guard bailed as soon as
-        // `selected` named a product that existed, and the default constant
-        // names Monthly, so Annual could never be preselected once it shipped.
-        if let annual = subs.products.first(where: { $0.id.hasSuffix("annual") }) {
-            selected = annual.id
-            return
-        }
+        // Weekly is preselected (weekly over monthly is the rule). Ids are
+        // matched by substring because cohort B ids end in ".b".
         guard !subs.products.contains(where: { $0.id == selected }) else { return }
-        selected = subs.products.first(where: { $0.id.hasSuffix("annual") })?.id
-            ?? subs.products.first(where: { $0.id.hasSuffix("monthly") })?.id
-            ?? subs.products.first(where: { $0.id.hasSuffix("weekly") })?.id
+        selected = subs.products.first(where: { $0.id.contains("weekly") })?.id
+            ?? subs.products.first(where: { $0.id.contains("monthly") })?.id
             ?? subs.products.first!.id
     }
 
@@ -1530,7 +1533,8 @@ struct PaywallScreen: View {
         let isLife = p.id == SubscriptionManager.lifetimeProductId
         Button {
             selected = p.id
-            Analytics.track("paywall_plan_selected", ["product": p.id, "source": source])
+            Analytics.track("paywall_plan_selected", ["product": p.id, "source": source,
+                                                      "cohort": subs.priceCohortEffective.rawValue])
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -1565,11 +1569,13 @@ struct PaywallScreen: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(isSel ? Fnl.lime.opacity(0.08) : Fnl.panel)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(isSel ? Fnl.lime : Fnl.line, lineWidth: isSel ? 2 : 1)))
             .overlay(alignment: .topTrailing) {
-                // BEST VALUE sits on Monthly (best per-week rate) now that
-                // Lifetime is retired; isLife kept for any cached product.
-                let hasAnnual = subs.products.contains { $0.id.hasSuffix("annual") }
-                if isLife || p.id.hasSuffix(hasAnnual ? "annual" : "monthly") {
-                    Text(t(.funnel_paywall_best_value)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
+                // MOST POPULAR sits on Weekly, the plan the paywall leads with
+                // (weekly over monthly is the rule, and 658 of 684 subscriptions
+                // were weekly). Monthly keeps its per-month saving line below
+                // the price, which is arithmetic, not a badge. isLife kept for
+                // any cached product.
+                if isLife || p.id.contains("weekly") {
+                    Text(t(.funnel_paywall_most_popular)).font(.archivoNarrow(9, weight: .bold)).kerning(1.4).foregroundColor(Fnl.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(Fnl.lime)).offset(x: -12, y: -8)
                 } else if let offer = paidIntroOffer(p) {
@@ -1588,16 +1594,18 @@ struct PaywallScreen: View {
 
 
     private func planName(_ p: Product) -> String {
-        if p.id.hasSuffix("weekly") { return t(.funnel_paywall_plan_weekly) }
-        if p.id.hasSuffix("monthly") { return t(.funnel_paywall_plan_monthly) }
-        if p.id.hasSuffix("annual") { return t(.paywall_plan_annual) }
+        if p.id.contains("weekly") { return t(.funnel_paywall_plan_weekly) }
+        if p.id.contains("monthly") { return t(.funnel_paywall_plan_monthly) }
+        if p.id.contains("quarterly") { return t(.paywall_plan_quarterly) }
+        if p.id.contains("annual") { return t(.paywall_plan_annual) }
         if p.id == SubscriptionManager.lifetimeProductId { return t(.funnel_paywall_plan_lifetime) }
         return p.displayName.uppercased()
     }
     private func planUnit(_ p: Product) -> String {
-        if p.id.hasSuffix("weekly") { return t(.funnel_paywall_unit_wk) }
-        if p.id.hasSuffix("monthly") { return t(.funnel_paywall_unit_mo) }
-        if p.id.hasSuffix("annual") { return t(.paywall_unit_yr) }
+        if p.id.contains("weekly") { return t(.funnel_paywall_unit_wk) }
+        if p.id.contains("monthly") { return t(.funnel_paywall_unit_mo) }
+        if p.id.contains("quarterly") { return t(.paywall_unit_qtr) }
+        if p.id.contains("annual") { return t(.paywall_unit_yr) }
         return ""
     }
     private func planSub(_ p: Product) -> String {

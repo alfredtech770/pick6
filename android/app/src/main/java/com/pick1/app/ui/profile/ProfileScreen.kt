@@ -74,6 +74,10 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
     val scope = rememberCoroutineScope()
     var showLanguages by remember { mutableStateOf(false) }
     var showEditProfile by remember { mutableStateOf(false) }
+    // Present a cancellation offer (rule, 2026-09-17): a subscriber heading
+    // for Play's cancel page sees one save screen first.
+    var showCancelOffer by remember { mutableStateOf(false) }
+    val isPro by com.pick1.app.billing.Billing.isPro.collectAsState()
     var showPrivacy by remember { mutableStateOf(false) }
 
     if (showLanguages) {
@@ -177,9 +181,27 @@ fun ProfileScreen(vm: ProfileViewModel = viewModel()) {
             SettingsRow(
                 Icons.Default.WorkspacePremium,
                 stringResource(R.string.settings_subscription),
-                sub = stringResource(R.string.settings_subscription_sub_free),
-                trailing = stringResource(R.string.settings_subscription_free),
-            ) { }
+                sub = stringResource(if (isPro) R.string.settings_subscription_sub_pro else R.string.settings_subscription_sub_free),
+                trailing = stringResource(if (isPro) R.string.settings_subscription_pro else R.string.settings_subscription_free),
+            ) { if (isPro) showCancelOffer = true }
+            if (showCancelOffer) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showCancelOffer = false },
+                    title = { Text(stringResource(R.string.cancel_offer_title)) },
+                    text = { Text(stringResource(R.string.cancel_offer_body)) },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(onClick = { showCancelOffer = false }) {
+                            Text(stringResource(R.string.cancel_offer_keep))
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = {
+                            showCancelOffer = false
+                            open("https://play.google.com/store/account/subscriptions?package=com.pick1.app")
+                        }) { Text(stringResource(R.string.cancel_offer_manage)) }
+                    },
+                )
+            }
             SettingsDivider()
             SettingsRow(
                 Icons.Default.Person,

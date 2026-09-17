@@ -44,16 +44,14 @@ fun PaywallScreen(
     onBuy: (PlanOffer) -> Unit,
     onRestore: () -> Unit,
     onContinueFree: () -> Unit,
+    /** The in-app upgrade prompt can be put away after a delay; the funnel
+     *  paywall cannot. Hard paywall over freemium is the rule (2026-09-17). */
+    allowSkip: Boolean = true,
 ) {
-    // Annual arrives selected, as on iOS. Defaulting to `first` selected the
-    // WEEKLY plan, so the card carrying BEST VALUE could never be the one
-    // chosen on arrival and the most expensive per-week option was the
-    // default. The best-value flag decides, not list order.
+    // Weekly arrives selected: it is first in the list AND carries the badge
+    // (weekly over monthly is the rule), so either way the flag decides.
     var selected by remember(plans) {
-        mutableStateOf(
-            (plans.firstOrNull { it.isBestValue } ?: plans.lastOrNull() ?: plans.firstOrNull())
-                ?.productId,
-        )
+        mutableStateOf((plans.firstOrNull { it.isBestValue } ?: plans.firstOrNull())?.productId)
     }
     var skipUnlocked by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -81,6 +79,13 @@ fun PaywallScreen(
             )
             Spacer(Modifier.height(14.dp))
             FnlHeadline(text = stringResource(R.string.funnel_paywall_headline), size = 40)
+            Spacer(Modifier.height(12.dp))
+            // Loss framing, not a feature list: what tonight costs without it.
+            Text(
+                stringResource(R.string.funnel_paywall_fomo),
+                style = archivo(14),
+                color = P1.Ink2,
+            )
 
             Spacer(Modifier.height(18.dp))
             listOf(
@@ -162,7 +167,7 @@ fun PaywallScreen(
                 LinkText(stringResource(R.string.funnel_paywall_restore), onRestore)
                 LinkText(stringResource(R.string.funnel_paywall_terms)) {}
                 LinkText(stringResource(R.string.funnel_paywall_privacy)) {}
-                if (skipUnlocked) {
+                if (allowSkip && skipUnlocked) {
                     Text(
                         stringResource(R.string.funnel_paywall_continue_free),
                         style = archivo(12, FontWeight.SemiBold),
@@ -247,11 +252,10 @@ private fun PlanCard(plan: PlanOffer, selected: Boolean, onSelect: () -> Unit) {
                 }
             }
         }
-        // BEST VALUE sits on monthly; the other plan advertises the intro
-        // price instead. Monthly is $39.99 against $64.96 for a month at the
-        // weekly rate, so it is the better deal on price AND on access.
+        // MOST POPULAR sits on weekly, the plan the paywall leads with; the
+        // other plans advertise the intro price instead.
         val badge = when {
-            plan.isBestValue -> stringResource(R.string.funnel_paywall_best_value) to P1.LimeFunnel
+            plan.isBestValue -> stringResource(R.string.funnel_paywall_most_popular) to P1.LimeFunnel
             plan.introPrice != null ->
                 stringResource(R.string.funnel_paywall_intro_badge, plan.introPrice) to P1.Win
             else -> null

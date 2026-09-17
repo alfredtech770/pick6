@@ -183,7 +183,7 @@ enum EnglishStrings {
         // ─── Onboarding funnel ───────────────────────────────────
         // Welcome
         .funnel_welcome_headline:        "WIN\nSMARTER.\n*NOT HARDER.*",
-        .funnel_welcome_lead:            "The AI that calls every game on today's board across 12 sports, and logs every result in public.",
+        .funnel_welcome_lead:            "Every game on today's board, called before kickoff and graded in public. Miss a day and the ledger moves on without you.",
         .funnel_welcome_cta:             "GET STARTED →",
         .funnel_welcome_member:          "Already a member? ",
         .funnel_welcome_signin:          "Sign in",
@@ -358,8 +358,8 @@ enum EnglishStrings {
         .funnel_ttw_lead:                "Your personalized daily pick is ready. One tap away.",
         .funnel_ttw_cta:                 "SEE MY PLAN →",
         // Paywall
-        .funnel_paywall_kicker:          "Go Pro",
-        .funnel_paywall_headline:        "UNLOCK\nEVERY *PICK.*",
+        .funnel_paywall_kicker:          "Tonight's board is live",
+        .funnel_paywall_headline:        "DON'T WATCH\nTONIGHT *BLIND.*",
         .funnel_paywall_feat1:           "Every game called, across 12 sports",
         .funnel_paywall_feat2:           "Calibrated confidence + reasoning",
         .funnel_paywall_feat3:           "Public ledger, live tracking & ROI",
@@ -387,6 +387,8 @@ enum EnglishStrings {
         .funnel_paywall_unit_wk:         "/wk",
         .funnel_paywall_unit_mo:         "/mo",
         .funnel_paywall_best_value:      "BEST VALUE",
+        .funnel_paywall_most_popular:    "MOST POPULAR",
+        .funnel_paywall_fomo:            "The board resets at midnight. Every call you skip tonight gets graded in public without you.",
         .funnel_paywall_sub_lifetime:    "One-time · yours forever",
         .funnel_paywall_sub_weekly:      "Billed weekly · cancel anytime",
         .funnel_paywall_sub_monthly:     "Billed monthly · cancel anytime",
@@ -634,6 +636,8 @@ enum EnglishStrings {
         .paywall_saving_vs_other: "Save %@ a month",
         .paywall_plan_annual: "Annual",
         .paywall_unit_yr: "/yr",
+        .paywall_plan_quarterly: "3 MONTHS",
+        .paywall_unit_qtr: "/3 mo",
         .paywall_sub_annual: "Billed once a year · Best value",
         .tk_confidence: "Confidence",
         .tk_to_win: "to win",
