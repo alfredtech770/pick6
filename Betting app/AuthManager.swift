@@ -251,13 +251,21 @@ final class AuthManager {
     // static verification code and sign in via a password grant under
     // the hood. The account is a throwaway with no privileges; RLS
     // gives it the same read-only access as any user.
-    private static let reviewerEmail = "review@pick1.live"
+    // Two reviewer accounts since 2026-09-17. `review@` holds a comp grant
+    // (Google Play reviewers cannot purchase, so it is Pro everywhere) and
+    // shows every screen. `review2@` has NO grant: with the hard paywall
+    // it lands on the plans at the end of onboarding, which is where App
+    // Review buys a subscription with a sandbox Apple ID to approve the
+    // in-app purchases. Same static code for both.
+    private static let reviewerEmails = ["review@pick1.live", "review2@pick1.live"]
     private static let reviewerStaticCode = "070770"
     private static let reviewerPassword = "p1ReviewDemo!2026#OTP"
 
     private func isReviewerEmail(_ email: String) -> Bool {
+        Self.reviewerEmails.contains(email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+    }
+    private func reviewerAddress(_ email: String) -> String {
         email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            == Self.reviewerEmail
     }
 
     func sendOTP(email: String) async {
@@ -291,7 +299,7 @@ final class AuthManager {
         if isReviewerEmail(email), token == Self.reviewerStaticCode {
             do {
                 try await SupabaseManager.client.auth.signIn(
-                    email: Self.reviewerEmail,
+                    email: reviewerAddress(email),
                     password: Self.reviewerPassword
                 )
                 isLoading = false
