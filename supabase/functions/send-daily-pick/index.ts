@@ -214,11 +214,18 @@ async function sendBatched(items: Outgoing[]): Promise<{ sent: number; failed: n
   return { sent, failed };
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
     if (!RESEND_KEY) {
       return Response.json({ skipped: "RESEND_API_KEY not set; daily pick emails dormant" });
     }
+    // Domain warming. pick1.live had sent under 200 emails in its life when
+    // this went live (2026-09-17), and 1,800 in one evening from a cold
+    // domain is how a sender lands in spam for good. The cron passes a
+    // `cap`; raise it day by day (400, 800, 1,600, then drop it) rather
+    // than at once. Uncapped when absent.
+    let cap = Infinity;
+    try { const b = await req.json(); if (typeof b?.cap === "number" && b.cap > 0) cap = b.cap; } catch { /* empty body */ }
     const today = new Date().toISOString().slice(0, 10);
     const { data: picks, error: pickErr } = await db.from("picks")
       .select("sport, league, game_date, home_team, away_team, pick, probability, confidence, reasoning, key_factor, odds")
@@ -248,8 +255,14 @@ Deno.serve(async (_req: Request) => {
         headers: { "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       } });
     }
-    const { sent, failed } = await sendBatched(items);
-    return Response.json({ sent, failed, pick: `${top.league}: ${top.pick}` });
+    const capped = items.length > cap ? items.slice(0, cap) : items;
+    if (capped.length < items.length) {
+      // Release the claims the cap leaves behind, so those people are not
+      // marked as done for a day they never received.
+      await db.from("email_log").delete().in("id", items.slice(cap).map((i) => i.logId));
+    }
+    const { sent, failed } = await sendBatched(capped);
+    return Response.json({ sent, failed, held: items.length - capped.length, pick: `${top.league}: ${top.pick}` });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
   }
