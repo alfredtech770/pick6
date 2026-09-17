@@ -113,12 +113,25 @@ function dailyPickHtml(p: Pick1Row, unsubUrl: string): string {
   });
 }
 
+// A daily email is for people still using the product. Everyone confirmed
+// gets the Monday newsletter; the daily pick goes only to accounts that
+// signed in within ACTIVE_DAYS (1,791 of 7,369 on 2026-09-17). Mailing
+// the other 5,500 dormant addresses every day would burn most of the
+// Resend quota on people who left, and unopened mail plus complaints from
+// them is exactly what gets a sending domain filtered for everyone else.
+const ACTIVE_DAYS = Number(Deno.env.get("DAILY_PICK_ACTIVE_DAYS") ?? "30");
+
 async function confirmedUsers(): Promise<Map<string, string>> {
   const out = new Map<string, string>();
+  const cutoff = Date.now() - ACTIVE_DAYS * 86400e3;
   for (let page = 1; page <= 10; page++) {
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
-    for (const u of data.users) if (u.email && u.email_confirmed_at) out.set(u.id, u.email);
+    for (const u of data.users) {
+      if (!u.email || !u.email_confirmed_at) continue;
+      if (!u.last_sign_in_at || Date.parse(u.last_sign_in_at) < cutoff) continue;
+      out.set(u.id, u.email);
+    }
     if (data.users.length < 1000) break;
   }
   return out;
@@ -142,6 +155,65 @@ async function subscribers(flag: string): Promise<{ user_id: string; unsubscribe
   return out;
 }
 
+
+// ── Delivery ──────────────────────────────────────────────────────────────
+//
+// One HTTP request per email was fine for seven subscribers and is not for
+// seven thousand: at the ~3 sends a second Resend answered on 2026-09-17,
+// a full run needs 40 minutes and an edge function is stopped at 400s, so
+// the same first few hundred people (by user_id) would get every mailing
+// and nobody else ever would. Resend's batch endpoint takes 100 emails per
+// call, and the email_log claim is done 500 users at a time, so a run is
+// ~150 requests and about a minute. The claim stays exactly-once: rows
+// already present for (user, type, key) are skipped by the upsert.
+const CLAIM = 500;
+const BATCH = 100;
+
+async function claimAll(userIds: string[], emailType: string, dedupeKey: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (let i = 0; i < userIds.length; i += CLAIM) {
+    const rows = userIds.slice(i, i + CLAIM).map((user_id) => ({ user_id, email_type: emailType, dedupe_key: dedupeKey, status: "pending" }));
+    const { data, error } = await db.from("email_log")
+      .upsert(rows, { onConflict: "user_id,email_type,dedupe_key", ignoreDuplicates: true })
+      .select("id, user_id");
+    if (error) throw error;
+    for (const r of data ?? []) out.set(r.user_id, r.id);
+  }
+  return out;
+}
+
+type Outgoing = { logId: string; email: { from: string; to: string[]; subject: string; html: string; headers: Record<string, string> } };
+
+async function sendBatched(items: Outgoing[]): Promise<{ sent: number; failed: number }> {
+  let sent = 0, failed = 0;
+  for (let i = 0; i < items.length; i += BATCH) {
+    const chunk = items.slice(i, i + BATCH);
+    const ids = chunk.map((c) => c.logId);
+    try {
+      // Resend allows 2 requests a second per account. Every batch call is
+      // spaced out, and a 429 is retried once after backing off, because a
+      // failed batch marks a hundred people as failed for the day.
+      let r: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (i > 0 || attempt > 0) await new Promise((res) => setTimeout(res, attempt ? 2000 : 600));
+        r = await fetch("https://api.resend.com/emails/batch", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify(chunk.map((c) => c.email)),
+        });
+        if (r.status !== 429) break;
+      }
+      if (!r || !r.ok) throw new Error(`Resend ${r?.status}: ${r ? (await r.text()).slice(0, 300) : "no response"}`);
+      await db.from("email_log").update({ status: "sent", sent_at: new Date().toISOString() }).in("id", ids);
+      sent += chunk.length;
+    } catch (e) {
+      await db.from("email_log").update({ status: "failed", error: String(e).slice(0, 500) }).in("id", ids);
+      failed += chunk.length;
+    }
+  }
+  return { sent, failed };
+}
+
 Deno.serve(async (_req: Request) => {
   try {
     if (!RESEND_KEY) {
@@ -162,43 +234,21 @@ Deno.serve(async (_req: Request) => {
     if (prefs.length === 0) return Response.json({ skipped: "no daily_pick subscribers" });
 
     const emails = await confirmedUsers();
-    let sent = 0, failed = 0;
-    for (const pref of prefs) {
-      const email = emails.get(pref.user_id);
-      if (!email) continue;
-      const { data: claimed, error: claimErr } = await db.from("email_log")
-        .upsert(
-          { user_id: pref.user_id, email_type: "daily_pick", dedupe_key: today, status: "pending" },
-          { onConflict: "user_id,email_type,dedupe_key", ignoreDuplicates: true },
-        )
-        .select("id");
-      if (claimErr) throw claimErr;
-      if (!claimed || claimed.length === 0) continue; // already sent today
-      const logId = claimed[0].id;
+    const withEmail = prefs.filter((p) => emails.has(p.user_id));
+    const claimed = await claimAll(withEmail.map((p) => p.user_id), "daily_pick", today);
+    const items: Outgoing[] = [];
+    for (const pref of withEmail) {
+      const logId = claimed.get(pref.user_id);
+      if (!logId) continue; // already sent today
       const unsubUrl = `${SUPABASE_URL}/functions/v1/email-unsubscribe?token=${pref.unsubscribe_token}&list=daily_pick`;
-      try {
-        const r = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: FROM,
-            to: [email],
-            subject: `Today's Pick: ${top.pick} (${top.probability}%)`,
-            html: dailyPickHtml(top, unsubUrl),
-            headers: {
-              "List-Unsubscribe": `<${unsubUrl}>`,
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
-          }),
-        });
-        if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0, 300)}`);
-        await db.from("email_log").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", logId);
-        sent++;
-      } catch (e) {
-        await db.from("email_log").update({ status: "failed", error: String(e).slice(0, 500) }).eq("id", logId);
-        failed++;
-      }
+      items.push({ logId, email: {
+        from: FROM, to: [emails.get(pref.user_id)!],
+        subject: `Today's Pick: ${top.pick} (${top.probability}%)`,
+        html: dailyPickHtml(top, unsubUrl),
+        headers: { "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      } });
     }
+    const { sent, failed } = await sendBatched(items);
     return Response.json({ sent, failed, pick: `${top.league}: ${top.pick}` });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });

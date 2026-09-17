@@ -154,6 +154,65 @@ async function allPages<T>(build: (from: number, to: number) => any): Promise<T[
   return out;
 }
 
+
+// ── Delivery ──────────────────────────────────────────────────────────────
+//
+// One HTTP request per email was fine for seven subscribers and is not for
+// seven thousand: at the ~3 sends a second Resend answered on 2026-09-17,
+// a full run needs 40 minutes and an edge function is stopped at 400s, so
+// the same first few hundred people (by user_id) would get every mailing
+// and nobody else ever would. Resend's batch endpoint takes 100 emails per
+// call, and the email_log claim is done 500 users at a time, so a run is
+// ~150 requests and about a minute. The claim stays exactly-once: rows
+// already present for (user, type, key) are skipped by the upsert.
+const CLAIM = 500;
+const BATCH = 100;
+
+async function claimAll(userIds: string[], emailType: string, dedupeKey: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (let i = 0; i < userIds.length; i += CLAIM) {
+    const rows = userIds.slice(i, i + CLAIM).map((user_id) => ({ user_id, email_type: emailType, dedupe_key: dedupeKey, status: "pending" }));
+    const { data, error } = await db.from("email_log")
+      .upsert(rows, { onConflict: "user_id,email_type,dedupe_key", ignoreDuplicates: true })
+      .select("id, user_id");
+    if (error) throw error;
+    for (const r of data ?? []) out.set(r.user_id, r.id);
+  }
+  return out;
+}
+
+type Outgoing = { logId: string; email: { from: string; to: string[]; subject: string; html: string; headers: Record<string, string> } };
+
+async function sendBatched(items: Outgoing[]): Promise<{ sent: number; failed: number }> {
+  let sent = 0, failed = 0;
+  for (let i = 0; i < items.length; i += BATCH) {
+    const chunk = items.slice(i, i + BATCH);
+    const ids = chunk.map((c) => c.logId);
+    try {
+      // Resend allows 2 requests a second per account. Every batch call is
+      // spaced out, and a 429 is retried once after backing off, because a
+      // failed batch marks a hundred people as failed for the day.
+      let r: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (i > 0 || attempt > 0) await new Promise((res) => setTimeout(res, attempt ? 2000 : 600));
+        r = await fetch("https://api.resend.com/emails/batch", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify(chunk.map((c) => c.email)),
+        });
+        if (r.status !== 429) break;
+      }
+      if (!r || !r.ok) throw new Error(`Resend ${r?.status}: ${r ? (await r.text()).slice(0, 300) : "no response"}`);
+      await db.from("email_log").update({ status: "sent", sent_at: new Date().toISOString() }).in("id", ids);
+      sent += chunk.length;
+    } catch (e) {
+      await db.from("email_log").update({ status: "failed", error: String(e).slice(0, 500) }).in("id", ids);
+      failed += chunk.length;
+    }
+  }
+  return { sent, failed };
+}
+
 Deno.serve(async (_req: Request) => {
   try {
     if (!RESEND_KEY) {
@@ -197,45 +256,21 @@ Deno.serve(async (_req: Request) => {
     if (prefs.length === 0) return Response.json({ skipped: "no newsletter subscribers" });
 
     const emails = await confirmedUsers();
-    let sent = 0, failed = 0;
-    for (const pref of prefs) {
-      const email = emails.get(pref.user_id);
-      if (!email) continue;
-      const { data: claimed, error: claimErr } = await db.from("email_log")
-        .upsert(
-          { user_id: pref.user_id, email_type: "newsletter", dedupe_key: weekKey, status: "pending" },
-          { onConflict: "user_id,email_type,dedupe_key", ignoreDuplicates: true },
-        )
-        .select("id");
-      if (claimErr) throw claimErr;
-      if (!claimed || claimed.length === 0) continue;
-      const logId = claimed[0].id;
+    const withEmail = prefs.filter((p) => emails.has(p.user_id));
+    const claimed = await claimAll(withEmail.map((p) => p.user_id), "newsletter", weekKey);
+    const subject = last7.length ? `The week, logged: ${w7}-${l7}` : `Pick1 weekly: ${wAll}-${lAll} all-time`;
+    const items: Outgoing[] = [];
+    for (const pref of withEmail) {
+      const logId = claimed.get(pref.user_id);
+      if (!logId) continue; // already sent this week
       const unsubUrl = `${SUPABASE_URL}/functions/v1/email-unsubscribe?token=${pref.unsubscribe_token}&list=newsletter`;
-      try {
-        const r = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: FROM,
-            to: [email],
-            subject: last7.length
-              ? `The week, logged: ${w7}-${l7}`
-              : `Pick1 weekly: ${wAll}-${lAll} all-time`,
-            html: newsletterHtml({ w7, l7, wAll, lAll, leagues, topWins }, unsubUrl),
-            headers: {
-              "List-Unsubscribe": `<${unsubUrl}>`,
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
-          }),
-        });
-        if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0, 300)}`);
-        await db.from("email_log").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", logId);
-        sent++;
-      } catch (e) {
-        await db.from("email_log").update({ status: "failed", error: String(e).slice(0, 500) }).eq("id", logId);
-        failed++;
-      }
+      items.push({ logId, email: {
+        from: FROM, to: [emails.get(pref.user_id)!], subject,
+        html: newsletterHtml({ w7, l7, wAll, lAll, leagues, topWins }, unsubUrl),
+        headers: { "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      } });
     }
+    const { sent, failed } = await sendBatched(items);
     return Response.json({ sent, failed, week: weekKey, record7d: `${w7}-${l7}` });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
