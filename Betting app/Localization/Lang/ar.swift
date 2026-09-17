@@ -632,6 +632,7 @@ enum ArabicStrings {
         .rec_trial_banner_body: "التجديد متوقف، لذا ستفقد Pro. هذا ما توقّعه النموذج أثناء اشتراكك.",
         .rec_trial_banner_cta: "عرض حصيلة تجربتي",
         .paywall_per_month_suffix: "/ شهر",
+        .paywall_saving_vs_other: "وفّر %@ شهريًا",
         .paywall_plan_annual: "سنوي",
         .paywall_unit_yr: "/سنة",
         .paywall_sub_annual: "يُدفع مرة في السنة · أفضل عرض",

@@ -19,16 +19,17 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.pick1.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pick1.app"
         minSdk = 26          // matches the iOS feature floor; covers ~95%+ of devices
-        targetSdk = 35
-        // 1 is taken: a 1.0.14 bundle was uploaded to the internal testing
-        // track on 2026-08-04 and Play never lets a versionCode be reused,
-        // even for a build nobody installed.
-        versionCode = 2
+        targetSdk = 36
+        // 1 and 2 are taken. 1 went to the internal testing track on
+        // 2026-08-04; 2 was uploaded to production on 2026-09-15 and rejected
+        // by Play for targeting API 35 and Billing 7. Play never lets a
+        // versionCode be reused, even for a bundle nobody ever installed.
+        versionCode = 3
         versionName = "1.0.18"   // keep in step with the iOS release train
 
         // Same backend as iOS. The anon key is a publishable client credential
@@ -65,12 +66,13 @@ android {
             isDebuggable = true
         }
         release {
-            // First store build ships un-minified so the release binary is a
-            // byte-for-byte behavioural match of debug — no R8 surprises with
-            // kotlinx.serialization / ktor / Supabase reflection. Re-enable R8
-            // with proper keep rules once we've validated on a closed track.
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 on since 2026-09-15, with real keep rules in proguard-rules.pro
+            // for kotlinx.serialization, ktor, Supabase, Firebase and Billing.
+            // Un-minified the bundle was 20.2 MB, most of it unused
+            // material-icons-extended vectors. Verify on the internal testing
+            // track before the production rollout completes.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }

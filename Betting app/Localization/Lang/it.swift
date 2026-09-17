@@ -630,6 +630,7 @@ enum ItalianStrings {
         .rec_trial_banner_body: "Il rinnovo è disattivato, quindi perderai Pro. Ecco cosa ha previsto il modello mentre ce l'avevi.",
         .rec_trial_banner_cta: "Vedi il bilancio della prova",
         .paywall_per_month_suffix: "/ mese",
+        .paywall_saving_vs_other: "Risparmia %@ al mese",
         .paywall_plan_annual: "Annuale",
         .paywall_unit_yr: "/anno",
         .paywall_sub_annual: "Addebito annuale · Miglior offerta",

@@ -81,6 +81,19 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🤑 +${won}, em cheio", b: "{team} {score}" },
     ar: { t: "🤑 +{won}$، توقّع صحيح", b: "{team} {score}" },
   },
+  // A game the user starred is kicking off. Every sport, one per game, and
+  // the only notification in the set that arrives before anything happens,
+  // which is the point: it is the one that gets the app opened while the
+  // game is still worth watching. No figure, no claim, just the fixture.
+  fav_start: {
+    en: { t: "🏟️ {team} is starting", b: "Your game is underway. AI call: {pick}." },
+    fr: { t: "🏟️ {team} commence", b: "Ton match démarre. Pronostic IA : {pick}." },
+    es: { t: "🏟️ Empieza {team}", b: "Tu partido arranca. Pronóstico IA: {pick}." },
+    de: { t: "🏟️ {team} beginnt", b: "Dein Spiel läuft. KI-Tipp: {pick}." },
+    it: { t: "🏟️ {team} inizia", b: "La tua partita è iniziata. Pronostico IA: {pick}." },
+    pt: { t: "🏟️ {team} vai começar", b: "O teu jogo arrancou. Palpite IA: {pick}." },
+    ar: { t: "🏟️ {team} تبدأ الآن", b: "مباراتك انطلقت. توقّع الذكاء الاصطناعي: {pick}." },
+  },
   goal_fav: {
     en: { t: "⚡ {score}", b: "{team} scores in your game." },
     fr: { t: "⚡ {score}", b: "{team} marque dans ton match." },
@@ -214,6 +227,7 @@ const TIER: Record<string, Tier> = {
 
   result_win: "personal",
   goal_fav: "personal",
+  fav_start: "personal",
 
   pick_drop: "daily",
   recap: "daily",
@@ -237,20 +251,37 @@ const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number } {
   if (!lastSeenAt) return { perDay: 0, perWeek: 0 };
   const days = (Date.now() - Date.parse(lastSeenAt)) / 86400e3;
-  // Raised from 2/day, 10/week on 2026-09-15. The measured week was 8,394
-  // sends over 2,454 devices, and the binding constraint was never this cap
-  // but the SUPPLY of things worth sending, so the active tier was rarely
-  // reaching even the old ceiling. Three a day with four hours between them
-  // is still at most one per waking third of the day.
+  // BROADCAST stays at 3 a day. It went to 5 for a day on 2026-09-16 and came
+  // back on the 17th, on the numbers: broadcast keys open at 0.8–1.5%, the
+  // personal keys at 9–12%, and iOS demotes senders nobody opens. The cap was
+  // never the binding constraint anyway (the measured fortnight ran ~2.2 a
+  // day against a ceiling of 3, because SUPPLY runs out first), so the extra
+  // two slots bought nothing today and loosened the guard-rail for whoever
+  // adds a broadcast key tomorrow. The "five a day" Ethan asked for lives in
+  // PERSONAL_BONUS_PER_DAY instead, where it is earned by following a game.
   //
-  // The dormant tiers are deliberately untouched. 1,598 of those 2,454
-  // devices have been dark for six weeks, and pushing them is precisely what
-  // got the sender demoted before. Volume comes from the people who are
-  // still here, never from waking the ones who left.
+  // The dormant tiers are deliberately untouched. 1,598 of 2,454 devices
+  // have been dark for six weeks, and pushing them is precisely what got the
+  // sender demoted before. Volume comes from the people who are still here,
+  // never from waking the ones who left.
   if (days <= 14) return { perDay: 3, perWeek: 14 };
   if (days <= 45) return { perDay: 1, perWeek: 2 };
   return { perDay: 0, perWeek: 0 };
 }
+
+/// Extra daily headroom for `personal` notifications, on top of `perDay`.
+///
+/// A goal in a match you starred is not the same interruption as the app's
+/// own drumbeat: you asked for it, by name, for that game. Measured over the
+/// fortnight the two personal keys had open rates of 9.1% (`result_win`) and
+/// 12.5% (`goal_fav`) against 0.8–1.5% for every broadcast key, which is the
+/// whole argument for spending the volume here rather than on more broadcast.
+///
+/// So a device that has favourited a busy night can take up to five
+/// broadcast sends AND five personal ones. Someone who favourites nothing
+/// still sees the old ceiling, which is the correct answer: notifications
+/// should follow what a person actually chose to follow.
+const PERSONAL_BONUS_PER_DAY = 5;
 
 // Rough UTC offset per app language. device_tokens carries no timezone, so
 // each language takes the offset of its dominant storefront. Same table as
@@ -295,6 +326,16 @@ function nextSendWindow(locale: string | null, from: Date = new Date()): Date {
 /// four hours out instead of dropped, so the second thing still arrives, in
 /// the afternoon, where it has the day to itself.
 const MIN_GAP_HOURS = 4;
+
+/// The same rule for `personal` keys, in minutes rather than hours.
+///
+/// Four hours cannot coexist with five a day: the send window is 09:00–21:00
+/// local, twelve hours, and five sends four hours apart need sixteen. More
+/// importantly a four-hour gap is wrong for the thing itself — two goals in
+/// a match you starred are twenty minutes apart, and parking the second one
+/// until the evening delivers it after the final whistle, which is worse
+/// than not sending it. Twenty minutes still collapses a flurry.
+const PERSONAL_MIN_GAP_MIN = 20;
 
 // Amounts are grouped in the reader's own language: "+$2,891" in English,
 // "+2 891 $" in French. Raw "+$2891" reads like a serial number, which is
@@ -659,7 +700,15 @@ Deno.serve(async (req: Request) => {
   const skipped = { dormant: 0, capped: 0, queued: 0 };
 
   // Recent history for everyone in range, read once. `critical` never asks.
-  const counts = new Map<string, { day: number; week: number; last: string | null }>();
+  // Broadcast and personal history are counted SEPARATELY, because they are
+  // spent from separate budgets (see PERSONAL_BONUS_PER_DAY). Counting them
+  // together would mean a busy night of starred games silently eats the
+  // day's pick_drop, which is the opposite of the intent: following a game
+  // should add notifications, never replace the ones everyone gets.
+  type Hist = { day: number; week: number; last: string | null;
+                dayP: number; lastP: string | null };
+  const blank = (): Hist => ({ day: 0, week: 0, last: null, dayP: 0, lastP: null });
+  const counts = new Map<string, Hist>();
   if (tier !== "critical") {
     const ids = [...new Set(tokens.map((t: any) => t.user_id).filter(Boolean))];
     const weekAgo = new Date(Date.now() - 7 * 86400e3).toISOString();
@@ -668,16 +717,22 @@ Deno.serve(async (req: Request) => {
       const hist: any[] = [];
       for (let from = 0; ; from += PAGE) {
         const { data: page } = await supabase.from("push_log")
-          .select("user_id, sent_at").in("user_id", ids.slice(i, i + 500))
+          .select("user_id, sent_at, base_key").in("user_id", ids.slice(i, i + 500))
           .gte("sent_at", weekAgo).range(from, from + PAGE - 1);
         hist.push(...(page ?? []));
         if (!page || page.length < PAGE) break;
       }
       for (const h of hist) {
-        const c = counts.get(h.user_id) ?? { day: 0, week: 0, last: null };
-        c.week++;
-        if (h.sent_at >= dayAgo) c.day++;
-        if (!c.last || h.sent_at > c.last) c.last = h.sent_at;
+        const c = counts.get(h.user_id) ?? blank();
+        const personal = tierOf(h.base_key) === "personal";
+        if (personal) {
+          if (h.sent_at >= dayAgo) c.dayP++;
+          if (!c.lastP || h.sent_at > c.lastP) c.lastP = h.sent_at;
+        } else {
+          c.week++;
+          if (h.sent_at >= dayAgo) c.day++;
+          if (!c.last || h.sent_at > c.last) c.last = h.sent_at;
+        }
         counts.set(h.user_id, c);
       }
     }
@@ -693,11 +748,21 @@ Deno.serve(async (req: Request) => {
     if (tier !== "critical") {
       const a = allowance(t.last_seen_at ?? null);
       if (a.perDay === 0) { skipped.dormant++; continue; }
-      const c = counts.get(t.user_id) ?? { day: 0, week: 0, last: null };
-      if (c.day >= a.perDay || c.week >= a.perWeek) { skipped.capped++; continue; }
-      if (c.last) {
-        const gap = new Date(Date.parse(c.last) + MIN_GAP_HOURS * 3600e3);
-        if (gap > earliest) earliest = gap;
+      const c = counts.get(t.user_id) ?? blank();
+      if (tier === "personal") {
+        // Own budget, own spacing. A starred game is allowed to be noisy on
+        // the night it is played and costs the drumbeat nothing.
+        if (c.dayP >= PERSONAL_BONUS_PER_DAY) { skipped.capped++; continue; }
+        if (c.lastP) {
+          const gap = new Date(Date.parse(c.lastP) + PERSONAL_MIN_GAP_MIN * 60e3);
+          if (gap > earliest) earliest = gap;
+        }
+      } else {
+        if (c.day >= a.perDay || c.week >= a.perWeek) { skipped.capped++; continue; }
+        if (c.last) {
+          const gap = new Date(Date.parse(c.last) + MIN_GAP_HOURS * 3600e3);
+          if (gap > earliest) earliest = gap;
+        }
       }
     }
     if (earliest <= nowTs && inSendWindow(t.locale)) now.push(t);

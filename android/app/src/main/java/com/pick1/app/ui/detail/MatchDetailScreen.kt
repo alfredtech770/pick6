@@ -184,7 +184,7 @@ private fun TopBar(pick: Pick, onClose: () -> Unit) {
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(P1.Panel)
-                .clickable { scope.launch { Favorites.toggle(ctx, pick.id) } }
+                .clickable { scope.launch { Favorites.toggle(ctx, pick.id, pick.gameId) } }
                 .padding(9.dp),
         )
     }

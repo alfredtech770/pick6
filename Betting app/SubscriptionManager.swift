@@ -290,10 +290,37 @@ final class SubscriptionManager: ObservableObject {
 
         do {
             let fetched = try await Product.products(for: Self.productIds)
-            // Sort weekly → monthly for stable display.
+            // Longest billing period FIRST: annual, then monthly, then
+            // weekly. Was weekly → monthly until 2026-09-16.
+            //
+            // The order matters more than it looks. Monthly is preselected
+            // and carries BEST VALUE, but it was rendering SECOND, so the
+            // first price a reader's eye met was "$14.99/wk" — the smallest
+            // sticker on the screen, attached to the plan that reaches a paid
+            // period 16.8% of the time against monthly's 33.8%, and that has
+            // a median life of three days against thirty. Leading with the
+            // plan the product actually wants to sell costs nothing and stops
+            // anchoring everyone on the cheapest-looking number.
+            //
+            // Ties fall back to the declared order in `productIds`, so this
+            // stays stable if two plans ever share a period.
+            func rank(_ p: Product) -> Int {
+                guard let period = p.subscription?.subscriptionPeriod else { return 99 }
+                let days: Int
+                switch period.unit {
+                case .day: days = period.value
+                case .week: days = period.value * 7
+                case .month: days = period.value * 30
+                case .year: days = period.value * 365
+                @unknown default: days = 0
+                }
+                return -days
+            }
             self.products = fetched.sorted { lhs, rhs in
-                Self.productIds.firstIndex(of: lhs.id) ?? 0 <
-                Self.productIds.firstIndex(of: rhs.id) ?? 0
+                let (a, b) = (rank(lhs), rank(rhs))
+                if a != b { return a < b }
+                return (Self.productIds.firstIndex(of: lhs.id) ?? 0)
+                     < (Self.productIds.firstIndex(of: rhs.id) ?? 0)
             }
 
             // Apple returns an empty array (not an error) when the IDs
@@ -816,6 +843,24 @@ extension Product {
     ///
     /// Nil for a plan already billed monthly (nothing to convert) and for
     /// non-renewing products like the Day Pass.
+    /// The same number as `monthlyEquivalentText`, unformatted, and returned
+    /// for monthly plans too so two plans can be subtracted from each other.
+    ///
+    /// `monthlyEquivalentText` deliberately returns nil for a plan already
+    /// billed monthly, because printing "$39.99 per month" under "$39.99/mo"
+    /// is noise. Comparing plans needs the value anyway.
+    var monthlyEquivalent: Decimal? {
+        guard let period = subscription?.subscriptionPeriod, period.value > 0 else { return nil }
+        let n = Decimal(period.value)
+        switch period.unit {
+        case .day:   return price * 30 / n
+        case .week:  return price * 30 / (n * 7)
+        case .month: return price / n
+        case .year:  return price / (n * 12)
+        @unknown default: return nil
+        }
+    }
+
     var monthlyEquivalentText: String? {
         guard let period = subscription?.subscriptionPeriod, period.value > 0 else { return nil }
         if period.unit == .month && period.value == 1 { return nil }

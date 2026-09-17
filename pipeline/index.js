@@ -2500,9 +2500,13 @@ async function liveTick() {
       for (const r of prev || []) prevById[r.game_id] = r;
     }
     // Sports where each score is a discrete event worth a "they scored!"
-    // push. High-frequency sports (basketball/baseball/football) only push
-    // on final, to avoid spamming.
-    const GOAL_SPORTS = new Set(['soccer', 'hockey']);
+    // push. Basketball and football are still excluded: a basketball game
+    // changes score ~70 times and the alert would be noise, not news.
+    //
+    // Baseball added 2026-09-16. A run is as discrete as a goal and a game
+    // has about nine of them, which is the same order as a hockey game, so
+    // the reason it was grouped with basketball was never true of it.
+    const GOAL_SPORTS = new Set(['soccer', 'hockey', 'baseball']);
     const pushEvents = [];
     const laEvents = [];   // Live Activity (Apple Sports card) updates
 
@@ -2556,6 +2560,33 @@ async function liveTick() {
         // ── Per-game push automations (only on real events) ──────────
         const prev = prevById[p.game_id];
         const score = `${p.home_team} ${homeScore ?? 0}–${awayScore ?? 0} ${p.away_team}`;
+
+        // ── Kick-off, for people who starred this game ───────────────
+        //
+        // Added 2026-09-16. Favourites produced almost nothing before: over
+        // the previous fortnight, 365 games were favourited and exactly 14
+        // people received a single favourite-driven push, because the only
+        // two triggers were a goal (soccer and hockey only, 29% of
+        // favourites) and a win (only when the AI's call landed).
+        //
+        // A start is the one event every favourite has, in every sport,
+        // exactly once. It is also the only one that arrives while there is
+        // still a game left to watch.
+        //
+        // Gated on FAV_START=1 until send-push carries the fav_start copy.
+        // send-push does NOT fail safe on an unknown key: it sends the raw
+        // key as the title with an empty body, so shipping this trigger
+        // ahead of the sender would push the literal text "fav_start" to
+        // everyone who starred a game. Flip the variable on Railway once
+        // send-push is deployed, then delete this guard.
+        if (process.env.FAV_START === '1'
+            && prev && prev.status !== 'InProgress' && prev.status !== 'Final'
+            && status === 'InProgress') {
+          pushEvents.push({ key: 'fav_start', prefKey: 'live',
+            favOnly: true, gameId: p.game_id,
+            args: { team: `${p.home_team} v ${p.away_team}`, pick: p.pick || '—' } });
+        }
+
         if (prev) {
           const scoreChanged =
             String(prev.home_score) !== String(homeScore) ||

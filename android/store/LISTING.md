@@ -59,7 +59,7 @@ Written to the same rules as the App Store copy:
 
 **Full description**
 
-> Pick1 calls every game on today's board across ten sports, before any of them start, and logs every result in public afterwards.
+> Pick1 calls every game on today's board across twelve sports, before any of them start, and logs every result in public afterwards.
 >
 > **The whole slate, not a shortlist**
 > Basketball, football, soccer, hockey, baseball, fight, racing, tennis, cricket, golf, Australian football and rugby. The AI publishes a call and a win probability for each matchup, every morning, and the board says exactly when it was written.
@@ -88,7 +88,7 @@ Written to the same rules as the App Store copy:
 
 **Description complète**
 
-> Pick1 se prononce sur tous les matchs du jour, sur dix sports, avant qu'ils ne commencent, et publie ensuite chaque résultat.
+> Pick1 se prononce sur tous les matchs du jour, sur douze sports, avant qu'ils ne commencent, et publie ensuite chaque résultat.
 >
 > **Le tableau entier, pas une sélection**
 > Basket, football américain, foot, hockey, baseball, combat, course, tennis, cricket, golf, football australien et rugby. L'IA publie un pronostic et une probabilité pour chaque affiche, chaque matin, et le tableau indique l'heure exacte à laquelle il a été écrit.
@@ -117,7 +117,7 @@ Written to the same rules as the App Store copy:
 
 **Descripción completa**
 
-> Pick1 se pronuncia sobre todos los partidos del día en diez deportes, antes de que empiecen, y publica después cada resultado.
+> Pick1 se pronuncia sobre todos los partidos del día en doce deportes, antes de que empiecen, y publica después cada resultado.
 >
 > **El cartel completo, no una selección**
 > Baloncesto, fútbol americano, fútbol, hockey, béisbol, combate, carreras, tenis, críquet, golf, fútbol australiano y rugby. La IA publica un pronóstico y una probabilidad para cada encuentro, cada mañana, y el cartel indica la hora exacta en que se escribió.
@@ -146,7 +146,7 @@ Written to the same rules as the App Store copy:
 
 **Vollständige Beschreibung**
 
-> Pick1 tippt jedes Spiel des Tages in zehn Sportarten, bevor eines davon beginnt, und protokolliert danach jedes Ergebnis öffentlich.
+> Pick1 tippt jedes Spiel des Tages in zwölf Sportarten, bevor eines davon beginnt, und protokolliert danach jedes Ergebnis öffentlich.
 >
 > **Das ganze Programm, keine Auswahl**
 > Basketball, Football, Fußball, Eishockey, Baseball, Kampfsport, Motorsport, Tennis, Cricket, Golf, Australian Football und Rugby. Die KI veröffentlicht jeden Morgen einen Tipp und eine Wahrscheinlichkeit für jede Partie, und das Board nennt die genaue Uhrzeit.
@@ -175,7 +175,7 @@ Written to the same rules as the App Store copy:
 
 **Descrizione completa**
 
-> Pick1 si pronuncia su ogni partita del giorno in dieci sport, prima che inizino, e pubblica poi ogni risultato.
+> Pick1 si pronuncia su ogni partita del giorno in dodici sport, prima che inizino, e pubblica poi ogni risultato.
 >
 > **Tutto il programma, non una selezione**
 > Basket, football americano, calcio, hockey, baseball, combattimento, motori, tennis, cricket, golf, football australiano e rugby. L'IA pubblica ogni mattina un pronostico e una probabilità per ogni incontro, e il programma indica l'ora esatta in cui è stato scritto.
@@ -204,7 +204,7 @@ Written to the same rules as the App Store copy:
 
 **Descrição completa**
 
-> O Pick1 se pronuncia sobre todos os jogos do dia em dez esportes, antes de começarem, e publica depois cada resultado.
+> O Pick1 se pronuncia sobre todos os jogos do dia em doze desportos, antes de começarem, e publica depois cada resultado.
 >
 > **O quadro inteiro, não uma seleção**
 > Basquete, futebol americano, futebol, hóquei, beisebol, luta, automobilismo, tênis, críquete, golfe, futebol australiano e râguebi. A IA publica todas as manhãs um palpite e uma probabilidade para cada confronto, e o quadro informa a hora exata em que foi escrito.
@@ -233,7 +233,7 @@ Written to the same rules as the App Store copy:
 
 **وصف كامل**
 
-> يتوقّع Pick1 كل مباريات اليوم في عشر رياضات، قبل أن تبدأ أي منها، ثم يسجّل كل نتيجة علنًا.
+> يتوقّع Pick1 كل مباريات اليوم في اثنتي عشرة رياضة، قبل أن تبدأ أي منها، ثم يسجّل كل نتيجة علنًا.
 >
 > **اللوحة كاملة، وليست قائمة مختصرة**
 > كرة السلة، كرة القدم الأمريكية، كرة القدم، الهوكي، البيسبول، القتال، السباقات، التنس، الكريكيت، الغولف، كرة القدم الأسترالية والرغبي. ينشر الذكاء الاصطناعي كل صباح توقّعًا واحتمالًا لكل مواجهة، وتوضح اللوحة الوقت الذي كُتب فيه.

@@ -630,6 +630,7 @@ enum GermanStrings {
         .rec_trial_banner_body: "Die Verlängerung ist aus, du verlierst Pro. Das hat das Modell getippt, solange du es hattest.",
         .rec_trial_banner_cta: "Meine Testbilanz ansehen",
         .paywall_per_month_suffix: "/ Monat",
+        .paywall_saving_vs_other: "Spare %@ im Monat",
         .paywall_plan_annual: "Jährlich",
         .paywall_unit_yr: "/Jahr",
         .paywall_sub_annual: "Einmal jährlich · Bestes Angebot",

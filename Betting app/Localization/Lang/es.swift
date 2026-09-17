@@ -630,6 +630,7 @@ enum SpanishStrings {
         .rec_trial_banner_body: "La renovación está desactivada, así que perderás Pro. Esto es lo que el modelo predijo mientras lo tenías.",
         .rec_trial_banner_cta: "Ver mi balance de prueba",
         .paywall_per_month_suffix: "/ mes",
+        .paywall_saving_vs_other: "Ahorra %@ al mes",
         .paywall_plan_annual: "Anual",
         .paywall_unit_yr: "/año",
         .paywall_sub_annual: "Cobro anual · La mejor oferta",

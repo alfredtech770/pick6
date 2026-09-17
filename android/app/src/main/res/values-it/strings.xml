@@ -340,6 +340,8 @@
     <string name="funnel_paywall_unit_wk">/sett</string>
     <string name="funnel_paywall_unit_mo">/mese</string>
     <string name="funnel_paywall_best_value">MIGLIORE OFFERTA</string>
+    <string name="paywall_per_month_suffix">/ mese</string>
+    <string name="paywall_saving_vs_other">Risparmia %1$s al mese</string>
     <string name="funnel_paywall_intro_badge">OFFERTA %1$s</string>
     <string name="funnel_paywall_fineprint_intro">PREZZO INIZIALE %1$s · POI %2$s · DISDICI QUANDO VUOI · PAGAMENTO SICURO</string>
     <string name="funnel_paywall_cta_intro">INIZIA A %1$s →</string>

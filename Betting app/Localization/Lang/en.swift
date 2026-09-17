@@ -631,6 +631,7 @@ enum EnglishStrings {
         .rec_trial_banner_body: "Renewal is off, so you'll lose Pro when it does. Here's what the model called while you had it.",
         .rec_trial_banner_cta: "See my trial record",
         .paywall_per_month_suffix: "/ month",
+        .paywall_saving_vs_other: "Save %@ a month",
         .paywall_plan_annual: "Annual",
         .paywall_unit_yr: "/yr",
         .paywall_sub_annual: "Billed once a year · Best value",

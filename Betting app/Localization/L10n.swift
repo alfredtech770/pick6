@@ -682,6 +682,9 @@ enum L10nKey: String, CaseIterable {
 
     // Same-unit price comparison, and the annual plan.
     case paywall_per_month_suffix
+    /// "Save $24.97 a month" on the cheaper-per-month plan. Pure subtraction
+    /// between the two per-month figures already printed on the cards.
+    case paywall_saving_vs_other
     case paywall_plan_annual
     case paywall_unit_yr
     case paywall_sub_annual

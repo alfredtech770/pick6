@@ -1508,6 +1508,23 @@ struct PaywallScreen: View {
         return t(selectedTrialAvailable ? .funnel_paywall_fineprint_trial : .funnel_paywall_fineprint)
     }
 
+    /// What `p` saves per month against the dearest plan on this paywall.
+    ///
+    /// Returns nil unless `p` is genuinely the cheapest per month and the
+    /// gap is worth printing, so only one card ever carries the line and it
+    /// is always the one being recommended. Both sides come from
+    /// `monthlyEquivalent`, the same 30-day basis the cards already show.
+    private func monthlySavingText(_ p: Product) -> String? {
+        guard let mine = p.monthlyEquivalent else { return nil }
+        let others = subs.products.filter { $0.id != p.id }.compactMap(\.monthlyEquivalent)
+        guard let dearest = others.max(), dearest > mine else { return nil }
+        let gap = dearest - mine
+        guard gap >= 1 else { return nil }
+        var rounded = Decimal(); var raw = gap
+        NSDecimalRound(&rounded, &raw, 2, .plain)
+        return rounded.formatted(p.priceFormatStyle)
+    }
+
     @ViewBuilder private func planCard(_ p: Product) -> some View {
         let isSel = selected == p.id
         let isLife = p.id == SubscriptionManager.lifetimeProductId
@@ -1532,6 +1549,15 @@ struct PaywallScreen: View {
                         Text("\(perMonth) \(t(.paywall_per_month_suffix))")
                             .font(.mono(10, weight: .medium))
                             .foregroundColor(Fnl.ink2)
+                    } else if let saving = monthlySavingText(p) {
+                        // Only ever on the cheapest-per-month plan, which is
+                        // also the one with no equivalent line to print. The
+                        // figure is the difference between the two per-month
+                        // numbers already on screen, so the reader can check
+                        // it by subtracting what they can see.
+                        Text(String(format: t(.paywall_saving_vs_other), saving))
+                            .font(.mono(10, weight: .bold))
+                            .foregroundColor(Fnl.win)
                     }
                 }
             }

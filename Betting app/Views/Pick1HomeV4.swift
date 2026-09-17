@@ -354,7 +354,15 @@ struct P1V4Hero: View {
     /// Required when the ALL board is selected: without the selected sport orb
     /// as context, the card must name its own sport.
     var showSport: Bool = false
+    /// Whether this game is already starred. Drives the FOLLOW pill.
+    var isStarred: Bool = false
     var onTap: () -> Void = {}
+    /// The star, on the card itself. Added 2026-09-17: 74% of subscribers
+    /// never favourited a game, and conversion runs 15% for them against
+    /// 34% for people with three or more actions. Favouriting used to live
+    /// only behind the detail screen's star; this is the first surface every
+    /// new user lands on, so the action now sits where the eyes already are.
+    var onStar: () -> Void = {}
 
     var body: some View {
         Button(action: onTap) {
@@ -409,6 +417,29 @@ struct P1V4Hero: View {
                                       colors: V4.barGradients[i % V4.barGradients.count])
                     }
                 }
+
+                // FOLLOW pill. A plain tap gesture rather than a nested
+                // Button: a Button inside a .plain Button's label loses its
+                // tap to the parent on iOS more often than not, and this is
+                // the one tap on the screen that has to land every time. The
+                // copy says what the star DOES, because a bare star on a
+                // sports card reads as "rate this" to a new user.
+                HStack(spacing: 6) {
+                    Image(systemName: isStarred ? "star.fill" : "star")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(isStarred ? "FOLLOWING · ALERTS ON" : "FOLLOW THIS GAME · GET ALERTS")
+                        .font(.archivoNarrow(10, weight: .bold))
+                        .tracking(1.4)
+                }
+                .foregroundStyle(isStarred ? V4.ink : Color.p1Lime)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Capsule().fill(isStarred ? Color.p1Lime : Color.p1Lime.opacity(0.10)))
+                .overlay(Capsule().strokeBorder(Color.p1Lime.opacity(isStarred ? 0 : 0.45), lineWidth: 1))
+                .padding(.top, 18)
+                .contentShape(Capsule())
+                .onTapGesture(perform: onStar)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(isStarred ? "Following this game" : "Follow this game and get alerts")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
@@ -1446,7 +1477,15 @@ struct Pick1HomeV4: View {
             P1V4Hero(pick: hero,
                      showUnbacked: Self.showUnbacked,
                      backers: 312,
-                     showSport: activeSport == Self.allSports) { onSelectPick(hero) }
+                     showSport: activeSport == Self.allSports,
+                     isStarred: favorites.contains(hero.id),
+                     onTap: { onSelectPick(hero) },
+                     onStar: {
+                        let on = !favorites.contains(hero.id)
+                        favorites.set(hero, on: on)
+                        Analytics.track("hero_star_tapped",
+                                        ["on": on, "sport": hero.sport, "pick": hero.id.uuidString])
+                     })
         } else if let s = activeSport, !coveredToday.isEmpty {
             // Selected a sport with nothing on it. Say so plainly rather than
             // dropping the user onto a board that silently belongs to other

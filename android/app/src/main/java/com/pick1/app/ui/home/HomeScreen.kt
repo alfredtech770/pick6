@@ -1,4 +1,5 @@
 package com.pick1.app.ui.home
+import com.pick1.app.data.Favorites
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -292,6 +293,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 val rest = vm.rest(isPro)
                 val freeIds = vm.freeIds(isPro)
                 val biggest = vm.biggestWinId
+                // Starred pick ids, for the FOLLOW pill on the hero. Read here
+                // rather than inside the hero so the card stays a pure view.
+                val favIds by Favorites.ids(ctx).collectAsState(initial = emptySet())
+                val scope = rememberCoroutineScope()
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                     item { P1V4TopBar(onProfile = { showProfile = true }) }
@@ -309,7 +314,15 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                             }
 
                             if (hero != null) {
-                                item { P1V4Hero(hero) { selected = hero } }
+                                item {
+                                    P1V4Hero(
+                                        pick = hero,
+                                        isStarred = hero.id in favIds,
+                                        onStar = {
+                                            scope.launch { Favorites.toggle(ctx, hero.id, hero.gameId) }
+                                        },
+                                    ) { selected = hero }
+                                }
                             } else if (vm.sport != ALL_SPORTS && vm.todayPicks.isNotEmpty()) {
                                 // Selected a sport with nothing on it. Say so
                                 // plainly rather than dropping the user onto a

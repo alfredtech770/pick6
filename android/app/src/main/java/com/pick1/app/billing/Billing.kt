@@ -56,6 +56,13 @@ data class PlanOffer(
      *  Android has to say the same thing. */
     val introPrice: String? = null,
     val isBestValue: Boolean = false,
+    /// What this plan costs per 30 days, in the storefront's currency, or
+    /// null for a plan already billed monthly (nothing to convert).
+    val perMonth: String? = null,
+    /// What this plan saves per 30 days against the dearest plan on the
+    /// paywall. Only ever set on the cheapest-per-month plan, so exactly one
+    /// card carries it, and it is subtraction over the two figures above.
+    val savingPerMonth: String? = null,
 )
 
 object Products {
@@ -72,7 +79,13 @@ object Products {
      * advertising it at $249.99, a product that does not exist, and the
      * best-value preselect was pointing straight at it.
      */
-    val SUBS = listOf(WEEKLY, MONTHLY)
+    // MONTHLY FIRST, since 2026-09-16. It is the preselected plan and it
+    // carries BEST VALUE, but it was rendering second, so the first price on
+    // screen was the smallest sticker, "$14.99/wk", attached to the plan that
+    // reaches a paid period 16.8% of the time against monthly's 33.8% and
+    // whose median life is three days against thirty. This list IS the
+    // paywall's display order (PaywallScreen renders Billing.offers in order).
+    val SUBS = listOf(MONTHLY, WEEKLY)
 
     fun name(id: String) = when (id) {
         WEEKLY -> "Weekly"; MONTHLY -> "Monthly"; DAY_PASS -> "Day Pass"
@@ -103,18 +116,24 @@ object Products {
  */
 object PlaceholderCatalogue {
     fun plans(introEligible: Boolean): List<PlanOffer> = listOf(
-        PlanOffer(
-            Products.WEEKLY, "Weekly", "Full access, billed weekly",
-            "$14.99", "/wk",
-            introPrice = if (introEligible) "$0.99" else null,
-        ),
-        // Monthly carries BEST VALUE on arithmetic, not on a slogan: $39.99 a
-        // month against $14.99 a week, which is $64.96 over the same 30 days.
+        // Monthly FIRST, same order as the live catalogue. The placeholder is
+        // what an emulator and any device without Play services renders, so
+        // when it disagrees with the real paywall the disagreement is the bug.
+        //
+        // BEST VALUE is arithmetic, not a slogan: $39.99 a month against
+        // $14.99 a week, which is $64.24 over the same 30 days.
         PlanOffer(
             Products.MONTHLY, "Monthly", "Full access, billed monthly",
             "$39.99", "/mo",
             introPrice = if (introEligible) "$0.99" else null,
             isBestValue = true,
+            savingPerMonth = "$24.25",
+        ),
+        PlanOffer(
+            Products.WEEKLY, "Weekly", "Full access, billed weekly",
+            "$14.99", "/wk",
+            introPrice = if (introEligible) "$0.99" else null,
+            perMonth = "$64.24",
         ),
     )
 }
@@ -218,6 +237,40 @@ object Billing {
         }.onFailure { Log.w(TAG, "queryProducts failed: ${it.message}") }
     }
 
+    /// Cost per 30 days in micros, from the recurring phase's own period.
+    ///
+    /// 30 days rather than 4 weeks on purpose: a 4-week month understates a
+    /// weekly plan by about 8%, which is exactly the error this exists to
+    /// correct. Mirrors `Product.monthlyEquivalent` on iOS.
+    private fun perMonthMicros(periodIso: String?, micros: Long): Long? {
+        val m = Regex("^P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)W)?(?:(\\d+)D)?$")
+            .find(periodIso ?: return null) ?: return null
+        val (y, mo, w, d) = (1..4).map { m.groupValues[it].toLongOrNull() ?: 0L }
+        val days = y * 365 + mo * 30 + w * 7 + d
+        if (days <= 0L) return null
+        return micros * 30 / days
+    }
+
+    /// A plan plus the raw numbers needed to compare it with the others.
+    /// Kept out of PlanOffer because the UI has no use for micros.
+    private data class Priced(
+        val plan: PlanOffer,
+        val perMonthMicros: Long?,
+        val currency: String?,
+    )
+
+    /// Micros to a localized money string, in the storefront's own currency
+    /// and the device's own formatting, so "$24.97" and "24,97 €" both come
+    /// out right without a hardcoded symbol table.
+    private fun money(micros: Long, currency: String?): String? {
+        val code = currency ?: return null
+        return runCatching {
+            val f = java.text.NumberFormat.getCurrencyInstance()
+            f.currency = java.util.Currency.getInstance(code)
+            f.format(micros / 1_000_000.0)
+        }.getOrNull()
+    }
+
     private fun rebuildOffers() {
         var anyIntro = false
         val list = Products.SUBS.mapNotNull { id ->
@@ -231,7 +284,7 @@ object Billing {
             // old check reported no offer at all.
             val introPhase = phases.dropLast(1).firstOrNull()
             if (introPhase != null) anyIntro = true
-            PlanOffer(
+            val plan = PlanOffer(
                 productId = id,
                 name = Products.name(id),
                 subtitle = Products.subtitle(id),
@@ -240,8 +293,27 @@ object Billing {
                 introPrice = introPhase?.formattedPrice,
                 isBestValue = id == Products.MONTHLY,
             )
+            Priced(
+                plan = plan,
+                perMonthMicros = perMonthMicros(paidPhase?.billingPeriod,
+                                                paidPhase?.priceAmountMicros ?: 0L),
+                currency = paidPhase?.priceCurrencyCode,
+            )
         }
-        _offers.value = list
+        // Second pass: a saving cannot be known until every plan's per-month
+        // figure exists, so it is filled in here rather than in the map above.
+        val dearest = list.mapNotNull { it.perMonthMicros }.maxOrNull()
+        _offers.value = list.map { p ->
+            val mine = p.perMonthMicros
+            // Nothing to convert on a plan already billed monthly.
+            val perMonth = if (p.plan.unit == "/mo" || mine == null) null
+                           else money(mine, p.currency)
+            // At least a currency unit of difference, so the line never reads
+            // "Save $0.00" on two plans that happen to price out the same.
+            val saving = if (mine != null && dearest != null && dearest - mine >= 1_000_000L)
+                             money(dearest - mine, p.currency) else null
+            p.plan.copy(perMonth = perMonth, savingPerMonth = saving)
+        }
         _introEligible.value = anyIntro
     }
 

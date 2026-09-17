@@ -630,6 +630,7 @@ enum PortugueseStrings {
         .rec_trial_banner_body: "A renovação está desligada, vais perder o Pro. Isto foi o que o modelo previu enquanto o tiveste.",
         .rec_trial_banner_cta: "Ver o balanço do teste",
         .paywall_per_month_suffix: "/ mês",
+        .paywall_saving_vs_other: "Poupa %@ por mês",
         .paywall_plan_annual: "Anual",
         .paywall_unit_yr: "/ano",
         .paywall_sub_annual: "Cobrado uma vez por ano · Melhor oferta",

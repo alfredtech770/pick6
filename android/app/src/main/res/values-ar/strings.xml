@@ -340,6 +340,8 @@
     <string name="funnel_paywall_unit_wk">/أسبوع</string>
     <string name="funnel_paywall_unit_mo">/شهر</string>
     <string name="funnel_paywall_best_value">أفضل قيمة</string>
+    <string name="paywall_per_month_suffix">/ شهريًا</string>
+    <string name="paywall_saving_vs_other">وفّر %1$s شهريًا</string>
     <string name="funnel_paywall_intro_badge">عرض %1$s</string>
     <string name="funnel_paywall_fineprint_intro">سعر تمهيدي %1$s · ثم %2$s · إلغاء في أي وقت · دفع آمن</string>
     <string name="funnel_paywall_cta_intro">← ابدأ مقابل %1$s</string>

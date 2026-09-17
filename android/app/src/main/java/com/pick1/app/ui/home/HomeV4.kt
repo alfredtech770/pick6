@@ -1,4 +1,6 @@
 package com.pick1.app.ui.home
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.filled.Star
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -308,8 +310,21 @@ fun P1V4FactorRow(label: String, note: String, value: Int, colors: List<Color>) 
 
 // MARK: - Hero pick
 
+/**
+ * [isStarred] and [onStar] drive the FOLLOW pill at the foot of the card.
+ * Added 2026-09-17: 74% of subscribers never favourited a game, and
+ * conversion runs 15% for them against 34% for people with three or more
+ * actions. Favouriting used to live only behind the detail screen's star;
+ * this is the first surface every new user lands on, so the action now sits
+ * where the eyes already are. Same pill, same copy, same place as iOS.
+ */
 @androidx.compose.runtime.Composable
-fun P1V4Hero(pick: Pick, onTap: () -> Unit) {
+fun P1V4Hero(
+    pick: Pick,
+    isStarred: Boolean = false,
+    onStar: () -> Unit = {},
+    onTap: () -> Unit,
+) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -358,6 +373,34 @@ fun P1V4Hero(pick: Pick, onTap: () -> Unit) {
                         colors = V4.barGradients[i % V4.barGradients.size],
                     )
                 }
+            }
+
+            // FOLLOW pill. Its own clickable inside the card's clickable Box:
+            // Compose delivers the tap to the innermost target, so this never
+            // opens the detail by accident. The copy says what the star DOES,
+            // because a bare star on a sports card reads as "rate this".
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .padding(top = 18.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (isStarred) P1.Lime else P1.Lime.copy(alpha = 0.10f))
+                    .border(1.dp, P1.Lime.copy(alpha = if (isStarred) 0f else 0.45f), RoundedCornerShape(50))
+                    .clickable(onClick = onStar)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Icon(
+                    if (isStarred) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    contentDescription = null,
+                    tint = if (isStarred) V4.ink else P1.Lime,
+                    modifier = Modifier.size(13.dp),
+                )
+                Text(
+                    if (isStarred) "FOLLOWING · ALERTS ON" else "FOLLOW THIS GAME · GET ALERTS",
+                    style = archivoNarrow(10, FontWeight.Bold, tracking = 1.4f),
+                    color = if (isStarred) V4.ink else P1.Lime,
+                )
             }
         }
 

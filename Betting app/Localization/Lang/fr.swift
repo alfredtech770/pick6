@@ -630,6 +630,7 @@ enum FrenchStrings {
         .rec_trial_banner_body: "Le renouvellement est coupé, tu perdras Pro à ce moment-là. Voici ce que le modèle a annoncé pendant ton essai.",
         .rec_trial_banner_cta: "Voir mon bilan d'essai",
         .paywall_per_month_suffix: "/ mois",
+        .paywall_saving_vs_other: "Économise %@ par mois",
         .paywall_plan_annual: "Annuel",
         .paywall_unit_yr: "/an",
         .paywall_sub_annual: "Facturé une fois par an · Meilleure offre",

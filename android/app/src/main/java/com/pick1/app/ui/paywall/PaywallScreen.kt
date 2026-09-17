@@ -217,18 +217,39 @@ private fun PlanCard(plan: PlanOffer, selected: Boolean, onSelect: () -> Unit) {
                 Text(plan.name, style = anton(20), color = P1.Foreground)
                 Text(plan.subtitle, style = archivo(12), color = P1.Ink2)
             }
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    plan.displayPrice,
-                    style = anton(22),
-                    color = if (selected) P1.LimeFunnel else P1.Foreground,
-                )
-                Text(plan.unit, style = archivo(12), color = P1.Ink2)
+            // Price, and under it the same-unit comparison. Stacked rather
+            // than inline: "Économise 22,40 € par mois" is twice the width of
+            // the English and would fight the price for the same row.
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        plan.displayPrice,
+                        style = anton(22),
+                        color = if (selected) P1.LimeFunnel else P1.Foreground,
+                    )
+                    Text(plan.unit, style = archivo(12), color = P1.Ink2)
+                }
+                // The same figure for every plan, so the comparison is between
+                // like and like, and on the cheapest one the difference spelled
+                // out. Both come from the prices already on the card.
+                plan.perMonth?.let {
+                    Text(
+                        "$it ${stringResource(R.string.paywall_per_month_suffix)}",
+                        style = archivo(10),
+                        color = P1.Ink2,
+                    )
+                } ?: plan.savingPerMonth?.let {
+                    Text(
+                        stringResource(R.string.paywall_saving_vs_other, it),
+                        style = archivo(10, FontWeight.Bold),
+                        color = P1.Win,
+                    )
+                }
             }
         }
         // BEST VALUE sits on monthly; the other plan advertises the intro
-        // price instead. Both are the same $14.99 recurring, so monthly is
-        // the better deal on access rather than on price.
+        // price instead. Monthly is $39.99 against $64.96 for a month at the
+        // weekly rate, so it is the better deal on price AND on access.
         val badge = when {
             plan.isBestValue -> stringResource(R.string.funnel_paywall_best_value) to P1.LimeFunnel
             plan.introPrice != null ->
