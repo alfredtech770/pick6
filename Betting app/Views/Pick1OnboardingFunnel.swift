@@ -1425,6 +1425,14 @@ struct PaywallScreen: View {
                 // the app (the App Store listing promises a free tier).
                 HStack(spacing: 18) {
                     Button(t(.funnel_paywall_restore)) { Task { await subs.restorePurchases() } }
+                    // Offer codes (COMEBACK50 on the store listing, KEEP50W /
+                    // KEEP50M on the cancellation sheet) redeem through Apple's
+                    // own sheet; without this entry the listing would name a
+                    // code the app had no way to take.
+                    Button(t(.funnel_paywall_have_code)) {
+                        Analytics.track("offer_code_sheet_opened", ["source": source])
+                        Task { await subs.presentOfferCodeSheet() }
+                    }
                     Button(t(.funnel_paywall_terms)) { showTerms = true }
                     Button(t(.funnel_paywall_privacy)) { showPrivacy = true }
                     if allowSkip && skipUnlocked && !subs.isPro {

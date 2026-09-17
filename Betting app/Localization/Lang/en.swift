@@ -375,6 +375,7 @@ enum EnglishStrings {
         .funnel_paywall_cta_intro:       "START FOR %@ →",
         .funnel_paywall_fineprint_intro: "INTRO PRICE %@ · THEN %@ · CANCEL ANYTIME · SECURE CHECKOUT",
         .funnel_paywall_restore:         "Restore",
+        .funnel_paywall_have_code:       "Have a code?",
         .funnel_paywall_terms:           "Terms",
         .funnel_paywall_privacy:         "Privacy",
         .funnel_paywall_continue_free:   "Continue free →",

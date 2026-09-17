@@ -376,6 +376,7 @@ enum ArabicStrings {
         .funnel_paywall_cta_intro:       "← ابدأ مقابل %@",
         .funnel_paywall_fineprint_intro: "سعر تمهيدي %@ · ثم %@ · إلغاء في أي وقت · دفع آمن",
         .funnel_paywall_restore:         "استعادة",
+        .funnel_paywall_have_code:       "لديك رمز؟",
         .funnel_paywall_terms:           "الشروط",
         .funnel_paywall_privacy:         "الخصوصية",
         .funnel_paywall_continue_free:   "← المتابعة مجانًا",

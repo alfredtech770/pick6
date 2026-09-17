@@ -419,6 +419,7 @@ enum L10nKey: String, CaseIterable {
     case funnel_paywall_cta_intro         // "START FOR $0.99 →"
     case funnel_paywall_fineprint_intro   // "INTRO PRICE $0.99 · THEN $14.99/WEEK …"
     case funnel_paywall_restore           // "Restore"
+    case funnel_paywall_have_code         // "Have a code?"
     case funnel_paywall_terms             // "Terms"
     case funnel_paywall_privacy           // "Privacy"
     case funnel_paywall_continue_free     // "Continue free →"

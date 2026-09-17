@@ -374,6 +374,7 @@ enum ItalianStrings {
         .funnel_paywall_cta_intro:       "INIZIA A %@ →",
         .funnel_paywall_fineprint_intro: "PREZZO INIZIALE %@ · POI %@ · DISDICI QUANDO VUOI · PAGAMENTO SICURO",
         .funnel_paywall_restore:         "Ripristina",
+        .funnel_paywall_have_code:       "Hai un codice?",
         .funnel_paywall_terms:           "Termini",
         .funnel_paywall_privacy:         "Privacy",
         .funnel_paywall_continue_free:   "Continua gratis →",

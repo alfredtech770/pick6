@@ -374,6 +374,7 @@ enum PortugueseStrings {
         .funnel_paywall_cta_intro:       "COMEÇAR POR %@ →",
         .funnel_paywall_fineprint_intro: "PREÇO INICIAL %@ · DEPOIS %@ · CANCELA QUANDO QUISERES · PAGAMENTO SEGURO",
         .funnel_paywall_restore:         "Restaurar",
+        .funnel_paywall_have_code:       "Tens um código?",
         .funnel_paywall_terms:           "Termos",
         .funnel_paywall_privacy:         "Privacidade",
         .funnel_paywall_continue_free:   "Continuar grátis →",

@@ -374,6 +374,7 @@ enum GermanStrings {
         .funnel_paywall_cta_intro:       "FÜR %@ STARTEN →",
         .funnel_paywall_fineprint_intro: "STARTPREIS %@ · DANACH %@ · JEDERZEIT KÜNDBAR · SICHERE ZAHLUNG",
         .funnel_paywall_restore:         "Wiederherstellen",
+        .funnel_paywall_have_code:       "Code einlösen",
         .funnel_paywall_terms:           "AGB",
         .funnel_paywall_privacy:         "Datenschutz",
         .funnel_paywall_continue_free:   "Kostenlos fortfahren →",

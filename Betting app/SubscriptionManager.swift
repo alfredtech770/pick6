@@ -213,6 +213,20 @@ final class SubscriptionManager: ObservableObject {
         activeProductId.flatMap { Self.cancellationOfferCodes[$0] } ?? ""
     }
 
+    /// Apple's offer code redemption sheet, on the foreground window scene.
+    /// Entitlements refresh through the transaction listener once a code
+    /// is redeemed, so nothing else has to happen here.
+    @MainActor
+    func presentOfferCodeSheet() async {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive })
+            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
+        else { return }
+        do { try await AppStore.presentOfferCodeRedeemSheet(in: scene) }
+        catch { print("offer code sheet: \(error)") }
+    }
+
     /// The cheapest plan ACTUALLY ON SALE, priced in the viewer's own
     /// storefront currency.
     ///

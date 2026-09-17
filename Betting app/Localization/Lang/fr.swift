@@ -374,6 +374,7 @@ enum FrenchStrings {
         .funnel_paywall_cta_intro:       "COMMENCER POUR %@ →",
         .funnel_paywall_fineprint_intro: "PRIX D'ESSAI %@ · PUIS %@ · ANNULABLE À TOUT MOMENT · PAIEMENT SÉCURISÉ",
         .funnel_paywall_restore:         "Restaurer",
+        .funnel_paywall_have_code:       "Un code ?",
         .funnel_paywall_terms:           "Conditions",
         .funnel_paywall_privacy:         "Confidentialité",
         .funnel_paywall_continue_free:   "Continuer gratuitement →",
