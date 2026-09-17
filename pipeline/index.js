@@ -2124,8 +2124,52 @@ async function espnScoreboard(league) {
         detail: st.shortDetail || st.description || '',
         period: ev.status?.period ?? null,
         startTime: ev.date || null,
+        moneyline: espnMoneyline(comp),
       };
     });
+  }
+}
+
+// The pregame moneyline ESPN prints on its scoreboard (one provider,
+// DraftKings at the time of writing), as decimal odds for each side.
+//
+// This is what fills market_odds when pick generation found no quote of
+// its own, which over the last fortnight was 55% of picks: the model only
+// records a price it happened to see while researching, and for MLB that
+// was one game in four. sportsdata.io's odds feed was tried first and is
+// scrambled on this key (every book is literally named "Scrambled"), so it
+// is not a source. ESPN's is a real closing line from a real book.
+function espnMoneyline(comp) {
+  const o = comp?.odds?.[0];
+  if (!o) return null;
+  const american = (side) => {
+    const raw = o.moneyline?.[side]?.close?.odds ?? o.moneyline?.[side]?.open?.odds
+      ?? (side === 'home' ? o.homeTeamOdds?.moneyLine : o.awayTeamOdds?.moneyLine);
+    const n = Number(String(raw ?? '').replace(/[^0-9+-]/g, ''));
+    if (!Number.isFinite(n) || n === 0) return null;
+    // American -> decimal. "EVEN" arrives as +100.
+    return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n);
+  };
+  const home = american('home'), away = american('away');
+  if (home == null && away == null) return null;
+  return { home, away, book: o.provider?.name || o.provider?.displayName || 'ESPN BET' };
+}
+
+// Today's #1 pick, by the same ranking sendDailyPickDrop announces in the
+// morning, so "today's #1 is starting" and "today's #1 came in" are about
+// the pick people were actually shown.
+async function topPickToday() {
+  try {
+    const { data } = await supabase
+      .from('picks')
+      .select('id, pick, probability')
+      .eq('game_date', daysAgoISO(0))
+      .order('probability', { ascending: false })
+      .limit(1);
+    return data?.[0] || null;
+  } catch (e) {
+    err('topPickToday failed:', e.message);
+    return null;
   }
 }
 
@@ -2509,6 +2553,8 @@ async function liveTick() {
     const GOAL_SPORTS = new Set(['soccer', 'hockey', 'baseball']);
     const pushEvents = [];
     const laEvents = [];   // Live Activity (Apple Sports card) updates
+    const oddsUpdates = [];   // market_odds fills from the ESPN line
+    const topPick = await topPickToday();
 
     const byLeague = {};
     for (const p of picks) (byLeague[p.league] ||= []).push(p);
@@ -2587,6 +2633,46 @@ async function liveTick() {
             args: { team: `${p.home_team} v ${p.away_team}`, pick: p.pick || '—' } });
         }
 
+        // ── Fill a missing market price from ESPN's pregame line ─────
+        //
+        // Only while the game has not started (a live line is a different
+        // number), only when the pick maps cleanly to one side, and only
+        // inside the same sanity band the generation path applies: a real
+        // quote that disagrees with our probability by more than 20 points
+        // is still stored as null, because printing 66% next to a price
+        // that says 45% is a contradiction, not information.
+        if (p.market_odds == null && status === 'Scheduled' && ev.moneyline) {
+          const pl2 = (p.pick || '').toLowerCase();
+          const ourHome = p.home_team && pl2.includes(p.home_team.toLowerCase());
+          const ourAway = p.away_team && pl2.includes(p.away_team.toLowerCase());
+          if (ourHome !== ourAway) {
+            // ev.moneyline is oriented to ESPN's home/away; ours may be flipped.
+            const espnSide = (ourHome ? 'home' : 'away');
+            const side = flipped ? (espnSide === 'home' ? 'away' : 'home') : espnSide;
+            const dec = ev.moneyline[side];
+            if (typeof dec === 'number' && dec >= 1.01 && dec <= 25
+                && Math.abs((p.probability || 0) - 100 / dec) <= 20) {
+              const rounded = +dec.toFixed(2);
+              oddsUpdates.push({ pick_id: p.id, market_odds: rounded,
+                odds_source: ev.moneyline.book,
+                odds_books: [{ book: ev.moneyline.book, odds: rounded }] });
+              p.market_odds = rounded;   // so payoutPct below sees it
+            }
+          }
+        }
+
+        // ── Today's #1 pick kicks off: everyone hears about it ───────
+        // The morning pick_drop named it; this is the reminder that there
+        // is a game to watch right now. Broadcast, daily tier, so it is
+        // still subject to the per-person allowance and quiet hours.
+        if (topPick && p.id === topPick.id
+            && prev && prev.status !== 'InProgress' && prev.status !== 'Final'
+            && status === 'InProgress') {
+          pushEvents.push({ key: 'top_start', prefKey: 'picks',
+            args: { team: `${p.home_team} v ${p.away_team}`, pick: p.pick || '—',
+                    conf: Math.round(p.probability || 0) } });
+        }
+
         if (prev) {
           const scoreChanged =
             String(prev.home_score) !== String(homeScore) ||
@@ -2638,7 +2724,15 @@ async function liveTick() {
             if (pl.includes('draw')) pickWon = !homeWon && !awayWon;
             else if (p.home_team && pl.includes(p.home_team.toLowerCase())) pickWon = homeWon;
             else if (p.away_team && pl.includes(p.away_team.toLowerCase())) pickWon = awayWon;
-            if (pickWon === true) {
+            if (pickWon === true && topPick && p.id === topPick.id) {
+              // The #1 pick of the day came in. This one is news to everyone
+              // who saw the morning pick_drop, tracked or not, so it goes
+              // out as a broadcast (daily tier) instead of result_win. The
+              // people who tracked it are inside that audience already.
+              pushEvents.push({ key: 'top_result', prefKey: 'results',
+                args: { pick: p.pick, team: `${p.home_team} v ${p.away_team}`,
+                        score: scoreShort, won: payoutPct(p) } });
+            } else if (pickWon === true) {
               // On a flat $100 a pick, the payout percentage IS the dollars.
               pushEvents.push({ key: 'result_win', prefKey: 'results',
                 interestedOnly: true, gameId: p.game_id, pickId: p.id,
@@ -2725,6 +2819,13 @@ async function liveTick() {
         .eq('id', u.pick_id);
     }
     if (logoUpdates.length) log(`Crest URLs set on ${logoUpdates.length} pick(s)`);
+    for (const u of oddsUpdates) {
+      const { error: oe } = await supabase.from('picks')
+        .update({ market_odds: u.market_odds, odds_source: u.odds_source, odds_books: u.odds_books })
+        .eq('id', u.pick_id).is('market_odds', null);
+      if (oe) err('market_odds fill failed:', oe.message);
+    }
+    if (oddsUpdates.length) log(`Odds: market_odds filled from ESPN on ${oddsUpdates.length} pick(s)`);
   } catch (e) {
     err('Live tick crashed:', e.message);
   } finally {

@@ -94,6 +94,28 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🏟️ {team} vai começar", b: "O teu jogo arrancou. Palpite IA: {pick}." },
     ar: { t: "🏟️ {team} تبدأ الآن", b: "مباراتك انطلقت. توقّع الذكاء الاصطناعي: {pick}." },
   },
+  // The day's #1 pick, to everyone. Two moments a broadcast is worth
+  // making about a game most people have not starred: when it kicks off
+  // (there is still a game to watch) and when it lands (the call they saw
+  // this morning came in). A losing #1 sends nothing, same rule as above.
+  top_start: {
+    en: { t: "🔔 Today's #1 is starting", b: "{team}. AI call: {pick}, at {conf}%." },
+    fr: { t: "🔔 Le n°1 du jour commence", b: "{team}. Pronostic IA : {pick}, à {conf}%." },
+    es: { t: "🔔 Empieza el n.º1 de hoy", b: "{team}. Pronóstico IA: {pick}, al {conf}%." },
+    de: { t: "🔔 Die Nr. 1 von heute beginnt", b: "{team}. KI-Tipp: {pick}, mit {conf}%." },
+    it: { t: "🔔 Il n.1 di oggi inizia", b: "{team}. Pronostico IA: {pick}, al {conf}%." },
+    pt: { t: "🔔 O n.º1 de hoje vai começar", b: "{team}. Palpite IA: {pick}, a {conf}%." },
+    ar: { t: "🔔 رقم 1 اليوم يبدأ الآن", b: "{team}. توقّع الذكاء الاصطناعي: {pick}، بثقة {conf}٪." },
+  },
+  top_result: {
+    en: { t: "🤑 Today's #1 came in: {pick}", b: "{team} {score}. +${won} on $100 tracked." },
+    fr: { t: "🤑 Le n°1 du jour est passé : {pick}", b: "{team} {score}. +{won} $ sur 100 $ suivis." },
+    es: { t: "🤑 El n.º1 de hoy entró: {pick}", b: "{team} {score}. +${won} sobre $100 seguidos." },
+    de: { t: "🤑 Die Nr. 1 von heute ist aufgegangen: {pick}", b: "{team} {score}. +{won} $ auf 100 $ verfolgt." },
+    it: { t: "🤑 Il n.1 di oggi è passato: {pick}", b: "{team} {score}. +{won} $ su 100 $ seguiti." },
+    pt: { t: "🤑 O n.º1 de hoje entrou: {pick}", b: "{team} {score}. +${won} sobre $100 seguidos." },
+    ar: { t: "🤑 رقم 1 اليوم نجح: {pick}", b: "{team} {score}. +{won}$ على 100$ متابَعة." },
+  },
   goal_fav: {
     en: { t: "⚡ {score}", b: "{team} scores in your game." },
     fr: { t: "⚡ {score}", b: "{team} marque dans ton match." },
@@ -238,6 +260,8 @@ const TIER: Record<string, Tier> = {
   week_missed: "daily",
   top_win: "daily",
   day1_return: "daily",
+  top_start: "daily",
+  top_result: "daily",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 
@@ -264,7 +288,14 @@ function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number
   // have been dark for six weeks, and pushing them is precisely what got the
   // sender demoted before. Volume comes from the people who are still here,
   // never from waking the ones who left.
-  if (days <= 14) return { perDay: 3, perWeek: 14 };
+  //
+  // Raised again to 5/day on 2026-09-17. Measured over the previous week an
+  // active user actually received 1 to 2 a day, never more than 4, so the
+  // 3/day ceiling was never what stood between the product and its users;
+  // the ceiling still has to be above what the pipeline can now produce
+  // (pick_drop, big_odds, recap or top_win, top_start, top_result,
+  // week_missed on Mondays) or the later, better ones get parked.
+  if (days <= 14) return { perDay: 5, perWeek: 25 };
   if (days <= 45) return { perDay: 1, perWeek: 2 };
   return { perDay: 0, perWeek: 0 };
 }
@@ -325,7 +356,10 @@ function nextSendWindow(locale: string | null, from: Date = new Date()): Date {
 /// undoes the point of capping at all. Whichever loses the race is parked
 /// four hours out instead of dropped, so the second thing still arrives, in
 /// the afternoon, where it has the day to itself.
-const MIN_GAP_HOURS = 4;
+// Two hours since 2026-09-17: at four, only three sends fit between 09:00
+// and 21:00 local, which silently capped the day at three whatever the
+// allowance said.
+const MIN_GAP_HOURS = 2;
 
 /// The same rule for `personal` keys, in minutes rather than hours.
 ///
@@ -385,10 +419,12 @@ async function allDeviceTokens(
   return { rows: out, error: null };
 }
 
-function pemToDer(pem: string): Uint8Array {
+function pemToDer(pem: string): Uint8Array<ArrayBuffer> {
   const b64 = pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
   const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
+  // Backed by a plain ArrayBuffer so it satisfies BufferSource under the
+  // stricter lib types Deno 2 ships with (ArrayBufferLike is rejected).
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
@@ -542,7 +578,7 @@ Deno.serve(async (req: Request) => {
     // the whole point: it has to be recognisable from a pocket, before the
     // screen is even out. Both platforms now: APNs takes a file name, Android
     // takes a channel whose sound was fixed when the channel was created.
-    const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds",
+    const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds", "top_result",
                                 "free_recap", "free_recap_b", "week_missed",
                                 "top_win"]);
     const money = !!k && MONEY_KEYS.has(k);
@@ -571,10 +607,19 @@ Deno.serve(async (req: Request) => {
     const dead: string[] = [];
     const logRows: any[] = [];
     const loggedUsers = new Set<string>();
+    // Literal sends carry their campaign in `data` (lifecycle-push does
+    // this). Logging them here, on successful delivery, is what makes
+    // push_log a record of what reached a phone: until 2026-09-17 the
+    // caller logged every ATTEMPT instead, so a user this function had
+    // gated still acquired a row, and those rows then ate the allowance
+    // that should have gone to the morning pick.
+    const litKey = !k && typeof d.campaign === "string" && d.campaign ? d.campaign : null;
+    const litVariant = litKey && typeof d.variant === "string" ? d.variant : null;
     function logIfKeyed(t: any, label: string | null) {
-      if (k && t.user_id && !loggedUsers.has(t.user_id)) {
+      const base = k ?? litKey;
+      if (base && t.user_id && !loggedUsers.has(t.user_id)) {
         loggedUsers.add(t.user_id);
-        logRows.push({ user_id: t.user_id, base_key: k, variant: label, locale: t.locale ?? "en" });
+        logRows.push({ user_id: t.user_id, base_key: base, variant: label ?? litVariant, locale: t.locale ?? "en" });
       }
     }
 

@@ -341,17 +341,29 @@ Deno.serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
   const report: Record<string, unknown> = { ranAt: new Date().toISOString(), dryRun };
 
+  const PAGE = 1000;
+
   // Users who already received a given base_key over push. `sinceDays` scopes
   // the lookup to a rolling window: day 1 and trial are once-ever, but a card
   // can fail again months later, so the recovery segments only suppress recent
   // sends rather than banning the user forever.
+  //
+  // Paged: PostgREST caps an unbounded select at 1000 rows. The once-ever
+  // segments outgrew that cap, so users past row 1000 looked unsent and were
+  // re-pushed every hour (day1_return hit 204 people up to 11 times on
+  // 2026-09-17). Never read push_log without .range().
   async function alreadySent(baseKeys: string[], sinceDays?: number): Promise<Set<string>> {
     const seen = new Set<string>();
-    let q = supabase.from("push_log").select("user_id").in("base_key", baseKeys);
-    if (sinceDays) q = q.gte("sent_at", new Date(Date.now() - sinceDays * 86400e3).toISOString());
-    const { data, error } = await q;
-    if (error) throw new Error(`push_log read failed: ${error.message}`);
-    for (const r of data ?? []) if (r.user_id) seen.add(r.user_id);
+    const since = sinceDays ? new Date(Date.now() - sinceDays * 86400e3).toISOString() : null;
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase.from("push_log").select("user_id").in("base_key", baseKeys)
+        .order("sent_at", { ascending: true }).range(from, from + PAGE - 1);
+      if (since) q = q.gte("sent_at", since);
+      const { data, error } = await q;
+      if (error) throw new Error(`push_log read failed: ${error.message}`);
+      for (const r of data ?? []) if (r.user_id) seen.add(r.user_id);
+      if (!data || data.length < PAGE) break;
+    }
     return seen;
   }
 
@@ -395,9 +407,8 @@ Deno.serve(async (req: Request) => {
       };
     }
 
-    let sent = 0, failed = 0;
+    let sent = 0, failed = 0, gated = 0;
     const errors: string[] = [];
-    const logRows: any[] = [];
     for (const g of groups.values()) {
       const copy = render(g.locKey, g.lang);
       if (!copy) { errors.push(`no copy for ${g.locKey}/${g.lang}`); continue; }
@@ -417,17 +428,16 @@ Deno.serve(async (req: Request) => {
       let parsed: any = {};
       try { parsed = JSON.parse(txt); } catch { /* ignore */ }
       sent += parsed.sent ?? 0;
-      // Log the whole attempted group, not just delivered tokens: send-push
-      // reports per-call totals, not per-user. Logging attempts is the safer
-      // side of the trade — a user with a dead token is never re-targeted on
-      // every subsequent hourly run. Only skipped when the call itself failed.
-      for (const id of g.ids) logRows.push({ user_id: id, base_key: baseKey, variant: g.label, locale: g.lang });
+      gated += (parsed.capped ?? 0) + (parsed.dormant ?? 0) + (parsed.queued ?? 0);
+      // push_log is written by send-push, per user, on DELIVERY, under the
+      // campaign passed in `data`. This function used to log the whole
+      // attempted group itself, which meant a user send-push had gated
+      // (dormant, capped, asleep) still got a row: dedup then treated them
+      // as done, and worse, those rows counted against their daily
+      // allowance and pushed out the pick they would actually open. A
+      // gated user now simply comes back as a candidate next hour.
     }
-    if (logRows.length) {
-      const { error } = await supabase.from("push_log").insert(logRows);
-      if (error) errors.push(`push_log write failed: ${error.message}`);
-    }
-    return { eligible: recipients.length, groups: groups.size, sent, failed, logged: logRows.length, ...(errors.length ? { errors } : {}) };
+    return { eligible: recipients.length, groups: groups.size, sent, failed, gated, ...(errors.length ? { errors } : {}) };
   }
 
   // Transactional email for push-unreachable subscribers. Claims an email_log
