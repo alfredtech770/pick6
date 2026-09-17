@@ -138,7 +138,7 @@ two stores read the same, then the paragraph below is true on both.
 
 **Descripción corta**
 
-> Cada partido del día, anunciado por la IA antes del inicio y calificado en público.
+> Cada partido del día, anunciado por IA antes del inicio y calificado en público.
 
 **Descripción completa**
 
@@ -178,7 +178,7 @@ two stores read the same, then the paragraph below is true on both.
 
 **Kurzbeschreibung**
 
-> Jedes Spiel des Tages, von der KI vor dem Anpfiff getippt und öffentlich bewertet.
+> Jedes Spiel des Tages, von der KI vor dem Anpfiff getippt, öffentlich bewertet.
 
 **Vollständige Beschreibung**
 
@@ -218,7 +218,7 @@ two stores read the same, then the paragraph below is true on both.
 
 **Descrizione breve**
 
-> Ogni partita del giorno, annunciata dall'IA prima del via e valutata in pubblico.
+> Ogni partita del giorno, annunciata dall'IA prima del via, valutata in pubblico.
 
 **Descrizione completa**
 
@@ -254,11 +254,11 @@ two stores read the same, then the paragraph below is true on both.
 
 ---
 
-## pt-BR
+## pt-BR / pt-PT
 
 **Descrição curta**
 
-> Todos os jogos do dia, anunciados pela IA antes do apito inicial e avaliados em público.
+> Todos os jogos do dia, anunciados pela IA antes do apito e avaliados em público.
 
 **Descrição completa**
 
