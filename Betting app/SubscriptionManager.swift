@@ -199,12 +199,19 @@ final class SubscriptionManager: ObservableObject {
     static let productIdsB: [String] = productIds.map { $0 + ".b" }
     @Published private(set) var priceCohortEffective: PriceCohort = .a
 
-    /// Offer code shown to a subscriber who is about to cancel (rule:
-    /// present a cancellation offer). Create it in App Store Connect under
-    /// Pick1 Pro → Offer Codes (suggested: 50% off the next period, one
-    /// redemption per customer) and paste the code here. Empty means the
-    /// sheet still opens, without the discount button.
-    static let cancellationOfferCode = ""
+    /// Offer codes shown to a subscriber who is about to cancel (rule:
+    /// present a cancellation offer). Created in App Store Connect on
+    /// 2026-09-17 through the API: half price on the next period, existing
+    /// subscribers only, one per plan because Apple ties an offer code to a
+    /// single subscription. Someone on a plan with no code (a cohort B
+    /// product, the old annual) gets the sheet without the discount button.
+    static let cancellationOfferCodes: [String: String] = [
+        "com.pick1.app.pro.weekly": "KEEP50W",
+        "com.pick1.app.pro.monthly": "KEEP50M",
+    ]
+    var cancellationOfferCode: String {
+        activeProductId.flatMap { Self.cancellationOfferCodes[$0] } ?? ""
+    }
 
     /// The cheapest plan ACTUALLY ON SALE, priced in the viewer's own
     /// storefront currency.

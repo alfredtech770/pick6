@@ -291,7 +291,7 @@ struct Pick1CancellationOfferSheet: View {
     var onClose: () -> Void
 
     private var offerURL: URL? {
-        let code = SubscriptionManager.cancellationOfferCode
+        let code = subs.cancellationOfferCode
         guard !code.isEmpty else { return nil }
         return URL(string: "https://apps.apple.com/redeem?ctx=offercodes&id=\(UpdateChecker.appStoreId)&code=\(code)")
     }
