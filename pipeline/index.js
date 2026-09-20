@@ -3071,10 +3071,15 @@ cron.schedule('*/2 * * * *', () => {
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
     10,
   );
-  // Every 2 min in the game window (10am–1am ET) so live scores feel
-  // near-real-time. ESPN's scoreboard is free + keyless, so the only
-  // cost is bandwidth — no Claude/paid calls in this loop.
-  if (hour >= 10 || hour <= 1) liveTick();
+  // Every 2 min in the game window, 6am to 1am ET since 2026-09-20.
+  //
+  // It used to start at 10am ET, which is 4pm in Paris: every European
+  // football morning, the whole Saturday and Sunday EPL card, kicked off,
+  // played and finished without this loop ever looking at it. No kick-off
+  // alert, no live score, and no win notification either, since grading
+  // runs on the same window. ESPN's scoreboard is free and keyless, so
+  // four more hours of coverage costs bandwidth and nothing else.
+  if (hour >= 6 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
 // Grade — every 10 MINUTES during the game window. AI-free: just diffs
@@ -3086,7 +3091,7 @@ cron.schedule('*/10 * * * *', () => {
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
     10,
   );
-  if (hour >= 10 || hour <= 1) gradeAndBackfillTick();
+  if (hour >= 6 || hour <= 1) gradeAndBackfillTick();
 }, { timezone: TZ });
 
 // Pick generation — once daily at 5am ET. The ONLY Claude entry point.
