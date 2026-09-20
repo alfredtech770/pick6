@@ -716,7 +716,19 @@ Deno.serve(async (req: Request) => {
 
     if (apnsReady && apple.length) {
       const jwt = await apnsJwt();
-      for (const t of apple) {
+      // Sent in parallel since 2026-09-20. One at a time, a broadcast to 900
+      // devices took past the caller's 150-second idle timeout, so the
+      // pipeline logged "send-push 504" on the daily recap while the
+      // function quietly carried on. That was survivable for two broadcasts
+      // a day and is not for one per winning pick: twenty-two sequential
+      // broadcasts would outlast the grading tick that started them.
+      // Sixteen at a time turns two and a half minutes into ten seconds and
+      // stays far below what APNs treats as abusive.
+      const CONCURRENCY = 16;
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < apple.length) {
+        const t = apple[cursor++];
         const { tTitle, tBody, label } = resolve(t);
         const stamp = k ? { campaign: k, ...(label ? { variant: label } : {}) } : {};
         const aps = { aps: { alert: { title: tTitle, body: tBody }, sound }, ...d, ...stamp };
@@ -747,7 +759,11 @@ Deno.serve(async (req: Request) => {
           if (res.status === 410 || res.body.includes("BadDeviceToken") || res.body.includes("Unregistered")) dead.push(t.token);
           else { badTokens.push(t.token); console.error(lastError); }
         }
-      }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(CONCURRENCY, apple.length) }, () => worker()),
+      );
     }
 
     if (sa && android.length) {
@@ -866,7 +882,10 @@ Deno.serve(async (req: Request) => {
     let good = 0, bad = 0;
     if (apnsReady) {
       const jwt = await apnsJwt();
-      for (const t of apple) {
+      let vCursor = 0;
+      const vWorker = async () => {
+        while (vCursor < apple.length) {
+        const t = apple[vCursor++];
         const host = t.environment === "sandbox" ? HOST_SANDBOX : HOST_PROD;
         const payload = { aps: { "content-available": 1 } };
         const r = await fetch(`${host}/3/device/${t.token}`, {
@@ -887,7 +906,11 @@ Deno.serve(async (req: Request) => {
         byError[reason] = (byError[reason] ?? 0) + 1;
         if (r.status === 410 || reason === "BadDeviceToken" || reason === "Unregistered") deadV.push(t.token);
         else await supabase.rpc("record_push_result", { ok_tokens: [], bad_tokens: [t.token], err: reason });
-      }
+        }
+      };
+      // Same sixteen-way fan-out as a real send, so the health check
+      // finishes inside the caller's timeout on the full token list.
+      await Promise.all(Array.from({ length: Math.min(16, apple.length) }, () => vWorker()));
     }
     if (!dryRun) {
       if (deadV.length) await supabase.from("device_tokens").delete().in("token", deadV);
