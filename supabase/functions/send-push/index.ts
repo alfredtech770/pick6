@@ -367,22 +367,38 @@ function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number
 /// should follow what a person actually chose to follow.
 const PERSONAL_BONUS_PER_DAY = 5;
 
-// Rough UTC offset per app language. device_tokens carries no timezone, so
-// each language takes the offset of its dominant storefront. Same table as
-// lifecycle-push, kept in step by hand; it only decides "night or not", and
-// being an hour out never changes that answer.
+// Rough UTC offset per app language, the FALLBACK when a device has not
+// told us where it is. Each language takes the offset of its dominant
+// storefront. It only decides "night or not", and being an hour out never
+// changes that answer.
+//
+// Being SEVEN hours out does. An English-language phone in Paris is read as
+// New York, so everything fired between 02:00 and 14:00 UTC is parked and
+// released at 14:20, and the owner reports that the app sends nothing. That
+// was 82 of the 1,478 devices active in the last 45 days on 2026-09-20,
+// including the founder's, which is how it was found.
+//
+// `device_tokens.utc_offset_minutes` overrides the guess whenever it is set.
+// Nothing populates it from the app yet, so it stays null for most rows and
+// the table below still decides; it can be set per device today and the app
+// can start reporting the real zone in a later build.
 const TZ_OFFSET: Record<string, number> = {
   en: -5, es: -6, fr: 1, pt: -3, de: 1, it: 1, ar: 1,
 };
+function offsetHours(t: any): number {
+  const mins = t?.utc_offset_minutes;
+  if (typeof mins === "number" && Number.isFinite(mins)) return mins / 60;
+  const lang = (t?.locale || "en").slice(0, 2).toLowerCase();
+  return TZ_OFFSET[lang] ?? 0;
+}
 const QUIET_START = 9;  // nothing before 09:00 local
 const QUIET_END = 21;   // nothing at 21:00 local or later
 
-function localHour(locale: string | null, at: Date = new Date()): number {
-  const lang = (locale || "en").slice(0, 2).toLowerCase();
-  return (at.getUTCHours() + (TZ_OFFSET[lang] ?? 0) + 24) % 24;
+function localHour(t: any, at: Date = new Date()): number {
+  return ((at.getUTCHours() + offsetHours(t)) % 24 + 24) % 24;
 }
-const inSendWindow = (locale: string | null, at: Date = new Date()) => {
-  const h = localHour(locale, at);
+const inSendWindow = (t: any, at: Date = new Date()) => {
+  const h = localHour(t, at);
   return h >= QUIET_START && h < QUIET_END;
 };
 
@@ -393,10 +409,10 @@ const inSendWindow = (locale: string | null, at: Date = new Date()) => {
 /// woken up; the alternative of refusing to send would have removed them from
 /// the product. Parking the send until morning is the only option that keeps
 /// both the user and the notification.
-function nextSendWindow(locale: string | null, from: Date = new Date()): Date {
+function nextSendWindow(tok: any, from: Date = new Date()): Date {
   for (let h = 0; h <= 24; h++) {
-    const t = new Date(from.getTime() + h * 3600e3);
-    if (inSendWindow(locale, t)) return t;
+    const at = new Date(from.getTime() + h * 3600e3);
+    if (inSendWindow(tok, at)) return at;
   }
   return from;
 }
@@ -447,7 +463,7 @@ function render(locKey: string, locale: string, args: Record<string, unknown>): 
   return { t: fill(copy.t, args, lang), b: fill(copy.b, args, lang) };
 }
 
-const TOKEN_COLS = "token, environment, prefs, locale, user_id, platform, last_seen_at";
+const TOKEN_COLS = "token, environment, prefs, locale, user_id, platform, last_seen_at, utc_offset_minutes";
 const PAGE = 1000;
 
 /// Read device_tokens in full.
@@ -659,6 +675,9 @@ Deno.serve(async (req: Request) => {
 
     let sent = 0, failed = 0;
     const dead: string[] = [];
+    // Tokens whose stored `environment` was wrong, with the value that
+    // actually worked. See the retry below.
+    const envFix: { token: string; environment: string }[] = [];
     const logRows: any[] = [];
     const loggedUsers = new Set<string>();
     // Literal sends carry their campaign in `data` (lifecycle-push does
@@ -684,7 +703,25 @@ Deno.serve(async (req: Request) => {
         const stamp = k ? { campaign: k, ...(label ? { variant: label } : {}) } : {};
         const aps = { aps: { alert: { title: tTitle, body: tBody }, sound }, ...d, ...stamp };
         const host = t.environment === "sandbox" ? HOST_SANDBOX : HOST_PROD;
-        const res = await sendApns(host, t.token, jwt, aps);
+        let res = await sendApns(host, t.token, jwt, aps);
+
+        // A token registered against Apple's OTHER environment answers
+        // `BadEnvironmentKeyInToken`, and the old code counted that as a
+        // plain failure: not delivered, not pruned, not retried, so the
+        // device went dark forever while the send reported nothing wrong.
+        // Found on 2026-09-20 on a phone running a build straight from
+        // Xcode, whose row said `production` while the token was a sandbox
+        // one. Retry on the other host, and write the answer back so it
+        // costs one failed send in the device's life rather than every one.
+        if (!res.ok && res.body.includes("BadEnvironmentKeyInToken")) {
+          const other = host === HOST_PROD ? HOST_SANDBOX : HOST_PROD;
+          const retry = await sendApns(other, t.token, jwt, aps);
+          if (retry.ok) {
+            envFix.push({ token: t.token, environment: other === HOST_SANDBOX ? "sandbox" : "production" });
+            res = retry;
+          }
+        }
+
         if (res.ok) { sent++; logIfKeyed(t, label); }
         else {
           failed++;
@@ -720,6 +757,11 @@ Deno.serve(async (req: Request) => {
     }
 
     if (dead.length) await supabase.from("device_tokens").delete().in("token", dead);
+    for (const f of envFix) {
+      await supabase.from("device_tokens")
+        .update({ environment: f.environment }).eq("token", f.token);
+    }
+    if (envFix.length) console.log(`apns: corrected environment on ${envFix.length} token(s)`);
     if (logRows.length) { try { await supabase.from("push_log").insert(logRows); } catch (_e) { /* non-fatal */ } }
     return { sent, failed, pruned: dead.length };
   }
@@ -758,7 +800,7 @@ Deno.serve(async (req: Request) => {
       const toks = await tokensFor(rows.map((r: any) => r.user_id));
       // Still respect the window: a row can come due while its owner has
       // drifted into another part of the day.
-      const ok = toks.filter((t: any) => inSendWindow(t.locale));
+      const ok = toks.filter((t: any) => inSendWindow(t));
       if (!dryRun && ok.length) {
         const r = await deliver(ok, rows[0].base_key, undefined, undefined, rows[0].args ?? {}, rows[0].data ?? {});
         delivered += r.sent;
@@ -872,7 +914,7 @@ Deno.serve(async (req: Request) => {
         }
       }
     }
-    if (earliest <= nowTs && inSendWindow(t.locale)) now.push(t);
+    if (earliest <= nowTs && inSendWindow(t)) now.push(t);
     else later.push({ ...t, _after: earliest });
   }
 
@@ -887,7 +929,7 @@ Deno.serve(async (req: Request) => {
       queueRows.push({
         user_id: t.user_id, base_key: key, args: args ?? {}, pref_key: prefKey ?? null,
         free_only: !!freeOnly, data: data ?? {},
-        send_after: nextSendWindow(t.locale, t._after ?? new Date()).toISOString(),
+        send_after: nextSendWindow(t, t._after ?? new Date()).toISOString(),
         expires_at: new Date(Date.now() + ttl * 3600e3).toISOString(),
       });
     }
