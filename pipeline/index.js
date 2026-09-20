@@ -1671,6 +1671,9 @@ async function notifyTrackedWins(wins) {
 
     // Favourited the game but tracked no stake: the flat $100 line, which is
     // the only honest figure we have for them.
+    const told = new Map();   // pickId -> Set(userId) already told, personally
+    for (const [k, g] of groups) told.set(g.pick.id,
+      new Set([...(told.get(g.pick.id) || []), ...g.userIds]));
     for (const w of wins) {
       if (!w.game_id) continue;
       const { data: favs } = await supabase
@@ -1680,6 +1683,36 @@ async function notifyTrackedWins(wins) {
       if (!ids.length) continue;
       await sendPush({ key: 'result_win', prefKey: 'results', userIds: ids,
         args: { team: w.pick, score: w.score, pct: payoutPct(w), won: payoutPct(w) } });
+      told.set(w.id, new Set([...(told.get(w.id) || []), ...ids]));
+      sent++;
+    }
+
+    // ── Then everyone else, one broadcast per winning pick ──────────
+    //
+    // "Every game that passes should send a notification" (Ethan,
+    // 2026-09-20). It is the daily allowance that makes that safe rather
+    // than a return to the 93,099-a-month era: a reader takes at most five
+    // broadcasts a day, so the order here IS the editorial decision. Biggest
+    // price first means the five that land are the five worth interrupting
+    // someone for, and the 1.10-shot nobody is impressed by falls off the
+    // end by itself.
+    //
+    // The day's #1 keeps its own copy: those people were told about that
+    // exact pick this morning, and closing the loop on it is a different
+    // sentence from "a game you never saw came in".
+    const top = await topPickToday();
+    const ranked = [...wins].sort((a, b) => payoutPct(b) - payoutPct(a));
+    for (const w of ranked) {
+      const isTop = top && w.id === top.id;
+      const exclude = [...(told.get(w.id) || [])];
+      await sendPush({
+        key: isTop ? 'top_result' : 'win_all',
+        prefKey: 'results',
+        excludeUserIds: exclude,
+        args: isTop
+          ? { pick: w.pick, team: `${w.home_team} v ${w.away_team}`, score: w.score, won: payoutPct(w) }
+          : { team: w.pick, score: w.score, payout: payoutPct(w), conf: Math.round(w.probability || 0) },
+      });
       sent++;
     }
     if (sent) log(`Push: ${sent} win notification group(s) on ${wins.length} settled win(s)`);
@@ -2454,6 +2487,16 @@ async function winningStreakDays() {
 /// than having a payout inferred for them, because an inferred number has no
 /// business in a notification that exists to say "this one is unusual".
 const BIG_ODDS_MIN_DECIMAL = 2.0;   // +100% and up
+
+// Pre-game value alert. 1.60 is chosen from the board, not from taste: over
+// the last week 2.00 matched almost nothing (0 or 1 pick a day) and 1.60
+// matched 0 to 10, which is the band where "the biggest ones" still means
+// something. Two a day, 20 to 90 minutes out, so it lands while the game is
+// still ahead of the reader.
+const PREGAME_MIN_DECIMAL = 1.6;
+const PREGAME_MAX_PER_DAY = 2;
+const PREGAME_MIN_MINUTES = 20;
+const PREGAME_MAX_MINUTES = 90;
 async function sendBigOdds() {
   try {
     const today = daysAgoISO(0);
@@ -2615,7 +2658,7 @@ async function liveTick() {
     // in-play games, ungraded finals, and tonight's event previews.
     const { data: picks, error } = await supabase
       .from('picks')
-      .select('id, game_id, league, sport, home_team, away_team, game_date, pick, probability, market_odds')
+      .select('id, game_id, league, sport, home_team, away_team, game_date, pick, probability, market_odds, pregame_alert_at')
       .eq('result', 'pending')
       .gte('game_date', daysAgoISO(3));
     if (error || !picks?.length) return;
@@ -2642,7 +2685,14 @@ async function liveTick() {
     const pushEvents = [];
     const laEvents = [];   // Live Activity (Apple Sports card) updates
     const oddsUpdates = [];   // market_odds fills from the ESPN line
+    const pregameEvents = [];  // "+$X if it lands", before kick-off
     const topPick = await topPickToday();
+    // How many pre-game alerts have already gone out today, read from the
+    // stamps rather than kept in memory: this process restarts on deploy.
+    const { count: pregameToday } = await supabase
+      .from('picks').select('id', { count: 'exact', head: true })
+      .gte('pregame_alert_at', `${todayISO()}T00:00:00Z`);
+    let pregameSentToday = pregameToday || 0;
 
     const byLeague = {};
     for (const p of picks) (byLeague[p.league] ||= []).push(p);
@@ -2749,6 +2799,29 @@ async function liveTick() {
           }
         }
 
+        // ── The biggest price on the board, before it starts ────────
+        //
+        // "Notify the big ones BEFORE, tell them what they could make"
+        // (Ethan, 2026-09-20). Bounded hard, because a forward-looking
+        // money line is the one most easily read as advice: at most
+        // PREGAME_MAX_PER_DAY a day, only above PREGAME_MIN_DECIMAL, only
+        // inside a window where the game has not started, and once per pick
+        // ever (`picks.pregame_alert_at` is the stamp, so a restart of this
+        // process cannot re-send). The copy states the price and the
+        // model's confidence; it never says to bet.
+        if (status === 'Scheduled' && p.market_odds >= PREGAME_MIN_DECIMAL
+            && !p.pregame_alert_at && ev.startTime
+            && pregameSentToday < PREGAME_MAX_PER_DAY) {
+          const mins = Math.round((Date.parse(ev.startTime) - Date.now()) / 60000);
+          if (mins >= PREGAME_MIN_MINUTES && mins <= PREGAME_MAX_MINUTES) {
+            pregameSentToday++;
+            p.pregame_alert_at = new Date().toISOString();   // guard the rest of this tick
+            pregameEvents.push({ pickId: p.id, key: 'value_soon', prefKey: 'picks',
+              args: { team: p.pick, payout: payoutPct(p), mins,
+                      conf: Math.round(p.probability || 0) } });
+          }
+        }
+
         // ── Today's #1 pick kicks off: everyone hears about it ───────
         // The morning pick_drop named it; this is the reminder that there
         // is a game to watch right now. Broadcast, daily tier, so it is
@@ -2812,20 +2885,13 @@ async function liveTick() {
             if (pl.includes('draw')) pickWon = !homeWon && !awayWon;
             else if (p.home_team && pl.includes(p.home_team.toLowerCase())) pickWon = homeWon;
             else if (p.away_team && pl.includes(p.away_team.toLowerCase())) pickWon = awayWon;
-            if (pickWon === true && topPick && p.id === topPick.id) {
-              // The #1 pick of the day came in. This one is news to everyone
-              // who saw the morning pick_drop, tracked or not, so it goes
-              // out as a broadcast (daily tier) instead of result_win. The
-              // people who tracked it are inside that audience already.
-              pushEvents.push({ key: 'top_result', prefKey: 'results',
-                args: { pick: p.pick, team: `${p.home_team} v ${p.away_team}`,
-                        score: scoreShort, won: payoutPct(p) } });
-            }
-            // `result_win` USED to fire here, off the live score transition.
-            // It now belongs to grading (notifyTrackedWins), which is the
-            // code that actually decides a pick won and which knows what
-            // each tracker staked. Firing here as well would double-send,
-            // and would announce a win the ledger has not written yet.
+            // Nothing fires here any more. Every win message — the tracked
+            // stake, the favouriter line, the broadcast, and the day's #1 —
+            // belongs to grading (notifyTrackedWins), which is the code that
+            // actually decides a pick won. Firing here as well would
+            // double-send and would announce a win the ledger has not
+            // written yet. `pickWon` is still computed above for the Live
+            // Activity card.
             // A loss sends nothing. Every settled pick, win or lose, is still
             // published in the app permanently, which is where the record
             // belongs; a push is not an audit trail.
@@ -2913,6 +2979,17 @@ async function liveTick() {
       if (oe) err('market_odds fill failed:', oe.message);
     }
     if (oddsUpdates.length) log(`Odds: market_odds filled from ESPN on ${oddsUpdates.length} pick(s)`);
+    for (const ev of pregameEvents) {
+      // Stamp FIRST. A push that goes out twice is worse than one that never
+      // goes out, and the stamp is the only thing standing between this and
+      // a loop if the send throws.
+      const { error: pe } = await supabase.from('picks')
+        .update({ pregame_alert_at: new Date().toISOString() })
+        .eq('id', ev.pickId).is('pregame_alert_at', null);
+      if (pe) { err('pregame stamp failed:', pe.message); continue; }
+      await sendPush({ key: ev.key, prefKey: ev.prefKey, args: ev.args });
+      log(`Push: value_soon ${ev.args.team} +$${ev.args.payout} in ${ev.args.mins} min`);
+    }
   } catch (e) {
     err('Live tick crashed:', e.message);
   } finally {

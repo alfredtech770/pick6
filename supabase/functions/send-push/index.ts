@@ -133,6 +133,39 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🤑 O n.º1 de hoje entrou: {pick}", b: "{team} {score}. +${won} sobre $100 seguidos." },
     ar: { t: "🤑 رقم 1 اليوم نجح: {pick}", b: "{team} {score}. +{won}$ على 100$ متابَعة." },
   },
+  // EVERY settled win, to everyone, as it settles (2026-09-20). The flat
+  // $100 basis is what makes one figure comparable across readers; the
+  // people who tracked this pick get their own number instead, and are
+  // excluded from this send so nobody hears about the same game twice.
+  //
+  // The daily allowance is what makes "every win" safe: roughly 22 picks
+  // land a day and a reader can take 5, so the pipeline sends them biggest
+  // price first and the cap keeps the rest. Losses still send nothing.
+  win_all: {
+    en: { t: "🏆 {team} came in: +${payout}", b: "{score} · on $100 tracked. Called at {conf}%." },
+    fr: { t: "🏆 {team} est passé : +{payout} $", b: "{score} · sur 100 $ suivis. Annoncé à {conf}%." },
+    es: { t: "🏆 {team} entró: +${payout}", b: "{score} · sobre $100 seguidos. Anunciado al {conf}%." },
+    de: { t: "🏆 {team} ist aufgegangen: +{payout} $", b: "{score} · auf 100 $ verfolgt. Mit {conf}% getippt." },
+    it: { t: "🏆 {team} è passato: +{payout} $", b: "{score} · su 100 $ seguiti. Dato al {conf}%." },
+    pt: { t: "🏆 {team} entrou: +${payout}", b: "{score} · sobre $100 seguidos. Indicado a {conf}%." },
+    ar: { t: "🏆 {team} نجح: +{payout}$", b: "{score} · على 100$ متابَعة. بثقة {conf}٪." },
+  },
+  // The biggest price on the board, shortly before it starts. The only
+  // forward-looking money line in the set, so it is the one that has to be
+  // read hardest: it states what the market pays IF the call lands, on the
+  // same $100 basis as everything else, and it never tells anyone to bet.
+  // Pick1 takes no bets; the price belongs to a sportsbook, not to us.
+  // Default sound on purpose: the cash register rings when money actually
+  // lands, not when a game is about to start.
+  value_soon: {
+    en: { t: "💸 +${payout} on {team}", b: "Starts in {mins} min. Called at {conf}%, on $100 tracked." },
+    fr: { t: "💸 +{payout} $ sur {team}", b: "Commence dans {mins} min. Annoncé à {conf}%, sur 100 $ suivis." },
+    es: { t: "💸 +${payout} con {team}", b: "Empieza en {mins} min. Anunciado al {conf}%, sobre $100 seguidos." },
+    de: { t: "💸 +{payout} $ mit {team}", b: "Beginnt in {mins} Min. Mit {conf}% getippt, auf 100 $ verfolgt." },
+    it: { t: "💸 +{payout} $ su {team}", b: "Inizia tra {mins} min. Dato al {conf}%, su 100 $ seguiti." },
+    pt: { t: "💸 +${payout} com {team}", b: "Começa em {mins} min. Indicado a {conf}%, sobre $100 seguidos." },
+    ar: { t: "💸 +{payout}$ على {team}", b: "تبدأ خلال {mins} دقيقة. بثقة {conf}٪، على 100$ متابَعة." },
+  },
   goal_fav: {
     en: { t: "⚡ {score}", b: "{team} scores in your game." },
     fr: { t: "⚡ {score}", b: "{team} marque dans ton match." },
@@ -279,6 +312,8 @@ const TIER: Record<string, Tier> = {
   top_win: "daily",
   day1_return: "daily",
   top_start: "daily",
+  win_all: "daily",
+  value_soon: "daily",
   top_result: "daily",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
@@ -565,12 +600,13 @@ Deno.serve(async (req: Request) => {
   }
 
   let key: string | undefined, title: string | undefined, body: string | undefined,
-    prefKey: string | undefined, userIds: string[] | undefined, freeOnly: boolean | undefined,
+    prefKey: string | undefined, userIds: string[] | undefined,
+    excludeUserIds: string[] | undefined, freeOnly: boolean | undefined,
     args: Record<string, unknown> | undefined, data: Record<string, unknown> | undefined,
     drain: boolean | undefined, dryRun: boolean | undefined,
     ttlHours: number | undefined;
   try {
-    ({ key, title, body, prefKey, userIds, freeOnly, args, data,
+    ({ key, title, body, prefKey, userIds, excludeUserIds, freeOnly, args, data,
        drain, dryRun, ttlHours } = await req.json());
   } catch {
     return new Response("Bad Request", { status: 400 });
@@ -596,7 +632,7 @@ Deno.serve(async (req: Request) => {
     // the whole point: it has to be recognisable from a pocket, before the
     // screen is even out. Both platforms now: APNs takes a file name, Android
     // takes a channel whose sound was fixed when the channel was created.
-    const MONEY_KEYS = new Set(["result_win", "result_win_stake", "recap", "hot_streak", "big_odds", "top_result",
+    const MONEY_KEYS = new Set(["result_win", "result_win_stake", "win_all", "recap", "hot_streak", "big_odds", "top_result",
                                 "free_recap", "free_recap_b", "week_missed",
                                 "top_win"]);
     const money = !!k && MONEY_KEYS.has(k);
@@ -745,6 +781,14 @@ Deno.serve(async (req: Request) => {
 
   let tokens = rows;
   if (prefKey) tokens = tokens.filter((t: any) => t.prefs?.[prefKey] !== false);
+
+  // A broadcast about one game must not reach someone who already got the
+  // personal version of it. The pipeline sends the tracked-stake copy first
+  // and hands those user ids back here.
+  if (Array.isArray(excludeUserIds) && excludeUserIds.length) {
+    const drop = new Set(excludeUserIds);
+    tokens = tokens.filter((t: any) => !t.user_id || !drop.has(t.user_id));
+  }
 
   if (freeOnly) {
     const nowIso = new Date().toISOString();
