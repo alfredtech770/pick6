@@ -391,8 +391,19 @@ function offsetHours(t: any): number {
   const lang = (t?.locale || "en").slice(0, 2).toLowerCase();
   return TZ_OFFSET[lang] ?? 0;
 }
-const QUIET_START = 9;  // nothing before 09:00 local
-const QUIET_END = 21;   // nothing at 21:00 local or later
+// 08:00 to 23:00 local since 2026-09-20, widened from 09:00 to 21:00.
+//
+// The old window was set when the product only ever sent a morning pick and
+// an evening recap. It now sends results as games settle, and sport happens
+// at night: a game ending at 22:30 local was parked until 09:00 the next
+// morning, so "you made $83" arrived eleven hours late, which is a different
+// and much weaker message. Over the previous week 56% of Spanish-locale
+// sends and 42% of English ones were parked.
+//
+// 23:00 is still civil for a sports app, and the daily allowance, not the
+// window, is what protects people from volume.
+const QUIET_START = 8;
+const QUIET_END = 23;
 
 function localHour(t: any, at: Date = new Date()): number {
   return ((at.getUTCHours() + offsetHours(t)) % 24 + 24) % 24;
@@ -619,11 +630,11 @@ Deno.serve(async (req: Request) => {
     prefKey: string | undefined, userIds: string[] | undefined,
     excludeUserIds: string[] | undefined, freeOnly: boolean | undefined,
     args: Record<string, unknown> | undefined, data: Record<string, unknown> | undefined,
-    drain: boolean | undefined, dryRun: boolean | undefined,
+    drain: boolean | undefined, dryRun: boolean | undefined, validate: boolean | undefined,
     ttlHours: number | undefined;
   try {
     ({ key, title, body, prefKey, userIds, excludeUserIds, freeOnly, args, data,
-       drain, dryRun, ttlHours } = await req.json());
+       drain, dryRun, validate, ttlHours } = await req.json());
   } catch {
     return new Response("Bad Request", { status: 400 });
   }
@@ -678,6 +689,13 @@ Deno.serve(async (req: Request) => {
     // Tokens whose stored `environment` was wrong, with the value that
     // actually worked. See the retry below.
     const envFix: { token: string; environment: string }[] = [];
+    // Per-token outcome, written back so a device that fails every send is
+    // distinguishable from one nobody targeted. Without this, a dead token
+    // is invisible: push_log only records successes, so the row simply
+    // stops appearing and looks exactly like a quiet week.
+    const okTokens: string[] = [];
+    const badTokens: string[] = [];
+    let lastError = "";
     const logRows: any[] = [];
     const loggedUsers = new Set<string>();
     // Literal sends carry their campaign in `data` (lifecycle-push does
@@ -722,11 +740,12 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        if (res.ok) { sent++; logIfKeyed(t, label); }
+        if (res.ok) { sent++; okTokens.push(t.token); logIfKeyed(t, label); }
         else {
           failed++;
+          lastError = `apns ${res.status}: ${res.body.slice(0, 200)}`;
           if (res.status === 410 || res.body.includes("BadDeviceToken") || res.body.includes("Unregistered")) dead.push(t.token);
-          else console.error(`apns ${res.status}: ${res.body.slice(0, 160)}`);
+          else { badTokens.push(t.token); console.error(lastError); }
         }
       }
     }
@@ -743,11 +762,12 @@ Deno.serve(async (req: Request) => {
             title: tTitle, body: tBody, sound: androidSound,
             channel: androidChannel, data: stamp,
           });
-          if (res.ok) { sent++; logIfKeyed(t, label); }
+          if (res.ok) { sent++; okTokens.push(t.token); logIfKeyed(t, label); }
           else {
             failed++;
+            lastError = `fcm ${res.status}: ${res.body.slice(0, 200)}`;
             if (res.status === 404 || res.body.includes("UNREGISTERED") || res.body.includes("registration-token-not-registered")) dead.push(t.token);
-            else console.error(`fcm ${res.status}: ${res.body.slice(0, 200)}`);
+            else { badTokens.push(t.token); console.error(lastError); }
           }
         }
       } catch (e) {
@@ -762,6 +782,17 @@ Deno.serve(async (req: Request) => {
         .update({ environment: f.environment }).eq("token", f.token);
     }
     if (envFix.length) console.log(`apns: corrected environment on ${envFix.length} token(s)`);
+    if (okTokens.length || badTokens.length) {
+      // Chunked: PostgREST puts the array in the request body here, but the
+      // function is cheap and a broadcast can carry 1,400 tokens.
+      for (let i = 0; i < Math.max(okTokens.length, badTokens.length); i += 500) {
+        await supabase.rpc("record_push_result", {
+          ok_tokens: okTokens.slice(i, i + 500),
+          bad_tokens: badTokens.slice(i, i + 500),
+          err: lastError,
+        });
+      }
+    }
     if (logRows.length) { try { await supabase.from("push_log").insert(logRows); } catch (_e) { /* non-fatal */ } }
     return { sent, failed, pruned: dead.length };
   }
@@ -812,6 +843,59 @@ Deno.serve(async (req: Request) => {
       if (expiredIds.length) await supabase.from("push_queue").delete().in("id", expiredIds);
     }
     return Response.json({ drained: doneIds.length, delivered, expired, groups, dryRun: !!dryRun });
+  }
+
+  // -- Health check ------------------------------------------------------
+  //
+  // `{"validate": true}` sends a BACKGROUND push (no alert, no sound, no
+  // badge) to every live token and reports what Apple says about each one.
+  // Nothing appears on anyone's phone. This exists because a token that
+  // Apple rejects is otherwise invisible: push_log only records successes,
+  // so a dead device is indistinguishable from a quiet week, and one stayed
+  // dark for six days before anyone noticed (2026-09-20).
+  //
+  // Definitively dead tokens (410 / BadDeviceToken / Unregistered) are
+  // pruned; everything else is recorded on the row and left alone.
+  if (validate) {
+    const { rows: all, error: vErr } = await allDeviceTokens(supabase, userIds);
+    if (vErr) return Response.json({ error: vErr }, { status: 500 });
+    const apple = all.filter((t: any) => t.platform !== "android");
+    const byError: Record<string, number> = {};
+    const deadV: string[] = [];
+    const okV: string[] = [];
+    let good = 0, bad = 0;
+    if (apnsReady) {
+      const jwt = await apnsJwt();
+      for (const t of apple) {
+        const host = t.environment === "sandbox" ? HOST_SANDBOX : HOST_PROD;
+        const payload = { aps: { "content-available": 1 } };
+        const r = await fetch(`${host}/3/device/${t.token}`, {
+          method: "POST",
+          headers: {
+            authorization: `bearer ${jwt}`,
+            "apns-topic": BUNDLE_ID,
+            "apns-push-type": "background",
+            "apns-priority": "5",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (r.ok) { good++; okV.push(t.token); continue; }
+        const txt = await r.text();
+        bad++;
+        const reason = (txt.match(/"reason"\s*:\s*"([^"]+)"/) || [, `HTTP ${r.status}`])[1];
+        byError[reason] = (byError[reason] ?? 0) + 1;
+        if (r.status === 410 || reason === "BadDeviceToken" || reason === "Unregistered") deadV.push(t.token);
+        else await supabase.rpc("record_push_result", { ok_tokens: [], bad_tokens: [t.token], err: reason });
+      }
+    }
+    if (!dryRun) {
+      if (deadV.length) await supabase.from("device_tokens").delete().in("token", deadV);
+      for (let i = 0; i < okV.length; i += 500) {
+        await supabase.rpc("record_push_result", { ok_tokens: okV.slice(i, i + 500), bad_tokens: [], err: "" });
+      }
+    }
+    return Response.json({ validated: apple.length, ok: good, failed: bad, pruned: dryRun ? 0 : deadV.length, byError });
   }
 
   if (!key && (!title || !body)) return new Response("need key or title+body", { status: 400 });
