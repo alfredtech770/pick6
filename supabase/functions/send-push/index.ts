@@ -81,6 +81,23 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🤑 +${won}, em cheio", b: "{team} {score}" },
     ar: { t: "🤑 +{won}$، توقّع صحيح", b: "{team} {score}" },
   },
+  // The one notification that carries a figure the reader can check against
+  // their own money, because it IS their own: the stake they entered on this
+  // pick and the price they entered with. Everything else in this file is
+  // priced at a flat $100 so the number means the same thing to everyone;
+  // here the whole point is that it does not. Sent only to someone who
+  // tracked the pick before it settled, never to a favouriter, never on a
+  // loss, and never without the stake in the body, which is what keeps it a
+  // statement about their ledger rather than a claim about the product.
+  result_win_stake: {
+    en: { t: "🤑 You made +${won} on {team}", b: "Your ${stake} tracked came in. {score}" },
+    fr: { t: "🤑 +{won} $ gagnés sur {team}", b: "Tes {stake} $ suivis sont passés. {score}" },
+    es: { t: "🤑 Ganaste +${won} con {team}", b: "Tus ${stake} seguidos entraron. {score}" },
+    de: { t: "🤑 +{won} $ mit {team}", b: "Deine {stake} $ sind aufgegangen. {score}" },
+    it: { t: "🤑 +{won} $ con {team}", b: "I tuoi {stake} $ seguiti sono passati. {score}" },
+    pt: { t: "🤑 Ganhaste +${won} com {team}", b: "Os teus ${stake} seguidos entraram. {score}" },
+    ar: { t: "🤑 ربحت +{won}$ مع {team}", b: "{stake}$ التي تابعتها نجحت. {score}" },
+  },
   // A game the user starred is kicking off. Every sport, one per game, and
   // the only notification in the set that arrives before anything happens,
   // which is the point: it is the one that gets the app opened while the
@@ -248,6 +265,7 @@ const TIER: Record<string, Tier> = {
   billing_retry: "critical",
 
   result_win: "personal",
+  result_win_stake: "personal",
   goal_fav: "personal",
   fav_start: "personal",
 
@@ -374,7 +392,7 @@ const PERSONAL_MIN_GAP_MIN = 20;
 // Amounts are grouped in the reader's own language: "+$2,891" in English,
 // "+2 891 $" in French. Raw "+$2891" reads like a serial number, which is
 // the opposite of what a money notification is for.
-const MONEY_ARGS = new Set(["net", "won", "payout"]);
+const MONEY_ARGS = new Set(["net", "won", "payout", "stake"]);
 
 function fill(tpl: string, args: Record<string, unknown>, lang = "en"): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => {
@@ -578,7 +596,7 @@ Deno.serve(async (req: Request) => {
     // the whole point: it has to be recognisable from a pocket, before the
     // screen is even out. Both platforms now: APNs takes a file name, Android
     // takes a channel whose sound was fixed when the channel was created.
-    const MONEY_KEYS = new Set(["result_win", "recap", "hot_streak", "big_odds", "top_result",
+    const MONEY_KEYS = new Set(["result_win", "result_win_stake", "recap", "hot_streak", "big_odds", "top_result",
                                 "free_recap", "free_recap_b", "week_missed",
                                 "top_win"]);
     const money = !!k && MONEY_KEYS.has(k);

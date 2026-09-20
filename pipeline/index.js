@@ -1605,10 +1605,93 @@ async function gradeFieldEvents() {
   return graded;
 }
 
+/// Tell each person what THEY made, the moment the pick settles.
+///
+/// WHY THIS EXISTS. Until 2026-09-20 the only "you won" push fired from the
+/// live tick, at the instant it happened to observe a game flip to Final.
+/// Grading is a separate hourly pass, and it is grading, not the live tick,
+/// that decides a pick is a win. So a game that finished outside the live
+/// window, or whose pick never matched an ESPN event, settled in the ledger
+/// and told nobody: 121 winning tracked bets over three days produced 13 to
+/// 35 notifications. That is the "there are no notifications" complaint.
+///
+/// WHY THE FIGURE IS PERSONAL. Every other money line in this product is
+/// priced at a flat $100 so it means the same thing to everyone. This one is
+/// the opposite on purpose: `user_bets` holds the stake the user entered and
+/// the price they entered at, for a bet they placed elsewhere. "+$120 on the
+/// $100 you tracked" is arithmetic over their own row, not a claim about what
+/// Pick1 pays. Pick1 still takes no bets and holds no money.
+///
+/// GUARD RAILS. Winners only, never a loss. Only people who tracked a stake
+/// BEFORE it settled; a favouriter with no stake gets the old flat line.
+/// Stakes outside $1 to $10,000 are dropped rather than printed: the table
+/// holds a 2,000,000 row, and a notification reading "+$3,000,000" is either
+/// a typo or a screenshot nobody at this company wants in the wild.
+const STAKE_FLOOR = 1;
+const STAKE_CEILING = 10000;
+
+async function notifyTrackedWins(wins) {
+  try {
+    const byPick = new Map(wins.map((w) => [w.id, w]));
+    const { data: bets } = await supabase
+      .from('user_bets')
+      .select('user_id, pick_id, stake, odds_at_bet')
+      .in('pick_id', [...byPick.keys()]);
+
+    // One send-push call renders ONE copy, so recipients are grouped by the
+    // figures they share: same pick, same stake, same return.
+    const groups = new Map();
+    const staked = new Set();
+    for (const b of bets || []) {
+      const p = byPick.get(b.pick_id);
+      if (!p || !b.user_id) continue;
+      const stake = Math.round(Number(b.stake));
+      if (!Number.isFinite(stake) || stake < STAKE_FLOOR || stake > STAKE_CEILING) continue;
+      // Their price if they entered one, else the pick's, else implied.
+      let dec = Number(b.odds_at_bet);
+      if (!Number.isFinite(dec) || dec <= 1) {
+        dec = (p.market_odds && p.market_odds > 1) ? Number(p.market_odds)
+                                                   : 1 + payoutPct(p) / 100;
+      }
+      const won = Math.round(stake * (dec - 1));
+      if (won <= 0) continue;
+      staked.add(b.user_id);
+      const k = `${b.pick_id}|${stake}|${won}`;
+      if (!groups.has(k)) groups.set(k, { pick: p, stake, won, userIds: [] });
+      groups.get(k).userIds.push(b.user_id);
+    }
+
+    let sent = 0;
+    for (const g of groups.values()) {
+      await sendPush({ key: 'result_win_stake', prefKey: 'results',
+        userIds: [...new Set(g.userIds)],
+        args: { won: g.won, stake: g.stake, team: g.pick.pick, score: g.pick.score } });
+      sent++;
+    }
+
+    // Favourited the game but tracked no stake: the flat $100 line, which is
+    // the only honest figure we have for them.
+    for (const w of wins) {
+      if (!w.game_id) continue;
+      const { data: favs } = await supabase
+        .from('user_favorites').select('user_id').eq('game_id', w.game_id);
+      const ids = [...new Set((favs || []).map((f) => f.user_id)
+        .filter((u) => u && !staked.has(u)))];
+      if (!ids.length) continue;
+      await sendPush({ key: 'result_win', prefKey: 'results', userIds: ids,
+        args: { team: w.pick, score: w.score, pct: payoutPct(w), won: payoutPct(w) } });
+      sent++;
+    }
+    if (sent) log(`Push: ${sent} win notification group(s) on ${wins.length} settled win(s)`);
+  } catch (e) {
+    err('notifyTrackedWins failed:', e.message);
+  }
+}
+
 async function gradePicks() {
   const { data: pending, error: e1 } = await supabase
     .from('picks')
-    .select('id, game_id, pick, home_team, away_team, sport')
+    .select('id, game_id, pick, home_team, away_team, sport, market_odds, probability')
     .eq('result', 'pending');
   if (e1) { err('Pending picks fetch failed:', e1.message); return; }
   if (!pending?.length) return;
@@ -1627,6 +1710,9 @@ async function gradePicks() {
 
   const byGameId = new Map(scores.map((s) => [s.game_id, s]));
   let graded = 0;
+  // Picks that flip to WIN in this pass. Settling is the moment the ledger
+  // says so, which is the moment to tell the people who had money on it.
+  const justWon = [];
   for (const pick of pending) {
     const score = byGameId.get(pick.game_id);
     if (!score || !FINAL_STATUSES.has(score.status)) continue;
@@ -1652,9 +1738,11 @@ async function gradePicks() {
       .eq('id', pick.id);
     if (e3) { err(`Grade update failed for pick ${pick.id}:`, e3.message); continue; }
     log(`${won ? '✅ WIN' : '❌ LOSS'}: ${pick.pick} (${score.home_score}-${score.away_score})`);
+    if (won) justWon.push({ ...pick, score: `${score.home_score}–${score.away_score}` });
     graded++;
   }
   if (graded) log(`Graded ${graded} picks.`);
+  if (justWon.length) await notifyTrackedWins(justWon);
   return graded;
 }
 
@@ -2732,13 +2820,12 @@ async function liveTick() {
               pushEvents.push({ key: 'top_result', prefKey: 'results',
                 args: { pick: p.pick, team: `${p.home_team} v ${p.away_team}`,
                         score: scoreShort, won: payoutPct(p) } });
-            } else if (pickWon === true) {
-              // On a flat $100 a pick, the payout percentage IS the dollars.
-              pushEvents.push({ key: 'result_win', prefKey: 'results',
-                interestedOnly: true, gameId: p.game_id, pickId: p.id,
-                args: { team: p.pick, score: scoreShort,
-                        pct: payoutPct(p), won: payoutPct(p) } });
             }
+            // `result_win` USED to fire here, off the live score transition.
+            // It now belongs to grading (notifyTrackedWins), which is the
+            // code that actually decides a pick won and which knows what
+            // each tracker staked. Firing here as well would double-send,
+            // and would announce a win the ledger has not written yet.
             // A loss sends nothing. Every settled pick, win or lose, is still
             // published in the app permanently, which is where the record
             // belongs; a push is not an audit trail.
@@ -2913,9 +3000,11 @@ cron.schedule('*/2 * * * *', () => {
   if (hour >= 10 || hour <= 1) liveTick();
 }, { timezone: TZ });
 
-// Grade — once per HOUR during the game window. AI-free: just diffs
-// pending picks against the sportsdata.io live_scores table.
-cron.schedule('0 * * * *', () => {
+// Grade — every 10 MINUTES during the game window. AI-free: just diffs
+// pending picks against the live_scores table, and grading is now what
+// sends the "you made $X" push, so the hourly cadence was up to an hour of
+// silence between the final whistle and the notification.
+cron.schedule('*/10 * * * *', () => {
   const hour = parseInt(
     new Date().toLocaleTimeString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit' }),
     10,
