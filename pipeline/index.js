@@ -1060,6 +1060,11 @@ function buildUserPrompt(league, games, stats30, stats7, forceResearch = false, 
   ].join('\n');
 }
 
+// Largest fixture list handed to one Claude call. Twenty is below the point
+// where a slate overflowed the output budget (31 did, on 2026-09-22) with
+// room to spare, and above every routine day, so most leagues never split.
+const MAX_EVENTS_PER_CALL = 20;
+
 async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   const cfg = LEAGUES[league];
   const useResearch = cfg.promptMode === 'research' || forceResearch;
@@ -1075,6 +1080,25 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   if (claudeBudgetExceeded()) {
     log(`🛑 Skipping ${league} pick gen: daily Claude cost ceiling ($${CLAUDE_DAILY_COST_LIMIT_USD}) reached. Spent $${claudeCostUsd.toFixed(2)} today.`);
     return [];
+  }
+
+  // Split a slate that cannot fit in one answer.
+  //
+  // Raising max_tokens buys headroom but not a guarantee: the output has to
+  // hold a full written rationale per fixture, so it grows with the slate
+  // while the ceiling does not. A 31-fixture MLB day overflowed even before
+  // it reached the schema's closing brace. Splitting bounds the failure as
+  // well as the size — a chunk that goes wrong costs one chunk, not the
+  // league's whole day. Research mode is exempt: it has no fixture list to
+  // split, it goes and finds its own.
+  if (!useResearch && games.length > MAX_EVENTS_PER_CALL) {
+    const out = [];
+    for (let i = 0; i < games.length; i += MAX_EVENTS_PER_CALL) {
+      const slice = games.slice(i, i + MAX_EVENTS_PER_CALL);
+      log(`   ${league}: ${games.length} events — analysing ${i + 1}-${i + slice.length} in this pass.`);
+      out.push(...await getClaudePicks(league, slice, { forceResearch }));
+    }
+    return out;
   }
 
   // Budget check — research mode + forceResearch both fan out web_search
@@ -1107,12 +1131,22 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   }
   const userPrompt = buildUserPrompt(league, games, stats30, stats7, forceResearch, excludeMatchups);
 
-  // max_tokens=32000 + effort=high: gives the agentic web_search loop
+  // max_tokens=64000 + effort=high: gives the agentic web_search loop
   // enough headroom to think AND emit the final JSON. effort=max +
   // 16k was burning all output on reasoning, leaving no text block.
+  //
+  // Raised 32000 -> 64000 on 2026-09-22. At 32000 a large slate silently
+  // paid full price and returned nothing: MLB with 31 fixtures spent $2.28
+  // and 31 web searches over 8m30s, then hit the ceiling mid-sentence and
+  // died on `Unterminated string in JSON at position 52515`. The board has
+  // been covering 4 to 7 leagues a day, and this is part of why: the big
+  // slates, which are the ones worth having, are exactly the ones that
+  // overflow. Truncation is now named explicitly below rather than
+  // surfacing as a parse error, because a parse error reads like a bad
+  // model response when it is really a budget we set too low.
   const makeStream = () => anthropic.messages.stream({
     model: ANTHROPIC_MODEL,
-    max_tokens: 32000,
+    max_tokens: 64000,
     thinking: { type: 'adaptive' },
     output_config: {
       effort: 'high',
@@ -1189,7 +1223,11 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    err(`Claude ${league}: JSON parse failed:`, e.message);
+    if (final.stop_reason === 'max_tokens') {
+      err(`Claude ${league}: response TRUNCATED at max_tokens (${u.output_tokens} out, ${games.length} events). The call was paid for in full and produced nothing — raise max_tokens or split the slate.`);
+    } else {
+      err(`Claude ${league}: JSON parse failed:`, e.message);
+    }
     return [];
   }
 
