@@ -342,13 +342,20 @@ function allowance(lastSeenAt: string | null): { perDay: number; perWeek: number
   // sender demoted before. Volume comes from the people who are still here,
   // never from waking the ones who left.
   //
-  // Raised again to 5/day on 2026-09-17. Measured over the previous week an
-  // active user actually received 1 to 2 a day, never more than 4, so the
-  // 3/day ceiling was never what stood between the product and its users;
-  // the ceiling still has to be above what the pipeline can now produce
-  // (pick_drop, big_odds, recap or top_win, top_start, top_result,
-  // week_missed on Mondays) or the later, better ones get parked.
-  if (days <= 14) return { perDay: 5, perWeek: 25 };
+  // Raised to 10/day on 2026-09-22, at Ethan's request: ten a day, spread
+  // across the timeline rather than arriving in a clump. Ten is a real
+  // number, not a headroom figure. The pipeline can now produce more than
+  // that on a good night (pick_drop, big_odds, recap, top_start, one
+  // value_soon per big price, one win_all per winning pick, top_result),
+  // so the allowance is what actually chooses, and MIN_GAP_HOURS is what
+  // spaces them. Fifteen waking hours at one an hour fits ten with room.
+  //
+  // This number only became meaningful on the same day. Until 2026-09-22
+  // the history read could silently return nothing and the cap vanished
+  // with it, so the real figure was whatever the pipeline happened to send:
+  // 15.5 a day on average, 22 at the top. See the note on the push_history
+  // RPC below.
+  if (days <= 14) return { perDay: 10, perWeek: 60 };
   if (days <= 45) return { perDay: 1, perWeek: 2 };
   return { perDay: 0, perWeek: 0 };
 }
@@ -436,10 +443,13 @@ function nextSendWindow(tok: any, from: Date = new Date()): Date {
 /// undoes the point of capping at all. Whichever loses the race is parked
 /// four hours out instead of dropped, so the second thing still arrives, in
 /// the afternoon, where it has the day to itself.
-// Two hours since 2026-09-17: at four, only three sends fit between 09:00
-// and 21:00 local, which silently capped the day at three whatever the
-// allowance said.
-const MIN_GAP_HOURS = 2;
+// One hour since 2026-09-22. The gap and the allowance have to agree or the
+// smaller one silently wins: the send window is 08:00-23:00 local, fifteen
+// hours, so a two-hour gap admits at most eight and the ten-a-day allowance
+// would have been decorative. At one hour ten fit with five hours to spare,
+// which is what "per timeline" means, one at a time through the day rather
+// than four inside forty minutes.
+const MIN_GAP_HOURS = 1;
 
 /// The same rule for `personal` keys, in minutes rather than hours.
 ///
@@ -842,17 +852,65 @@ Deno.serve(async (req: Request) => {
       if (!byShape.has(shape)) byShape.set(shape, bucket);
       bucket.push(row);
     }
+    // The drain used to hand every due group straight to `deliver()`, which
+    // meant it was the one path that spent nobody's allowance and honoured
+    // nobody's spacing. Two rows parked for the same person came due in the
+    // same run and both went out in the same second (observed 2026-09-20 at
+    // 15:20: fav_start and goal_fav, back to back). Parking a notification
+    // for a civil hour and then delivering it in a burst is worse than not
+    // parking it. So the drain now reads the same history and applies the
+    // same two gates as the live path, and a row that loses simply stays in
+    // the queue for the next hourly drain, until its own expiry drops it.
+    const dueUsers = [...new Set((due ?? []).map((r: any) => r.user_id).filter(Boolean))];
+    const hist = new Map<string, { day: number; last: string | null; dayP: number; lastP: string | null }>();
+    if (dueUsers.length) {
+      const personalKeys = Object.keys(TIER).filter((k) => TIER[k] === "personal");
+      for (let i = 0; i < dueUsers.length; i += 1000) {
+        const { data: rows, error: he } = await supabase.rpc("push_history", {
+          p_user_ids: dueUsers.slice(i, i + 1000), p_personal: personalKeys,
+        });
+        if (he) return Response.json({ drained: 0, error: `history unavailable: ${he.message}` }, { status: 503 });
+        for (const h of (rows ?? []) as any[]) {
+          hist.set(h.user_id, { day: h.day_count ?? 0, last: h.last_sent ?? null,
+                                dayP: h.day_personal ?? 0, lastP: h.last_personal ?? null });
+        }
+      }
+    }
+    // At most one parked notification per person per drain, whatever else
+    // came due for them this hour.
+    const servedThisRun = new Set<string>();
+    const nowMs = Date.now();
+
     for (const rows of byShape.values()) {
       groups++;
+      const rowTier = tierOf(rows[0].base_key);
       const toks = await tokensFor(rows.map((r: any) => r.user_id));
       // Still respect the window: a row can come due while its owner has
       // drifted into another part of the day.
-      const ok = toks.filter((t: any) => inSendWindow(t));
+      const ok = toks.filter((t: any) => {
+        if (!inSendWindow(t)) return false;
+        if (!t.user_id || servedThisRun.has(t.user_id)) return false;
+        if (rowTier === "critical") return true;
+        if (allowance(t.last_seen_at ?? null).perDay === 0) return false;
+        const h = hist.get(t.user_id);
+        if (!h) return true;
+        if (rowTier === "personal") {
+          if (h.dayP >= PERSONAL_BONUS_PER_DAY) return false;
+          return !h.lastP || nowMs - Date.parse(h.lastP) >= PERSONAL_MIN_GAP_MIN * 60e3;
+        }
+        const a = allowance(t.last_seen_at ?? null);
+        if (h.day >= a.perDay) return false;
+        return !h.last || nowMs - Date.parse(h.last) >= MIN_GAP_HOURS * 3600e3;
+      });
+      const cleared = new Set(ok.map((t: any) => t.user_id));
       if (!dryRun && ok.length) {
         const r = await deliver(ok, rows[0].base_key, undefined, undefined, rows[0].args ?? {}, rows[0].data ?? {});
         delivered += r.sent;
       }
-      for (const row of rows) doneIds.push(row.id);
+      for (const uid of cleared) servedThisRun.add(uid);
+      // Only the rows that actually went out are retired. The rest keep
+      // their place in the queue and their own expiry.
+      for (const row of rows) if (cleared.has(row.user_id)) doneIds.push(row.id);
     }
     if (!dryRun) {
       if (doneIds.length) await supabase.from("push_queue").update({ sent_at: nowIso }).in("id", doneIds);
@@ -966,30 +1024,42 @@ Deno.serve(async (req: Request) => {
   const blank = (): Hist => ({ day: 0, week: 0, last: null, dayP: 0, lastP: null });
   const counts = new Map<string, Hist>();
   if (tier !== "critical") {
+    // Aggregated in Postgres, deliberately.
+    //
+    // This used to page raw push_log rows into memory. Two things were wrong
+    // with that, and together they silently switched the cap off on exactly
+    // the days it mattered. A busy day writes ~15k rows, so the seven-day
+    // window held ~100k and the read became 200+ paged round trips; and the
+    // error was destructured away (`const { data: page }`), so the moment one
+    // page failed or timed out, the loop saw `undefined`, broke, and left
+    // `counts` EMPTY. An empty history reads as "this person has had nothing
+    // all week", so every gate below passes and the whole audience gets the
+    // push. Measured on 2026-09-20: 22 notifications to one device against a
+    // nominal cap of 5, four full broadcasts inside 40 minutes.
+    //
+    // One RPC per chunk, no OFFSET, and the error is checked.
     const ids = [...new Set(tokens.map((t: any) => t.user_id).filter(Boolean))];
-    const weekAgo = new Date(Date.now() - 7 * 86400e3).toISOString();
-    const dayAgo = new Date(Date.now() - 86400e3).toISOString();
-    for (let i = 0; i < ids.length; i += 500) {
-      const hist: any[] = [];
-      for (let from = 0; ; from += PAGE) {
-        const { data: page } = await supabase.from("push_log")
-          .select("user_id, sent_at, base_key").in("user_id", ids.slice(i, i + 500))
-          .gte("sent_at", weekAgo).range(from, from + PAGE - 1);
-        hist.push(...(page ?? []));
-        if (!page || page.length < PAGE) break;
+    const personalKeys = Object.keys(TIER).filter((k) => TIER[k] === "personal");
+    for (let i = 0; i < ids.length; i += 1000) {
+      const { data: rows, error: he } = await supabase.rpc("push_history", {
+        p_user_ids: ids.slice(i, i + 1000),
+        p_personal: personalKeys,
+      });
+      if (he) {
+        // Never fall through to "no history". Sending uncapped is worse than
+        // not sending: the cap is the only thing standing between a good day
+        // on the board and an uninstall.
+        console.error(`push_history failed: ${he.message}`);
+        return Response.json({ sent: 0, error: `history unavailable: ${he.message}` }, { status: 503 });
       }
-      for (const h of hist) {
-        const c = counts.get(h.user_id) ?? blank();
-        const personal = tierOf(h.base_key) === "personal";
-        if (personal) {
-          if (h.sent_at >= dayAgo) c.dayP++;
-          if (!c.lastP || h.sent_at > c.lastP) c.lastP = h.sent_at;
-        } else {
-          c.week++;
-          if (h.sent_at >= dayAgo) c.day++;
-          if (!c.last || h.sent_at > c.last) c.last = h.sent_at;
-        }
-        counts.set(h.user_id, c);
+      for (const h of (rows ?? []) as any[]) {
+        counts.set(h.user_id, {
+          day: h.day_count ?? 0,
+          week: h.week_count ?? 0,
+          last: h.last_sent ?? null,
+          dayP: h.day_personal ?? 0,
+          lastP: h.last_personal ?? null,
+        });
       }
     }
   }
@@ -1044,12 +1114,21 @@ Deno.serve(async (req: Request) => {
     // (where sent_at is null), and ON CONFLICT cannot target a partial index
     // through PostgREST. So the duplicate check is done here instead: read
     // what is already pending for this key and insert only the rest.
+    //
+    // The comparison includes `args`, and that matters. Keyed on base_key
+    // alone, a night where nine picks landed queued exactly one win_all per
+    // person and silently discarded the other eight, because they shared a
+    // key. They are not duplicates: each one names a different team, score
+    // and payout. What makes them safe to keep is the drain, which serves at
+    // most one parked notification per person per hour, so nine wins arrive
+    // across nine hours instead of nine at once, or one and nothing.
     if (queueRows.length) {
+      const shapeOf = (r: any) => `${r.user_id}|${JSON.stringify(r.args ?? {})}`;
       const { data: pending } = await supabase.from("push_queue")
-        .select("user_id").eq("base_key", key).is("sent_at", null)
+        .select("user_id, args").eq("base_key", key).is("sent_at", null)
         .in("user_id", queueRows.map((r) => r.user_id));
-      const already = new Set((pending ?? []).map((r: any) => r.user_id));
-      const fresh = queueRows.filter((r) => !already.has(r.user_id));
+      const already = new Set((pending ?? []).map(shapeOf));
+      const fresh = queueRows.filter((r) => !already.has(shapeOf(r)));
       if (fresh.length) {
         const { error: qe } = await supabase.from("push_queue").insert(fresh);
         if (qe) console.error(`push_queue insert: ${qe.message}`);

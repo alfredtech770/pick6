@@ -60,6 +60,40 @@ const anthropic = new Anthropic({
   timeout: 120_000,
 });
 
+// A streamed request has no effective deadline. The SDK `timeout` above
+// covers establishing the request, not the agentic loop that follows: once
+// events are flowing, `finalMessage()` waits for as long as the model keeps
+// the connection open. On 2026-09-19 an NHL stream stopped emitting and never
+// resolved, so `runPipeline()` never returned, `pipelineRunning` stayed true,
+// and every tick afterwards (including all three self-heal passes) logged
+// "already running" and did nothing. Four days, zero picks, a process that
+// looked perfectly healthy because live scores and grading run on their own
+// crons. Hence a wall-clock deadline that aborts the stream.
+// Fifteen minutes, not five. Measured 2026-09-22, a single NHL slate took
+// 8m25s of agentic web_search before emitting its final message, so anything
+// under ten would abort legitimate work and turn a slow run into no run. The
+// deadline exists to bound a stall, not to police slowness.
+const CLAUDE_CALL_TIMEOUT_MS = Number(process.env.CLAUDE_CALL_TIMEOUT_MS || 900_000);
+
+async function finalMessageWithDeadline(stream, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      stream.finalMessage(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          try { stream.abort(); } catch (_e) { /* already closed */ }
+          reject(new Error(
+            `stream deadline: ${label} produced no final message in ${Math.round(CLAUDE_CALL_TIMEOUT_MS / 1000)}s`,
+          ));
+        }, CLAUDE_CALL_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 
 // ─── Prop-market menus per sport ─────────────────────────────────────
 // The "More predictions" system: beyond the main pick, the model fills
@@ -1098,11 +1132,11 @@ async function getClaudePicks(league, games, { forceResearch = false } = {}) {
   let final;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      final = await makeStream().finalMessage();
+      final = await finalMessageWithDeadline(makeStream(), league);
       break;
     } catch (e) {
       const msg = e.message || '';
-      const transient = /overloaded|529|rate.?limit/i.test(msg);
+      const transient = /overloaded|529|rate.?limit|stream deadline/i.test(msg);
       err(`Claude (${league}) attempt ${attempt} failed:`, msg);
       lastClaudeError = {
         at: new Date().toISOString(),
@@ -1927,14 +1961,29 @@ async function savePerformanceSnapshot() {
 // ════════════════════════════════════════════════════════════════
 
 let pipelineRunning = false;
+let pipelineStartedAt = null;
+// Second net, under the per-call deadline. If a run ever wedges somewhere the
+// deadline does not cover, the flag alone would silence the pipeline forever
+// (see the note by CLAUDE_CALL_TIMEOUT_MS). After this long the run is treated
+// as dead and a fresh one is allowed through; savePicks is idempotent on
+// matchup, so an overlap costs a duplicate call, never a duplicate card.
+const PIPELINE_STALL_MS = Number(process.env.PIPELINE_STALL_MS || 90 * 60_000);
 /// Set when a league fails for an account-level reason. The league loop
 /// checks it and stops, rather than repeating the same failure once per
 /// league for the rest of the run.
 let accountFailureThisRun = false;
 
 async function runPipeline() {
-  if (pipelineRunning) { log('Pipeline already running — skipping this tick.'); return; }
+  if (pipelineRunning) {
+    const heldMs = pipelineStartedAt ? Date.now() - pipelineStartedAt : 0;
+    if (heldMs < PIPELINE_STALL_MS) {
+      log(`Pipeline already running (${Math.round(heldMs / 60000)}min) — skipping this tick.`);
+      return;
+    }
+    err(`⚠️ Pipeline has been "running" for ${Math.round(heldMs / 60000)}min — treating it as dead and starting a fresh run.`);
+  }
   pipelineRunning = true;
+  pipelineStartedAt = Date.now();
   log('▶ Pipeline run starting');
   const startedAt = new Date();
   try {
@@ -2494,7 +2543,11 @@ const BIG_ODDS_MIN_DECIMAL = 2.0;   // +100% and up
 // something. Two a day, 20 to 90 minutes out, so it lands while the game is
 // still ahead of the reader.
 const PREGAME_MIN_DECIMAL = 1.6;
-const PREGAME_MAX_PER_DAY = 2;
+// Four since 2026-09-22. Two was sized against a five-a-day allowance; with
+// ten a day the pre-game alert is the one key that reliably has something to
+// say in the afternoon, which is the part of the timeline the drumbeat
+// (pick_drop at 5am, recap at 9, free_recap at 10) leaves empty.
+const PREGAME_MAX_PER_DAY = 4;
 const PREGAME_MIN_MINUTES = 20;
 const PREGAME_MAX_MINUTES = 90;
 async function sendBigOdds() {
