@@ -494,17 +494,34 @@ const PAGE = 1000;
 /// sent reached at most the first 1000 devices and silently skipped 44% of
 /// the install base. Nothing surfaced it: the send reported success for
 /// every token it was handed.
+/// How many user ids go into one `.in(...)` filter.
+///
+/// PostgREST puts the list in the URL, and a uuid costs ~37 characters, so a
+/// few hundred ids is already a URL of tens of kilobytes. Past the server's
+/// limit the request fails, and because the only caller that passes ids
+/// (`tokensFor`, in the drain) dropped the error, the failure surfaced as
+/// "this group has no devices" rather than as an error: the notifications
+/// stayed in the queue and the product went quiet. Chunked, every list works
+/// whatever its length.
+const ID_CHUNK = 250;
+
 async function allDeviceTokens(
   supabase: any, userIds?: string[],
 ): Promise<{ rows: any[]; error: string | null }> {
   const out: any[] = [];
-  for (let from = 0; ; from += PAGE) {
-    let q = supabase.from("device_tokens").select(TOKEN_COLS).range(from, from + PAGE - 1);
-    if (Array.isArray(userIds) && userIds.length) q = q.in("user_id", userIds);
-    const { data, error } = await q;
-    if (error) return { rows: out, error: error.message };
-    out.push(...(data ?? []));
-    if (!data || data.length < PAGE) break;
+  const chunks: (string[] | null)[] = (Array.isArray(userIds) && userIds.length)
+    ? Array.from({ length: Math.ceil(userIds.length / ID_CHUNK) },
+                 (_v, i) => userIds.slice(i * ID_CHUNK, (i + 1) * ID_CHUNK))
+    : [null];
+  for (const ids of chunks) {
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase.from("device_tokens").select(TOKEN_COLS).range(from, from + PAGE - 1);
+      if (ids) q = q.in("user_id", ids);
+      const { data, error } = await q;
+      if (error) return { rows: out, error: error.message };
+      out.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
+    }
   }
   return { rows: out, error: null };
 }
@@ -826,7 +843,10 @@ Deno.serve(async (req: Request) => {
   /// Every device for a set of users, so the drain can reach them again.
   async function tokensFor(ids: string[]) {
     if (!ids.length) return [];
-    const { rows } = await allDeviceTokens(supabase, ids);
+    const { rows, error } = await allDeviceTokens(supabase, ids);
+    // Never treat a failed lookup as "nobody has a device": that silently
+    // retires the queue rows as delivered and the notification is lost.
+    if (error) throw new Error(`device_tokens lookup failed: ${error}`);
     return rows;
   }
 
@@ -837,8 +857,29 @@ Deno.serve(async (req: Request) => {
   // have started is worse than no pick_drop.
   if (drain) {
     const nowIso = new Date().toISOString();
-    const { data: due } = await supabase.from("push_queue")
-      .select("*").is("sent_at", null).lte("send_after", nowIso).limit(500);
+    // Read EVERY row that is due, oldest first, not the first 500 the
+    // planner happens to hand back.
+    //
+    // `.limit(500)` with no ordering was the reason the product felt quiet.
+    // A broadcast parks ~1,200 people, ten broadcasts a day park ~12,000
+    // rows, and the hourly drain looked at 500 of them chosen arbitrarily.
+    // The queue could only ever drain at a fraction of the rate it filled,
+    // so a backlog built up (2,691 rows pending, 1,829 of them already due,
+    // measured 2026-09-24) and an active user received 2.6 notifications a
+    // day against an allowance of 10. Worse, with no ORDER BY the same rows
+    // could be re-read every hour while others never came up at all.
+    //
+    // Oldest send_after first, so a notification that has waited longest is
+    // served first, and the per-person-per-run rule below still spaces them.
+    const due: any[] = [];
+    for (let from = 0; from < 20000; from += PAGE) {
+      const { data: page, error: de } = await supabase.from("push_queue")
+        .select("*").is("sent_at", null).lte("send_after", nowIso)
+        .order("send_after", { ascending: true }).range(from, from + PAGE - 1);
+      if (de) { console.error(`push_queue read: ${de.message}`); break; }
+      due.push(...(page ?? []));
+      if (!page || page.length < PAGE) break;
+    }
     let delivered = 0, expired = 0, groups = 0;
     const doneIds: string[] = [];
     const expiredIds: string[] = [];
