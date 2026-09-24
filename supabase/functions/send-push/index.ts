@@ -241,6 +241,25 @@ const LOC: Record<string, Locales> = {
   // stake basis, and makes no claim about the day it came from. That is the
   // whole line: a true statement about a single result, never a performance
   // figure dressed up as one.
+  // Re-engagement, for a device that has been dark 45 days or more. Sent
+  // with `includeDormant: true` and nothing else: one notification, once.
+  //
+  // It names a REAL pick that landed, its real price, and what $100 tracked
+  // on that one pick returned, plus how many picks are on the board today.
+  // Every value is passed in from the graded record. What it deliberately
+  // does NOT say is "here is what you missed" over a period: measured on
+  // 2026-09-24 the 30-day net on $100 a pick was negative in two windows of
+  // three, so a period figure would have been a claim the data contradicts.
+  // A single pick's result is a fact; a period's profit was not available.
+  wake_up: {
+    en: { t: "🏆 {team} landed at {odds}", b: "+${payout} on $100 tracked. {n} new picks on the board today." },
+    fr: { t: "🏆 {team} est passé à {odds}", b: "+{payout} $ sur 100 $ suivis. {n} nouveaux pronostics aujourd'hui." },
+    es: { t: "🏆 {team} entró a {odds}", b: "+${payout} sobre $100 seguidos. {n} pronósticos nuevos hoy." },
+    de: { t: "🏆 {team} kam bei {odds}", b: "+{payout} $ auf 100 $ verfolgt. {n} neue Tipps heute." },
+    it: { t: "🏆 {team} è passato a {odds}", b: "+{payout} $ su 100 $ seguiti. {n} nuovi pronostici oggi." },
+    pt: { t: "🏆 {team} entrou a {odds}", b: "+${payout} sobre $100 seguidos. {n} palpites novos hoje." },
+    ar: { t: "🏆 {team} نجح بـ {odds}", b: "+{payout}$ على 100$ متابَعة. {n} توقعات جديدة اليوم." },
+  },
   top_win: {
     en: { t: "🏆 {team} came in yesterday", b: "+${payout} on $100 tracked." },
     fr: { t: "🏆 {team} est passé hier", b: "+{payout} $ sur 100 $ suivis." },
@@ -310,6 +329,7 @@ const TIER: Record<string, Tier> = {
   free_recap_b: "daily",
   week_missed: "daily",
   top_win: "daily",
+  wake_up: "daily",
   day1_return: "daily",
   top_start: "daily",
   win_all: "daily",
