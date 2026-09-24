@@ -658,10 +658,10 @@ Deno.serve(async (req: Request) => {
     excludeUserIds: string[] | undefined, freeOnly: boolean | undefined,
     args: Record<string, unknown> | undefined, data: Record<string, unknown> | undefined,
     drain: boolean | undefined, dryRun: boolean | undefined, validate: boolean | undefined,
-    ttlHours: number | undefined;
+    includeDormant: boolean | undefined, ttlHours: number | undefined;
   try {
     ({ key, title, body, prefKey, userIds, excludeUserIds, freeOnly, args, data,
-       drain, dryRun, validate, ttlHours } = await req.json());
+       drain, dryRun, validate, includeDormant, ttlHours } = await req.json());
   } catch {
     return new Response("Bad Request", { status: 400 });
   }
@@ -1113,8 +1113,25 @@ Deno.serve(async (req: Request) => {
     // and is pushed out by whichever gate is furthest away.
     let earliest = nowTs;
     if (tier !== "critical") {
-      const a = allowance(t.last_seen_at ?? null);
-      if (a.perDay === 0) { skipped.dormant++; continue; }
+      // `includeDormant` is the ONLY way past the dormancy floor, and it is
+      // opt-in per call, never a default.
+      //
+      // A device dark for 45 days normally gets nothing: 91% of this app's
+      // push volume once landed on inactive phones and the sender's
+      // reputation paid for it. That rule stays. But "never" makes the
+      // decision permanent, and a deliberate, spaced re-engagement send is a
+      // different act from a daily drumbeat. The flag lifts the floor to ONE
+      // notification, which the gap and the send window still govern; it
+      // does not raise anyone else's allowance and it does not persist.
+      //
+      // Before using it, validate the tokens (`{"validate": true}`): sending
+      // to uninstalled devices is what damages a sender, and that check
+      // prunes them silently, with nothing shown on anyone's screen.
+      let a = allowance(t.last_seen_at ?? null);
+      if (a.perDay === 0) {
+        if (!includeDormant) { skipped.dormant++; continue; }
+        a = { perDay: 1, perWeek: 1 };
+      }
       const c = counts.get(t.user_id) ?? blank();
       if (tier === "personal") {
         // Own budget, own spacing. A starred game is allowed to be noisy on
