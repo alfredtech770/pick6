@@ -25,12 +25,19 @@ android {
         applicationId = "com.pick1.app"
         minSdk = 26          // matches the iOS feature floor; covers ~95%+ of devices
         targetSdk = 36
-        // 1 and 2 are taken. 1 went to the internal testing track on
+        // 1, 2 and 3 are taken. 1 went to the internal testing track on
         // 2026-08-04; 2 was uploaded to production on 2026-09-15 and rejected
-        // by Play for targeting API 35 and Billing 7. Play never lets a
-        // versionCode be reused, even for a bundle nobody ever installed.
-        versionCode = 3
-        versionName = "1.0.18"   // keep in step with the iOS release train
+        // by Play for targeting API 35 and Billing 7; 3 was uploaded the same
+        // evening (20:33) and is the bundle Google has had in review since
+        // 2026-09-17. Play never lets a versionCode be reused, even for a
+        // bundle nobody ever installed.
+        //
+        // 4 is the first Android build that actually carries the seven
+        // monetization rules of 2026-09-17: the bundle in review was compiled
+        // on the 15th, two days before that work landed, so whatever Google
+        // approves will ship WITHOUT the hard paywall. This is its successor.
+        versionCode = 4
+        versionName = "1.0.19"   // keep in step with the iOS release train
 
         // Same backend as iOS. The anon key is a publishable client credential
         // (RLS-enforced) and is designed to ship in the binary.
