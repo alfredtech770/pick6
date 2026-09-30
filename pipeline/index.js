@@ -2660,6 +2660,78 @@ async function sendWeekMissed() {
   } catch (e) { err('sendWeekMissed failed:', e.message); }
 }
 
+/// Morning recap of yesterday, delivered at 08:00 in each reader's OWN
+/// timezone (send-push `atLocal`), replacing the two recaps that used to go
+/// out at 9 and 10 in the morning New York time, which is mid-afternoon for
+/// most of this audience. Scheduled at 02:05 ET, after the night's last
+/// grading tick, so the body reflects the finished slate.
+///
+/// Basis: yesterday's settled picks that carry a real posted price. A pick
+/// without one would need its payout inferred from our own confidence, and
+/// an inferred figure has no place in a line that is a dollar amount.
+///
+/// Three titles, because one would be false for someone:
+///  - day up, reader without Pro: "you missed +$X";
+///  - day up, Pro reader: "yesterday +$X" (they saw every pick);
+///  - day flat or down: the record only, no dollar total claimed.
+/// The body lists up to four real winners either way, then the record line,
+/// which counts every priced pick, losses included.
+async function sendMorningRecap() {
+  try {
+    const y = daysAgoISO(1);
+    const { data: picks } = await supabase
+      .from('picks')
+      .select('pick, result, market_odds')
+      .eq('game_date', y)
+      .in('result', ['win', 'loss']);
+    const priced = (picks || []).filter((p) => Number(p.market_odds) > 1.01 && Number(p.market_odds) <= 20);
+    const winners = priced.filter((p) => p.result === 'win');
+    if (!priced.length || !winners.length) {
+      log(`Push: morning recap skipped (${winners.length}/${priced.length} priced for ${y})`);
+      return;
+    }
+    const net = Math.round(priced.reduce((a, p) =>
+      a + (p.result === 'win' ? (Number(p.market_odds) - 1) * 100 : -100), 0));
+    const results = winners
+      .map((p) => ({ team: p.pick, won: Math.round((Number(p.market_odds) - 1) * 100) }))
+      .sort((a, b) => b.won - a.won);
+    const base = { wins: winners.length, games: priced.length, results, day: y };
+    const common = { prefKey: 'results', atLocal: '08:00', latestLocalHour: 12 };
+
+    if (net > 0) {
+      await sendPush({ key: 'morning_recap_missed', freeOnly: true, ...common, args: { ...base, net } });
+      const pro = await proUserIds();
+      if (pro.length) await sendPush({ key: 'morning_recap', userIds: pro, ...common, args: { ...base, net } });
+      log(`Push: morning recap scheduled, up day (${winners.length}/${priced.length}, +$${net}, ${pro.length} Pro)`);
+    } else {
+      await sendPush({ key: 'morning_recap_even', ...common, args: base });
+      log(`Push: morning recap scheduled, down day (${winners.length}/${priced.length}, $${net})`);
+    }
+  } catch (e) { err('sendMorningRecap failed:', e.message); }
+}
+
+/// Every user entitled to Pro right now: a live Apple or Google subscription,
+/// or an unexpired comp grant. Paged, because an unbounded select stops at
+/// 1000 rows without saying so.
+async function proUserIds() {
+  const ids = new Set();
+  const nowIso = new Date().toISOString();
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabase.from('subscriptions').select('user_id')
+      .gt('expires_date', nowIso).is('revocation_date', null).not('user_id', 'is', null)
+      .range(from, from + 999);
+    for (const r of data || []) ids.add(r.user_id);
+    if (!data || data.length < 1000) break;
+  }
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabase.from('pro_grants').select('user_id, expires_at')
+      .range(from, from + 999);
+    for (const r of data || []) if (!r.expires_at || r.expires_at > nowIso) ids.add(r.user_id);
+    if (!data || data.length < 1000) break;
+  }
+  return [...ids];
+}
+
 async function sendFreeRecap() {
   try {
     const y = daysAgoISO(1);
@@ -3260,12 +3332,13 @@ cron.schedule('25 5,6,12 * * *', async () => {
   } catch (e) { err('Self-heal check failed:', e.message); }
 }, { timezone: TZ });
 
-// Daily recap push at 9am ET — after the overnight slate has graded,
-// before the morning's pick_drop competition. Hypes profitable days.
-cron.schedule('0 9 * * *', sendDailyRecap, { timezone: TZ });
-
-// Free-tier upsell recap — an hour after the member recap.
-cron.schedule('0 10 * * *', sendFreeRecap, { timezone: TZ });
+// Morning recap of yesterday at 08:00 in each reader's own timezone, since
+// 2026-09-30. Computed at 02:05 ET, once the night's grading has stopped,
+// and parked per person by send-push. It replaces the member recap (9am ET)
+// and the free recap (10am ET): both described the same day, both landed in
+// the afternoon for European readers, and together with this one a reader
+// would have been told about yesterday three times.
+cron.schedule('5 2 * * *', sendMorningRecap, { timezone: TZ });
 
 // Weekly missed-money push — Monday 11am ET, an hour clear of the daily one
 // so the two never land together.

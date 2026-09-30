@@ -195,6 +195,45 @@ const LOC: Record<string, Locales> = {
     pt: { t: "💸 Até +${payout} hoje", b: "{team}, indicado a {conf}%. Sobre $100." },
     ar: { t: "💸 حتى +{payout}$ اليوم", b: "{team}، بثقة {conf}٪. على 100$." },
   },
+  // Morning recap, delivered at 08:00 in each reader's own timezone (see
+  // `atLocal`). The body is built per language from the `results` list by
+  // recapLines(): up to four of yesterday's winning picks with what $100
+  // tracked on each returned, then a record line carrying the stake basis.
+  //
+  // Three titles, chosen by the pipeline, because one would lie to someone:
+  //  - morning_recap_missed: a day that finished up, for readers WITHOUT Pro.
+  //    "You missed" is only true for someone who could not see the picks.
+  //  - morning_recap: the same up day, for Pro readers, who missed nothing.
+  //  - morning_recap_even: a day that finished flat or down, for everyone.
+  //    The record is stated and no dollar total is claimed, because there
+  //    was no gain to claim; the winners are still listed, and they are real.
+  morning_recap_missed: {
+    en: { t: "💵 You missed +${net} yesterday", b: "{lines}" },
+    fr: { t: "💵 Hier, tu as raté +{net} $", b: "{lines}" },
+    es: { t: "💵 Ayer te perdiste +${net}", b: "{lines}" },
+    de: { t: "💵 Gestern verpasst: +{net} $", b: "{lines}" },
+    it: { t: "💵 Ieri ti sei perso +{net} $", b: "{lines}" },
+    pt: { t: "💵 Ontem você perdeu +${net}", b: "{lines}" },
+    ar: { t: "💵 فاتك أمس +{net}$", b: "{lines}" },
+  },
+  morning_recap: {
+    en: { t: "💵 Yesterday: +${net}", b: "{lines}" },
+    fr: { t: "💵 Hier : +{net} $", b: "{lines}" },
+    es: { t: "💵 Ayer: +${net}", b: "{lines}" },
+    de: { t: "💵 Gestern: +{net} $", b: "{lines}" },
+    it: { t: "💵 Ieri: +{net} $", b: "{lines}" },
+    pt: { t: "💵 Ontem: +${net}", b: "{lines}" },
+    ar: { t: "💵 أمس: +{net}$", b: "{lines}" },
+  },
+  morning_recap_even: {
+    en: { t: "📊 Yesterday: {wins} of {games} picks landed", b: "{lines}" },
+    fr: { t: "📊 Hier : {wins} pronos gagnés sur {games}", b: "{lines}" },
+    es: { t: "📊 Ayer: {wins} de {games} acertados", b: "{lines}" },
+    de: { t: "📊 Gestern: {wins} von {games} getroffen", b: "{lines}" },
+    it: { t: "📊 Ieri: {wins} su {games} vinti", b: "{lines}" },
+    pt: { t: "📊 Ontem: {wins} de {games} certos", b: "{lines}" },
+    ar: { t: "📊 أمس: {wins} من {games} نجحت", b: "{lines}" },
+  },
   recap: {
     en: { t: "💰 +${net} yesterday", b: "{wins} of {games} landed. On $100 a pick." },
     fr: { t: "💰 +{net} $ hier", b: "{wins} matchs sur {games} passés. Sur 100 $ par pari." },
@@ -330,6 +369,9 @@ const TIER: Record<string, Tier> = {
   week_missed: "daily",
   top_win: "daily",
   wake_up: "daily",
+  morning_recap: "daily",
+  morning_recap_missed: "daily",
+  morning_recap_even: "daily",
   day1_return: "daily",
   top_start: "daily",
   win_all: "daily",
@@ -486,8 +528,39 @@ const PERSONAL_MIN_GAP_MIN = 20;
 // the opposite of what a money notification is for.
 const MONEY_ARGS = new Set(["net", "won", "payout", "stake"]);
 
+/// The morning recap body, in the reader's language: up to four winners,
+/// best first, then a record line that always states the stake basis.
+/// Five lines at most, which a lock screen shows in full once expanded.
+/// Only winners are named, but the record line counts every settled pick,
+/// so the losses are in the number even when they are not in the list.
+const RECAP_WORDS: Record<string, { record: string }> = {
+  en: { record: "{wins}/{games} landed · on $100 a pick" },
+  fr: { record: "{wins}/{games} gagnés · sur 100 $ par pick" },
+  es: { record: "{wins}/{games} acertados · sobre $100 por pick" },
+  de: { record: "{wins}/{games} getroffen · auf 100 $ pro Tipp" },
+  it: { record: "{wins}/{games} vinti · su 100 $ a pronostico" },
+  pt: { record: "{wins}/{games} certos · sobre $100 por palpite" },
+  ar: { record: "{wins}/{games} نجحت · على 100$ لكل توقّع" },
+};
+function moneyIn(lang: string, n: number): string {
+  let v: string;
+  try { v = Math.round(n).toLocaleString(lang); } catch { v = String(Math.round(n)); }
+  if (lang === "ar") return `+${v}$`;
+  return (lang === "en" || lang === "es" || lang === "pt") ? `+$${v}` : `+${v} $`;
+}
+function recapLines(args: Record<string, unknown>, lang: string): string {
+  const words = RECAP_WORDS[lang] ?? RECAP_WORDS.en;
+  const results = Array.isArray(args.results) ? args.results as { team: string; won: number }[] : [];
+  // Five lines at most: four winners and the record. The record already
+  // carries the count, so a "+2 more" line would only repeat it.
+  const shown = results.slice(0, 4).map((r) => `✅ ${r.team} ${moneyIn(lang, Number(r.won))}`);
+  shown.push(words.record.replace("{wins}", String(args.wins ?? "")).replace("{games}", String(args.games ?? "")));
+  return shown.join("\n");
+}
+
 function fill(tpl: string, args: Record<string, unknown>, lang = "en"): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => {
+    if (k === "lines") return recapLines(args, lang);
     const v = args[k];
     if (v === undefined) return `{${k}}`;
     if (MONEY_ARGS.has(k) && typeof v === "number" && Number.isFinite(v)) {
@@ -678,10 +751,11 @@ Deno.serve(async (req: Request) => {
     excludeUserIds: string[] | undefined, freeOnly: boolean | undefined,
     args: Record<string, unknown> | undefined, data: Record<string, unknown> | undefined,
     drain: boolean | undefined, dryRun: boolean | undefined, validate: boolean | undefined,
-    includeDormant: boolean | undefined, ttlHours: number | undefined;
+    includeDormant: boolean | undefined, ttlHours: number | undefined,
+    atLocal: string | undefined, latestLocalHour: number | undefined;
   try {
     ({ key, title, body, prefKey, userIds, excludeUserIds, freeOnly, args, data,
-       drain, dryRun, validate, includeDormant, ttlHours } = await req.json());
+       drain, dryRun, validate, includeDormant, ttlHours, atLocal, latestLocalHour } = await req.json());
   } catch {
     return new Response("Bad Request", { status: 400 });
   }
@@ -708,7 +782,8 @@ Deno.serve(async (req: Request) => {
     // takes a channel whose sound was fixed when the channel was created.
     const MONEY_KEYS = new Set(["result_win", "result_win_stake", "win_all", "recap", "hot_streak", "big_odds", "top_result",
                                 "free_recap", "free_recap_b", "week_missed",
-                                "top_win"]);
+                                "top_win", "morning_recap", "morning_recap_missed",
+                                "morning_recap_even"]);
     const money = !!k && MONEY_KEYS.has(k);
     const sound = money ? "chaching.caf" : "default";
     // Android names a raw resource, not a file, and the sound is a property
@@ -1125,6 +1200,52 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // -- Scheduled for a wall-clock time in each reader's own timezone ------
+  //
+  // `atLocal: "08:00"` parks one queue row per person with send_after at
+  // 08:00 THEIR time (utc_offset_minutes, else the locale's zone), and
+  // expires it at `latestLocalHour` (default 12) the same local day. The
+  // hourly drain then delivers it, with every gate it applies to anything
+  // parked: send window, allowance, one-hour spacing, one per run. A reader
+  // whose morning is already over when this is called gets nothing rather
+  // than yesterday's recap in the afternoon. Built for the morning recap,
+  // usable by any key that belongs to a time of day rather than an event.
+  if (atLocal && key) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(atLocal);
+    if (!m) return Response.json({ error: "atLocal must be HH:MM" }, { status: 400 });
+    const minuteOfDay = Number(m[1]) * 60 + Number(m[2]);
+    const latestH = (typeof latestLocalHour === "number" && latestLocalHour > 0) ? latestLocalHour : 12;
+    const nowMs = Date.now();
+    const rows: any[] = [];
+    const seenU = new Set<string>();
+    let stale = 0, dormantN = 0;
+    for (const t of tokens as any[]) {
+      if (!t.user_id || seenU.has(t.user_id)) continue;
+      if (tier !== "critical" && allowance(t.last_seen_at ?? null).perDay === 0 && !includeDormant) { dormantN++; continue; }
+      const off = offsetHours(t) * 3600e3;
+      const local = new Date(nowMs + off);
+      const localMidnightUtc = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - off;
+      const targetUtc = localMidnightUtc + minuteOfDay * 60e3;
+      const expiresUtc = localMidnightUtc + latestH * 3600e3;
+      if (nowMs >= expiresUtc) { stale++; continue; }
+      seenU.add(t.user_id);
+      rows.push({
+        user_id: t.user_id, base_key: key, args: args ?? {}, pref_key: prefKey ?? null,
+        free_only: !!freeOnly, data: data ?? {},
+        send_after: new Date(Math.max(targetUtc, nowMs)).toISOString(),
+        expires_at: new Date(expiresUtc).toISOString(),
+      });
+    }
+    if (dryRun) return Response.json({ dryRun: true, key, atLocal, wouldSchedule: rows.length, stale, dormant: dormantN });
+    let scheduled = 0;
+    for (let i = 0; i < rows.length; i += 500) {
+      const { data: n, error: qe } = await supabase.rpc("enqueue_push", { rows: rows.slice(i, i + 500) });
+      if (qe) { console.error(`enqueue_push (atLocal): ${qe.message}`); continue; }
+      scheduled += Number(n ?? 0);
+    }
+    return Response.json({ key, atLocal, scheduled, stale, dormant: dormantN });
+  }
+
   const now: any[] = [];
   const later: any[] = [];
   const nowTs = new Date();
@@ -1188,30 +1309,30 @@ Deno.serve(async (req: Request) => {
         expires_at: new Date(Date.now() + ttl * 3600e3).toISOString(),
       });
     }
-    // The unique index that keeps one pending copy per person is PARTIAL
-    // (where sent_at is null), and ON CONFLICT cannot target a partial index
-    // through PostgREST. So the duplicate check is done here instead: read
-    // what is already pending for this key and insert only the rest.
-    //
-    // The comparison includes `args`, and that matters. Keyed on base_key
+    // One pending copy per person AND per content: the unique index is on
+    // (user_id, base_key, md5(args)) where sent_at is null, and `args`
+    // matters. Keyed on base_key
     // alone, a night where nine picks landed queued exactly one win_all per
     // person and silently discarded the other eight, because they shared a
     // key. They are not duplicates: each one names a different team, score
     // and payout. What makes them safe to keep is the drain, which serves at
     // most one parked notification per person per hour, so nine wins arrive
     // across nine hours instead of nine at once, or one and nothing.
+    // Through enqueue_push(), which inserts with ON CONFLICT DO NOTHING on
+    // (user_id, base_key, md5(args)). A plain insert failed the WHOLE batch
+    // as soon as one row collided with something already pending, and the
+    // pre-check that tried to avoid that passed every user id through the URL
+    // (the same length trap as tokensFor). 51 batches were lost that way in
+    // the 24 hours to 2026-09-30. Now a true duplicate is skipped, a distinct
+    // message for the same person is kept, and nobody else is affected.
     if (queueRows.length) {
-      const shapeOf = (r: any) => `${r.user_id}|${JSON.stringify(r.args ?? {})}`;
-      const { data: pending } = await supabase.from("push_queue")
-        .select("user_id, args").eq("base_key", key).is("sent_at", null)
-        .in("user_id", queueRows.map((r) => r.user_id));
-      const already = new Set((pending ?? []).map(shapeOf));
-      const fresh = queueRows.filter((r) => !already.has(shapeOf(r)));
-      if (fresh.length) {
-        const { error: qe } = await supabase.from("push_queue").insert(fresh);
-        if (qe) console.error(`push_queue insert: ${qe.message}`);
-        else skipped.queued = fresh.length;
+      let queued = 0;
+      for (let i = 0; i < queueRows.length; i += 500) {
+        const { data: n, error: qe } = await supabase.rpc("enqueue_push", { rows: queueRows.slice(i, i + 500) });
+        if (qe) console.error(`enqueue_push: ${qe.message}`);
+        else queued += Number(n ?? 0);
       }
+      skipped.queued = queued;
     }
   } else if (later.length) {
     skipped.queued = later.length;
