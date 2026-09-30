@@ -74,10 +74,31 @@ async function fetchFixtures(league, days = 8) {
 
   const now = new Date();
   const end = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-  const url = `${SITE}/${path}/scoreboard?dates=${yyyymmdd(now)}-${yyyymmdd(end)}&limit=100`;
 
-  const data = await getJSON(url);
-  const events = data?.events || [];
+  // One request PER DAY, never a range. ESPN answers `dates=YYYYMMDD-YYYYMMDD`
+  // with HTTP 400 on the rugby and AFL scoreboards, while a single
+  // `dates=YYYYMMDD` works. getJSON() swallows the 400 and returns null, so
+  // the range form handed every league here an empty slate, silently: rugby
+  // produced zero picks in the life of the product (measured 2026-09-30, with
+  // eight Top 14 matches listed for 3 October), and AFL's last pick was
+  // 29 August. Nine small requests in parallel cost nothing next to that.
+  const dayUrls = [];
+  for (let d = 0; d <= days; d++) {
+    const day = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+    dayUrls.push(`${SITE}/${path}/scoreboard?dates=${yyyymmdd(day)}&limit=100`);
+  }
+  const pages = await Promise.all(dayUrls.map((u) => getJSON(u)));
+  // League metadata (the competition name) is identical on every page.
+  const data = pages.find((pg) => pg?.leagues?.length) || null;
+  const seen = new Set();
+  const events = [];
+  for (const page of pages) {
+    for (const e of page?.events || []) {
+      if (e?.id && seen.has(e.id)) continue;
+      if (e?.id) seen.add(e.id);
+      events.push(e);
+    }
+  }
   const rows = [];
 
   for (const e of events) {
