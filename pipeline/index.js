@@ -369,7 +369,11 @@ const SEASON_MONTHS = {
   AFL:        [3, 4, 5, 6, 7, 8, 9],                   // home-and-away + finals
   SIXNATIONS: [1, 2, 3],
   RUGBYCHAMP: [8, 9, 10],
-  RWC:        [9, 10],                                 // quadrennial
+  // Quadrennial. The next edition is Australia, 1 Oct to 13 Nov 2027. Marked
+  // [9, 10] every year, it counted as "in season" in 2026 with no fixtures
+  // and took one of rugby's round-robin turns for nothing. Set to [10, 11]
+  // for 2027 only.
+  RWC:        [],
   TOP14:      [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
   PREMRUGBY:  [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
   URC:        [9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
@@ -567,6 +571,34 @@ const LEAGUES = {
   // researchFallback is deliberately OFF — an empty ESPN slate for a
   // weekly sport means "no round this week", not "the feed broke", and
   // falling through would pay Opus to invent one.
+  // Declaration order IS rugby's priority: leagueRunOrder() gives each sport
+  // one league per round, in the order written here, and the daily cost
+  // ceiling usually trips around the tenth league. With the Rugby
+  // Championship and the World Cup written first, rugby's first two turns
+  // went to competitions with no fixtures that week, Top 14 sat 23rd in the
+  // run, and rugby produced zero picks in the life of the product (measured
+  // 2026-09-30). The club leagues that actually play most weekends now come
+  // first, Top 14 at the head for Pick1's French audience.
+  TOP14: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('TOP14'),
+    notes: 'Top 14 — French first division (Sep-Jun). Home advantage is unusually strong here and several clubs rotate heavily for away trips. Pick the match winner.',
+    normalizer: espnNorm,
+  },
+  URC: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('URC'),
+    notes: 'United Rugby Championship — Ireland, Italy, Scotland, Wales and South Africa (Sep-Jun). South African away trips are a genuine disadvantage for the travelling side. Pick the match winner.',
+    normalizer: espnNorm,
+  },
+  PREMRUGBY: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('PREMRUGBY'),
+    notes: 'Gallagher Premiership — English first division (Sep-Jun). Pick the match winner; check for England international call-ups thinning a squad during Test windows.',
+    normalizer: espnNorm,
+  },
+  CHAMPCUP: {
+    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('CHAMPCUP'),
+    notes: 'European Rugby Champions Cup (Dec-May). Pool-stage sides often rest players for domestic priorities; knockout rounds do not. Pick the match winner.',
+    normalizer: espnNorm,
+  },
   RUGBYCHAMP: {
     sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('RUGBYCHAMP'),
     notes: 'The Rugby Championship — Argentina, Australia, New Zealand, South Africa (Aug-Oct). Home advantage is large in this competition, and travel between hemispheres matters. Pick the match winner; draws are rare enough to ignore.',
@@ -580,26 +612,6 @@ const LEAGUES = {
   RWC: {
     sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('RWC'),
     notes: 'Rugby World Cup (Sep-Oct, every four years). Pool games between tier-1 and tier-2 nations are heavy mismatches — say so in the margin markets and keep the win probability honest rather than capping it.',
-    normalizer: espnNorm,
-  },
-  TOP14: {
-    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('TOP14'),
-    notes: 'Top 14 — French first division (Sep-Jun). Home advantage is unusually strong here and several clubs rotate heavily for away trips. Pick the match winner.',
-    normalizer: espnNorm,
-  },
-  PREMRUGBY: {
-    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('PREMRUGBY'),
-    notes: 'Gallagher Premiership — English first division (Sep-Jun). Pick the match winner; check for England international call-ups thinning a squad during Test windows.',
-    normalizer: espnNorm,
-  },
-  URC: {
-    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('URC'),
-    notes: 'United Rugby Championship — Ireland, Italy, Scotland, Wales and South Africa (Sep-Jun). South African away trips are a genuine disadvantage for the travelling side. Pick the match winner.',
-    normalizer: espnNorm,
-  },
-  CHAMPCUP: {
-    sport: 'rugby', promptMode: 'team', fetcher: espnfixtures.fetcherFor('CHAMPCUP'),
-    notes: 'European Rugby Champions Cup (Dec-May). Pool-stage sides often rest players for domestic priorities; knockout rounds do not. Pick the match winner.',
     normalizer: espnNorm,
   },
 
