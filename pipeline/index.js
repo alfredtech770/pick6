@@ -2592,12 +2592,19 @@ const BIG_ODDS_MIN_DECIMAL = 2.0;   // +100% and up
 // matched 0 to 10, which is the band where "the biggest ones" still means
 // something. Two a day, 20 to 90 minutes out, so it lands while the game is
 // still ahead of the reader.
-const PREGAME_MIN_DECIMAL = 1.6;
+// 1.5 since 2026-09-30. On a full day (27 Sep) 16 priced picks cleared 1.5
+// against 12 at 1.6; each is a real upcoming game with a real payout on
+// $100 tracked, so the lower bar adds true alerts, not filler.
+const PREGAME_MIN_DECIMAL = 1.5;
 // Four since 2026-09-22. Two was sized against a five-a-day allowance; with
 // ten a day the pre-game alert is the one key that reliably has something to
 // say in the afternoon, which is the part of the timeline the drumbeat
 // (pick_drop at 5am, recap at 9, free_recap at 10) leaves empty.
-const PREGAME_MAX_PER_DAY = 4;
+// 8 since 2026-09-30, at the clients' request for more notifications.
+// Measured on 27 Sep: 16 eligible picks, 4 announced, so the cap was
+// discarding three quarters of the afternoon's timeline. send-push's
+// allowance (10 a day) and one-hour spacing still decide who gets what.
+const PREGAME_MAX_PER_DAY = 8;
 const PREGAME_MIN_MINUTES = 20;
 const PREGAME_MAX_MINUTES = 90;
 async function sendBigOdds() {
