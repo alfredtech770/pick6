@@ -451,14 +451,51 @@ const PERSONAL_BONUS_PER_DAY = 5;
 // Nothing populates it from the app yet, so it stays null for most rows and
 // the table below still decides; it can be set per device today and the app
 // can start reporting the real zone in a later build.
-const TZ_OFFSET: Record<string, number> = {
-  en: -5, es: -6, fr: 1, pt: -3, de: 1, it: 1, ar: 1,
+//
+// Since 2026-09-30 the fallback is a ZONE per language, not a fixed offset.
+// The fixed table said France was UTC+1, which is only true in winter: from
+// late March to late October every French device (about 480 active) got its
+// quiet hours and its "08:00" an hour late. A zone name lets Intl apply
+// daylight saving on the right date, for the fallback and for the real
+// value alike.
+//
+// Order of trust: `timezone` (the IANA name the app reports, once a build
+// sends it), then `utc_offset_minutes` (set by hand), then the language zone.
+const LANG_ZONE: Record<string, string> = {
+  en: "America/New_York", es: "America/Mexico_City", fr: "Europe/Paris",
+  pt: "America/Sao_Paulo", de: "Europe/Berlin", it: "Europe/Rome",
+  ar: "Africa/Casablanca",
 };
-function offsetHours(t: any): number {
+const zoneFmt = new Map<string, Intl.DateTimeFormat>();
+/// UTC offset of an IANA zone at a given instant, in hours, or null when the
+/// name is not a zone this runtime knows.
+function zoneOffsetHours(zone: string, at: Date): number | null {
+  try {
+    let f = zoneFmt.get(zone);
+    if (!f) {
+      f = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone, hourCycle: "h23", year: "numeric", month: "2-digit",
+        day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+      });
+      zoneFmt.set(zone, f);
+    }
+    const p: Record<string, number> = {};
+    for (const part of f.formatToParts(at)) if (part.type !== "literal") p[part.type] = Number(part.value);
+    const wall = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    return Math.round((wall - Math.floor(at.getTime() / 1000) * 1000) / 60e3) / 60;
+  } catch {
+    return null;
+  }
+}
+function offsetHours(t: any, at: Date = new Date()): number {
+  if (typeof t?.timezone === "string" && t.timezone) {
+    const z = zoneOffsetHours(t.timezone, at);
+    if (z !== null) return z;
+  }
   const mins = t?.utc_offset_minutes;
   if (typeof mins === "number" && Number.isFinite(mins)) return mins / 60;
   const lang = (t?.locale || "en").slice(0, 2).toLowerCase();
-  return TZ_OFFSET[lang] ?? 0;
+  return zoneOffsetHours(LANG_ZONE[lang] ?? "UTC", at) ?? 0;
 }
 // 08:00 to 23:00 local since 2026-09-20, widened from 09:00 to 21:00.
 //
@@ -475,7 +512,7 @@ const QUIET_START = 8;
 const QUIET_END = 23;
 
 function localHour(t: any, at: Date = new Date()): number {
-  return ((at.getUTCHours() + offsetHours(t)) % 24 + 24) % 24;
+  return ((at.getUTCHours() + offsetHours(t, at)) % 24 + 24) % 24;
 }
 const inSendWindow = (t: any, at: Date = new Date()) => {
   const h = localHour(t, at);
@@ -577,7 +614,7 @@ function render(locKey: string, locale: string, args: Record<string, unknown>): 
   return { t: fill(copy.t, args, lang), b: fill(copy.b, args, lang) };
 }
 
-const TOKEN_COLS = "token, environment, prefs, locale, user_id, platform, last_seen_at, utc_offset_minutes";
+const TOKEN_COLS = "token, environment, prefs, locale, user_id, platform, last_seen_at, utc_offset_minutes, timezone";
 const PAGE = 1000;
 
 /// Read device_tokens in full.
@@ -1222,7 +1259,7 @@ Deno.serve(async (req: Request) => {
     for (const t of tokens as any[]) {
       if (!t.user_id || seenU.has(t.user_id)) continue;
       if (tier !== "critical" && allowance(t.last_seen_at ?? null).perDay === 0 && !includeDormant) { dormantN++; continue; }
-      const off = offsetHours(t) * 3600e3;
+      const off = offsetHours(t, new Date(nowMs)) * 3600e3;
       const local = new Date(nowMs + off);
       const localMidnightUtc = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - off;
       const targetUtc = localMidnightUtc + minuteOfDay * 60e3;

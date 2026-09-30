@@ -60,6 +60,12 @@ final class PushManager {
         /// The user's chosen app language ("en"/"fr"/"es"/…), so the
         /// send-push function can localize every notification server-side.
         let locale: String
+        /// The phone's IANA timezone ("Europe/Madrid", "America/Los_Angeles").
+        /// send-push trusts it above everything else for quiet hours and for
+        /// the 08:00 morning recap. Without it the server can only guess from
+        /// the language, which cannot tell Madrid from Mexico City, and which
+        /// got daylight saving wrong for every French phone until 2026-09-30.
+        let timezone: String
     }
 
     private func upload() async {
@@ -81,7 +87,8 @@ final class PushManager {
                              environment: environment,
                              platform: "ios",
                              app_version: version,
-                             locale: LocalizationManager.shared.languageCode),
+                             locale: LocalizationManager.shared.languageCode,
+                             timezone: TimeZone.current.identifier),
                     onConflict: "token"
                 )
                 .execute()

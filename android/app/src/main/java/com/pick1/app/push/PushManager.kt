@@ -33,6 +33,9 @@ object PushManager {
         val platform: String,
         val app_version: String?,
         val locale: String,
+        // The phone's IANA timezone ("Europe/Madrid"). send-push trusts it
+        // above the language guess for quiet hours and the 08:00 recap.
+        val timezone: String,
     )
 
     /** Fetch the current FCM token and upload it (call after sign-in). */
@@ -53,6 +56,7 @@ object PushManager {
                         platform = "android",
                         app_version = BuildConfig.VERSION_NAME,
                         locale = LanguageManager.current ?: "en",
+                        timezone = java.util.TimeZone.getDefault().id,
                     )
                 ) { onConflict = "token" }
             }
