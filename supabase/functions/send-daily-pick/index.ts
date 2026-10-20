@@ -121,16 +121,23 @@ function dailyPickHtml(p: Pick1Row, unsubUrl: string): string {
 // them is exactly what gets a sending domain filtered for everyone else.
 const ACTIVE_DAYS = Number(Deno.env.get("DAILY_PICK_ACTIVE_DAYS") ?? "30");
 
+// Most recent sign-in per user, so a capped run reaches the people who still
+// open the app instead of the same lowest user_ids every day.
+const lastSignIn = new Map<string, number>();
+
 async function confirmedUsers(): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   const cutoff = Date.now() - ACTIVE_DAYS * 86400e3;
-  for (let page = 1; page <= 10; page++) {
+  // 11,846 auth users on 2026-10-20: the old ceiling of 10 pages silently
+  // left the newest ~1,800 sign-ups out of every mailing.
+  for (let page = 1; page <= 100; page++) {
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
     for (const u of data.users) {
       if (!u.email || !u.email_confirmed_at) continue;
       if (!u.last_sign_in_at || Date.parse(u.last_sign_in_at) < cutoff) continue;
       out.set(u.id, u.email);
+      lastSignIn.set(u.id, Date.parse(u.last_sign_in_at));
     }
     if (data.users.length < 1000) break;
   }
@@ -241,7 +248,14 @@ Deno.serve(async (req: Request) => {
     if (prefs.length === 0) return Response.json({ skipped: "no daily_pick subscribers" });
 
     const emails = await confirmedUsers();
-    const withEmail = prefs.filter((p) => emails.has(p.user_id));
+    // Only the people this run will actually mail are claimed. Claiming the
+    // whole list and "releasing" the rest past the cap with one
+    // `.delete().in("id", <6,000 ids>)` was a request PostgREST refused, the
+    // error unchecked, so 86% of rows sat as pending forever. And the list
+    // was in user_id order, so a cap of 400 mailed the same 400 people daily.
+    const withEmail = prefs.filter((p) => emails.has(p.user_id))
+      .sort((a, b) => (lastSignIn.get(b.user_id) ?? 0) - (lastSignIn.get(a.user_id) ?? 0))
+      .slice(0, Number.isFinite(cap) ? cap : undefined);
     const claimed = await claimAll(withEmail.map((p) => p.user_id), "daily_pick", today);
     const items: Outgoing[] = [];
     for (const pref of withEmail) {
@@ -255,14 +269,8 @@ Deno.serve(async (req: Request) => {
         headers: { "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       } });
     }
-    const capped = items.length > cap ? items.slice(0, cap) : items;
-    if (capped.length < items.length) {
-      // Release the claims the cap leaves behind, so those people are not
-      // marked as done for a day they never received.
-      await db.from("email_log").delete().in("id", items.slice(cap).map((i) => i.logId));
-    }
-    const { sent, failed } = await sendBatched(capped);
-    return Response.json({ sent, failed, held: items.length - capped.length, pick: `${top.league}: ${top.pick}` });
+    const { sent, failed } = await sendBatched(items);
+    return Response.json({ sent, failed, audience: prefs.length, pick: `${top.league}: ${top.pick}` });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
   }

@@ -194,7 +194,7 @@ function issueHtml(lang: Lang, o: {
 
 async function confirmedUsersDetailed(): Promise<Map<string, { email: string; lastSignIn: number | null }>> {
   const out = new Map<string, { email: string; lastSignIn: number | null }>();
-  for (let page = 1; page <= 10; page++) {
+  for (let page = 1; page <= 100; page++) { // 11,846 users on 2026-10-20; 10 pages dropped the newest
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
     for (const u of data.users) if (u.email && u.email_confirmed_at) out.set(u.id, { email: u.email, lastSignIn: u.last_sign_in_at ? Date.parse(u.last_sign_in_at) : null });
@@ -352,7 +352,10 @@ Deno.serve(async (req: Request) => {
       return Response.json({ dryRun: true, issue, sinceDate, record: `${w}-${l}`, net, landed: landed.map((p) => p.pick), today: today.map((p) => `${p.pick} @${p.market_odds}`), members, audience: audience.length, sample,
         subject_en: fill(net >= 0 ? L.en.subject_up : L.en.subject_down, { when: L.en[whenKey], w, l, net: Math.abs(net).toLocaleString("en") }) });
     }
-    const claimed = await claimAll(audience.map((p) => p.user_id), "newsletter", issue);
+    // Claim only the slice this run mails. Claiming everyone then releasing
+    // the rest with one huge `.delete().in("id", …)` failed silently (URL too
+    // long) and left ~7,400 rows pending per issue.
+    const claimed = await claimAll(audience.slice(0, Number.isFinite(cap) ? cap : undefined).map((p) => p.user_id), "newsletter", issue);
     const items: Outgoing[] = [];
     for (const pref of audience) {
       const logId = claimed.get(pref.user_id); if (!logId) continue;
@@ -366,10 +369,8 @@ Deno.serve(async (req: Request) => {
         headers: { "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
       } });
     }
-    const capped = items.length > cap ? items.slice(0, cap) : items;
-    if (capped.length < items.length) await db.from("email_log").delete().in("id", items.slice(cap).map((i) => i.logId));
-    const { sent, failed } = await sendBatched(capped);
-    return Response.json({ sent, failed, held: items.length - capped.length, issue, record: `${w}-${l}`, net });
+    const { sent, failed } = await sendBatched(items);
+    return Response.json({ sent, failed, audience: audience.length, issue, record: `${w}-${l}`, net });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
   }
