@@ -189,13 +189,13 @@ final class SubscriptionManager: ObservableObject {
     /// what people saw, not what they were assigned.
     enum PriceCohort: String { case a, b }
     private static let priceCohortKey = "priceCohort"
-    static var priceCohort: PriceCohort {
-        if let raw = UserDefaults.standard.string(forKey: priceCohortKey),
-           let c = PriceCohort(rawValue: raw) { return c }
-        let c: PriceCohort = Bool.random() ? .a : .b
-        UserDefaults.standard.set(c.rawValue, forKey: priceCohortKey)
-        return c
-    }
+    /// The test ENDED on 2026-10-20 (Ethan: keep the original price, it
+    /// earns about 27% more per weekly sign-up). Every install now loads the
+    /// A products. Since 2026-10-22 the ".b" products carry the same prices
+    /// as A in App Store Connect anyway, so builds still assigning B charge
+    /// the same; this only makes the analytics read "a". Existing ".b"
+    /// subscribers stay entitled through `entitledProductIds`.
+    static var priceCohort: PriceCohort { .a }
     static let productIdsB: [String] = productIds.map { $0 + ".b" }
     @Published private(set) var priceCohortEffective: PriceCohort = .a
 

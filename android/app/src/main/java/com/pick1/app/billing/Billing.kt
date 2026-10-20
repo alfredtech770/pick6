@@ -204,11 +204,9 @@ object Billing {
     fun init(context: Context) {
         if (client != null) return
         appContext = context.applicationContext
-        // Price cohort: assigned once, kept for life (see Products.cohort).
-        val prefs = context.applicationContext.getSharedPreferences("pick1_price", Context.MODE_PRIVATE)
-        Products.cohort = prefs.getString("cohort", null) ?: (if (Math.random() < 0.5) "a" else "b").also {
-            prefs.edit().putString("cohort", it).apply()
-        }
+        // Price test ENDED 2026-10-20 (Ethan: keep the original price). Every
+        // install is cohort A; the ".b" products were never created on Play.
+        Products.cohort = "a"
         val c = BillingClient.newBuilder(context.applicationContext)
             .setListener(purchasesListener)
             .enablePendingPurchases(
