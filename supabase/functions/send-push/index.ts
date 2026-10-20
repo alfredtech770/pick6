@@ -1003,23 +1003,40 @@ Deno.serve(async (req: Request) => {
     //
     // Oldest send_after first, so a notification that has waited longest is
     // served first, and the per-person-per-run rule below still spaces them.
+    //
+    // Expired rows are purged FIRST, by filter, and never read. Until
+    // 2026-10-20 they were read into the 20,000 row window and deleted by
+    // `.in("id", expiredIds)`: 20,000 uuids in one query string, a request
+    // PostgREST rejects, with the error never checked. Nothing was deleted,
+    // the same 20,000 dead rows (oldest send_after first) filled the window
+    // every hour, and from 10 Oct no live row was ever reached again: 83,000
+    // queued pushes expired unsent while the drain reported "expired: 20000".
+    let expired = 0;
+    if (!dryRun) {
+      const { count: purged, error: pe } = await supabase.from("push_queue")
+        .delete({ count: "exact" }).is("sent_at", null).lte("expires_at", nowIso);
+      if (pe) console.error(`push_queue purge: ${pe.message}`);
+      expired = purged ?? 0;
+    } else {
+      const { count: stale } = await supabase.from("push_queue")
+        .select("id", { count: "exact", head: true }).is("sent_at", null).lte("expires_at", nowIso);
+      expired = stale ?? 0;
+    }
     const due: any[] = [];
     for (let from = 0; from < 20000; from += PAGE) {
       const { data: page, error: de } = await supabase.from("push_queue")
-        .select("*").is("sent_at", null).lte("send_after", nowIso)
+        .select("*").is("sent_at", null).lte("send_after", nowIso).gt("expires_at", nowIso)
         .order("send_after", { ascending: true }).range(from, from + PAGE - 1);
       if (de) { console.error(`push_queue read: ${de.message}`); break; }
       due.push(...(page ?? []));
       if (!page || page.length < PAGE) break;
     }
-    let delivered = 0, expired = 0, groups = 0;
+    let delivered = 0, groups = 0;
     const doneIds: string[] = [];
-    const expiredIds: string[] = [];
 
     // One transport pass per (key, args) group rather than per row.
     const byShape = new Map<string, any[]>();
     for (const row of due ?? []) {
-      if (row.expires_at <= nowIso) { expiredIds.push(row.id); expired++; continue; }
       const shape = `${row.base_key}|${JSON.stringify(row.args)}|${JSON.stringify(row.data)}`;
       const bucket = byShape.get(shape) ?? [];
       if (!byShape.has(shape)) byShape.set(shape, bucket);
@@ -1086,8 +1103,13 @@ Deno.serve(async (req: Request) => {
       for (const row of rows) if (cleared.has(row.user_id)) doneIds.push(row.id);
     }
     if (!dryRun) {
-      if (doneIds.length) await supabase.from("push_queue").update({ sent_at: nowIso }).in("id", doneIds);
-      if (expiredIds.length) await supabase.from("push_queue").delete().in("id", expiredIds);
+      // In chunks: one `.in("id", …)` with thousands of uuids is a URL the
+      // gateway refuses, and an unretired row is delivered again next hour.
+      for (let i = 0; i < doneIds.length; i += ID_CHUNK) {
+        const { error: ue } = await supabase.from("push_queue")
+          .update({ sent_at: nowIso }).in("id", doneIds.slice(i, i + ID_CHUNK));
+        if (ue) console.error(`push_queue retire: ${ue.message}`);
+      }
     }
     return Response.json({ drained: doneIds.length, delivered, expired, groups, dryRun: !!dryRun });
   }
