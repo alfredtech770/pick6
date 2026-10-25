@@ -50,6 +50,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let info = response.notification.request.content.userInfo
         Analytics.notificationOpened(campaign: info["campaign"] as? String,
                                      variant: info["variant"] as? String)
+        // Team alerts carry the game: open its page.
+        if let game = info["game"] as? String {
+            Task { @MainActor in
+                P1DeepLink.pendingGameKey = game
+                NotificationCenter.default.post(name: .pick1OpenGame, object: game)
+            }
+        }
         completionHandler()
     }
 

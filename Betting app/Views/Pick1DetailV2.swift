@@ -186,34 +186,8 @@ struct Pick1DetailV2: View {
     private var props: [BettingProp] { pick.bettingProps ?? [] }
 
     var body: some View {
-        ZStack {
-            RadialGradient(colors: [Color(hex: "#1D2026"), Color.p1Ink],
-                           center: .init(x: 0.5, y: -0.08), startRadius: 0, endRadius: 520)
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    header
-                    hero
-                    P1FacesV2(pick: pick)
-                    callCard
-                    projections
-                    if let factors = pick.factors, !factors.isEmpty {
-                        factorGrid(factors)
-                    }
-                    Color.clear.frame(height: 120)   // clearance for the bet drawer
-                }
-                .padding(.top, 8)
-            }
-        }
-        .overlay(alignment: .bottom) {
-            // Only for calls that are still open — there is nothing to log
-            // on a game that has already been graded.
-            if pick.isPending {
-                P1BetDrawer(pick: pick, startExpanded: startWithBetDrawer)
-            }
-        }
-        .preferredColorScheme(.dark)
+        P1SportsbookDetail(pick: pick, onClose: onBack, openTrackSheet: startWithBetDrawer)
+            .p1Entrance()
     }
 
     // MARK: Header

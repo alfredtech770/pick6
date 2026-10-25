@@ -60,7 +60,7 @@ final class BetTracker: ObservableObject {
             let user_id: String, pick_id: String
             let stake: Double?, odds_at_bet: Double?
         }
-        let odds = pick.marketOdds ?? pick.impliedOddsForPayout
+        let odds = P1BookQuote.forPick(pick)?.odds
         do {
             try await client.from("user_bets")
                 .upsert(Row(user_id: uid.uuidString, pick_id: pick.id.uuidString,
@@ -103,7 +103,7 @@ final class BetTracker: ObservableObject {
             s.settled += 1
             if pick.isWin { s.wins += 1 } else if pick.isLoss { s.losses += 1 }
             guard let stake = bet.stake, stake > 0 else { continue }
-            let odds = bet.oddsAtBet ?? pick.marketOdds ?? 1.9
+            guard let odds = bet.oddsAtBet ?? P1BookQuote.forPick(pick)?.odds, odds.isFinite, odds > 1 else { continue }
             s.staked += stake
             s.profit += pick.isWin ? stake * (odds - 1) : -stake
         }

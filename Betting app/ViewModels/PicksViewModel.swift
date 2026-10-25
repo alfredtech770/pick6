@@ -88,8 +88,7 @@ class PicksViewModel: ObservableObject {
     let sports = [
         "all",
         "football", "basketball", "baseball", "f1",
-        "combat",   "soccer",     "cricket",  "hockey",
-        "tennis",   "golf",
+        "soccer", "hockey", "tennis",
     ]
 
     // MARK: - Filters
@@ -119,7 +118,7 @@ class PicksViewModel: ObservableObject {
     var upcomingEventPicks: [Pick] {
         let tomorrow = Self.dateString(daysAgo: -1)
         return historyPicks
-            .filter { $0.isPending && $0.gameDate > tomorrow }
+            .filter { P1_SPORTS.contains($0.sport) && $0.isPending && $0.gameDate > tomorrow }
             .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
     }
 
@@ -131,7 +130,7 @@ class PicksViewModel: ObservableObject {
         let tomorrow = Self.dateString(daysAgo: -1)
         let horizon  = Self.dateString(daysAgo: -5)
         return historyPicks
-            .filter { ($0.sport == "soccer" || $0.sport == "golf") && $0.isPending
+            .filter { ($0.sport == "soccer") && $0.isPending
                       && $0.gameDate > tomorrow && $0.gameDate <= horizon }
             .sorted { ($0.gameDate, -$0.probability) < ($1.gameDate, -$1.probability) }
     }
@@ -534,7 +533,7 @@ class PicksViewModel: ObservableObject {
         async let history  = fetchAllPicks()
         async let scores   = fetchLiveScoresInner()
         let (t, y, h, s)   = await (today, yest, history, scores)
-        self.todayPicks      = t
+        self.todayPicks      = t.filter { P1_SPORTS.contains($0.sport) }
         self.yesterdayPicks  = y
         self.historyPicks    = h
         self.liveScores      = s
@@ -673,7 +672,7 @@ class PicksViewModel: ObservableObject {
     func fetchTodayPicks() async {
         let resp = await fetchPicks(from: Self.dateString(daysAgo: 0),
                                     to: Self.dateString(daysAgo: -14))
-        self.todayPicks = resp
+        self.todayPicks = resp.filter { P1_SPORTS.contains($0.sport) }
     }
 
     func fetchLiveScores() async {
@@ -835,7 +834,7 @@ class PicksViewModel: ObservableObject {
     }
 
     private static func dateString(daysAgo: Int) -> String {
-        let cal = Calendar(identifier: .iso8601)
+        let cal = P1BookDays.calendar
         let date = cal.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"

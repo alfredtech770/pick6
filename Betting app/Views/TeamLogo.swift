@@ -130,6 +130,12 @@ enum TeamLogoStore {
         }
     }
 
+    /// Crests the in-app scoreboard read from ESPN, for teams no pick named yet.
+    static func register(team: String, url: String) {
+        let key = normKey(team)
+        if map[key] == nil, !url.isEmpty { map[key] = url }
+    }
+
     static func url(for team: String) -> URL? {
         guard let s = map[normKey(team)] else { return nil }
         return URL(string: s)
@@ -274,7 +280,9 @@ struct LeagueLogo: View {
 enum LeagueLogoLookup {
     static func url(_ leagueId: String) -> URL? {
         let path: String?
-        switch leagueId {
+        let aliases = ["premierleague": "epl", "championsleague": "ucl", "uefachampionsleague": "ucl", "seriea": "seriea", "ligue1": "ligue1", "laliga": "laliga"]
+        let key = leagueId.lowercased().filter { $0.isLetter || $0.isNumber }
+        switch aliases[key] ?? key {
         // ── Soccer (ESPN numeric competition IDs) ──
         case "ucl":        path = "leaguelogos/soccer/500/2"
         case "epl":        path = "leaguelogos/soccer/500/23"
@@ -774,6 +782,22 @@ private let tennisIds: [String: String] = [
 // ════════════════════════════════════════════════════════════════
 
 enum TeamLogoLookup {
+    /// Broadcast-style team code ("NE", "CHI") for the US leagues, nil elsewhere.
+    static func code(sport: String, team: String) -> String? {
+        let tables: [[String: String]]
+        switch sport {
+        case "basketball": tables = [nbaAbbrevs, wnbaAbbrevs]
+        case "football": tables = [nflAbbrevs]
+        case "baseball": tables = [mlbAbbrevs]
+        case "hockey": tables = [nhlAbbrevs]
+        default: return nil
+        }
+        for table in tables {
+            if let ab = abbreviation(in: table, team: team) { return ab.uppercased() }
+        }
+        return nil
+    }
+
     /// Returns an ESPN CDN URL for the given (sport, team), or nil if
     /// we can't map it. Nil falls back to the colored crest.
     static func url(sport: String, team: String) -> URL? {

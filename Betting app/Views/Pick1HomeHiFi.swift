@@ -502,14 +502,10 @@ struct Pick1HomeHiFi: View {
         }
         .onChange(of: subs.winBackOffers.count) { _, _ in presentWinBackIfDue() }
         .onChange(of: splashDone) { _, done in if done { presentWinBackIfDue() } }
-        // Drive Live Activities off the live-score feed: start/update/end
-        // a Lock-Screen + Dynamic Island card for each favorited game that's
-        // in play (Apple Sports style).
-        .onChange(of: vm.liveScores) { _, scores in
-            let all = vm.todayPicks + vm.historyPicks
-            let favGameIds = Set(all.filter { favorites.contains($0.id) }.compactMap(\.gameId))
-            LiveActivityManager.shared.sync(favoritePickGameIds: favGameIds, picks: all, scores: scores)
-        }
+        // Live Activities are driven by Pick1HomeV4 from the ESPN board now
+        // (keyed "espn|...", pushed by the team-alerts job). The old pick
+        // keyed sync here ended any activity it did not know, which would
+        // cut those off, and only moved while the app was open.
         // Re-pull the slate + rebind realtime whenever the app comes
         // back to the foreground. Catches: scores that ticked while
         // backgrounded, games that finished, and (critically) the ET

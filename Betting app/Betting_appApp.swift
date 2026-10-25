@@ -73,7 +73,9 @@ struct Betting_appApp: App {
                 // app without a session (public feeds work; account features
                 // show signed-out states). Screenshots + design review only —
                 // compiled out of Release.
-                if CommandLine.arguments.contains("-showHomeV4") {
+                if CommandLine.arguments.contains("-showSplash") {
+                    Pick1SplashLoader().preferredColorScheme(.dark)
+                } else if CommandLine.arguments.contains("-showHomeV4") {
                     Pick1HomeV4DebugHost()
                         .preferredColorScheme(.dark)
                 } else if CommandLine.arguments.contains("-showOnboardingV2") {
@@ -116,6 +118,14 @@ struct Betting_appApp: App {
             .environment(localization)
             .environmentObject(subscriptions)
             .environmentObject(favorites)
+            // pick1://game?key=espn|path|id|day from the Scores widget.
+            .onOpenURL { url in
+                guard url.scheme == "pick1", url.host == "game",
+                      let key = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                        .queryItems?.first(where: { $0.name == "key" })?.value else { return }
+                P1DeepLink.pendingGameKey = key
+                NotificationCenter.default.post(name: .pick1OpenGame, object: key)
+            }
             // Flip the whole view tree to RTL when the user picks Arabic.
             // SwiftUI mirrors layout (HStack ordering, leading/trailing
             // edges, sheet animations) automatically once this is set.

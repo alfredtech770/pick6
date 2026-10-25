@@ -76,6 +76,7 @@ enum Pick1Springs {
 ///   Button { ... } label: { MyLabel() }
 ///       .buttonStyle(PressableButtonStyle())
 struct PressableButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Scale at full press. 0.97 is the sweet spot — visible but not
     /// goofy. 0.95 is for tiles; 0.99 is for large hero cards.
     var scale: CGFloat = 0.97
@@ -85,9 +86,9 @@ struct PressableButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
             .opacity(configuration.isPressed ? opacity : 1)
-            .animation(Pick1Springs.snappy, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : Pick1Springs.snappy, value: configuration.isPressed)
     }
 }
 
@@ -172,5 +173,93 @@ enum Haptics {
     static func error() {
         let gen = UINotificationFeedbackGenerator()
         gen.notificationOccurred(.error)
+    }
+}
+
+
+// Entrance motion runs once per mounted card; reduced motion presents it immediately.
+private struct P1Entrance: ViewModifier {
+    var delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 14)
+            .scaleEffect(shown || reduceMotion ? 1 : 0.985, anchor: .top)
+            .onAppear {
+                guard !shown else { return }
+                withAnimation(reduceMotion ? nil : Pick1Springs.smooth.delay(delay)) { shown = true }
+            }
+    }
+}
+extension View {
+    func p1Entrance(delay: Double = 0) -> some View { modifier(P1Entrance(delay: delay)) }
+}
+
+struct P1SpotlightSheen: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var swept = false
+    var body: some View {
+        if !reduceMotion {
+            GeometryReader { geometry in
+                LinearGradient(colors: [.clear, .white.opacity(0.10), .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: geometry.size.width * 0.45)
+                    .rotationEffect(.degrees(18))
+                    .offset(x: swept ? geometry.size.width * 1.5 : -geometry.size.width * 0.6)
+                    .onAppear {
+                        guard !swept else { return }
+                        withAnimation(.easeInOut(duration: 1.15).delay(0.3)) { swept = true }
+                    }
+            }.allowsHitTesting(false).accessibilityHidden(true)
+        }
+    }
+}
+
+// Short score highlights reset on each new value and cancel when the view disappears.
+private struct P1ScoreFlash: ViewModifier {
+    let value: String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var previous: String?
+    @State private var glowing = false
+    func body(content: Content) -> some View {
+        content.contentTransition(.numericText())
+            .padding(3)
+            .background(Color.p1Lime.opacity(glowing ? 0.16 : 0), in: RoundedRectangle(cornerRadius: 6))
+            .shadow(color: Color.p1Lime.opacity(glowing ? 0.45 : 0), radius: 8)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: glowing)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: value)
+            .task(id: value) {
+                let changed = previous != nil && previous != value
+                previous = value
+                guard changed, !reduceMotion else { glowing = false; return }
+                glowing = true
+                do { try await Task.sleep(for: .milliseconds(650)) } catch { glowing = false; return }
+                glowing = false
+            }
+    }
+}
+extension View {
+    func p1ScoreFlash(_ value: String) -> some View { modifier(P1ScoreFlash(value: value)) }
+}
+struct P1LivePulse: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+    var body: some View {
+        Circle().fill(Color.p1Red).frame(width: 5, height: 5)
+            .opacity(pulsing && !reduceMotion ? 0.45 : 1)
+            .scaleEffect(pulsing && !reduceMotion ? 1.25 : 1)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 1.1).repeatForever(autoreverses: true), value: pulsing)
+            .onAppear { pulsing = true }.accessibilityHidden(true)
+    }
+}
+struct P1LoadingCards: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<3, id: \.self) { _ in P1SkeletonGameCard() }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading games and predictions")
     }
 }

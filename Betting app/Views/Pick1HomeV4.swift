@@ -31,14 +31,14 @@ import StoreKit
 // rather than private: the match detail page is styled against these same
 // tokens so the two screens read as one app.
 enum V4 {
-    static let ink = Color(hex: "#07080A")
-    static let lift = Color(hex: "#181C23")
-    static let panelTop = Color(hex: "#1B1F27")
-    static let panelBot = Color(hex: "#0B0D11")
-    static let rowTop = Color(hex: "#14171D")
-    static let line = Color.white.opacity(0.09)
-    static let mute = Color(hex: "#63666D")
-    static let ink2 = Color(hex: "#B9B7B0")
+    static let ink = Color(hex: "#1A1A1C")
+    static let lift = Color(hex: "#1A1A1C")
+    static let panelTop = Color(hex: "#303032")
+    static let panelBot = Color(hex: "#222224")
+    static let rowTop = Color(hex: "#262628")
+    static let line = Color(hex: "#454548").opacity(0.6)
+    static let mute = Color(hex: "#A5A5AA")
+    static let ink2 = Color(hex: "#DADADD")
     static let gold = Color(hex: "#FFD84D")
     static let win = Color(hex: "#4ADE80")
     static let hot = Color(hex: "#FF5A36")
@@ -82,7 +82,7 @@ enum V4 {
 /// in that gap and produced zero picks in the life of the product.
 let P1_SPORTS: [String] = [
     "basketball", "football", "soccer", "hockey", "baseball",
-    "combat", "f1", "tennis", "cricket", "golf", "afl", "rugby",
+    "f1", "tennis",
 ]
 
 /// Display names, also Ethan's: "Fight" not MMA, "Race" not Racing or F1.
@@ -121,7 +121,12 @@ struct P1V4TopBar: View {
             // precede it, left over from when the mark was centred and that
             // spacer balanced the avatar opposite. Once the mark moved left
             // the spacer had nothing to balance and just indented the brand.
-            Pick1Wordmark(size: 28)
+            VStack(alignment: .leading, spacing: 3) {
+                Pick1Wordmark(size: 28)
+                Text("PREDICT. COMPARE. BET.")
+                    .font(.archivoNarrow(9, weight: .bold))
+                    .tracking(1.3).foregroundStyle(V4.ink2)
+            }
 
             Spacer(minLength: 8)
 
@@ -140,7 +145,7 @@ struct P1V4TopBar: View {
                     .background(Capsule().fill(V4.gold.opacity(0.08)))
                     .overlay(Capsule().strokeBorder(V4.gold.opacity(0.35), lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableButtonStyle())
             }
 
             Button(action: onProfile) {
@@ -156,7 +161,7 @@ struct P1V4TopBar: View {
                     )
                     .overlay(Circle().strokeBorder(V4.line, lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableButtonStyle())
             .accessibilityLabel("Profile")
         }
         .padding(.leading, 18)
@@ -172,7 +177,7 @@ enum P1V4Tab: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .tonight: return "Tonight"
+        case .tonight: return "Picks"
         case .live:    return "Live"
         case .yours:   return "Your Picks"
         case .results: return "Results"
@@ -192,7 +197,7 @@ struct P1V4Segment: View {
                 } label: {
                     HStack(spacing: 6) {
                         if on {
-                            Circle().fill(Color.p1Lime).frame(width: 5, height: 5)
+                            Circle().fill(Color.p1Primary).frame(width: 5, height: 5)
                         }
                         Text(tab.title.uppercased())
                             .font(.archivoNarrow(12, weight: .bold))
@@ -203,7 +208,7 @@ struct P1V4Segment: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableButtonStyle())
                 .accessibilityAddTraits(on ? [.isSelected, .isButton] : .isButton)
             }
         }
@@ -232,12 +237,12 @@ struct P1V4Orb: View {
                         // "everything at once" without implying a discipline.
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: 21, weight: .semibold))
-                            .foregroundStyle(isOn ? Color.p1Lime : V4.ink2)
+                            .foregroundStyle(isOn ? Color.p1Primary : V4.ink2)
                             // Same reach as P1SportMark's (size * 0.32), so
                             // ALL does not glow harder than the sports next
                             // to it. The glyph is square, so an oversized
                             // shadow on it reads as a boxy halo.
-                            .shadow(color: isOn ? Color.p1Lime.opacity(0.55) : .clear,
+                            .shadow(color: isOn ? Color.p1Primary.opacity(0.55) : .clear,
                                     radius: 21 * 0.32)
                     } else {
                         P1SportMark(sport: sport, size: 23, glowing: isOn, active: isOn)
@@ -250,26 +255,26 @@ struct P1V4Orb: View {
                                            startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
                     )
-                    .overlay(Circle().strokeBorder(isOn ? Color.p1Lime : V4.line, lineWidth: 1.5))
+                    .overlay(Circle().strokeBorder(isOn ? Color.p1Primary : V4.line, lineWidth: 1.5))
                     .opacity(hasPicks ? 1 : 0.45)
                     // Radius 13 put the halo's reach at roughly 3pt (the
                     // 1.12 scale) plus ~26pt of falloff, well past the rail's
                     // 18pt of headroom, so the selected orb's glow was sliced
                     // off flat along the top edge.
-                    .shadow(color: isOn ? Color.p1Lime.opacity(0.45) : .clear, radius: 9)
+                    .shadow(color: isOn ? Color.p1Primary.opacity(0.45) : .clear, radius: 9)
                     .scaleEffect(isOn ? 1.12 : 1)
 
                 Text(v4Name(sport).uppercased())
                     .font(.archivoNarrow(8.5, weight: .bold))
                     .tracking(0.85)
-                    .foregroundStyle(isOn ? Color.p1Lime : V4.mute)
+                    .foregroundStyle(isOn ? Color.p1Primary : V4.mute)
                     .opacity(hasPicks ? 1 : 0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .padding(.top, 6)
 
                 Circle()
-                    .fill(Color.p1Lime)
+                    .fill(Color.p1Primary)
                     .frame(width: 5, height: 5)
                     .opacity(isOn ? 1 : 0)
                     .padding(.top, 4)
@@ -277,7 +282,7 @@ struct P1V4Orb: View {
             .frame(width: 62)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
         .accessibilityLabel(v4Name(sport))
         .accessibilityAddTraits(isOn ? [.isSelected, .isButton] : .isButton)
     }
@@ -455,7 +460,7 @@ struct P1V4Hero: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(Color.p1Lime.opacity(0.35), lineWidth: 1)
+                    .strokeBorder(V4.line, lineWidth: 1)
             )
             // The confidence number and the floating art both sit outside the
             // padded content, top-right, exactly as in the mockup.
@@ -488,7 +493,7 @@ struct P1V4Hero: View {
             .padding(.horizontal, 22)
             .padding(.top, 26)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
     }
 }
 
@@ -635,17 +640,17 @@ struct P1V4GameRow: View {
                     }
                     .padding(.horizontal, 16).padding(.vertical, 11)
                     .background(Capsule().fill(Color.p1Lime))
-                } else {
+                } else if pick.isPending {
                     Button(action: onTrack) {
-                        Text("TRACK THIS")
+                        Text("SEE PARTNERS")
                             .font(.archivoNarrow(11, weight: .bold))
                             .tracking(1.1)
-                            .foregroundStyle(V4.ink)
+                            .foregroundStyle(Color.white)
                             .padding(.horizontal, 18).padding(.vertical, 12)
-                            .background(Capsule().fill(Color.p1Lime))
-                            .shadow(color: Color.p1Lime.opacity(0.35), radius: 10, y: 4)
+                            .background(Capsule().fill(Color.p1Primary))
+                            .shadow(color: Color.p1Primary.opacity(0.15), radius: 10, y: 4)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableButtonStyle())
                 }
             }
             .padding(.top, 12)
@@ -767,7 +772,7 @@ struct P1V4LockMore: View {
             )
             .contentShape(RoundedRectangle(cornerRadius: 16))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
     }
 }
 
@@ -869,11 +874,10 @@ struct P1V4ResultRow: View {
         return "\(max(h, a))–\(min(h, a))"
     }
 
-    /// "+$139" on a winner, "−$100" on a loser, from the real settled price.
+    /// Hypothetical payout including stake, using captured prices only.
     private var returnLine: String {
-        guard !pick.isPending else { return "—" }
-        let net = pick.isWin ? (pick.decimalOdds - 1) * 100 : -100
-        return (net >= 0 ? "+$" : "−$") + String(Int(abs(net).rounded()))
+        guard !pick.isPending, let quote = P1BookQuote.forPick(pick) else { return "—" }
+        return "$" + String(Int((pick.isWin ? quote.odds * 100 : 0).rounded()))
     }
 
     private var verdict: (label: String, color: Color) {
@@ -913,7 +917,7 @@ struct P1V4ResultRow: View {
                     .font(.anton(22))
                     .foregroundStyle(verdict.color)
                     .lineLimit(1).minimumScaleFactor(0.6)
-                Text(verdict.label)
+                Text(verdict.label + (P1BookQuote.forPick(pick) == nil ? " · NO PRICE" : " · RETURN"))
                     .font(.archivoNarrow(8.5, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(V4.mute)
@@ -931,7 +935,7 @@ struct P1V4ResultRow: View {
                         .background(Circle().fill(V4.panelBot))
                         .overlay(Circle().strokeBorder(V4.line, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableButtonStyle())
                 .accessibilityLabel(pick.isWin ? "Share this win" : "Share this loss")
             }
         }
@@ -1073,7 +1077,7 @@ struct P1V4PayBar: View {
             .shadow(color: Color.p1Lime.opacity(0.35), radius: 25, y: 18)
             .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
         .padding(.horizontal, 22)
     }
 }
@@ -1103,6 +1107,21 @@ struct Pick1HomeV4: View {
     @State private var resultSearch = ""
     /// The settled call being shared, win or loss.
     @State private var shareResult: Pick?
+    @State private var bookSearch = ""
+    @State private var bookPage: P1ExplorePage?
+    @State private var selectedDay = P1BookDays.key()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var collapsedLeagues = Set<String>()
+    @State private var slipMessage: String?
+    @State private var slipFeedback = 0
+    @State private var isSlipPage: Bool = {
+        #if DEBUG
+        return CommandLine.arguments.contains("-showPickSlip")
+        #else
+        return false
+        #endif
+    }()
+    @AppStorage("sportsbookSlipIDs") private var savedSlipIDs = ""
 
     /// Real entitlement, with the same DEBUG-only `-forcePro` override the
     /// production home carries so the Pro surfaces stay reviewable on the
@@ -1118,19 +1137,18 @@ struct Pick1HomeV4: View {
         return subs.isPro
     }
 
-    /// The free tier, taken from the view model rather than redefined here:
-    /// one pick per sport, the highest-confidence call of that sport. v4
-    /// previously showed free users the hero plus two more, which was more
-    /// generous than production and would have handed away the paid product.
-    /// The one call a free user may open: the hero of the board in front of
-    /// them, and nothing else.
-    ///
-    /// This used to read a single pick chosen across the WHOLE day, which
-    /// left every sport tab that did not happen to contain it with nothing
-    /// unlocked at all — while the hero above stayed open regardless. The
-    /// board was locked and unlocked at the same time, and tapping BASEBALL
-    /// produced a visible hero over a wall of blurred cards.
-    private var freeIds: Set<UUID> { hero.map { [$0.id] } ?? [] }
+    /// One highest-confidence pick per league and calendar day, independent of the selected tab.
+    private var freeIds: Set<UUID> {
+        var unique: [UUID: Pick] = [:]
+        for pick in coveredToday + vm.historyPicks + vm.yesterdayPicks { unique[pick.id] = pick }
+        return Set(Dictionary(grouping: Array(unique.values), by: { $0.gameDate + "|" + $0.sport + "|" + $0.league.lowercased() })
+            .values.compactMap { group in
+                group.sorted {
+                    if $0.probability != $1.probability { return $0.probability > $1.probability }
+                    return $0.id.uuidString < $1.id.uuidString
+                }.first?.id
+            })
+    }
     private func locked(_ p: Pick) -> Bool { !isPro && !freeIds.contains(p.id) }
 
     /// Same discipline as v2: one switch for everything with no table behind
@@ -1319,8 +1337,11 @@ struct Pick1HomeV4: View {
     }
 
     private var settled: [Pick] {
-        vm.historyPicks.filter { !$0.isPending }
-            .sorted { ($0.gameDateValue ?? .distantPast) > ($1.gameDateValue ?? .distantPast) }
+        // game_date is "yyyy-MM-dd", which sorts as text exactly as it does as a
+        // date. Parsing it inside the comparator cost thousands of formatter
+        // calls per render, and this runs on every live-score tick.
+        vm.historyPicks.filter { !$0.isPending && P1_SPORTS.contains($0.sport) }
+            .sorted { $0.gameDate > $1.gameDate }
     }
 
     /// Every prediction whose game is in the past, plus any current-day call
@@ -1380,244 +1401,418 @@ struct Pick1HomeV4: View {
         return (m.price / 30).formatted(m.priceFormatStyle)
     }
 
+    private var slipIDs: Set<String> { Set(savedSlipIDs.split(separator: ",").map(String.init)) }
+    private var slipPicks: [Pick] {
+        let free = freeIds
+        var seen = Set<UUID>()
+        return (coveredToday + vm.historyPicks).filter {
+            P1_SPORTS.contains($0.sport) && seen.insert($0.id).inserted && slipIDs.contains($0.id.uuidString) && (isPro || free.contains($0.id))
+        }
+    }
+    private func toggleSlip(_ pick: Pick) {
+        guard !locked(pick) else { onUpgrade(); return }
+        var ids = slipIDs
+        let adding = !ids.contains(pick.id.uuidString)
+        if adding { ids.insert(pick.id.uuidString) } else { ids.remove(pick.id.uuidString) }
+        withAnimation(reduceMotion ? nil : Pick1Springs.snappy) {
+            savedSlipIDs = ids.sorted().joined(separator: ",")
+            slipMessage = adding ? "Added to your watchlist" : "Removed from your watchlist"
+        }
+        slipFeedback += 1
+        P1ArenaAudio.play("pick1-click")
+        Analytics.track(adding ? "pick_slip_added" : "pick_slip_removed", ["pick_id": pick.id.uuidString])
+    }
+    private func removeSlip(_ pick: Pick) {
+        var ids = slipIDs; ids.remove(pick.id.uuidString)
+        savedSlipIDs = ids.sorted().joined(separator: ",")
+    }
+    private struct BookLeague: Identifiable {
+        let id: String
+        let name: String
+        let sport: String
+        let picks: [Pick]
+    }
+    @State private var favoritesOnly = false
+    @AppStorage("pick1FavoriteTeamsBannerHidden") private var favBannerHidden = false
+    @StateObject private var board = P1ScoreboardStore()
+    @State private var openGame: P1GameRow?
+    @State private var showSearch = false
+    @State private var showTeams = false
+    private var bookPicks: [Pick] {
+        sportPicks.filter {
+            $0.gameDate == selectedDay && (!favoritesOnly || favorites.follows($0)) && (bookSearch.isEmpty || [$0.homeTeam, $0.awayTeam, $0.league].contains(where: { $0.localizedCaseInsensitiveContains(bookSearch) }))
+        }
+    }
+    private var unlockedBookPicks: [Pick] {
+        bookPicks.filter { !locked($0) }.sorted {
+            if $0.isPending != $1.isPending { return $0.isPending }
+            if $0.probability != $1.probability { return $0.probability > $1.probability }
+            return $0.id.uuidString < $1.id.uuidString
+        }
+    }
+    private var bookLeagues: [BookLeague] {
+        Dictionary(grouping: isPro ? bookPicks : bookPicks.filter { locked($0) }, by: { $0.sport + "|" + $0.league }).map { key, picks in
+            BookLeague(id: key, name: p1LeagueLabel(picks[0]), sport: picks[0].sport,
+                       picks: picks.sorted { ($0.isPending ? 0 : 1, $0.gameDate, $0.startTime ?? "") < ($1.isPending ? 0 : 1, $1.gameDate, $1.startTime ?? "") })
+        }.sorted {
+            let aOpen = $0.picks.contains { $0.isPending }, bOpen = $1.picks.contains { $0.isPending }
+            if aOpen != bOpen { return aOpen }
+            let a = $0.picks.map(\.probability).max() ?? 0
+            let b = $1.picks.map(\.probability).max() ?? 0
+            return a == b ? $0.id < $1.id : a > b
+        }
+    }
+
     // MARK: Body
-
     var body: some View {
-        ZStack {
-            RadialGradient(colors: [V4.lift, V4.ink],
-                           center: .init(x: 0.5, y: -0.06), startRadius: 0, endRadius: 540)
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    P1V4TopBar(coins: Self.showUnbacked ? 2_450 : nil,
-                               onProfile: onProfile)
-
-                    P1V4Segment(selection: $tab)
-
-                    switch tab {
-                    case .tonight: tonight
-                    case .live:    live
-                    case .yours:   yours
-                    case .results: results
-                    }
-
-                    if tab != .tonight {
-                        Color.clear.frame(height: 24 + bottomInset)
-                    } else {
-                        Color.clear.frame(height: 24)
-                    }
-                }
-                .padding(.top, 10)
+        TabView(selection: Binding<String>(
+            get: { isSlipPage ? "slip" : tab.rawValue },
+            set: { value in
+                isSlipPage = value == "slip"
+                if let next = P1V4Tab(rawValue: value) { tab = next }
             }
-
-            // Sticky conversion bar, pinned rather than scrolled away. Free
-            // users only.
-            if !isPro && tab == .tonight && !coveredToday.isEmpty {
-                VStack {
-                    Spacer()
-                    // P1_SPORTS, not `sports`. The latter is the CHIP RAIL,
-                    // which begins with the ALL chip, so counting it
-                    // advertised "11 SPORTS" against the ten the app covers
-                    // and against its own onboarding copy.
-                    P1V4PayBar(perDay: perDay, sports: P1_SPORTS.count, onTap: onUpgrade)
-                        .padding(.bottom, bottomInset)
-                }
+        )) {
+            bookTabContent(.tonight)
+                .tabItem { Label("Sports", systemImage: "house.fill") }.tag(P1V4Tab.tonight.rawValue)
+            bookTabContent(.live)
+                .tabItem { Label("Live", systemImage: "dot.radiowaves.left.and.right") }.tag(P1V4Tab.live.rawValue)
+            watchlistPage
+                .tabItem { Label("Watchlist", systemImage: "list.bullet.rectangle.fill") }
+                .badge(slipPicks.count).tag("slip")
+                .animation(reduceMotion ? nil : Pick1Springs.bouncy, value: slipPicks.count)
+            bookTabContent(.yours)
+                .tabItem { Label("My picks", systemImage: "bookmark.fill") }.tag(P1V4Tab.yours.rawValue)
+            bookTabContent(.results)
+                .tabItem { Label("Results", systemImage: "chart.line.uptrend.xyaxis") }.tag(P1V4Tab.results.rawValue)
+        }
+        .tint(Color.p1Lime)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedDay)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: tab)
+        .animation(reduceMotion ? nil : Pick1Springs.smooth, value: selectedSport)
+        .animation(reduceMotion ? nil : Pick1Springs.snappy, value: savedSlipIDs)
+        .sensoryFeedback(.selection, trigger: selectedDay)
+        .sensoryFeedback(.selection, trigger: slipFeedback)
+        .overlay(alignment: .bottom) {
+            if let slipMessage {
+                Label(slipMessage, systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 18).padding(.vertical, 12)
+                    .background(Capsule().fill(Color.p1Panel2).shadow(color: .black.opacity(0.3), radius: 12))
+                    .padding(.bottom, 84).allowsHitTesting(false)
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .task(id: slipFeedback) {
+            guard slipMessage != nil else { return }
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { slipMessage = nil }
+        }
+        .background(Color.p1Ink.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
+        .sheet(item: $bookPage) { page in
+            P1ExploreScreen(page: page, games: coveredToday, picks: coveredToday.filter { !locked($0) }, onOpen: { p in bookPage = nil; if locked(p) { onUpgrade() } else { onSelectPick(p) } }, onAdd: toggleSlip)
+        }
         .sheet(item: $shareResult) { p in ShareWinSheet(pick: p) }
+        .task(id: selectedDay) { await board.follow(day: selectedDay) }
+        .onReceive(NotificationCenter.default.publisher(for: .pick1OpenGame)) { _ in openPendingGame() }
+        .task { openPendingGame(); favorites.syncAllTeams() }
+        .task { await P1AffiliateStore.shared.load() }
+        .onChange(of: board.games(P1BookDays.key())) { _, _ in autoTrackLive() }
+        .fullScreenCover(item: $openGame) { row in
+            P1GameDetail(row: liveRow(row), locked: row.pick.map(locked) ?? false,
+                         watching: row.pick.map { slipIDs.contains($0.id.uuidString) } ?? false,
+                         onAnalysis: { p in
+                             openGame = nil
+                             Task { try? await Task.sleep(for: .milliseconds(450)); onSelectPick(p) }
+                         },
+                         onWatch: toggleSlip,
+                         onUnlock: {
+                             openGame = nil
+                             Task { try? await Task.sleep(for: .milliseconds(450)); onUpgrade() }
+                         },
+                         actions: gameActions)
+                .environmentObject(favorites)
+        }
+        .sheet(isPresented: $showTeams) {
+            P1ManageTeamsSheet().environmentObject(favorites)
+        }
+        .sheet(isPresented: $showSearch) {
+            P1SearchScreen(games: gameRows(selectedDay) + (selectedDay == P1BookDays.key() ? [] : gameRows(P1BookDays.key())),
+                           actions: gameActions)
+                .environmentObject(favorites)
+        }
         .task { if subs.products.isEmpty { await subs.reloadProducts() } }
         .task { if !betTracker.loaded { await betTracker.load() } }
+    }
+
+    private func bookTabContent(_ page: P1V4Tab) -> some View {
+        VStack(spacing: 0) {
+            P1BookHeader(onProfile: onProfile, onTeams: { showTeams = true }, onSearch: { showSearch = true }, onPage: { bookPage = $0 })
+            ScrollView(showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    switch page {
+                    case .tonight: tonight
+                    case .live: live
+                    case .yours: yours
+                    case .results: results
+                    }
+                    Color.clear.frame(height: 16)
+                }
+            }
+            .refreshable {
+                if page == .tonight || page == .live {
+                    await board.load(page == .live ? P1BookDays.key() : selectedDay, force: true)
+                }
+            }
+        }.background(Color.black.ignoresSafeArea())
     }
 
     // MARK: Tonight
 
     @ViewBuilder private var tonight: some View {
-        if !sports.isEmpty {
-            // Spacing and the trailing inset are tuned so the SIXTH orb
-            // always peeks in from the right edge. At 15pt spacing with 22pt
-            // on both sides, exactly five 56pt orbs filled the width and the
-            // next one began a couple of points past the screen: the rail
-            // scrolled, but nothing on screen said so. Sports are ordered by
-            // their best call's confidence, so the low-confidence ones — a
-            // 31% Grand Prix, a 55% league game — are precisely the ones that
-            // land off the edge, and they were being read as missing.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(sports, id: \.self) { s in
-                        P1V4Orb(sport: s, isOn: s == activeSport, hasPicks: hasPicks(s)) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                selectedSport = s
-                            }
-                        }
+        P1SportTabs(sports: boardSports, active: tabSport) { selectedSport = $0 }
+            .padding(.top, 2).padding(.bottom, 14)
+        if selectedDay >= P1BookDays.key() { conversionBanner(gameRows(selectedDay)) }
+        if !favBannerHidden {
+            P1FavoriteTeamsBanner(teams: favoriteTeams, active: favoritesOnly,
+                                  onTap: {
+                                      if favorites.teams.isEmpty && favorites.leagues.isEmpty { showTeams = true }
+                                      else { favoritesOnly.toggle() }
+                                  },
+                                  onClose: { favBannerHidden = true; favoritesOnly = false })
+                .padding(.horizontal, 16).padding(.bottom, 14)
+        }
+        let rows = dayRows
+        let featured = rows.filter { row in row.pick.map { !locked($0) } ?? false }
+            .sorted { ($0.game.phase.rawValue, $0.game.date) < ($1.game.phase.rawValue, $1.game.date) }
+        P1FeaturedGames(rows: Array(featured.prefix(6)), onOpen: { openGame = $0 })
+            .padding(.bottom, featured.isEmpty ? 0 : 16)
+        P1DayChips(days: boardDays, selected: $selectedDay,
+                   liveDays: board.games(P1BookDays.key()).contains { $0.phase == .live } ? [P1BookDays.key()] : [])
+            .padding(.bottom, 16)
+        P1DateDivider(day: selectedDay).padding(.bottom, 14)
+        if rows.isEmpty && (board.loading.contains(selectedDay) || vm.isLoading) {
+            P1LoadingCards()
+        } else if rows.isEmpty {
+            emptyState(favoritesOnly ? "No games for your teams" : "No games on this day",
+                       (board.failures[selectedDay] ?? 0) > 0 ? "Some schedules did not load. Pull down to refresh." : "Pick another day or another sport.")
+        } else {
+            P1AllGamesList(rows: rows, isLocked: locked, isWatching: { slipIDs.contains($0.id.uuidString) },
+                           onOpen: { openGame = $0 },
+                           onWatch: toggleSlip, onUnlock: onUpgrade)
+                .id(selectedDay + tabSport)
+        }
+        if !isPro, rows.contains(where: { $0.pick != nil }) {
+            Button(action: onUpgrade) {
+                HStack {
+                    Image(systemName: "sparkles").foregroundStyle(Color.p1Lime)
+                    Text(offer.cta).font(.system(size: 13, weight: .semibold))
+                    Spacer(); Image(systemName: "chevron.right")
+                }.foregroundStyle(.white).padding(14)
+                    .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(P1Board.edge))
+            }.buttonStyle(PressableButtonStyle()).padding(.horizontal, 16).padding(.bottom, 12)
+        }
+        Text("Scores and schedules from ESPN, times in your timezone. PICK1 shows its call under each game it analysed.")
+            .font(.system(size: 10)).foregroundStyle(P1Board.secondary)
+            .padding(.horizontal, 16).padding(.top, 4)
+    }
+
+    // MARK: All games
+
+    /// Fixed order for the text tabs, so they never shuffle between mornings.
+    private var boardSports: [String] { [Self.allSports, "football", "basketball", "hockey", "baseball", "soccer", "tennis", "f1"] }
+    private var tabSport: String { selectedSport.flatMap { boardSports.contains($0) ? $0 : nil } ?? Self.allSports }
+    /// Three days back for results, six ahead for the schedule.
+    private var boardDays: [String] {
+        (-3...6).compactMap { P1BookDays.calendar.date(byAdding: .day, value: $0, to: Date()).map { P1BookDays.key($0) } }
+    }
+    private var allPicks: [Pick] {
+        var seen = Set<UUID>()
+        return (vm.todayPicks + vm.yesterdayPicks + vm.historyPicks).filter { seen.insert($0.id).inserted }
+    }
+    private func gameRows(_ day: String) -> [P1GameRow] {
+        P1GameMatch.rows(games: board.games(day), picks: allPicks, scores: vm.liveScores, day: day)
+    }
+    private func followsGame(_ row: P1GameRow) -> Bool {
+        if let p = row.pick, favorites.follows(p) { return true }
+        if favorites.leagues.contains(row.game.league) { return true }
+        return favorites.teams.contains { team in
+            P1GameMatch.same(row.game.home, team, sport: row.game.sport) || P1GameMatch.same(row.game.away, team, sport: row.game.sport)
+        }
+    }
+    private var dayRows: [P1GameRow] {
+        gameRows(selectedDay)
+            .filter { tabSport == Self.allSports || $0.game.sport == tabSport }
+            .filter { !favoritesOnly || followsGame($0) }
+    }
+    /// Followed teams with the sport their crest comes from.
+    private var favoriteTeams: [(name: String, sport: String)] {
+        let picks = allPicks
+        return favorites.teams.sorted().map { team in
+            let sport = picks.first { $0.homeTeam == team || $0.awayTeam == team }?.sport
+                ?? board.games(P1BookDays.key()).first { $0.home.name == team || $0.away.name == team }?.sport
+                ?? "soccer"
+            return (team, sport)
+        }
+    }
+
+    /// Callbacks for game and team pages opened anywhere below the home
+    /// screen. Leaving for the analysis or the paywall closes them all first.
+    // MARK: Conversion
+
+    /// The upgrade pitch from the real StoreKit offer: the weekly plan, with
+    /// its intro price only when this user is still eligible for it.
+    private var offer: P1Offer {
+        guard let weekly = subs.products.first(where: { $0.id.hasSuffix("weekly") }) else { return P1Offer() }
+        if subs.introOfferEligible, let intro = weekly.subscription?.introductoryOffer {
+            if intro.paymentMode == .freeTrial {
+                return P1Offer(cta: "Start your free trial", terms: "Free, then \(weekly.displayPrice)/week. Cancel anytime.")
+            }
+            return P1Offer(cta: "Start for \(intro.displayPrice)",
+                           terms: "First week \(intro.displayPrice), then \(weekly.displayPrice)/week. Cancel anytime.")
+        }
+        return P1Offer(cta: "Unlock for \(weekly.displayPrice)/week", terms: "Cancel anytime.")
+    }
+
+    /// PICK1's real 30-day record in a league, shown only when it sells.
+    private func leagueRecord(_ pick: Pick) -> String? {
+        let cutoff = P1BookDays.key(Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date())
+        let graded = allPicks.filter { $0.league == pick.league && $0.gameDate >= cutoff && ($0.isWin || $0.isLoss) }
+        let w = graded.filter(\.isWin).count
+        guard graded.count >= 10, Double(w) / Double(graded.count) >= 0.55 else { return nil }
+        return "PICK1 in \(p1LeagueLabel(pick)): \(w)-\(graded.count - w) over the last 30 days"
+    }
+
+    /// Locked live games where PICK1's (hidden) side is ahead right now.
+    private func leadingLocked(_ rows: [P1GameRow]) -> Int {
+        rows.filter { row in
+            guard row.game.phase == .live, let p = row.pick, locked(p),
+                  let hs = row.game.home.score, let aws = row.game.away.score else { return false }
+            let onHome = P1GameMatch.same(row.game.home, p.pick, sport: row.game.sport)
+            let onAway = P1GameMatch.same(row.game.away, p.pick, sport: row.game.sport)
+            guard onHome != onAway else { return false }
+            return onHome ? hs > aws : aws > hs
+        }.count
+    }
+
+    /// Free users only: what they are missing today, in real numbers.
+    @ViewBuilder private func conversionBanner(_ rows: [P1GameRow]) -> some View {
+        let lockedCount = rows.filter { $0.pick.map { $0.isPending && locked($0) } ?? false }.count
+        if !isPro, lockedCount > 0 {
+            let leading = leadingLocked(rows)
+            let weekCut = P1BookDays.key(Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date())
+            let week = settled.filter { $0.gameDate >= weekCut && ($0.isWin || $0.isLoss) }
+            let wins = week.filter(\.isWin).count
+            let o = offer
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.open.fill").foregroundStyle(Color.p1Lime)
+                    Text(lockedCount == 1 ? "1 PICK1 call is locked" : "\(lockedCount) PICK1 calls are locked")
+                        .font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
+                }
+                if leading > 0 {
+                    HStack(spacing: 6) {
+                        P1LivePulse()
+                        Text(leading == 1 ? "PICK1 is leading 1 live game right now" : "PICK1 is leading \(leading) live games right now")
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.p1Lime)
                     }
+                } else if week.count >= 10, Double(wins) / Double(week.count) >= 0.55 {
+                    Text("PICK1 went \(wins)-\(week.count - wins) this week, every call public.")
+                        .font(.system(size: 14)).foregroundStyle(P1Board.secondary)
                 }
-                .padding(.leading, 22)
-                .padding(.trailing, 8)
-                // Headroom for the selected orb's halo. The rail carries a
-                // .mask below, and a mask composites within the view's own
-                // bounds: anything the glow reaches past this padding is cut,
-                // it does not simply overflow.
-                .padding(.top, 24)
-                .padding(.bottom, 12)
-            }
-            // The peek does the work; this softens the cut so a half orb
-            // reads as "more this way" rather than as a clipped one.
-            .mask(
-                LinearGradient(stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.9),
-                    .init(color: .black.opacity(0.15), location: 1),
-                ], startPoint: .leading, endPoint: .trailing)
-            )
-        }
-
-        if let hero {
-            P1V4Hero(pick: hero,
-                     showUnbacked: Self.showUnbacked,
-                     backers: 312,
-                     showSport: activeSport == Self.allSports,
-                     isStarred: favorites.contains(hero.id),
-                     onTap: { onSelectPick(hero) },
-                     onStar: {
-                        let on = !favorites.contains(hero.id)
-                        favorites.set(hero, on: on)
-                        Analytics.track("hero_star_tapped",
-                                        ["on": on, "sport": hero.sport, "pick": hero.id.uuidString])
-                     })
-        } else if let s = activeSport, !coveredToday.isEmpty {
-            // Selected a sport with nothing on it. Say so plainly rather than
-            // dropping the user onto a board that silently belongs to other
-            // sports, and keep that board underneath so the tap is not a
-            // dead end.
-            VStack(spacing: 7) {
-                P1SportMark(sport: s, size: 26, glowing: false)
-                Text("NO \(v4Name(s).uppercased()) CALLS TODAY")
-                    .font(.anton(17))
-                    .foregroundStyle(.white)
-                Text("Every sport is scored each morning and only the calls worth making are published. Nothing here today.")
-                    .font(.archivo(12.5))
-                    .foregroundStyle(V4.mute)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .frame(maxWidth: 290)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 26)
-            .background(RoundedRectangle(cornerRadius: 20)
-                .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
-                                     startPoint: .top, endPoint: .bottom)))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(V4.line, lineWidth: 1))
-            .padding(.horizontal, 22)
-            .padding(.top, 14)
-        }
-
-        if !shownRest.isEmpty {
-            HStack(alignment: .firstTextBaseline) {
-                (
-                    restIsWholeBoard
-                        ? Text("EVERYTHING ").foregroundStyle(.white)
-                            + Text("ELSE").foregroundStyle(Color.p1Lime)
-                        : Text("TODAY'S ").foregroundStyle(.white)
-                            + Text("GAMES").foregroundStyle(Color.p1Lime)
-                )
-                .font(.anton(18))
-                Spacer(minLength: 8)
-                Text(restMetaLine)
-                    .font(.mono(9, weight: .bold))
-                    .tracking(0.72)
-                    .foregroundStyle(V4.mute)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-            }
-            .padding(.horizontal, 22)
-            .padding(.top, 24)
-
-            VStack(spacing: 12) {
-                ForEach(visibleRest) { p in
-                    P1V4GameRow(pick: p,
-                                showSport: activeSport == Self.allSports || restIsWholeBoard,
-                                isBiggestWin: p.id == biggestWinId,
-                                onTap: { onSelectPick(p) },
-                                onTrack: { onTrackPick(p) })
-                }
-                // The first two locked calls stay on screen, blurred, so the
-                // free user can see there is more rather than being told.
-                ForEach(hiddenRest.prefix(2)) { p in
-                    P1V4GameRow(pick: p, isLocked: true,
-                                showSport: activeSport == Self.allSports || restIsWholeBoard,
-                                onTap: onUpgrade)
-                }
-                if hiddenRest.count > 2 {
-                    P1V4LockMore(hidden: Array(hiddenRest.dropFirst(2)), onTap: onUpgrade)
+                Button(action: onUpgrade) {
+                    Text(o.cta).font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
+                        .frame(maxWidth: .infinity).frame(height: 48).background(Capsule().fill(Color.p1Lime))
+                }.buttonStyle(PressableButtonStyle())
+                if !o.terms.isEmpty {
+                    Text(o.terms).font(.system(size: 12)).foregroundStyle(P1Board.secondary).frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 10)
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(Color.p1Lime.opacity(0.35)))
+            .padding(.horizontal, 16).padding(.bottom, 14)
         }
+    }
 
-        if !isPro, missedWins > 0 {
-            HStack(spacing: 12) {
-                Text("😬").font(.system(size: 20))
-                (
-                    Text("You missed ").foregroundStyle(.white)
-                    + Text("\(missedWins) winning picks").foregroundStyle(V4.hotSoft)
-                    + Text(" this week. Premium saw them all.").foregroundStyle(.white)
-                )
-                .font(.archivoNarrow(12, weight: .semibold))
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 8)
-                Text("Unlock →").font(.anton(12)).foregroundStyle(Color.p1Lime).fixedSize()
+    private var gameActions: P1GameActions {
+        P1GameActions(
+            offer: offer, leagueRecord: { leagueRecord($0) },
+            picks: allPicks, isLocked: { locked($0) }, isWatching: { slipIDs.contains($0.id.uuidString) },
+            onAnalysis: { p in
+                openGame = nil; showSearch = false
+                Task { try? await Task.sleep(for: .milliseconds(500)); onSelectPick(p) }
+            },
+            onWatch: { toggleSlip($0) },
+            onUnlock: {
+                openGame = nil; showSearch = false
+                Task { try? await Task.sleep(for: .milliseconds(500)); onUpgrade() }
+            })
+    }
+
+    /// A tapped team alert names its game ("espn|path|id|day"): jump to that
+    /// day and open the page once the board has it.
+    private func openPendingGame() {
+        guard let key = P1DeepLink.pendingGameKey else { return }
+        let parts = key.split(separator: "|").map(String.init)
+        guard parts.count == 4 else { P1DeepLink.pendingGameKey = nil; return }
+        let id = parts[2], day = parts[3]
+        tab = .tonight; isSlipPage = false; selectedDay = day
+        Task {
+            for _ in 0..<20 {
+                await board.load(day)
+                if let row = gameRows(day).first(where: { $0.game.id == id }) {
+                    P1DeepLink.pendingGameKey = nil
+                    openGame = row
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(500))
             }
-            .padding(.horizontal, 15).padding(.vertical, 13)
-            .background(
-                RoundedRectangle(cornerRadius: 16).fill(
-                    LinearGradient(colors: [V4.hot.opacity(0.14), V4.hot.opacity(0.04)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing))
-            )
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(V4.hot.opacity(0.45), lineWidth: 1))
-            .padding(.horizontal, 22)
-            .padding(.top, 16)
-            .onTapGesture { onUpgrade() }
+            P1DeepLink.pendingGameKey = nil
         }
+    }
 
-        if coveredToday.isEmpty && !vm.isLoading {
-            emptyState("No slate today", "The model publishes the day's board each morning.")
+    /// Starred and watched calls get their Lock Screen card as soon as the
+    /// game starts, the way the old pick-keyed sync did, but on ESPN's feed.
+    private func autoTrackLive() {
+        for row in gameRows(P1BookDays.key()) where row.game.phase == .live {
+            guard let pick = row.pick, !locked(pick),
+                  favorites.contains(pick.id) || slipIDs.contains(pick.id.uuidString),
+                  !LiveActivityManager.shared.isTracking(row.game) else { continue }
+            LiveActivityManager.shared.track(game: row.game, pick: pick, locked: false)
         }
+    }
 
-        // Clearance for the sticky paybar and, in the shell, the nav pill.
-        Color.clear.frame(height: (!isPro && !coveredToday.isEmpty ? 96 : 12) + bottomInset)
+    /// The open game page follows the board, so its score keeps moving.
+    private func liveRow(_ row: P1GameRow) -> P1GameRow {
+        for day in [selectedDay, P1BookDays.key()] {
+            if let fresh = gameRows(day).first(where: { $0.id == row.id }) { return fresh }
+        }
+        return row
     }
 
     // MARK: Live
 
     @ViewBuilder private var live: some View {
-        HStack(spacing: 6) {
-            Circle().fill(V4.hot).frame(width: 7, height: 7)
-            Text("\(liveNow.count) GAME\(liveNow.count == 1 ? "" : "S") LIVE NOW")
-                .font(.archivoNarrow(10, weight: .bold))
-                .tracking(1.6)
-                .foregroundStyle(V4.hotSoft)
-        }
-        .padding(.horizontal, 13).padding(.vertical, 6)
-        .background(Capsule().fill(V4.hot.opacity(0.12)))
-        .overlay(Capsule().strokeBorder(V4.hot.opacity(0.5), lineWidth: 1))
-        .frame(maxWidth: .infinity)
-        .padding(.top, 18)
-
-        if liveNow.isEmpty {
-            emptyState("Nothing in play", "Live scores appear here once one of today's calls kicks off.")
+        let rows = gameRows(P1BookDays.key()).filter { $0.game.phase == .live }
+        HStack(alignment: .firstTextBaseline) {
+            Text("Live").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+            Spacer()
+            if !rows.isEmpty { Text(p1GamesCount(rows.count)).font(.system(size: 12)).foregroundStyle(P1Board.secondary) }
+        }.padding(16)
+        conversionBanner(rows)
+        if rows.isEmpty && board.loading.contains(P1BookDays.key()) {
+            P1LoadingCards()
+        } else if rows.isEmpty {
+            emptyState("No live games right now", "Every game in progress shows here with its live score, and the PICK1 call when there is one.")
         } else {
-            ForEach(liveNow, id: \.score.id) { item in
-                P1V4LiveCard(pick: item.pick, score: item.score,
-                             tint: V4.glow(item.pick.sport),
-                             isLocked: locked(item.pick))
-            }
+            P1AllGamesList(rows: rows, isLocked: locked, isWatching: { slipIDs.contains($0.id.uuidString) },
+                           onOpen: { openGame = $0 },
+                           onWatch: toggleSlip, onUnlock: onUpgrade, preview: 50)
         }
     }
-
-    // MARK: Results
 
     // MARK: Your picks
 
@@ -1631,13 +1826,11 @@ struct Pick1HomeV4: View {
         for p in vm.yesterdayPicks { byId[p.id] = p }
         for p in vm.todayPicks     { byId[p.id] = p }
 
-        let ids = Set(betTracker.bets.keys).union(favorites.ids)
+        let ids = Set(betTracker.bets.keys).union(byId.values.filter { favorites.follows($0) }.map(\.id))
         return ids.compactMap { id -> (pick: Pick, bet: UserBet?)? in
-            guard let p = byId[id] else { return nil }
+            guard let p = byId[id], P1_SPORTS.contains(p.sport), !locked(p) else { return nil }
             return (p, betTracker.bets[id])
         }
-        // Still-to-play first — those are the ones the user can still act
-        // on — then the settled ones newest first.
         .sorted {
             if $0.pick.isPending != $1.pick.isPending { return $0.pick.isPending }
             return $0.pick.gameDate > $1.pick.gameDate
@@ -1646,236 +1839,301 @@ struct Pick1HomeV4: View {
 
     @ViewBuilder private var yours: some View {
         let rows = mine
-        let settledMine = rows.filter { !$0.pick.isPending }
+        let settledMine = rows.filter { $0.pick.isWin || $0.pick.isLoss }
         let wins = settledMine.filter { $0.pick.isWin }.count
-        let losses = settledMine.filter { $0.pick.isLoss }.count
         let summary = betTracker.summary(picks: vm.historyPicks + vm.yesterdayPicks + vm.todayPicks)
 
+        pageTitle("My picks", rows.isEmpty ? nil : "\(rows.count) on your slate")
         HStack(spacing: 10) {
-            resultBox("\(rows.count)", "On your slate")
-            resultBox("\(wins)-\(losses)", "Your record")
-            // Only claim a P&L when real stakes were entered. Otherwise show
-            // the hit rate, which is true whether or not money was involved.
+            statTile("\(rows.filter { $0.pick.isPending }.count)", "Still to play")
+            statTile("\(wins)-\(settledMine.count - wins)", "Your record")
             if let roi = summary.roiPct, summary.staked > 0 {
-                resultBox("\(roi >= 0 ? "+" : "")\(Int(roi.rounded()))%", "Your ROI")
+                statTile("\(roi >= 0 ? "+" : "")\(Int(roi.rounded()))%", "Your ROI", tint: roi >= 0 ? Color.p1Lime : Color.p1Red)
             } else {
-                resultBox(settledMine.isEmpty ? "—" : "\(Int((Double(wins) / Double(max(settledMine.count, 1)) * 100).rounded()))%",
-                          "Hit rate")
+                statTile(settledMine.isEmpty ? "–" : "\(Int((Double(wins) / Double(settledMine.count) * 100).rounded()))%", "Hit rate")
             }
-        }
-        .padding(.horizontal, 22)
-        .padding(.top, 16)
+        }.padding(.horizontal, 16).padding(.bottom, 18)
 
         if rows.isEmpty {
-            emptyState("Nothing on your slate yet",
-                       "Track a call from Tonight, or tap the star on any pick, and it lands here with its result.")
+            boardEmpty(icon: "bookmark", title: "Nothing on your slate yet",
+                       body: "Track a PICK1 call or star a game and it lands here, with the live score and then the result.",
+                       action: ("Browse today's games", { tab = .tonight }))
         } else {
-            ForEach(rows, id: \.pick.id) { row in
-                Button { onSelectPick(row.pick) } label: {
-                    P1V4YourRow(pick: row.pick, bet: row.bet)
-                }
-                .buttonStyle(.plain)
-            }
+            let open = rows.filter { $0.pick.isPending }
+            let done = rows.filter { !$0.pick.isPending }
+            if !open.isEmpty { pickSection("Still to play", open) }
+            if !done.isEmpty { pickSection("Settled", done) }
             if summary.staked > 0 {
-                Text("P&L COUNTS ONLY THE BETS YOU ENTERED A STAKE FOR")
-                    .font(.mono(8, weight: .semibold))
-                    .tracking(0.4)
-                    .foregroundStyle(V4.mute)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 22)
-                    .padding(.top, 16)
+                Text("Profit and ROI count only the picks you entered a stake for.")
+                    .font(.system(size: 11)).foregroundStyle(P1Board.secondary)
+                    .padding(.horizontal, 16).padding(.top, 4)
             }
         }
+    }
+
+    private func pickSection(_ title: String, _ rows: [(pick: Pick, bet: UserBet?)]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+            ForEach(pickRows(rows.map(\.pick)), id: \.game.id) { row in
+                VStack(alignment: .leading, spacing: 6) {
+                    P1GameListRow(row: row, locked: false,
+                                  watching: row.pick.map { slipIDs.contains($0.id.uuidString) } ?? false,
+                                  onOpen: { openGame = row },
+                                  onWatch: { if let p = row.pick { toggleSlip(p) } }, onUnlock: onUpgrade)
+                    if let p = row.pick, let bet = rows.first(where: { $0.pick.id == p.id })?.bet, let stake = bet.stake, stake > 0 {
+                        betLine(p, bet: bet, stake: stake).padding(.horizontal, 6)
+                    }
+                }
+            }
+        }.padding(.horizontal, 16).padding(.bottom, 20)
+    }
+
+    private func betLine(_ p: Pick, bet: UserBet, stake: Double) -> some View {
+        let odds = bet.oddsAtBet ?? p.decimalOdds
+        let amount = stake.formatted(.currency(code: "USD").precision(.fractionLength(0)))
+        return HStack(spacing: 6) {
+            Image(systemName: "dollarsign.circle.fill").foregroundStyle(P1Board.secondary)
+            Text("Your stake \(amount) at \(String(format: "%.2f", odds))")
+                .foregroundStyle(P1Board.secondary)
+            Spacer()
+            if p.isWin {
+                Text(P1Odds.money(stake * (odds - 1))).foregroundStyle(Color.p1Lime)
+            } else if p.isLoss {
+                Text(P1Odds.money(-stake)).foregroundStyle(Color.p1Red)
+            } else {
+                Text("To win " + P1Odds.money(stake * (odds - 1)).dropFirst()).foregroundStyle(.white)
+            }
+        }.font(.system(size: 12, weight: .semibold)).monospacedDigit()
+    }
+
+    // MARK: Watchlist
+
+    private var watchlistPage: some View {
+        VStack(spacing: 0) {
+            P1BookHeader(onProfile: onProfile, onTeams: { showTeams = true }, onSearch: { showSearch = true }, onPage: { bookPage = $0 })
+            ScrollView(showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    let picks = slipPicks.sorted { ($0.isPending ? 0 : 1, $0.gameDate) < ($1.isPending ? 0 : 1, $1.gameDate) }
+                    pageTitle("Watchlist", picks.isEmpty ? nil : p1GamesCount(picks.count))
+                    if picks.isEmpty {
+                        boardEmpty(icon: "eye", title: "Nothing on your watchlist",
+                                   body: "Tap the eye on any game with a PICK1 call. It stays here with its live score, then its graded result.",
+                                   action: ("Browse today's games", { isSlipPage = false; tab = .tonight }))
+                    } else {
+                        let rows = pickRows(picks)
+                        let live = rows.filter { $0.game.phase == .live }
+                        let next = rows.filter { $0.game.phase == .pre }
+                        let done = rows.filter { $0.game.phase == .final || $0.game.phase == .off }
+                        if !live.isEmpty { watchSection("Live now", live) }
+                        if !next.isEmpty { watchSection("Upcoming", next) }
+                        if !done.isEmpty { watchSection("Settled", done) }
+                        let open = picks.filter { $0.isPending }
+                        if !open.isEmpty {
+                            P1PlaceButton(open.count > 1 ? "Place your watchlist (\(open.count))" : "Place this pick",
+                                          selections: open.map(\.handoffSelection), source: "watchlist")
+                                .padding(.horizontal, 16).padding(.bottom, 12)
+                        }
+                    }
+                    Color.clear.frame(height: 16)
+                }
+            }
+        }.background(Color.black.ignoresSafeArea())
+    }
+
+    private func watchSection(_ title: String, _ rows: [P1GameRow]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+            ForEach(rows, id: \.game.id) { row in
+                P1GameListRow(row: row, locked: false, watching: true,
+                              onOpen: { openGame = row },
+                              onWatch: { if let p = row.pick { removeSlip(p) } }, onUnlock: onUpgrade)
+            }
+        }.padding(.horizontal, 16).padding(.bottom, 20)
     }
 
     // MARK: Results
 
-    @ViewBuilder private var results: some View {
-        moneyStrip
-            .padding(.horizontal, 22)
-            .padding(.top, 16)
+    @State private var resultsSport = Pick1HomeV4.allSports
+    @State private var resultDayLimit = 10
 
-        HStack(spacing: 10) {
-            resultBox("\(vm.totalWins)/\(settled.count)", "Picks won")
-            resultBox("\(Int(vm.winRate.rounded()))%", "Hit rate")
-            // The flame used to be interpolated INTO the string this box
-            // takes, which prints SwiftUI's description of an Image rather
-            // than an icon. It rendered as a line of noise.
-            // The flame appears from two in a row. A flame beside a 0
-            // contradicts itself, and the streak is 0 whenever the most
-            // recent call lost, which is often.
-            resultBox("\(vm.currentStreak)", "Win streak",
-                      symbol: vm.currentStreak >= 2 ? "flame.fill" : nil)
+    /// Net on $100 per priced call over the last 30 days, losses included.
+    private func net30(_ picks: [Pick]) -> (net: Double, priced: Int, hit: Double, breakEven: Double) {
+        let cutoff = P1BookDays.key(Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date())
+        let priced = picks.filter { ($0.isWin || $0.isLoss) && $0.gameDate >= cutoff }.compactMap { p -> (Pick, Double)? in
+            guard let q = P1BookQuote.forPick(p) else { return nil }
+            return (p, q.odds)
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 10)
+        let wins = priced.filter { $0.0.isWin }
+        let hit = priced.isEmpty ? 0 : Double(wins.count) / Double(priced.count) * 100
+        // The hit rate a flat $100 needs to break even at these prices.
+        let avgWinPrice = wins.isEmpty ? 0 : wins.map(\.1).reduce(0, +) / Double(wins.count)
+        let breakEven = avgWinPrice > 1 ? 100 / avgWinPrice : 0
+        return (priced.reduce(0) { $0 + ($1.0.isWin ? 100 * ($1.1 - 1) : -100) }, priced.count, hit, breakEven)
+    }
 
-        resultSearchField
-            .padding(.horizontal, 22)
-            .padding(.top, 16)
+    @ViewBuilder private var results: some View {
+        // The record covers the sports the app shows, like every other surface.
+        let list = searchedPastPredictions.filter {
+            P1_SPORTS.contains($0.sport) && (resultsSport == Self.allSports || $0.sport == resultsSport)
+        }
+        let graded = list.filter { $0.isWin || $0.isLoss }
+        let wins = graded.filter(\.isWin).count
+        let money = net30(list)
+
+        pageTitle("Results", "Every call, graded in public")
+        P1SportTabs(sports: boardSports, active: resultsSport) { resultsSport = $0; resultDayLimit = 10 }
+            .padding(.bottom, 16)
+        HStack(spacing: 10) {
+            statTile("\(wins)-\(graded.count - wins)", "All-time record")
+            statTile(graded.isEmpty ? "–" : "\(Int((Double(wins) / Double(graded.count) * 100).rounded()))%", "All-time hit rate")
+            statTile(money.priced == 0 ? "–" : P1Odds.money(money.net), "Last 30 days",
+                     tint: money.net >= 0 ? Color.p1Lime : Color.p1Red)
+        }.padding(.horizontal, 16)
+        if money.priced > 0 {
+            moneyExplainer(money)
+                .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 16)
+        }
+
+        resultSearchField.padding(.horizontal, 16).padding(.bottom, 18)
 
         if pastPredictions.isEmpty {
-            emptyState("No settled calls yet", "Every pick is logged before kickoff and graded here once it lands.")
-        } else if searchedPastPredictions.isEmpty {
-            emptyState("No matching games", "Try a team, player, league, sport, or date.")
+            boardEmpty(icon: "chart.line.uptrend.xyaxis", title: "No settled calls yet",
+                       body: "Every pick is logged before kickoff and graded here once it lands.", action: nil)
+        } else if list.isEmpty {
+            boardEmpty(icon: "magnifyingglass", title: "No matching games",
+                       body: "Try a team, player, league, sport or date.", action: nil)
         } else {
-            // Tappable. These were static rows, so the public record — the
-            // thing the whole product is sold on — was the one list in the
-            // app you could not open. Every other pick surface opens its
-            // detail; this one now does too.
-            HStack {
-                Text(resultSearch.isEmpty ? "ALL PAST PREDICTIONS" : "SEARCH RESULTS")
-                Spacer()
-                Text("\(searchedPastPredictions.count) OF \(pastPredictions.count)")
+            let byDay = Dictionary(grouping: list, by: \.gameDate)
+            let days = byDay.keys.sorted(by: >)
+            ForEach(days.prefix(resultDayLimit), id: \.self) { day in
+                let dayPicks = byDay[day] ?? []
+                let dayWins = dayPicks.filter(\.isWin).count, dayLosses = dayPicks.filter(\.isLoss).count
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        P1DateDivider(day: day).padding(.horizontal, -16)
+                    }
+                    if dayWins + dayLosses > 0 {
+                        Text("\(dayWins)-\(dayLosses) that day")
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(P1Board.secondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    ForEach(pickRows(dayPicks), id: \.game.id) { row in
+                        P1GameListRow(row: row, locked: row.pick.map { $0.isPending && locked($0) } ?? false,
+                                      watching: row.pick.map { slipIDs.contains($0.id.uuidString) } ?? false,
+                                      onOpen: { openGame = row },
+                                      onWatch: { if let p = row.pick { toggleSlip(p) } }, onUnlock: onUpgrade)
+                            .contextMenu {
+                                if let p = row.pick, !p.isPending {
+                                    Button { shareResult = p } label: { Label("Share this result", systemImage: "square.and.arrow.up") }
+                                }
+                            }
+                    }
+                }.padding(.horizontal, 16).padding(.bottom, 18)
             }
-            .font(.mono(8.5, weight: .bold))
-            .tracking(0.65)
-            .foregroundStyle(V4.mute)
-            .padding(.horizontal, 22)
-            .padding(.top, 14)
-
-            ForEach(Array(searchedPastPredictions.enumerated()), id: \.element.id) { i, p in
-                // Not a Button any more: the row now contains one, and a
-                // Button inside a Button does not reliably route taps in
-                // SwiftUI. The row opens the detail on tap, the share glyph
-                // is its own target.
-                P1V4ResultRow(pick: p, isHighlight: i == 0 && p.isWin,
-                              onShare: { shareResult = p })
-                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .onTapGesture { onSelectPick(p) }
+            if days.count > resultDayLimit {
+                Button { resultDayLimit += 10 } label: {
+                    P1BoardPill(title: "Show earlier days", icon: "chevron.down")
+                }.buttonStyle(PressableButtonStyle()).padding(.horizontal, 16)
             }
-            Text("EVERY CALL LOGGED BEFORE KICKOFF · WINS AND LOSSES · FOREVER")
-                .font(.mono(8, weight: .semibold))
-                .tracking(0.4)
-                .foregroundStyle(V4.mute)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 22)
-                .padding(.top, 16)
+            Text("Every call is logged before kickoff and stays here, wins and losses, for good.")
+                .font(.system(size: 11)).foregroundStyle(P1Board.secondary)
+                .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                .padding(.horizontal, 16).padding(.top, 16)
         }
+    }
+
+    /// Why a winning record can still be a losing $100 line: PICK1 mostly
+    /// backs favourites, which pay little when they win.
+    private func moneyExplainer(_ m: (net: Double, priced: Int, hit: Double, breakEven: Double)) -> some View {
+        let profit = m.net >= 0
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: profit ? "arrow.up.right.circle.fill" : "info.circle.fill")
+                    .foregroundStyle(profit ? Color.p1Lime : .white)
+                Text(profit ? "Winning record, winning prices" : "More wins than losses, but favourites pay little")
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+            }
+            Text(profit
+                 ? "Over the last 30 days PICK1 won \(Int(m.hit.rounded()))% of its \(m.priced) priced calls, above the \(Int(m.breakEven.rounded()))% these prices need, so $100 on each one is up \(P1Odds.money(m.net).dropFirst())."
+                 : "Over the last 30 days PICK1 won \(Int(m.hit.rounded()))% of its \(m.priced) priced calls. Most were favourites, and at their prices a win returns about $\(Int((100 / max(m.breakEven, 1) * 100 - 100).rounded())) on $100 while a loss costs the full $100. Breaking even needs about \(Int(m.breakEven.rounded()))% wins.")
+                .font(.system(size: 13)).foregroundStyle(P1Board.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("$100 on every call with a captured market price, wins and losses. A simulation, not user earnings.")
+                .font(.system(size: 11)).foregroundStyle(P1Board.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(P1Board.edge))
     }
 
     private var resultSearchField: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(V4.mute)
-
-            TextField("Search team, player, league or sport", text: $resultSearch)
-                .font(.archivo(13, weight: .medium))
-                .foregroundStyle(.white)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-
+            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .semibold)).foregroundStyle(P1Board.secondary)
+            TextField("Search a team, player, league or date", text: $resultSearch)
+                .font(.system(size: 15)).foregroundStyle(.white)
+                .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
             if !resultSearch.isEmpty {
-                Button {
-                    resultSearch = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(V4.mute)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
+                Button { resultSearch = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(P1Board.secondary) }
+                    .buttonStyle(PressableButtonStyle()).accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14)
-        .frame(height: 46)
-        .background(RoundedRectangle(cornerRadius: 15).fill(V4.rowTop))
-        .overlay(RoundedRectangle(cornerRadius: 15).strokeBorder(V4.line, lineWidth: 1))
+        .padding(.horizontal, 14).frame(height: 44)
+        .background(RoundedRectangle(cornerRadius: 14).fill(P1Board.card))
     }
 
-    /// Calls settled in the last 30 days.
-    ///
-    /// The window is deliberate and it is stated on screen. Over ALL history
-    /// a flat $100 a call is down, because the early months predate the
-    /// market-prior anchoring and the 55% floor; over the last 30 days, on
-    /// 400+ settled calls, it is up. Showing the recent number is fair only
-    /// while the label says which window it is, so the label is not optional.
-    private var last30: [Pick] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        return settled.filter { ($0.gameDateValue ?? .distantPast) >= cutoff }
+    // MARK: Shared page pieces
+
+    /// The picks as game rows: the ESPN game when the board has it (live
+    /// score, crests, records), the pick alone otherwise.
+    private func pickRows(_ picks: [Pick]) -> [P1GameRow] {
+        P1GameMatch.rowsFor(picks: picks, games: { board.games($0) }, scores: vm.liveScores)
     }
 
-    /// What a flat $100 on every one of those calls would have returned.
-    private var last30Net: Int {
-        Int(last30.reduce(0.0) { $0 + ($1.isWin ? ($1.decimalOdds - 1) * 100 : -100) }.rounded())
-    }
-
-    @ViewBuilder private var moneyStrip: some View {
-        if !last30.isEmpty {
-            let up = last30Net >= 0
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(up ? "+" : "−")$\(abs(last30Net))")
-                    .font(.anton(40))
-                    .foregroundStyle(up ? Color.p1Lime : V4.hotSoft)
-                    .lineLimit(1).minimumScaleFactor(0.5)
-                Text("LAST 30 DAYS · $100 A CALL · \(last30.count) SETTLED")
-                    .font(.archivoNarrow(9, weight: .bold))
-                    .tracking(0.9)
-                    .foregroundStyle(V4.mute)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18).padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-            )
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(V4.line, lineWidth: 1))
+    private func pageTitle(_ title: String, _ subtitle: String?) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+            if let subtitle { Text(subtitle).font(.system(size: 14)).foregroundStyle(P1Board.secondary) }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 16)
     }
 
-    private func resultBox(_ value: String, _ label: String, symbol: String? = nil) -> some View {
-        VStack(spacing: 5) {
-            HStack(spacing: 4) {
-                if let symbol {
-                    Image(systemName: symbol)
-                        .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(V4.hotSoft)
-                }
-                Text(value)
-                    .font(.anton(26))
-                    .foregroundStyle(Color.p1Lime)
-                    .lineLimit(1).minimumScaleFactor(0.5)
-            }
-            Text(label.uppercased())
-                .font(.archivoNarrow(8, weight: .bold))
-                .tracking(0.96)
-                .foregroundStyle(V4.mute)
-                .lineLimit(1).minimumScaleFactor(0.7)
+    private func statTile(_ value: String, _ label: String, tint: Color = .white) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value).font(.system(size: 22, weight: .bold)).foregroundStyle(tint)
+                .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                .frame(height: 28, alignment: .leading)
+            Text(label).font(.system(size: 12)).foregroundStyle(P1Board.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14).padding(.horizontal, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(LinearGradient(colors: [V4.rowTop, V4.panelBot],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(V4.line, lineWidth: 1))
+        .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+        .padding(.horizontal, 14).padding(.vertical, 14)
+        .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(P1Board.edge))
+    }
+
+    private func boardEmpty(icon: String, title: String, body: String, action: (String, () -> Void)?) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 26, weight: .semibold)).foregroundStyle(Color.p1Lime)
+                .frame(width: 58, height: 58).background(Circle().fill(P1Board.pill))
+            Text(title).font(.system(size: 18, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center)
+            Text(body).font(.system(size: 14)).foregroundStyle(P1Board.secondary).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            if let action {
+                Button(action: action.1) {
+                    Text(action.0).font(.system(size: 15, weight: .semibold)).foregroundStyle(.black)
+                        .padding(.horizontal, 20).frame(height: 42).background(Capsule().fill(Color.white))
+                }.buttonStyle(PressableButtonStyle()).padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity).padding(.horizontal, 24).padding(.vertical, 30)
+        .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(P1Board.edge))
+        .padding(.horizontal, 16).padding(.top, 4)
     }
 
     private func emptyState(_ title: String, _ body: String) -> some View {
-        VStack(spacing: 8) {
-            Text(title.uppercased())
-                .font(.anton(18))
-                .foregroundStyle(.white)
-            Text(body)
-                .font(.archivo(13))
-                .foregroundStyle(V4.mute)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 34).padding(.vertical, 40)
-        .overlay(
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(V4.line, style: StrokeStyle(lineWidth: 1, dash: [6, 5]))
-        )
-        .padding(.horizontal, 22)
-        .padding(.top, 20)
+        boardEmpty(icon: "sportscourt", title: title, body: body, action: nil)
     }
 }
 
@@ -1892,7 +2150,13 @@ struct Pick1HomeV4DebugHost: View {
                     onSelectPick: { openBetDrawer = false; detailPick = $0 },
                     onTrackPick: { openBetDrawer = true; detailPick = $0 },
                     onUpgrade: { showPaywall = true })
-            .task { await vm.loadAll() }
+            .task {
+                await vm.loadAll()
+                if CommandLine.arguments.contains("-showMatchDetail") { detailPick = vm.todayPicks.filter { $0.isPending }.max(by: { ($0.bettingProps?.count ?? 0) < ($1.bettingProps?.count ?? 0) }) ?? vm.todayPicks.first }
+                if CommandLine.arguments.contains("-showPickSlip"), let first = vm.todayPicks.first {
+                    UserDefaults.standard.set(first.id.uuidString, forKey: "sportsbookSlipIDs")
+                }
+            }
             .fullScreenCover(item: $detailPick) { p in
                 Pick1DetailV2(pick: p,
                               onBack: { detailPick = nil },

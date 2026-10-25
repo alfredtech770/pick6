@@ -10,136 +10,120 @@
 import SwiftUI
 
 struct Pick1SplashLoader: View {
-    @State private var glowPulse: Bool = false
-    @State private var loaderProgress: Double = 0
-    @State private var tickerOffset: CGFloat = 0
-    @State private var contentOpacity: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+    @State private var glow = false
+    @State private var step = 0
+
+    /// What the app is actually doing while this shows, in order.
+    private let steps = ["Loading today's games", "Reading live scores", "Matching PICK1 calls"]
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-
-            // Pulsing lime radial glow (matches `.splash-glow` 500×500 pulse 3s)
-            RadialGradient(
-                colors: [Color(hex: "#C6FF34").opacity(glowPulse ? 0.18 : 0.10), .clear],
-                center: UnitPoint(x: 0.4, y: 0.5),
-                startRadius: 0,
-                endRadius: 280
-            )
-            .blur(radius: 30)
-            .ignoresSafeArea()
-
-            // Horizontal scanline grain overlay
-            ScanlineOverlay()
-                .opacity(0.04)
+            RadialGradient(colors: [Color.p1Lime.opacity(glow ? 0.16 : 0.08), .clear],
+                           center: UnitPoint(x: 0.5, y: 0.36), startRadius: 0, endRadius: 300)
+                .blur(radius: 24)
                 .ignoresSafeArea()
 
-            // Center stack
-            VStack(spacing: 18) {
-                Text("EST · 2026")
-                    .font(.mono(11, weight: .medium))
-                    .tracking(3.3)
-                    .foregroundColor(Color(hex: "#6E6F75"))
-
-                Pick1Wordmark(size: 84)
-
-                Text(t(.rd_picks_stats_glory))
-                    .font(.archivoNarrow(12, weight: .semibold))
-                    .tracking(4.2)
-                    .foregroundColor(Color(hex: "#B9B7B0"))
-            }
-            .opacity(contentOpacity)
-
-            // Bottom: ticker + loader stack
-            VStack(spacing: 50) {
+            VStack(spacing: 0) {
                 Spacer()
-                tickerStrip
-                    .opacity(contentOpacity)
-                loaderBar
-                    .opacity(contentOpacity)
-                    .padding(.bottom, 30)
+                Pick1Wordmark(size: 64)
+                    .scaleEffect(appeared ? 1 : 0.9)
+                    .opacity(appeared ? 1 : 0)
+                Text("Every game. Every call. Graded in public.")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(P1Board.secondary)
+                    .padding(.top, 18)
+                    .opacity(appeared ? 1 : 0)
+                Spacer()
+                // A preview of the board that is on its way.
+                VStack(spacing: 10) {
+                    ForEach(0..<3, id: \.self) { i in
+                        P1SkeletonGameCard().opacity(1 - Double(i) * 0.28)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
+                .frame(height: 300, alignment: .top)
+                .clipped()
+                .padding(.bottom, 14)
+                .opacity(appeared ? 1 : 0)
+                HStack(spacing: 8) {
+                    ProgressView().tint(Color.p1Lime).scaleEffect(0.8)
+                    Text(steps[step])
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .contentTransition(.opacity)
+                        .id(step)
+                }
+                .padding(.bottom, 34)
             }
-            .padding(.bottom, 40)
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
-                contentOpacity = 1
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("PICK1 is loading today's games")
+        .task {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.8)) { appeared = true }
+            if !reduceMotion {
+                withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) { glow = true }
             }
-            // Slow glow pulse, ease-in-out, repeat forever
-            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                glowPulse = true
-            }
-            // Loader bar 0 → 1 over 2s, looping
-            withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
-                loaderProgress = 1.0
-            }
-            // Ticker slow scroll left, 28s linear infinite
-            withAnimation(.linear(duration: 28).repeatForever(autoreverses: false)) {
-                tickerOffset = -1
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .milliseconds(1100)) } catch { return }
+                withAnimation(.easeInOut(duration: 0.25)) { step = (step + 1) % steps.count }
             }
         }
     }
+}
 
-    // MARK: Ticker
+/// A game card in the shape of P1GameListRow, shimmering while data loads.
+struct P1SkeletonGameCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var sweep = false
+    private let fill = Color.white.opacity(0.07)
 
-    private let tickerItems: [String] = [
-        "NBA · LAKERS −2.5", "EPL · ARSENAL TO WIN", "MLB · DODGERS ML",
-        "NFL · CHIEFS −3", "NHL · LIGHTNING ML", "UFC · MAIN CARD LIVE",
-        "ATP · SINNER WIN", "F1 · MONACO GP",
-    ]
-
-    private var tickerStrip: some View {
+    var body: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
-            GeometryReader { geo in
-                let w = geo.size.width
-                let totalWidth = w * 2  // two copies for seamless loop
-                HStack(spacing: 24) {
+            HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 14) {
                     ForEach(0..<2, id: \.self) { _ in
-                        ForEach(tickerItems, id: \.self) { item in
-                            HStack(spacing: 24) {
-                                Text(item)
-                                    .font(.mono(10, weight: .bold))
-                                    .tracking(2.4)
-                                    .foregroundColor(Color(hex: "#6E6F75"))
-                                Circle()
-                                    .fill(Color(hex: "#C6FF34"))
-                                    .frame(width: 4, height: 4)
+                        HStack(spacing: 10) {
+                            Circle().fill(fill).frame(width: 30, height: 30)
+                            VStack(alignment: .leading, spacing: 5) {
+                                Capsule().fill(fill).frame(width: 96, height: 11)
+                                Capsule().fill(fill).frame(width: 34, height: 8)
                             }
+                            Spacer()
+                            Capsule().fill(fill).frame(width: 22, height: 16)
                         }
                     }
                 }
-                .offset(x: tickerOffset * (totalWidth / 2))
-                .frame(height: 36)
+                Rectangle().fill(P1Board.rule).frame(width: 1).padding(.horizontal, 14)
+                VStack(alignment: .leading, spacing: 7) {
+                    Capsule().fill(fill).frame(width: 62, height: 9)
+                    Capsule().fill(fill).frame(width: 48, height: 12)
+                }.frame(width: 82, alignment: .leading)
             }
-            .frame(height: 36)
-            Rectangle().fill(Color(hex: "#2F2F2F")).frame(height: 1)
+            .padding(.horizontal, 16).padding(.top, 15).padding(.bottom, 13)
+            P1DashedRule().padding(.horizontal, 16)
+            HStack { Capsule().fill(fill).frame(width: 170, height: 9); Spacer() }
+                .padding(.horizontal, 16).frame(height: 40)
         }
-    }
-
-    // MARK: Loader
-
-    private var loaderBar: some View {
-        VStack(spacing: 10) {
+        .background(RoundedRectangle(cornerRadius: P1Board.radius).fill(P1Board.card))
+            .overlay(RoundedRectangle(cornerRadius: P1Board.radius).strokeBorder(P1Board.edge))
+        .overlay {
             GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color(hex: "#232323"))
-                    Rectangle()
-                        .fill(Color(hex: "#C6FF34"))
-                        .frame(width: geo.size.width * loaderProgress)
-                        .shadow(color: Color(hex: "#C6FF34").opacity(0.4), radius: 4)
-                }
-                .clipShape(Capsule())
+                LinearGradient(colors: [.clear, .white.opacity(0.06), .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: geo.size.width * 0.6)
+                    .offset(x: sweep ? geo.size.width : -geo.size.width * 0.6)
             }
-            .frame(height: 2)
-            .padding(.horizontal, 60)
-
-            Text(t(.rd_loading_picks))
-                .font(.archivoNarrow(10, weight: .bold))
-                .tracking(2.6)
-                .foregroundColor(Color(hex: "#6E6F75"))
+            .clipShape(RoundedRectangle(cornerRadius: P1Board.radius))
+            .opacity(reduceMotion ? 0 : 1)
         }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) { sweep = true }
+        }
+        .accessibilityHidden(true)
     }
 }
 

@@ -39,4 +39,14 @@ struct Pick1GameAttributes: ActivityAttributes {
     /// Country flag emoji for national-team sports (soccer / cricket).
     var homeFlag: String? = nil
     var awayFlag: String? = nil
+    /// Team colours (hex, no #) for the game-page style header wash.
+    var homeColor: String? = nil
+    var awayColor: String? = nil
+    /// Season records ("4-2"), shown before the game starts.
+    var homeRecord: String? = nil
+    var awayRecord: String? = nil
+    var startDate: Date? = nil
+    /// "home" or "away": the side of PICK1's call, for the sentence under the score.
+    var pickSide: String? = nil
+    var pickProbability: Int? = nil
 }

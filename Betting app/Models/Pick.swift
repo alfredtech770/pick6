@@ -348,7 +348,20 @@ struct BettingProp: Codable, Identifiable, Hashable {
     /// Real decimal odds for this selection when a book quote was found —
     /// powers the "$100 → $X" projected-return chip. Nil otherwise.
     var odds: Double? = nil
+    var oddsBooks: [OddsBook]? = nil
+    var oddsSource: String? = nil
+    var quotedAt: String? = nil
+    var marketKey: String? = nil
+    var line: Double? = nil
+    var participant: String? = nil
+    var selection: String? = nil
+    enum CodingKeys: String, CodingKey {
+        case label, value, hint, probability, odds, line, participant, selection
+        case oddsBooks = "odds_books", oddsSource = "odds_source", quotedAt = "quoted_at", marketKey = "market_key"
+    }
+    var validBooks: [OddsBook] { (oddsBooks ?? []).filter { $0.odds.isFinite && $0.odds > 1 }.sorted { $0.odds > $1.odds } }
     var id: String { label + value }
+
 }
 
 /// One WHY-breakdown factor: a real data point + the model's 0-100 read on

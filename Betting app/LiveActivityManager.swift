@@ -18,6 +18,76 @@ final class LiveActivityManager {
     private var activities: [String: Activity<Pick1GameAttributes>] = [:]   // gameId → activity
     private var tokenTasks: [String: Task<Void, Never>] = [:]
     private var creating: Set<String> = []   // gameIds with an in-flight start
+    /// Which side PICK1 called on each tracked game, uploaded with the token
+    /// so the server can say whether the call is hitting.
+    private var pickSides: [String: String] = [:]
+
+    // MARK: - Any game, from the ESPN board
+
+    func isTracking(_ game: P1Game) -> Bool {
+        guard let key = game.alertKey else { return false }
+        return activities[key] != nil || creating.contains(key)
+    }
+
+    /// Lock Screen / Dynamic Island card for any game on the board, with or
+    /// without a PICK1 call. The team-alerts job pushes every score to it.
+    func track(game: P1Game, pick: Pick?, locked: Bool) {
+        guard enabled, let key = game.alertKey, game.phase == .live || game.phase == .pre,
+              activities[key] == nil, !creating.contains(key) else { return }
+        creating.insert(key)
+        let call = locked ? nil : pick
+        let side: String? = call.flatMap { p in
+            P1GameMatch.same(game.home, p.pick, sport: game.sport) ? "home"
+                : P1GameMatch.same(game.away, p.pick, sport: game.sport) ? "away" : nil
+        }
+        Task {
+            defer { creating.remove(key) }
+            // ActivityKit refuses attributes over 4096 bytes, and the two
+            // crests are most of it: shrink them until the whole set fits.
+            func attributes(_ home: Data?, _ away: Data?) -> Pick1GameAttributes {
+                Pick1GameAttributes(
+                    homeTeam: game.home.short, awayTeam: game.away.short,
+                    homeAbbr: game.home.code, awayAbbr: game.away.code,
+                    league: game.league, pickText: call?.displayPick ?? "",
+                    gameId: key, sport: game.sport,
+                    homeLogoPNG: home, awayLogoPNG: away,
+                    homeColor: game.home.color, awayColor: game.away.color,
+                    homeRecord: game.home.record, awayRecord: game.away.record,
+                    startDate: game.date, pickSide: side,
+                    pickProbability: call.map { Int($0.probability.rounded()) })
+            }
+            var attrs = attributes(nil, nil)
+            for side in [40, 36, 32, 28, 24] as [CGFloat] {
+                let home = await liveLogoData(game.home.logo, target: side)
+                let away = await liveLogoData(game.away.logo, target: side)
+                // Both crests or a smaller size: one logo and one sport icon looks broken.
+                if (game.home.logo != nil && home == nil) || (game.away.logo != nil && away == nil) { continue }
+                let candidate = attributes(home, away)
+                if let size = try? JSONEncoder().encode(candidate).count, size < 3900 { attrs = candidate; break }
+            }
+            let h = game.home.score ?? 0, a = game.away.score ?? 0
+            let status = game.phase == .live
+                ? (game.detail.isEmpty ? "LIVE" : "LIVE · \(game.detail)")
+                : "STARTS \(game.date.formatted(date: .omitted, time: .shortened))"
+            // Hitting means ahead, not level: 0-0 is nobody's call yet.
+            let hitting = side == "home" ? h > a : side == "away" ? a > h : false
+            let state = Pick1GameAttributes.ContentState(homeScore: h, awayScore: a, statusLine: status,
+                                                         pickHitting: hitting && game.phase == .live, isFinal: false)
+            do {
+                let act = try Activity.request(attributes: attrs,
+                                               content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(1800)),
+                                               pushType: .token)
+                activities[key] = act
+                if let side { pickSides[key] = side }
+                observePushToken(act, gameId: key)
+            } catch { }
+        }
+    }
+
+    func stopTracking(_ game: P1Game) {
+        guard let key = game.alertKey else { return }
+        end(gameId: key)
+    }
 
     /// Whether the user has Live Activities enabled in Settings.
     var enabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
@@ -40,7 +110,7 @@ final class LiveActivityManager {
             }
         }
         // End activities whose game is no longer live/favorited.
-        for gid in activities.keys where !favoritePickGameIds.contains(gid) {
+        for gid in activities.keys where !gid.hasPrefix("espn|") && !favoritePickGameIds.contains(gid) {
             end(gameId: gid)
         }
     }
@@ -90,19 +160,16 @@ final class LiveActivityManager {
     /// carry. ActivityKit payloads are size-capped, so anything that doesn't
     /// shrink under the budget is dropped (the widget falls back to a flag
     /// or sport symbol).
-    private func liveLogoData(_ urlString: String?) async -> Data? {
+    private func liveLogoData(_ urlString: String?, target: CGFloat = 44) async -> Data? {
         guard let s = urlString, !s.isEmpty, let url = URL(string: s) else { return nil }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             guard let img = UIImage(data: data) else { return nil }
-            let target: CGFloat = 44
             let longest = max(img.size.width, img.size.height, 1)
             let scale = min(target / longest, 1)
             let newSize = CGSize(width: img.size.width * scale, height: img.size.height * scale)
-            let fmt = UIGraphicsImageRendererFormat(); fmt.scale = 1; fmt.opaque = false
-            let resized = UIGraphicsImageRenderer(size: newSize, format: fmt)
-                .image { _ in img.draw(in: CGRect(origin: .zero, size: newSize)) }
-            guard let png = resized.pngData(), png.count <= 3000 else { return nil }   // ~3KB budget
+            guard let cg = img.cgImage, let png = TinyPNG.encode(cg, side: Int(target)) else { return nil }
+            if png.count > 1100 { return nil }
             return png
         } catch { return nil }
     }
@@ -169,22 +236,33 @@ final class LiveActivityManager {
         }
     }
 
-    private struct TokenRow: Encodable { let user_id: String; let game_id: String; let token: String }
+    private struct TokenRow: Encodable {
+        let user_id: String; let game_id: String; let token: String
+        let pick_side: String?; let environment: String
+    }
 
     private func uploadToken(gameId: String, token: String) async {
         guard let uid = SupabaseManager.client.auth.currentSession?.user.id else { return }
+        #if DEBUG
+        let environment = "sandbox"
+        #else
+        let environment = "production"
+        #endif
         do {
             try await SupabaseManager.client.from("live_activity_tokens")
-                .upsert(TokenRow(user_id: uid.uuidString, game_id: gameId, token: token),
-                        onConflict: "game_id")
+                .upsert(TokenRow(user_id: uid.uuidString, game_id: gameId, token: token,
+                                 pick_side: pickSides[gameId], environment: environment),
+                        onConflict: "token")
                 .execute()
         } catch { }
     }
 
     private func deleteToken(gameId: String) async {
+        guard let uid = SupabaseManager.client.auth.currentSession?.user.id else { return }
+        pickSides[gameId] = nil
         do {
             try await SupabaseManager.client.from("live_activity_tokens")
-                .delete().eq("game_id", value: gameId).execute()
+                .delete().eq("game_id", value: gameId).eq("user_id", value: uid.uuidString).execute()
         } catch { }
     }
 }

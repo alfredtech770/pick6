@@ -24,7 +24,7 @@ struct TrackBetSheet: View {
         return v
     }
 
-    private var odds: Double { pick.marketOdds ?? pick.impliedOddsForPayout ?? 1.9 }
+    private var odds: Double? { P1BookQuote.forPick(pick)?.odds }
 
     /// Reference stake the projection falls back to before the user picks
     /// one. Never submitted: `stake` stays nil until they actually choose,
@@ -32,7 +32,7 @@ struct TrackBetSheet: View {
     /// a $100 bet they did not make.
     private static let referenceStake: Double = 100
 
-    private var projected: Double { (stake ?? Self.referenceStake) * odds }
+    private var projected: Double? { odds.map { (stake ?? Self.referenceStake) * $0 } }
     private var hasStake: Bool { stake != nil }
 
     @State private var confirming = false
@@ -63,7 +63,7 @@ struct TrackBetSheet: View {
                 Image(systemName: "arrow.right")
                     .font(.system(size: 13, weight: .heavy))
                     .foregroundColor(Color(hex: "#6E6F75"))
-                Text("$\(Int(projected.rounded()))")
+                Text(projected.map { "$" + String(Int($0.rounded())) } ?? "No captured price")
                     .font(.anton(38))
                     .foregroundColor(hasStake ? accent : Color(hex: "#8A8D94"))
                     .contentTransition(.numericText())

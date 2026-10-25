@@ -304,189 +304,7 @@ struct MatchDetailView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-        ZStack(alignment: .top) {
-            Color(hex: "#07080a").ignoresSafeArea()
-
-            // The content column is pinned to exactly the container width.
-            // scrollBounceBehavior alone wasn't enough: any row rendering
-            // even a point wider than the screen (long team names, tracked
-            // type, fixed tiles) grew the scroll content box sideways and
-            // the whole page panned left/right on diagonal swipes. With the
-            // frame clamped, horizontal movement is impossible no matter
-            // what a child renders; overflow just clips.
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    detailTopNav
-                    // The pick, as a ticket. One object states the call, the
-                    // terms and its own outcome; everything below it argues
-                    // for the call. This replaces three separate blocks (the
-                    // matchup header, the PICK1'S CALL heading and the hero
-                    // card) that between them printed the confidence three
-                    // times and the track action twice.
-                    P1PickTicket(pick: pick,
-                                 homeScore: liveScore?.homeScore ?? pick.homeScore,
-                                 awayScore: liveScore?.awayScore ?? pick.awayScore,
-                                 isLive: liveScore?.isLive ?? false,
-                                 scoreLine: scorePredictionLine,
-                                 confidence: confidenceDisplay,
-                                 loggedAt: loggedTimeText)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 14)
-
-                    // What the ticket does not have room for, kept as a quiet
-                    // strip rather than dropped: edge versus the market, and
-                    // the clock.
-                    HStack(spacing: 0) {
-                        ForEach(Array(pickHeroStats.enumerated()), id: \.element.label) { i, stat in
-                            if i > 0 { Rectangle().fill(V4.line).frame(width: 1, height: 22) }
-                            VStack(spacing: 3) {
-                                Text(stat.label)
-                                    .font(.archivoNarrow(8.5, weight: .bold)).tracking(1.4)
-                                    .foregroundColor(Color(hex: "#6E6F75"))
-                                    .lineLimit(1).minimumScaleFactor(0.7)
-                                HStack(alignment: .firstTextBaseline, spacing: 1) {
-                                    Text(stat.value)
-                                        .font(.anton(15))
-                                        .foregroundColor(Color(hex: "#F5F3EE"))
-                                    if let suffix = stat.suffix {
-                                        Text(suffix)
-                                            .font(.mono(9, weight: .semibold))
-                                            .foregroundColor(Color(hex: "#B9B7B0"))
-                                    }
-                                }
-                                .lineLimit(1).minimumScaleFactor(0.6)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 24)
-                    // Won pick → the share-your-gains viral loop. Free
-                    // users earn 24h of Premium for a completed share.
-                    if pick.isWin {
-                        Button {
-                            Haptics.tap()
-                            showShareWin = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 14, weight: .bold))
-                                Text(t(.sw_share_win))
-                                    .font(.anton(15)).kerning(0.4)
-                            }
-                            .foregroundColor(Color(hex: "#171717"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(RoundedRectangle(cornerRadius: 13)
-                                .fill(Color(hex: "#C6FF34")))
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 22)
-                    }
-                    // "What is this league" descriptor — only shows for
-                    // leagues whose code isn't self-explanatory (KBO, NPB,
-                    // EuroLeague, …), so users know what they're looking at.
-                    if let blurb = leagueBlurb(pick.league) {
-                        Text(blurb)
-                            .font(.archivo(11, weight: .medium))
-                            .foregroundColor(Color(hex: "#8A8D94"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.bottom, 12)
-                    }
-                    // (RECENT FORM lives in the TEAM STATS tab — not repeated here.)
-                    // The PICK1'S CALL heading and `pickHeroCard` used to sit
-                    // here. Both are now the ticket above: the heading named a
-                    // section whose only content was the card, and the card
-                    // restated the call the header had just made.
-                    // The "WHY <team>" factor panel used to sit here. Removed
-                    // at Ethan's request 2026-08-25: the same `pick.factors`
-                    // already drive the home hero's "why the AI likes it", and
-                    // the OUR CALL tab below carries the reasoning in prose.
-                    tabsRow
-                    Group {
-                        switch tab {
-                        case .ourCall:
-                            ourCallPanel
-                        case .summary:
-                            VStack(spacing: 14) {
-                                summaryPanel
-                                projectionPanel
-                            }
-                        case .stats:
-                            // Sport-adaptive stats: race podium (F1/golf),
-                            // tale of the tape (MMA), form guide (soccer),
-                            // grounded matchup facts (everything else).
-                            VStack(spacing: 14) {
-                                if isRaceEvent, let drivers = pick.fieldOdds, !drivers.isEmpty {
-                                    racePodiumPanel(drivers)
-                                } else if pick.sport == "combat", pick.taleOfTape != nil {
-                                    taleOfTapePanel
-                                } else if pick.sport == "soccer", pick.soccerComparison != nil {
-                                    formGuidePanel
-                                    matchupPanel
-                                } else {
-                                    matchupPanel
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    Spacer().frame(height: 120)
-                }
-                // Hard width pin: an overwide child (long factor value,
-                // wide table) must clip, never widen the scrollable content
-                // — a wider content size is what made the page pannable
-                // sideways.
-                .frame(width: UIScreen.main.bounds.width)
-                .frame(width: geo.size.width)
-            }
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-
-            // Toast
-            if showToast {
-                Text(t(.card_saved_toast, count: Int(pick.probability)))
-                    .font(.archivo(12, weight: .bold))
-                    .foregroundColor(Color(hex: "#171717"))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color(hex: "#F5F3EE"))
-                    .clipShape(Capsule())
-                    .frame(maxWidth: .infinity)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 100)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-        }
-        }
-        .preferredColorScheme(.dark)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            unifiedTrackBar
-        }
-        .onAppear { if openTrackSheet { showTrackSheet = true } }
-        .sheet(isPresented: $showTrackSheet) {
-            TrackBetSheet(
-                pick: pick,
-                accent: sportAccent,
-                onTrack: { stake in startTracking(stake: stake) },
-                isTracked: isTracking,
-                onUntrack: { stopTracking() }
-            )
-            // Sized for the content, not guessed: the money block at the top
-            // added roughly 110pt, and the old 360 clipped the sheet's own
-            // title off the top edge.
-            .presentationDetents([.height(isTracking ? 480 : 420)])
-            .onAppear {
-                Analytics.trackSheetViewed(league: pick.league, alreadyTracked: isTracking)
-            }
-        }
-        .task { if !betTracker.loaded { await betTracker.load() } }
-        // Engagement signal → PostHog (pick_viewed) + Meta (ViewContent,
-        // content_type = league). Fires once whenever a pick detail opens,
-        // from any screen that presents MatchDetailView.
-        .onAppear { Analytics.pickViewed(league: pick.league) }
+        P1SportsbookDetail(pick: pick, liveScore: liveScore, onClose: onClose, openTrackSheet: openTrackSheet)
     }
 
     private var detailTopNav: some View {
@@ -1958,7 +1776,7 @@ struct MatchDetailView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
         // Extra room above the pill so the fade has somewhere to happen.
-        .padding(.top, 24)
+        .padding(.top, 4)
         .padding(.bottom, 10)
         // A dissolve, not a slab. `.ultraThinMaterial` drew a frosted panel
         // with its own edges, so the button read as stuck to a second
@@ -2524,7 +2342,7 @@ struct SportHubView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color(hex: "#07080a").ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
             // Per-sport glow tint — radial gradient anchored top-right
             // matches design `.hero::before` (per-sport `--sport-glow`).
             RadialGradient(
@@ -5645,7 +5463,7 @@ struct PrivacySecuritySheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#07080a").ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     sheetHeader
@@ -5886,7 +5704,7 @@ struct LegalSheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#07080a").ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
             VStack(spacing: 0) {
                 sheetHeader
                     .padding(.horizontal, 18)
@@ -5976,7 +5794,7 @@ struct EditProfileSheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#07080a").ignoresSafeArea()
+            Color.p1Ink.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
