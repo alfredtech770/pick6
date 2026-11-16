@@ -99,6 +99,13 @@
   </url>
 
   <url>
+    <loc>https://pick1.live/support</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
     <loc>https://pick1.live/privacy</loc>
     <lastmod>2026-05-05</lastmod>
     <changefreq>yearly</changefreq>
