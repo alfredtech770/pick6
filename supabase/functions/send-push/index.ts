@@ -133,6 +133,18 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🤑 O n.º1 de hoje entrou: {pick}", b: "{team} {score}. +${won} sobre $100 seguidos." },
     ar: { t: "🤑 رقم 1 اليوم نجح: {pick}", b: "{team} {score}. +{won}$ على 100$ متابَعة." },
   },
+  // The day's #1 came in, told in Spread's terms (the free first bet). Sent in place of
+  // top_result only when the pipeline has SPREAD_PUSH=1 and the price is one Spread takes.
+  // {won} is the profit on a $500 stake, the most the free bet allows. Opens the app, where
+  // the Spread win card is waiting.
+  top_result_spread: {
+    en: { t: "🤑 {pick} won. That was +${won} on Spread", b: "$500 on a Spread account at {odds}. Your next pick there is free." },
+    fr: { t: "🤑 {pick} a gagné. +{won} $ sur Spread", b: "500 $ sur un compte Spread à {odds}. Ton prochain pari y est offert." },
+    es: { t: "🤑 {pick} ganó. Eran +${won} en Spread", b: "$500 en una cuenta Spread a {odds}. Tu próxima apuesta allí es gratis." },
+    pt: { t: "🤑 {pick} ganhou. Eram +${won} na Spread", b: "$500 numa conta Spread a {odds}. A tua próxima aposta lá é grátis." },
+    de: { t: "🤑 {pick} hat gewonnen. +{won} $ auf Spread", b: "500 $ auf einem Spread-Konto zu {odds}. Dein nächster Tipp dort ist gratis." },
+    it: { t: "🤑 {pick} ha vinto. +{won} $ su Spread", b: "500 $ su un conto Spread a {odds}. La tua prossima giocata lì è gratis." },
+  },
   // EVERY settled win, to everyone, as it settles (2026-09-20). The flat
   // $100 basis is what makes one figure comparable across readers; the
   // people who tracked this pick get their own number instead, and are
@@ -377,6 +389,7 @@ const TIER: Record<string, Tier> = {
   win_all: "daily",
   value_soon: "daily",
   top_result: "daily",
+  top_result_spread: "daily",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 
@@ -817,7 +830,7 @@ Deno.serve(async (req: Request) => {
     // the whole point: it has to be recognisable from a pocket, before the
     // screen is even out. Both platforms now: APNs takes a file name, Android
     // takes a channel whose sound was fixed when the channel was created.
-    const MONEY_KEYS = new Set(["result_win", "result_win_stake", "win_all", "recap", "hot_streak", "big_odds", "top_result",
+    const MONEY_KEYS = new Set(["result_win", "result_win_stake", "win_all", "recap", "hot_streak", "big_odds", "top_result", "top_result_spread",
                                 "free_recap", "free_recap_b", "week_missed",
                                 "top_win", "morning_recap", "morning_recap_missed",
                                 "morning_recap_even"]);

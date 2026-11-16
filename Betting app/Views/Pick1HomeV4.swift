@@ -1434,6 +1434,20 @@ struct Pick1HomeV4: View {
     }
     @State private var favoritesOnly = false
     @AppStorage("pick1FavoriteTeamsBannerHidden") private var favBannerHidden = false
+    @AppStorage("pick1SpreadBannerHidden") private var spreadBannerHidden = false
+    @AppStorage("pick1SpreadWinHidden") private var spreadWinHidden = ""
+
+    /// The latest PICK1 win in the last day at a price Spread takes, for the Spread win card.
+    /// The biggest price wins a tie of days, since that is the number worth showing.
+    private var spreadWin: Pick? {
+        let cutoff = Calendar.current.date(byAdding: .hour, value: -30, to: Date()) ?? Date()
+        var seen = Set<UUID>()
+        return (vm.todayPicks + vm.yesterdayPicks)
+            .filter { seen.insert($0.id).inserted }
+            .filter { $0.isWin && $0.marketOdds != nil && P1SpreadPromo.takes($0.decimalOdds) && ($0.gameDateValue ?? .distantPast) >= Calendar.current.startOfDay(for: cutoff) }
+            .max { ($0.gameDate, $0.decimalOdds) < ($1.gameDate, $1.decimalOdds) }
+            .flatMap { $0.id.uuidString == spreadWinHidden ? nil : $0 }
+    }
     @StateObject private var board = P1ScoreboardStore()
     @State private var openGame: P1GameRow?
     @State private var showSearch = false
@@ -1582,6 +1596,12 @@ struct Pick1HomeV4: View {
                                   },
                                   onClose: { favBannerHidden = true; favoritesOnly = false })
                 .padding(.horizontal, 16).padding(.bottom, 14)
+        }
+        if P1SpreadPromo.enabled, let win = spreadWin {
+            P1SpreadWinCard(pick: win, onClose: { spreadWinHidden = win.id.uuidString })
+                .padding(.horizontal, 16).padding(.bottom, 14)
+        } else if P1SpreadPromo.enabled && !spreadBannerHidden {
+            P1SpreadBanner(onClose: { spreadBannerHidden = true }).padding(.horizontal, 16).padding(.bottom, 14)
         }
         let rows = dayRows
         let featured = rows.filter { row in row.pick.map { !locked($0) } ?? false }

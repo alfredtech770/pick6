@@ -96,12 +96,20 @@ struct P1Selection: Identifiable {
     let probability: Int?
     let game: String
     let books: [OddsBook]
+    /// The price PICK1 captured for this selection, when there is one.
+    var price: Double? = nil
+    /// For the Spread handoff: the two teams and the side picked, so Spread can
+    /// find the same game on its board. Nil where the selection is not a winner pick.
+    var spreadHome: String? = nil
+    var spreadAway: String? = nil
+    var spreadPick: String? = nil
 }
 
 extension Pick {
     var handoffSelection: P1Selection {
         P1Selection(id: id.uuidString, market: "To win", value: displayPick, probability: Int(probability.rounded()),
-                    game: "\(awayTeam) @ \(homeTeam)", books: oddsBooks ?? [])
+                    game: "\(awayTeam) @ \(homeTeam)", books: oddsBooks ?? [], price: P1BookQuote.forPick(self)?.odds,
+                    spreadHome: homeTeam, spreadAway: awayTeam, spreadPick: pick)
     }
 }
 
@@ -182,6 +190,13 @@ struct P1BookmakerSheet: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
+                    if P1SpreadPromo.enabled {
+                        if selections.count == 1, let one = selections.first, one.spreadPick != nil {
+                            P1SpreadPickCard(selection: one)
+                        } else {
+                            P1SpreadSlipCard()
+                        }
+                    }
                     Text("Licensed in your country").font(.system(size: 14)).foregroundStyle(P1Board.secondary)
                     ForEach(store.available) { partnerRow($0) }
                     Text(selections.count > 1 ? "Your \(selections.count) selections" : "Your selection")
