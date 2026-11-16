@@ -133,8 +133,8 @@ const LOC: Record<string, Locales> = {
     pt: { t: "🤑 O n.º1 de hoje entrou: {pick}", b: "{team} {score}. +${won} sobre $100 seguidos." },
     ar: { t: "🤑 رقم 1 اليوم نجح: {pick}", b: "{team} {score}. +{won}$ على 100$ متابَعة." },
   },
-  // The day's #1 came in, told in Spread's terms (the free first bet). Sent in place of
-  // top_result only when the pipeline has SPREAD_PUSH=1 and the price is one Spread takes.
+  // The day's #1 came in, told in Spread's terms (the free first bet). This function swaps
+  // top_result for it itself (see the Spread swap below), so the pipeline is unchanged.
   // {won} is the profit on a $500 stake, the most the free bet allows. Opens the app, where
   // the Spread win card is waiting.
   top_result_spread: {
@@ -811,6 +811,26 @@ Deno.serve(async (req: Request) => {
   }
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, SERVICE_KEY);
+
+  // Spread swap (2026-11-16): the day's #1 win told as "+$X on a $500 Spread bet. Your next
+  // pick there is free", while the "spread-push" row in affiliate_partners is enabled (turn it
+  // off there, no deploy) and the pick has a real market price Spread takes, -300 to +1000
+  // (Spread's own LIMITS). Anything missing or failing sends the normal top_result.
+  if (key === "top_result" && args && typeof args.pick === "string") {
+    try {
+      const { data: sw } = await supabase.from("affiliate_partners").select("enabled").eq("id", "spread-push").maybeSingle();
+      if (sw?.enabled) {
+        const since = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10);
+        const { data: p } = await supabase.from("picks").select("market_odds").eq("pick", args.pick).eq("result", "win")
+          .gte("game_date", since).order("game_date", { ascending: false }).limit(1).maybeSingle();
+        const m = Number(p?.market_odds);
+        if (m >= 1.3333 && m <= 11) {
+          key = "top_result_spread";
+          args = { pick: args.pick, won: Math.round(500 * (m - 1)), odds: m.toFixed(2) };
+        }
+      }
+    } catch (_) { /* the normal top_result */ }
+  }
 
   // Opens are NOT reported here. This function only accepts the service key
   // (see the auth check above), so the app cannot call it, and handing the

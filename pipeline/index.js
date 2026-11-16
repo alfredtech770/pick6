@@ -1789,16 +1789,11 @@ async function notifyTrackedWins(wins) {
     for (const w of ranked) {
       const isTop = top && w.id === top.id;
       const exclude = [...(told.get(w.id) || [])];
-      // The #1 in Spread's terms (the free first bet), only with SPREAD_PUSH=1 and a real market
-      // price Spread takes (-300 to +1000, its own LIMITS). Off by default: the app banner ships first.
-      const spread = isTop && process.env.SPREAD_PUSH === '1' && w.market_odds >= 1.3333 && w.market_odds <= 11;
       await sendPush({
-        key: spread ? 'top_result_spread' : isTop ? 'top_result' : 'win_all',
+        key: isTop ? 'top_result' : 'win_all',
         prefKey: 'results',
         excludeUserIds: exclude,
-        args: spread
-          ? { pick: w.pick, won: Math.round(500 * (w.market_odds - 1)), odds: Number(w.market_odds).toFixed(2) }
-          : isTop
+        args: isTop
           ? { pick: w.pick, team: `${w.home_team} v ${w.away_team}`, score: w.score, won: payoutPct(w) }
           : { team: w.pick, score: w.score, payout: payoutPct(w), conf: Math.round(w.probability || 0) },
       });
