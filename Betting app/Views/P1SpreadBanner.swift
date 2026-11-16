@@ -5,11 +5,17 @@ import SwiftUI
 // pass a challenge, bet the firm's money, keep up to 80% of the profit.
 // Spread's own brand on purpose (black, green #3DFF9A, SPREAD wordmark) so it
 // reads as a partner product, not as a PICK1 feature. Dismissable.
-// OFF until Ethan says ship: P1SpreadPromo.enabled is false in every build
-// (the -previewSpreadBanner launch arg only exists for simulator previews).
+// Switched remotely: on while the "spread" row in Supabase affiliate_partners is enabled
+// (P1AffiliateStore.spreadOn). Turning that row off hides every Spread surface at once,
+// without a release. The -previewSpreadBanner launch arg forces it on in Debug builds only.
 
 enum P1SpreadPromo {
-    static var enabled: Bool { CommandLine.arguments.contains("-previewSpreadBanner") }
+    @MainActor static var enabled: Bool {
+        #if DEBUG
+        if CommandLine.arguments.contains("-previewSpreadBanner") { return true }
+        #endif
+        return P1AffiliateStore.shared.spreadOn
+    }
     static let url = URL(string: "https://thesharpfund.fly.dev/p1?utm_source=pick1&utm_medium=app&utm_campaign=banner")!
     /// The free first bet: one pick on a $10K account, no fee. Spread's own numbers (src/freebet.js).
     static let winPct = 50, lossPct = 35, maxStake = 500.0

@@ -47,7 +47,19 @@ final class P1AffiliateStore: ObservableObject {
     /// Partners licensed and linked for where the user is.
     var available: [P1Bookmaker] {
         guard !market.isEmpty else { return [] }
-        return partners.filter { $0.destination != nil && $0.markets.contains(market) }.sorted { $0.sort < $1.sort }
+        return partners.filter { $0.id != P1AffiliateStore.spreadID && $0.destination != nil && $0.markets.contains(market) }.sorted { $0.sort < $1.sort }
+    }
+
+    /// Spread (the prop firm's free first bet) is switched from the same table, no release
+    /// needed: row id "spread", on while `enabled` and its link is https (the table's own
+    /// read policy). markets ["*"] means everywhere; otherwise country codes ("US", "FR").
+    /// Spread itself refuses the regions it does not serve, at signup.
+    static let spreadID = "spread"
+    var spreadOn: Bool {
+        guard let s = partners.first(where: { $0.id == Self.spreadID }), s.destination != nil else { return false }
+        if s.markets.contains("*") { return true }
+        let country = String(market.prefix(2))
+        return !country.isEmpty && s.markets.contains(country)
     }
     var isAvailable: Bool { !available.isEmpty }
 

@@ -1449,6 +1449,7 @@ struct Pick1HomeV4: View {
             .flatMap { $0.id.uuidString == spreadWinHidden ? nil : $0 }
     }
     @StateObject private var board = P1ScoreboardStore()
+    @ObservedObject private var affiliates = P1AffiliateStore.shared
     @State private var openGame: P1GameRow?
     @State private var showSearch = false
     @State private var showTeams = false
