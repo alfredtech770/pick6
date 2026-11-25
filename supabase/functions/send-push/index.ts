@@ -390,6 +390,10 @@ const TIER: Record<string, Tier> = {
   value_soon: "daily",
   top_result: "daily",
   top_result_spread: "daily",
+
+  // literal sends from Spread (spread-alert): a graded pick on the trader's own
+  // account. Keyed by data.campaign, since a literal send has no key.
+  spread_bet: "personal",
 };
 const tierOf = (key: string | undefined): Tier => (key && TIER[key]) || "daily";
 
@@ -1238,7 +1242,7 @@ Deno.serve(async (req: Request) => {
   }
   if (!tokens.length) return Response.json({ sent: 0, reason: "no tokens" });
 
-  const tier = tierOf(key);
+  const tier = tierOf(key ?? (typeof data?.campaign === "string" ? data.campaign : undefined));
   const skipped = { dormant: 0, capped: 0, queued: 0 };
 
   // Recent history for everyone in range, read once. `critical` never asks.
