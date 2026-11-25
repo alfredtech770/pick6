@@ -68,6 +68,10 @@ final class P1AffiliateStore: ObservableObject {
         loaded = true
         async let rows: [P1Bookmaker] = (try? SupabaseManager.client.from("affiliate_partners")
             .select("id, name, markets, affiliate_url, logo_url, licence, sort").execute().value) ?? []
+    /// Spread's Discord, shown under the Spread banner on the home board. Row "spread-discord" in
+    /// the same table: change the link or switch it off there, no release (Ethan, 2026-11-25).
+    static let discordID = "spread-discord"
+    var discordURL: URL? { partners.first(where: { $0.id == Self.discordID })?.destination }
         partners = await rows
         // Nothing to place anywhere: skip locating the user entirely.
         guard partners.contains(where: { $0.destination != nil }) else { return }

@@ -1,0 +1,28 @@
+BUILD 48 REVIEW NOTES (1.0.27)
+
+What changed in 1.0.27: one new line on the home board, under the Spread card: "Join the community on Discord". It opens a public Discord invite link in Safari or the Discord app. The link is configured on our server and can be removed without a release. No other functional change; everything else is the same as 1.0.26 (already approved).
+
+From 1.0.25 (already approved):
+- Win cards: when a PICK1 call wins, the home board shows the result and what it paid at the listed price.
+- Spread, a partner sports prop firm: a card on the home board and in the "Place this pick" sheet offers a free first pick on Spread. Spread is an evaluation product. The free pick is placed on a simulated $10,000 account on Spread's own website, with no fee, no deposit and no card. The result only earns a discount on a paid Spread evaluation; nothing is paid out from the free pick. Tapping the card opens Spread's website in Safari, where Spread handles signup, its own age and region restrictions, and its terms.
+- The card shows Spread's current price for the pick, read from Spread's public price endpoint. PICK1 itself still never takes bets, deposits or payments for wagers.
+- The Spread card is switched from our server and can be turned off without a release.
+
+Licensed bookmaker links (please read):
+- Partners are configured on our server per jurisdiction. They are now enabled as follows:
+  * United States: DraftKings, only in the states where DraftKings Sportsbook is licensed (state found from the approximate IP region), and PrizePicks (state regulated fantasy and prediction products, which PrizePicks itself restricts by state).
+  * Brazil: Stake (Stake Brazil Ltda., authorised by SPA/MF). Mexico: Stake (SEGOB permit).
+  * Other countries: Stake under its Curacao licence, only in countries where Stake accepts players. It is not shown in the United States, United Kingdom, France, Germany, Italy, Spain, Australia, the Netherlands, Belgium, Ontario or the other countries Stake restricts.
+- In Cupertino (California) the sheet lists PrizePicks.
+- Every first tap asks for legal betting age, and the sheet shows the local responsible gambling message. Tapping a partner opens its own website in Safari (through a pick1 redirect that only counts the tap).
+- PICK1 itself never takes bets, deposits or payments for wagers. The app stays rated 18+.
+
+Demo accounts, passwordless: enter the email, tap Continue, then enter the code 070770.
+- review2@pick1.live: a FREE account (locked predictions, paywall).
+- review@pick1.live: already Pro, to see every screen past the paywall.
+
+Account deletion: Profile > Edit Profile > Danger Zone > Delete Account.
+
+PICK1 provides AI sports predictions and analysis for entertainment. It does not accept wagers, deposits or cash outs.
+
+Questions: support@pick1.live

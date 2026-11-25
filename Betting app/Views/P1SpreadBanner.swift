@@ -339,6 +339,37 @@ struct P1SpreadWinCard: View {
                 ZStack {
                     Color(hex: "#0B0D0C")
                     RadialGradient(colors: [green.opacity(0.26), .clear], center: .topTrailing, startRadius: 4, endRadius: 240)
+
+// MARK: Community
+// One line under the Spread banner: the Discord where Spread traders share picks, wins and payouts.
+// The link comes from Supabase (affiliate_partners row "spread-discord"); no row, no line.
+
+struct P1CommunityRow: View {
+    let url: URL
+    @Environment(\.openURL) private var openURL
+    private let blurple = Color(hex: "#5865F2")
+
+    var body: some View {
+        Button { openURL(url) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: 36, height: 36).background(blurple, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Join the community on Discord").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                    Text("Picks, wins and payouts with other bettors").font(.system(size: 12)).foregroundStyle(.white.opacity(0.6))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.up.right").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .background(Color(hex: "#111315"), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(blurple.opacity(0.45), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens Discord")
+    }
+}
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

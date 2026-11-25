@@ -1601,8 +1601,12 @@ struct Pick1HomeV4: View {
         if P1SpreadPromo.enabled, let win = spreadWin {
             P1SpreadWinCard(pick: win, onClose: { spreadWinHidden = win.id.uuidString })
                 .padding(.horizontal, 16).padding(.bottom, 14)
-        } else if P1SpreadPromo.enabled && !spreadBannerHidden {
-            P1SpreadBanner(onClose: { spreadBannerHidden = true }).padding(.horizontal, 16).padding(.bottom, 14)
+        } else if P1SpreadPromo.enabled {
+            // no close button: the Spread banner stays on the home board (Ethan, 2026-11-18)
+            P1SpreadBanner().padding(.horizontal, 16).padding(.bottom, 14)
+        }
+        if let discord = affiliates.discordURL {
+            P1CommunityRow(url: discord).padding(.horizontal, 16).padding(.bottom, 14)
         }
         let rows = dayRows
         let featured = rows.filter { row in row.pick.map { !locked($0) } ?? false }
